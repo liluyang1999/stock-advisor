@@ -48,6 +48,10 @@ class LoopToolingTests(unittest.TestCase):
     def test_traceability_edges_agree_with_work_items(self) -> None:
         self.assertEqual(check_traceability.check(release=False), [], check_traceability.check(release=False))
 
+    def test_every_acceptance_criterion_is_traced(self) -> None:
+        self.assertEqual(check_traceability.check(release=False), [], check_traceability.check(release=False))
+        self.assertIn("acceptance_criteria", check_traceability.REQUIRED_COLUMNS)
+
     def test_backlog_is_exact_projection(self) -> None:
         self.assertEqual(render_backlog.check_backlog(), [])
 

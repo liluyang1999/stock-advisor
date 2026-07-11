@@ -15,6 +15,7 @@ REQUIRED_COLUMNS = {
     "design_refs",
     "adr_refs",
     "work_item_ids",
+    "acceptance_criteria",
     "test_ids",
     "evidence_ids",
     "status",
@@ -87,6 +88,16 @@ def check(release: bool = False) -> list[str]:
             trace_row = row_by_req.get(req)
             if trace_row and work_id not in _split(trace_row["work_item_ids"]):
                 errors.append(f"{req} is owned by {work_id} in work-items.json but its trace row omits {work_id}")
+
+    acceptance_text = (LOOP_ROOT / "product/ACCEPTANCE_CRITERIA.md").read_text(encoding="utf-8")
+    acceptance_ids = set(re.findall(r"\bAC-\d{3}\b", acceptance_text))
+    traced_acceptance = {ac for row in rows for ac in _split(row.get("acceptance_criteria", ""))}
+    if missing := acceptance_ids - traced_acceptance:
+        errors.append(f"acceptance criteria not traced: {sorted(missing)}")
+    for row in rows:
+        for ac in _split(row.get("acceptance_criteria", "")):
+            if ac not in acceptance_ids:
+                errors.append(f"{row['requirement_id'].strip()} references unknown acceptance {ac}")
 
     check.stats = {"requirements": len(requirement_ids), "rows": len(rows)}
     return errors

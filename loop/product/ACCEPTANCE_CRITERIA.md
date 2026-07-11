@@ -13,4 +13,4 @@
 - **AC-010**：连续 5 次完整发布门禁绿色，依赖许可、SBOM、哈希、回滚和人工发布门禁完成。
 - **AC-011**：仓库级规则、README 与依赖元数据和已接受的 PySide6 目标一致，同时仍明确标注当前生产实现是 Tkinter，未提前声称迁移完成。
 
-每个 AC 的实现、测试和证据映射见 `../quality/traceability.csv`。
+每个 AC 的实现、测试和证据映射见 `../quality/traceability.csv` 的 `acceptance_criteria` 列。
