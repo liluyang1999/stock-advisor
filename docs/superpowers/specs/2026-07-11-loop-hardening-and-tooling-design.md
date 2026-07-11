@@ -31,7 +31,7 @@
 
 ## 3. 护栏与不变量（本轮绝不改变）
 
-1. **不动产品业务逻辑**：`src/stock_advisor/*.py` 算法与行为零改动；449 测试全绿。
+1. **冻结产品业务逻辑与行为**：算法、输出口径与外部行为零改动，449 测试保持全绿。**结构可动（本轮新增）**：应用户要求，把 `src/stock_advisor/` 按功能模块重组为子包属于本轮范围——这是**行为保持的搬迁**（移动文件 + 更新 import + 同步 loop 制品），不改任何逻辑。详见 WS-R。
 2. **写边界**：仅 `loop/`、`docs/`、根级开发工具配置。不写 `build/`、`dist/`、`%APPDATA%`。
 3. **运行时依赖边界的显式演进**：当前"运行期零第三方"是 Tk 基线；按 ADR-0001 演进为"运行时 = 标准库 + PySide6（已批准）"。ruff/pyright/pytest/coverage 等**仅 dev/CI 用，绝不进 EXE**。该措辞同步进 `AGENTS.md`/`DEPENDENCY_POLICY`，消除"既称零依赖又用 PySide6"的表述矛盾。
 4. **工具链以"棘轮"方式接入**：在**当前代码即通过**的基线上启用（pyright 从 basic 起步、ruff 规则集/`per-file-ignores` 校准到现状通过、coverage 门阈值先设为当前实测基线）；对新增/改动代码强制全规则；收紧（含 `src/` 一次性格式规范化、pyright strict、coverage 提标）排期为独立 WI，**本轮不因此改动 `src/`**。
@@ -51,6 +51,7 @@
 | 市场时区 | `config.json` 显式 `market_timezone = Asia/Shanghai`，与本地显示/日志时区分离 |
 | pyright↔"无 Node"冲突 | 记为 dev-only 明确豁免：约束本意针对产品运行时/交付物；写入 dev-toolchain ADR |
 | 初始提交 | 先做基线提交（含旧文档）作安全网，再分逻辑提交做加固与清理 |
+| **src 包结构（新增）** | 把 `src/stock_advisor/` 按功能层重组为 `domain/`(12 纯核心)/`data/`/`services/`/`ui/` 子包；**行为保持**、保留文件名、仅移动 + 改 import + 同步 manifest/module-map/boundaries/docs + 写 ADR |
 
 ## 5. 已实证缺陷清单（均经一手核对）
 
@@ -150,9 +151,20 @@
 - 新增 `governance` 归档/文档卫生政策（`loop/` 为 SSOT）。
 - **验证**：删除前把每文件抽取结论列给用户过目（可选门）；删除后无悬挂引用（grep 校验）。
 
+### WS-R product 包结构重组（行为保持，本轮新增）
+- **目的**：`src/stock_advisor/` 现为 23 个扁平模块单目录；按功能层重组为清晰子包，去掉"只有一个子目录"的无意义结构，并为 PySide6 迁移预留 `ui/qt/` 位置。
+- **目标结构**（保留文件名，仅移动 + 改 import）：
+  - `domain/`：12 个纯核心模块（`models` `symbols` `engine` `policy` `backtest` `screener` `presets` `compare` `alerts` `chart` `input_validate` `formatting`）——与 `architecture/core-module-manifest.json` 纯区一致，`check_core_boundaries` 强制无 Qt/网络/文件系统依赖。
+  - `data/`：`data_provider`、`sample_data`（唯一 I/O 边界）。
+  - `services/`：`workflow`、`store`（编排与持久化）。
+  - `ui/`：`app`、`layout`、`theme`、`view_text`、`view_format`、`manual`（表现层；迁移时 Qt 入 `ui/qt/`、Tk 暂留 `ui/tk/` 或让位）。
+- **改动**：移动文件并为每个子包加 `__init__.py`；更新全部 `src/` 与 `tests/` 的 import、`main.py`/`build_exe.py` 引用；**同步 loop 制品**：`architecture/core-module-manifest.json` 路径、`architecture/MODULE_BOUNDARIES.md`、`baseline/module-map.json`、`AGENTS.md`/`README.md` 目录结构、`scripts/check_core_boundaries.py`（若硬编码路径）；写一条 ADR 记录分层决定。
+- **验证**：`python -m unittest discover -s tests` 449 全绿、`check_core_boundaries` 绿、`main.py --self-test` 绿、`compileall` 绿——证明行为保持。
+- **依赖与顺序**：在 Plan 1（digest 演进使能）之后执行（它要改受 `control_plane_digest` 约束的 loop 制品）；在深度内容补强与 Qt 迁移之前，让后续一切基于干净结构。移动 `src/` 文件本身不影响 loop digest（digest 只哈希 `loop/`）。
+
 ## 7. 执行顺序与验证策略
 
-- **顺序**：WS-0 → WS-1 → WS-2 →（WS-3、WS-4、WS-5、WS-6、WS-7 内容补强，彼此可穿插，每步即时校验）→ WS-8 → WS-9。
+- **顺序**：WS-0 → WS-1 → WS-2 → **WS-R（product 包结构重组，行为保持）** →（WS-3、WS-4、WS-5、WS-6、WS-7 内容补强，彼此可穿插，每步即时校验）→ WS-8（配置对齐新结构）→ WS-9。
 - **分支**：基线提交落在 `main`（仓库首个提交）；WS-1 起的加固实现走独立特性分支/worktree。
 - **收尾全绿门禁**：`validate_loop`、`check_traceability`（含新边一致）、`render_* --check`、`check_core_boundaries`、`loop/tests`、根 `pytest`(449)、`ruff`、`pyright`、`coverage`、`main.py --self-test`、`run_gates` 一键。
 - **提交**：按 WS 分逻辑提交，祈使式信息说明"为什么"；提交信息尾行附 Co-Authored-By。
@@ -167,7 +179,8 @@
 
 ## 9. 风险与回滚
 
-- **R1 工具链在当前代码报错逼迫改产品**：以棘轮基线接入（当前树即通过），杜绝本轮改 `src/`；收紧排期为 WI。
+- **R1 工具链在当前代码报错逼迫改产品逻辑**：以棘轮基线接入（当前树即通过），本轮不因工具链改 `src/` 逻辑；收紧排期为 WI。（`src/` 的**结构**重组是独立、行为保持的 WS-R，不改逻辑。）
+- **R5 包重组遗漏 import 或破坏纯核心边界**：机械化搬迁 + 每步跑 449 测试与 `check_core_boundaries` 绿即回归防线；`domain/` 严格对齐 manifest，boundary 门守住无 Qt/网络/fs。
 - **R2 强化校验器一次性暴露大量不一致**：按 D1–D13 逐条闭合，TDD 红→绿；必要时用 `waivers.jsonl`（带 expiry）临时挂账并登记，不降门槛。
 - **R3 删除旧文档丢信息**：WS-0 基线提交 + 抽取先行 + 删前清单过目；git 历史可完全恢复。
 - **R4 pyright/Node 与"无 Node"约束**：记为 dev-only 豁免 ADR；不影响 EXE；可切 basedpyright。
