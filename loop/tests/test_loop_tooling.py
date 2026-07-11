@@ -116,6 +116,20 @@ class LoopToolingTests(unittest.TestCase):
         record_current.pop("superseded_by")
         self.assertFalse(validate_loop._digest_ok(record_current))
 
+    def test_registers_reject_duplicate_ids(self) -> None:
+        self.assertEqual(validate_loop.validate(), [], validate_loop.validate())
+        self.assertTrue(validate_loop._duplicates(["X", "X"]))
+
+    def test_decision_ledger_keeps_status_history_without_tripping_duplicate_check(self) -> None:
+        # registers/decisions.jsonl is an append-only ADR status ledger: the same id
+        # legitimately reappears whenever its status changes. It must stay excluded
+        # from the per-register id-uniqueness check so real audit history is never
+        # flagged as a defect the way registers/experiments.jsonl's accidental
+        # duplicate id is.
+        ids = [row["id"] for row in validate_loop.parse_jsonl(LOOP_ROOT / "registers" / "decisions.jsonl")]
+        self.assertTrue(validate_loop._duplicates(ids), "fixture assumption: decisions.jsonl has status-history duplicates")
+        self.assertEqual(validate_loop.validate(), [])
+
 
 if __name__ == "__main__":
     unittest.main()

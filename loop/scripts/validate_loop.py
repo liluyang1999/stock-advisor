@@ -197,6 +197,25 @@ def validate() -> list[str]:
         except (OSError, json.JSONDecodeError, ValueError) as exc:
             errors.append(f"invalid JSONL {path.relative_to(LOOP_ROOT)}: {exc}")
 
+    # "decisions" is deliberately excluded: registers/decisions.jsonl is an append-only
+    # ADR status ledger where the same id legitimately reappears every time its status
+    # changes (see the "latest decision register entries" check below, which already
+    # folds repeated ids down to their most recent row). Enforcing id-uniqueness there
+    # would flag genuine audit history as a defect instead of catching one.
+    for register in ("experiments", "assumptions", "changes", "waivers", "risks"):
+        suffix = "json" if register == "risks" else "jsonl"
+        register_path = LOOP_ROOT / "registers" / f"{register}.{suffix}"
+        if not register_path.exists():
+            continue
+        if suffix == "jsonl":
+            register_rows = parse_jsonl(register_path)
+        else:
+            register_payload = json.loads(register_path.read_text(encoding="utf-8"))
+            register_rows = register_payload.get(register, []) if isinstance(register_payload, dict) else []
+        register_id_list = [row.get("id", "") for row in register_rows if isinstance(row, dict)]
+        if duplicate_ids := _duplicates(register_id_list):
+            errors.append(f"duplicate {register} ids: {sorted(duplicate_ids)}")
+
     requirements = _ids_from_markdown("product/REQUIREMENTS.md", "REQ")
     acceptance = _ids_from_markdown("product/ACCEPTANCE_CRITERIA.md", "AC")
     tests_payload = load_json("quality/test-catalog.json")
