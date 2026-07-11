@@ -90,6 +90,11 @@ class LoopToolingTests(unittest.TestCase):
         self.assertEqual(config["ui_tokens"]["primary_control_height_dip"], 48)
         self.assertEqual(config["ui_tokens"]["table_row_height_dip"], 48)
 
+    def test_market_timezone_is_shanghai(self) -> None:
+        config = json.loads((LOOP_ROOT / "config.json").read_text(encoding="utf-8"))
+        self.assertEqual(config["project"]["market_timezone"], "Asia/Shanghai")
+        self.assertEqual(validate_loop.validate(), [])
+
     def test_false_success_transition_is_rejected(self) -> None:
         state = json.loads((LOOP_ROOT / "state/current.json").read_text(encoding="utf-8"))
         errors = update_state.validate_transition(state, "complete", "success")

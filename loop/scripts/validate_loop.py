@@ -431,6 +431,8 @@ def validate() -> list[str]:
         errors.append("current release readiness differs from metrics")
 
     config = load_json("config.json")
+    if config.get("project", {}).get("market_timezone") != "Asia/Shanghai":
+        errors.append("config market_timezone must be Asia/Shanghai for A-share sessions")
     if config.get("target_stack", {}).get("gui") != "PySide6":
         errors.append("config target GUI must be PySide6")
     if config.get("target_stack", {}).get("runtime_font") != "Microsoft YaHei":

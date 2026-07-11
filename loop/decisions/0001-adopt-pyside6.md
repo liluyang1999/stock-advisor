@@ -3,7 +3,7 @@
 - 状态：accepted
 - 日期：2026-07-10
 - 决策来源：用户明确要求
-- 人工门禁：HG-ARCH（已由当前要求批准方向；具体版本/发布仍需 HG-DEPS/HG-LICENSE）
+- 人工门禁：HG-ARCH（方向决策已通过本 ADR accepted；HG-ARCH 门禁本身对应仓库/源码对齐（WI-001）的人工签字，正式通过仍待 WI-001 执行完成后给出，目前状态为 pending；具体版本/发布仍需 HG-DEPS/HG-LICENSE）
 
 ## 背景
 

@@ -4,7 +4,7 @@
   "milestones":[
     {"id":"MS-00","title":"基线与规格冻结","status":"in_progress","depends_on":[],"work_items":["WI-000","WI-001","WI-002"],"exit_criteria":["loop validation passes","baseline evidence recorded","architecture decisions explicit"]},
     {"id":"MS-01","title":"PySide6 基础与打包 spike","status":"proposed","depends_on":["MS-00"],"work_items":["WI-003","WI-004","WI-005","WI-006"],"exit_criteria":["minimal Qt app works","font verified","packaging evidence reviewed"]},
-    {"id":"MS-02","title":"科学与数据合同加固","status":"proposed","depends_on":["MS-00"],"work_items":["WI-007","WI-008","WI-009"],"exit_criteria":["data envelope","golden vectors","research protocol gates"]},
+    {"id":"MS-02","title":"科学与数据合同加固","status":"proposed","depends_on":["MS-00","MS-01"],"work_items":["WI-007","WI-008","WI-009"],"exit_criteria":["data envelope","golden vectors","research protocol gates"]},
     {"id":"MS-03","title":"个股工作台迁移","status":"proposed","depends_on":["MS-01","MS-02"],"work_items":["WI-010","WI-011","WI-012"],"exit_criteria":["individual feature parity","Qt tests","visual states"]},
     {"id":"MS-04","title":"全市场筛选迁移","status":"proposed","depends_on":["MS-03"],"work_items":["WI-013","WI-014"],"exit_criteria":["six presets","complete snapshot semantics","deep analysis"]},
     {"id":"MS-05","title":"组合预警与深度工具迁移","status":"proposed","depends_on":["MS-03"],"work_items":["WI-015","WI-016","WI-017","WI-018"],"exit_criteria":["watchlist/compare","alerts","fund flow/help"]},

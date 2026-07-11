@@ -96,6 +96,14 @@ OBSERVE -> SPECIFY -> DECIDE -> PLAN -> IMPLEMENT
 
 退出条件：`state/current.json` 和 `STATUS.md` 一致。
 
+### RECOVER
+
+输入：任一阶段（OBSERVE..ADVANCE）失败或异常中止时的现场——具体失败步骤、错误/异常信息，以及 `state/current.json` 中最后一次成功持久化的状态。
+
+输出：重新稳定、内部一致的安全状态，以及对失败原因的诊断（记录进 `state/progress.jsonl` 及相关风险/缺陷登记）。
+
+退出条件：状态已恢复一致且循环从 OBSERVE 重新开始；若在授权范围内无法恢复到一致状态，则升级为 `loop.json` 定义的命名终态（如 `blocked_external`、`no_safe_progress` 或 `failed`），不得停留在不一致或未持久化的中间状态。
+
 ## 4. 验证阶梯
 
 | 等级 | 证据 | 可用于何种声明 |

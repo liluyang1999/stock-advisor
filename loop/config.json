@@ -6,6 +6,7 @@
     "package": "stock_advisor",
     "root": "..",
     "timezone": "Asia/Tokyo",
+    "market_timezone": "Asia/Shanghai",
     "text_encoding": "UTF-8",
     "disclaimer": "模型仅供研究和辅助决策，不构成投资建议；交易前请自行核验行情、公告和风险。"
   },
