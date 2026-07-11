@@ -1,0 +1,27 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"work-items.schema.json",
+  "type":"object",
+  "required":["schema_version","work_items"],
+  "properties":{
+    "work_items":{
+      "type":"array",
+      "items":{
+        "type":"object",
+        "required":["id","title","milestone","status","priority","depends_on","requirements","acceptance","implementation_paths","tests","next_action"],
+        "properties":{
+          "id":{"type":"string","pattern":"^WI-[0-9]{3}$"},
+          "status":{"enum":["proposed","ready","in_progress","verifying","accepted","blocked","deferred","cancelled"]},
+          "priority":{"enum":["P0","P1","P2","P3"]},
+          "depends_on":{"type":"array","items":{"type":"string"}},
+          "requirements":{"type":"array","items":{"type":"string","pattern":"^REQ-[0-9]{3}$"}},
+          "acceptance":{"type":"array","items":{"type":"string","pattern":"^AC-[0-9]{3}$"}},
+          "tests":{"type":"array","items":{"type":"string","pattern":"^TEST-"}},
+          "evidence_ids":{"type":"array","items":{"type":"string","pattern":"^EVD-"}}
+        },
+        "additionalProperties":true
+      }
+    }
+  },
+  "additionalProperties":true
+}

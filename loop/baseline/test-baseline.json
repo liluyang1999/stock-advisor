@@ -1,0 +1,17 @@
+{
+  "$schema":"../schemas/test-baseline.schema.json",
+  "schema_version": "1.0.0",
+  "captured_at": "2026-07-10T22:07:31+09:00",
+  "commit": "881099806deca77a7bf7e784d6786f9bccdf0ce6",
+  "branch": "main",
+  "dirty_worktree": true,
+  "environment": {"python":"3.14.4","platform":"Windows-11-10.0.26200-SP0","machine":"AMD64"},
+  "runs": [
+    {"evidence_id":"EVD-BASE-001","command":"python -m unittest discover -s tests","total":449,"passed":449,"failed":0,"errors":0,"skipped":0,"duration_seconds":45.052,"exit_code":0},
+    {"evidence_id":"EVD-BASE-002","command":"python main.py --self-test","exit_code":0,"required_marker":"SELF_TEST_OK","marker_found":true},
+    {"evidence_id":"EVD-BASE-003","command":"python -m compileall -q main.py build_exe.py src\\stock_advisor","exit_code":0}
+  ],
+  "coverage": {"statement":"not_measured","branch":"not_measured"},
+  "gui_contracts": {"tk_specific":187,"non_tk_or_core":262,"qt_specific":0},
+  "limitations": ["no coverage evidence", "no PySide6 installed", "no Qt tests", "no clean build performed"]
+}

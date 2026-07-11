@@ -1,0 +1,58 @@
+{
+  "$schema": "./schemas/loop.schema.json",
+  "schema_version": "1.0.0",
+  "id": "stock-adviser-pyside6-migration",
+  "name": "股市锦囊 PySide6 现代化工程循环",
+  "status": "active",
+  "trigger": {
+    "mode": "manual",
+    "future_modes": ["approved_work_item", "ci_failure", "scheduled_maintenance"],
+    "automatic_schedule_enabled": false
+  },
+  "goal": {
+    "objective_id": "OBJ-001",
+    "statement": "在保留可解释领域核心和现有功能合同的前提下，将桌面 GUI 迁移到 PySide6，并使计算、网络、并发、字体、测试、打包和发布达到可审计的现代工程标准。",
+    "success_requires": [
+      "AC-001",
+      "AC-002",
+      "AC-003",
+      "AC-004",
+      "AC-005",
+      "AC-006",
+      "AC-007",
+      "AC-008",
+      "AC-009",
+      "AC-010"
+    ]
+  },
+  "scope": {
+    "initialization_write_boundary": "loop/",
+    "future_source_boundary": "repository root after an approved work item",
+    "forbidden_without_human_gate": ["publish", "push", "merge", "release", "delete_user_data", "change_license_obligations"]
+  },
+  "cycle": ["observe", "specify", "decide", "plan", "implement", "verify", "review", "learn", "advance"],
+  "roles": {
+    "implementer": "changes code and tests within a bounded work item",
+    "verifier": "independently checks requirements, diffs, tests and failure modes",
+    "integrator": "reconciles evidence and advances state",
+    "human": "approves architecture, dependency/license, release and irreversible gates"
+  },
+  "verification_ladder": ["V0_assumption", "V1_static", "V2_unit", "V3_integration", "V4_system", "V5_release"],
+  "memory": {
+    "current": "state/current.json",
+    "progress": "state/progress.jsonl",
+    "checkpoints": "state/checkpoints.jsonl",
+    "evidence": "state/evidence-index.json",
+    "risks": "registers/risks.json",
+    "decisions": "decisions/"
+  },
+  "terminal_states": ["success", "needs_human", "changes_requested", "blocked_external", "no_safe_progress", "cancelled", "superseded", "failed"],
+  "stop_rules": [
+    "required human gate reached",
+    "same required gate failed three times without new diagnostic progress",
+    "unexpected external worktree change",
+    "evidence cannot support the next state transition",
+    "objective completed and independently verified"
+  ],
+  "human_gates": ["HG-ARCH", "HG-DEPS", "HG-LICENSE", "HG-PACKAGING", "HG-RELEASE"]
+}

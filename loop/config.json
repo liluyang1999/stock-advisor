@@ -1,0 +1,86 @@
+{
+  "$schema": "./schemas/config.schema.json",
+  "schema_version": "1.0.0",
+  "project": {
+    "name": "股市锦囊",
+    "package": "stock_advisor",
+    "root": "..",
+    "timezone": "Asia/Tokyo",
+    "text_encoding": "UTF-8",
+    "disclaimer": "模型仅供研究和辅助决策，不构成投资建议；交易前请自行核验行情、公告和风险。"
+  },
+  "target_stack": {
+    "python": ">=3.12",
+    "gui": "PySide6",
+    "gui_version_policy": "exact pin after approved dependency spike",
+    "packager": "PyInstaller",
+    "test_runner": "unittest initially; additional dev tools require approval",
+    "runtime_font": "Microsoft YaHei",
+    "candidate_versions": {
+      "PySide6": "6.11.1",
+      "PyInstaller": "6.21.0",
+      "pytest": "9.1.1",
+      "pytest-qt": "4.5.0",
+      "status": "unverified_until_WI-003"
+    }
+  },
+  "ui_tokens": {
+    "font_families": ["Microsoft YaHei"],
+    "font_points": {"caption": 9, "body": 10.5, "control": 10.5, "section": 13, "page": 17},
+    "spacing_dip": [8, 12, 16, 24, 32],
+    "control_min_height_dip": 44,
+    "primary_control_height_dip": 48,
+    "table_row_height_dip": 48,
+    "icon_size_dip": [16, 18, 20],
+    "content_max_width_dip": 1520,
+    "window_minimum_dip": [1000, 680]
+  },
+  "network_policy": {
+    "target_transport": "QNetworkAccessManager in a dedicated QObject + QThread event loop",
+    "migration_transport": "bounded synchronous urllib provider in QThreadPool workers",
+    "connect_timeout_seconds": 4,
+    "read_timeout_seconds": 8,
+    "operation_deadlines_seconds": {"quote": 12, "history": 20, "market_snapshot": 30, "fund_flow": 12},
+    "max_attempts": 3,
+    "backoff_base_seconds": 0.35,
+    "backoff_jitter_ratio": 0.2,
+    "retry_http_statuses": [408, 425, 429, 500, 502, 503, 504],
+    "retry_idempotent_only": true,
+    "respect_retry_after_within_deadline": true,
+    "max_concurrency_per_host": 4,
+    "max_global_concurrency": 8,
+    "circuit_breaker": {"failures_to_open": 5, "cooldown_seconds": 30, "half_open_probes": 1},
+    "response_limits_bytes": {"quote": 2097152, "history": 8388608, "market_snapshot": 33554432, "fund_flow": 4194304},
+    "tls_verification_required": true,
+    "https_to_http_redirect_allowed": false,
+    "fabricated_fallbacks_allowed": false
+  },
+  "commands": {
+    "baseline_tests": ["python", "-m", "unittest", "discover", "-s", "tests"],
+    "loop_tests": ["python", "-m", "unittest", "discover", "-s", "loop/tests"],
+    "self_test": ["python", "main.py", "--self-test"],
+    "syntax": ["python", "-m", "compileall", "-q", "main.py", "build_exe.py", "src/stock_advisor"],
+    "loop_validate": ["python", "loop/scripts/validate_loop.py"],
+    "traceability": ["python", "loop/scripts/check_traceability.py"],
+    "status_check": ["python", "loop/scripts/render_status.py", "--check"],
+    "backlog_check": ["python", "loop/scripts/render_backlog.py", "--check"],
+    "core_boundary_check": ["python", "loop/scripts/check_core_boundaries.py"]
+  },
+  "quality_policy": {
+    "required_pass_rate": 1.0,
+    "required_skips": 0,
+    "requirements_traceability": 1.0,
+    "evidence_required_for_verified": true,
+    "independent_verifier_required": true,
+    "consecutive_full_green_runs_for_release": 5
+  },
+  "paths": {
+    "source": "../src/stock_advisor",
+    "tests": "../tests",
+    "build": "../build",
+    "dist": "../dist",
+    "state": "state",
+    "evidence": "evidence",
+    "registers": "registers"
+  }
+}

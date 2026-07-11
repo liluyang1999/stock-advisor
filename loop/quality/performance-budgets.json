@@ -1,0 +1,19 @@
+{
+  "$schema":"../schemas/performance-budgets.schema.json",
+  "schema_version":"1.0.0",
+  "status":"provisional_until_first_qt_spike",
+  "sample_policy":{"minimum_runs":20,"record_machine":true,"record_versions":true,"report_percentiles":[50,95,99]},
+  "budgets":[
+    {"metric":"gui_event_handler_ms","p95_max":50,"p99_max":100},
+    {"metric":"busy_feedback_ms","max":100},
+    {"metric":"cancel_feedback_ms","max":100},
+    {"metric":"table_5000_sort_filter_ms","p95_max":150},
+    {"metric":"table_scroll_fps","min":30,"target":55},
+    {"metric":"cold_start_seconds","p95_max":4.0},
+    {"metric":"warm_start_seconds","p95_max":2.5},
+    {"metric":"idle_rss_mib","max":250},
+    {"metric":"idle_monitor_cpu_percent","average_max":1.0},
+    {"metric":"single_file_exe_mib","max":150,"rebaseline_rule":"after first approved clean Qt build, regression <=10%"},
+    {"metric":"dialog_100_cycles_rss_growth_mib","max":10}
+  ]
+}

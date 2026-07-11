@@ -1,0 +1,16 @@
+{
+  "id":"RISK-...",
+  "category":"",
+  "description":"",
+  "trigger":"",
+  "probability":1,
+  "impact":1,
+  "score":1,
+  "mitigation":"",
+  "contingency":"",
+  "owner":"project",
+  "status":"open",
+  "review_at":"",
+  "related_ids":[]
+}
+

@@ -1,0 +1,26 @@
+{
+  "$schema":"../schemas/core-module-manifest.schema.json",
+  "schema_version":"1.0.0",
+  "source_root":"../src/stock_advisor",
+  "package_name":"stock_advisor",
+  "forbidden_import_roots":["PySide6","tkinter","urllib","pathlib","os","subprocess"],
+  "forbidden_internal_modules":["app","data_provider","manual","store","theme","workflow","qt_app"],
+  "modules":[
+    {"path":"models.py","layer":"domain_models"},
+    {"path":"symbols.py","layer":"domain"},
+    {"path":"engine.py","layer":"domain"},
+    {"path":"policy.py","layer":"domain"},
+    {"path":"screener.py","layer":"domain"},
+    {"path":"presets.py","layer":"domain"},
+    {"path":"backtest.py","layer":"domain"},
+    {"path":"alerts.py","layer":"domain"},
+    {"path":"compare.py","layer":"domain"},
+    {"path":"chart.py","layer":"domain_geometry"},
+    {"path":"input_validate.py","layer":"domain_validation"},
+    {"path":"formatting.py","layer":"presentation_pure"}
+  ],
+  "notes":[
+    "The manifest is the single machine authority for protected core modules.",
+    "workflow.py remains application orchestration and must move provider exceptions behind a future port in WI-007/WI-009."
+  ]
+}

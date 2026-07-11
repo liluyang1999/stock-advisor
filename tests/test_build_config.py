@@ -1,0 +1,37 @@
+import sys
+import unittest
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+
+
+import build_exe
+
+
+class BuildConfigTests(unittest.TestCase):
+    def test_build_outputs_requested_name_and_uses_theme_icon(self):
+        self.assertEqual(build_exe.OUTPUT_NAME, "股市锦囊.exe")
+        self.assertEqual(build_exe.ICON_PATH.name, "a_stock_strategy.ico")
+        self.assertTrue(build_exe.ICON_PATH.exists())
+
+    def test_deliverables_go_to_dist_and_intermediates_to_build(self):
+        project = build_exe.PROJECT_ROOT.resolve()
+        dist_dir = build_exe.DIST_DIR.resolve()
+        build_dir = build_exe.BUILD_DIR.resolve()
+        # 最终交付物在 dist/，构建中间产物在 build/，都在项目内，且不再有 outputs/。
+        self.assertEqual(dist_dir, project / "dist")
+        self.assertEqual(build_dir, project / "build")
+        self.assertIn(project, dist_dir.parents)
+        self.assertFalse(hasattr(build_exe, "OUTPUT_DIR"))
+        # PyInstaller 原始产物留在 build/ 内，避免污染 dist/
+        self.assertIn(build_dir, build_exe.PYI_DIST_DIR.resolve().parents)
+
+    def test_build_also_emits_html_manual_into_dist(self):
+        self.assertEqual(build_exe.MANUAL_NAME, "使用说明.html")
+        self.assertTrue(hasattr(build_exe, "_write_manual"))
+
+
+if __name__ == "__main__":
+    unittest.main()

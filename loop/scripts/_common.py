@@ -1,0 +1,161 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from pathlib import Path
+from typing import Any
+
+
+LOOP_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = LOOP_ROOT.parent
+
+
+def load_json(relative: str) -> Any:
+    path = LOOP_ROOT / relative
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def atomic_write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_name(f".{path.name}.tmp")
+    temp.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    temp.replace(path)
+
+
+def parse_jsonl(path: Path) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    if not path.exists():
+        return records
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        value = json.loads(line)
+        if not isinstance(value, dict):
+            raise ValueError(f"{path}:{number} must contain a JSON object")
+        records.append(value)
+    return records
+
+
+def control_plane_digest() -> str:
+    """Hash authoritative control files while excluding self-referential evidence storage."""
+
+    digest = hashlib.sha256()
+    for path in sorted(LOOP_ROOT.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(LOOP_ROOT)
+        if relative.parts[0] == "evidence":
+            continue
+        if relative.as_posix() == "state/evidence-index.json":
+            continue
+        if "__pycache__" in relative.parts or path.suffix == ".pyc":
+            continue
+        digest.update(relative.as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def _matches_json_type(value: Any, expected: str) -> bool:
+    if expected == "object":
+        return isinstance(value, dict)
+    if expected == "array":
+        return isinstance(value, list)
+    if expected == "string":
+        return isinstance(value, str)
+    if expected == "integer":
+        return type(value) is int
+    if expected == "number":
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+    if expected == "boolean":
+        return isinstance(value, bool)
+    if expected == "null":
+        return value is None
+    return False
+
+
+def validate_against_schema(value: Any, schema: dict[str, Any], path: str = "$") -> list[str]:
+    """Validate the JSON-Schema subset used by loop/schemas without a runtime dependency.
+
+    Supported keywords are deliberately small and explicit: type, required, properties,
+    additionalProperties, items, enum, const, pattern, minLength, minimum, maximum,
+    minItems and uniqueItems. A schema using an unsupported structural keyword must be
+    extended here before it can become an enforced project contract.
+    """
+
+    errors: list[str] = []
+    expected_types = schema.get("type")
+    if expected_types is not None:
+        if isinstance(expected_types, str):
+            expected_types = [expected_types]
+        if not isinstance(expected_types, list) or not all(isinstance(item, str) for item in expected_types):
+            return [f"{path}: schema type must be a string or string array"]
+        if not any(_matches_json_type(value, expected) for expected in expected_types):
+            return [f"{path}: expected type {expected_types}, got {type(value).__name__}"]
+
+    if "const" in schema and value != schema["const"]:
+        errors.append(f"{path}: expected constant {schema['const']!r}, got {value!r}")
+    if "enum" in schema and value not in schema["enum"]:
+        errors.append(f"{path}: value {value!r} is not in enum {schema['enum']!r}")
+
+    if isinstance(value, dict):
+        required = schema.get("required", [])
+        if not isinstance(required, list):
+            errors.append(f"{path}: schema required must be an array")
+            required = []
+        for key in required:
+            if key not in value:
+                errors.append(f"{path}: missing required property {key!r}")
+        properties = schema.get("properties", {})
+        if not isinstance(properties, dict):
+            errors.append(f"{path}: schema properties must be an object")
+            properties = {}
+        if schema.get("additionalProperties") is False:
+            for key in value:
+                if key not in properties:
+                    errors.append(f"{path}: additional property {key!r} is not allowed")
+        for key, child_schema in properties.items():
+            if key in value:
+                if not isinstance(child_schema, dict):
+                    errors.append(f"{path}.{key}: child schema must be an object")
+                else:
+                    errors.extend(validate_against_schema(value[key], child_schema, f"{path}.{key}"))
+
+    if isinstance(value, list):
+        minimum_items = schema.get("minItems")
+        if isinstance(minimum_items, int) and len(value) < minimum_items:
+            errors.append(f"{path}: expected at least {minimum_items} items, got {len(value)}")
+        if schema.get("uniqueItems") is True:
+            serialized = [json.dumps(item, ensure_ascii=False, sort_keys=True) for item in value]
+            if len(serialized) != len(set(serialized)):
+                errors.append(f"{path}: array items must be unique")
+        item_schema = schema.get("items")
+        if item_schema is not None:
+            if not isinstance(item_schema, dict):
+                errors.append(f"{path}: schema items must be an object")
+            else:
+                for index, item in enumerate(value):
+                    errors.extend(validate_against_schema(item, item_schema, f"{path}[{index}]"))
+
+    if isinstance(value, str):
+        minimum_length = schema.get("minLength")
+        if isinstance(minimum_length, int) and len(value) < minimum_length:
+            errors.append(f"{path}: string is shorter than {minimum_length}")
+        pattern = schema.get("pattern")
+        if isinstance(pattern, str) and re.search(pattern, value) is None:
+            errors.append(f"{path}: value {value!r} does not match {pattern!r}")
+
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        minimum = schema.get("minimum")
+        maximum = schema.get("maximum")
+        if isinstance(minimum, (int, float)) and value < minimum:
+            errors.append(f"{path}: value {value!r} is below minimum {minimum!r}")
+        if isinstance(maximum, (int, float)) and value > maximum:
+            errors.append(f"{path}: value {value!r} is above maximum {maximum!r}")
+
+    return errors

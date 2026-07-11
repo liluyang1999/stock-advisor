@@ -1,0 +1,31 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"evidence.schema.json",
+  "type":"object",
+  "required":["schema_version","evidence"],
+  "properties":{
+    "evidence":{
+      "type":"array",
+      "items":{
+        "type":"object",
+        "required":["id","requirement_ids","work_item_id","type","command","exit_code","artifact_path","sha256","commit","environment","started_at","finished_at","summary","verified_by"],
+        "properties":{
+          "id":{"type":"string","pattern":"^EVD-"},
+          "record_version":{"type":"string"},
+          "command":{"type":"string"},
+          "cwd":{"type":"string"},
+          "exit_code":{"type":["integer","null"]},
+          "sha256":{"type":["string","null"]},
+          "dirty_worktree":{"type":"boolean"},
+          "started_at":{"type":["string","null"]},
+          "finished_at":{"type":["string","null"]},
+          "implemented_by":{"type":"string"},
+          "verified_by":{"type":"string"},
+          "control_plane_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"}
+        },
+        "additionalProperties":true
+      }
+    }
+  },
+  "additionalProperties":true
+}

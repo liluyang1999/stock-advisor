@@ -1,0 +1,30 @@
+{
+  "$schema":"../schemas/module-map.schema.json",
+  "schema_version": "1.0.0",
+  "generated_from_commit": "881099806deca77a7bf7e784d6786f9bccdf0ce6",
+  "modules": [
+    {"module":"models.py","layer":"domain","responsibility":"immutable domain records","side_effects":[],"tests":["test_models_new.py"],"migration_action":"preserve"},
+    {"module":"symbols.py","layer":"domain","responsibility":"symbol normalization and market identity","side_effects":[],"tests":["test_symbols.py"],"migration_action":"preserve"},
+    {"module":"engine.py","layer":"domain","responsibility":"objective measurement and factor scoring","side_effects":[],"tests":["test_engine.py","test_measure.py"],"migration_action":"preserve_and_version"},
+    {"module":"policy.py","layer":"domain","responsibility":"L1-L5 decision, spectrum and position sizing","side_effects":[],"tests":["test_policy.py","test_spectrum.py"],"migration_action":"preserve_and_version"},
+    {"module":"screener.py","layer":"domain","responsibility":"market filtering and deterministic ranking","side_effects":[],"tests":["test_screener.py"],"migration_action":"preserve"},
+    {"module":"presets.py","layer":"domain","responsibility":"six screen presets and tunable validation","side_effects":[],"tests":["test_presets.py"],"migration_action":"preserve"},
+    {"module":"backtest.py","layer":"domain","responsibility":"historical signal replay without future leakage","side_effects":[],"tests":["test_backtest.py"],"migration_action":"preserve_then_strengthen"},
+    {"module":"alerts.py","layer":"domain","responsibility":"edge-trigger alert evaluation","side_effects":[],"tests":["test_alerts.py"],"migration_action":"preserve"},
+    {"module":"compare.py","layer":"domain","responsibility":"comparison rows and holding P/L","side_effects":[],"tests":["test_compare.py"],"migration_action":"preserve"},
+    {"module":"chart.py","layer":"domain_geometry","responsibility":"K-line geometry and hover hit testing","side_effects":[],"tests":["test_chart.py"],"migration_action":"reuse_from_qpainter"},
+    {"module":"layout.py","layer":"domain_geometry","responsibility":"centering, content band, DPI and column geometry","side_effects":[],"tests":["test_sizing.py","test_gui_layout.py"],"migration_action":"adapt_to_device_independent_qt"},
+    {"module":"input_validate.py","layer":"domain","responsibility":"numeric and filter input validation","side_effects":[],"tests":["test_app_helpers.py"],"migration_action":"preserve"},
+    {"module":"formatting.py","layer":"presentation_pure","responsibility":"numeric and semantic formatting","side_effects":[],"tests":["test_app_helpers.py"],"migration_action":"preserve"},
+    {"module":"view_format.py","layer":"presentation_pure","responsibility":"table, clipboard and CSV formatting","side_effects":[],"tests":["test_app_helpers.py"],"migration_action":"preserve"},
+    {"module":"view_text.py","layer":"presentation_pure","responsibility":"detail, plan, backtest and help text","side_effects":[],"tests":["test_app_helpers.py","test_manual.py"],"migration_action":"preserve_and_align_copy"},
+    {"module":"theme.py","layer":"presentation","responsibility":"Tk colors, fonts, dimensions and constants","side_effects":[],"tests":["test_ui_polish.py"],"migration_action":"replace_with_qt_tokens"},
+    {"module":"data_provider.py","layer":"infrastructure","responsibility":"only network boundary and payload parsers","side_effects":["network"],"tests":["test_provider.py","test_fund_flow.py"],"migration_action":"preserve_boundary_strengthen_metadata"},
+    {"module":"workflow.py","layer":"application","responsibility":"analysis and screener orchestration via provider protocol","side_effects":["provider_calls"],"tests":["test_workflow.py"],"migration_action":"preserve_and_wrap_workers"},
+    {"module":"store.py","layer":"infrastructure","responsibility":"atomic user configuration IO","side_effects":["filesystem"],"tests":["test_store.py"],"migration_action":"preserve_contract"},
+    {"module":"manual.py","layer":"delivery","responsibility":"HTML manual generation","side_effects":[],"tests":["test_manual.py"],"migration_action":"update_font_and_ui_copy"},
+    {"module":"sample_data.py","layer":"test_support","responsibility":"offline samples for self-test","side_effects":[],"tests":["test_main.py"],"migration_action":"preserve_explicit_sample_label"},
+    {"module":"app.py","layer":"ui_and_controller","responsibility":"Tk views, session state, threads, dialogs and painting","side_effects":["gui","threading","clipboard","filesystem_dialog"],"tests":["test_gui_layout.py","test_ui_polish.py"],"migration_action":"strangler_rewrite_into_qt_app"},
+    {"module":"__init__.py","layer":"package","responsibility":"package marker","side_effects":[],"tests":[],"migration_action":"preserve"}
+  ]
+}

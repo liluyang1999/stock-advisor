@@ -1,0 +1,5 @@
+{"id":"ASM-001","timestamp":"2026-07-10T22:07:31+09:00","statement":"目标 Windows 环境包含 Microsoft YaHei","status":"unverified","validation":"QFontDatabase/QFontInfo on target matrix","owner":"project","related_ids":["ADR-0005","WI-021"]}
+{"id":"ASM-002","timestamp":"2026-07-10T22:07:31+09:00","statement":"PySide6 can be packaged with an acceptable onefile user experience","status":"unverified","validation":"WI-006 packaging spike","owner":"project","related_ids":["ADR-0004","WI-006"]}
+{"id":"ASM-003","timestamp":"2026-07-10T22:07:31+09:00","statement":"Existing pure core behavior should remain unchanged during UI migration","status":"accepted_constraint","validation":"baseline and mapping tests","owner":"project","related_ids":["ADR-0002"]}
+{"id":"ASM-004","timestamp":"2026-07-10T22:07:31+09:00","statement":"Qt offscreen is useful but insufficient for Windows visual acceptance","status":"accepted_constraint","validation":"offscreen plus target machine matrix","owner":"project","related_ids":["WI-021"]}
+

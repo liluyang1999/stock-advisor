@@ -1,0 +1,58 @@
+Evidence: EVD-LOOP-003
+Record version: 2.0.0
+Control-plane SHA-256: 68b8d37a599edbbafe5576670aeda7398ac98062956883759b91ea899c6438ba
+Verifier pre-registration scope SHA-256: bd97b93bd5ba0ba4cdce51fbae5fa9019cff9f12d728c63df8a528f78d332ccc
+Working directory: D:\Projects\stock-adviser
+Commit: 881099806deca77a7bf7e784d6786f9bccdf0ce6
+Dirty worktree: true (pre-existing product UI changes preserved; loop/ is untracked)
+Implemented by: root
+Independently verified by: /root/loop_quality_audit
+Verification started: 2026-07-11T00:00:14.4840349+09:00
+Verification finished: 2026-07-11T00:05:38.3915627+09:00
+
+Independent verifier results before evidence registration:
+
+- validate_loop.py: exit 1; the only error was the intentionally missing WI-000 independent evidence.
+- check_traceability.py: exit 0; TRACEABILITY_OK 30/30.
+- render_status.py --check: exit 0; STATUS_OK with exact full-content comparison.
+- render_backlog.py --check: exit 0; BACKLOG_OK.
+- check_core_boundaries.py: exit 0; 12 protected modules and 6 forbidden external roots passed.
+- loop unit tests: 12 run, one expected failure caused only by the same missing evidence record.
+- loop/product compileall: exit 0.
+- product tests: exit 0; 449 tests in 44.448s; OK.
+- main.py --self-test: exit 0; SELF_TEST_OK.
+- git diff --check: exit 0 apart from line-ending notices.
+- indexed evidence SHA-256: 5/5 matched.
+
+Verifier architecture review:
+
+- Current production GUI remains Tkinter; PySide6 is not installed and qt_app does not exist.
+- Target GUI, architecture and status consistently specify PySide6 without claiming migration completion.
+- Microsoft YaHei is the target for application-controlled text; current Tk font exceptions remain explicitly pending.
+- QNetworkAccessManager uses a dedicated QObject/QThread event-loop contract; manager/reply/timer affinity, queued commands, total deadlines, abort/deleteLater and finite shutdown are explicit.
+- urllib is migration-only; the pure domain core remains Qt/Tk/network/filesystem/process free.
+
+Verifier hardening observation and resolution:
+
+The first audit found that the AST boundary checker did not inspect package-relative imports. The final control tree now parses relative and package-qualified imports and blocks seven infrastructure/UI internal modules in addition to six external roots. A deterministic regression test covers the bypass.
+
+Scope limit:
+
+This evidence accepts AC-000 (the standalone Loop control plane) only. It does not claim that the PySide6 product migration, dependency/license gates, Qt GUI tests, packaging, visual QA, performance targets or release gates are complete.
+
+Post-registration independent replay:
+
+Verification started: 2026-07-11T00:14:01.2961261+09:00
+Verification finished: 2026-07-11T00:15:33.4817793+09:00
+
+- validate_loop.py: exit 0; LOOP_VALIDATION_OK json=45 schema_documents=20 jsonl_entries=30 requirements=30 acceptance=12 work_items=26.
+- check_traceability.py: exit 0; TRACEABILITY_OK 30/30.
+- render_status.py --check: exit 0; STATUS_OK.
+- render_backlog.py --check: exit 0; BACKLOG_OK.
+- check_core_boundaries.py: exit 0; CORE_BOUNDARY_OK modules=12 forbidden_roots=6 forbidden_internal=7.
+- loop unit tests: exit 0; 13 tests in 0.170s; OK.
+- control-plane digest: 68b8d37a599edbbafe5576670aeda7398ac98062956883759b91ea899c6438ba (match).
+- pre-append artifact SHA-256: 2328e0fa79230a1162e765025c26cd46ae912cda8076faaa39d1c7719c7d8b1b (matched the index at verification time).
+- latest gate run LOOP-20260711-003 resolved to EVD-LOOP-003 with distinct implementer/verifier roles.
+
+The verifier reported no remaining control-plane or architecture-contract error. This appended replay changes only the evidence artifact and its indexed hash; evidence storage is intentionally excluded from the self-referential control-plane digest.

@@ -1,0 +1,8 @@
+{"timestamp":"2026-07-10T22:07:31+09:00","id":"ADR-0001","status":"accepted","summary":"Adopt PySide6 for target GUI by explicit user decision"}
+{"timestamp":"2026-07-10T22:07:31+09:00","id":"ADR-0002","status":"accepted","summary":"Preserve a Qt-free pure domain core"}
+{"timestamp":"2026-07-10T22:07:31+09:00","id":"ADR-0003","status":"proposed","summary":"Use Qt workers/signals with generation and deadlines"}
+{"timestamp":"2026-07-10T22:07:31+09:00","id":"ADR-0004","status":"proposed","summary":"Evaluate retaining PyInstaller onefile after measured spike"}
+{"timestamp":"2026-07-10T22:07:31+09:00","id":"ADR-0005","status":"accepted","summary":"Use Microsoft YaHei for all visible text"}
+{"timestamp":"2026-07-10T22:07:31+09:00","id":"ADR-0006","status":"proposed","summary":"Use QPainter custom charts reusing pure geometry"}
+{"timestamp":"2026-07-10T23:39:38+09:00","id":"ADR-0003","status":"accepted","summary":"Use a dedicated QObject/QThread QNetworkAccessManager target adapter; retain bounded urllib workers only during migration"}
+{"timestamp":"2026-07-10T23:39:38+09:00","id":"ADR-0006","status":"accepted","summary":"Use QPainter custom charts while preserving pure geometry contracts"}

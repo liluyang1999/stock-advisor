@@ -1,0 +1,28 @@
+Evidence: EVD-LOOP-001
+Captured: 2026-07-10T22:07:32+09:00
+Working directory: D:\Projects\stock-adviser
+Commit: 881099806deca77a7bf7e784d6786f9bccdf0ce6
+Dirty worktree: true
+Environment: Windows-11-10.0.26200-SP0 AMD64; CPython 3.14.4
+
+Command: python loop\scripts\validate_loop.py
+Exit code: 0
+Output: LOOP_VALIDATION_OK json=38 jsonl_entries=19 requirements=30 acceptance=10 work_items=26
+
+Command: python loop\scripts\check_traceability.py
+Exit code: 0
+Output: TRACEABILITY_OK 30/30
+
+Command: python loop\scripts\render_status.py --check
+Exit code: 0
+Output: STATUS_OK
+
+Command: python -m unittest discover -s loop\tests -v
+Exit code: 0
+Output summary: Ran 7 tests in 0.036s; OK
+
+Command: python -m compileall -q loop\scripts loop\tests
+Exit code: 0
+Output: (none)
+
+Limit: validates the initialized Loop control plane, not the future PySide6 implementation or release gates.

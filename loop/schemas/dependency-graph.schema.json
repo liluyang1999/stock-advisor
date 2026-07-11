@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"dependency-graph.schema.json","type":"object","required":["schema_version","edges"],"properties":{"edges":{"type":"array","items":{"type":"array","minItems":2,"items":{"type":"string","pattern":"^WI-[0-9]{3}$"}}}},"additionalProperties":true}

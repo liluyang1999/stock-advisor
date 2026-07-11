@@ -1,0 +1,25 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"quality-gates.schema.json",
+  "type":"object",
+  "required":["schema_version","gates"],
+  "properties":{
+    "gates":{
+      "type":"array",
+      "items":{
+        "type":"object",
+        "required":["id","order","name","commands","enabled","required_for_release","pass_condition","evidence_type"],
+        "properties":{
+          "id":{"type":"string","pattern":"^G-"},
+          "order":{"type":"integer","minimum":1},
+          "commands":{"type":"array"},
+          "enabled":{"type":"boolean"},
+          "required_for_release":{"type":"boolean"}
+        },
+        "additionalProperties":true
+      }
+    }
+  },
+  "additionalProperties":true
+}
+

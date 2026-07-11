@@ -1,0 +1,33 @@
+# Python 字节码
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# 本地虚拟环境与敏感配置
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+credentials.json
+secrets.json
+config.local.json
+*.pem
+*.key
+
+# 构建与交付产物(靠 build_exe.py 按需重建)
+/build/
+/dist/
+
+# 本地代理与工作流状态
+/.agents/
+/.codex/
+/.superpowers/
+
+# 编辑器/系统杂项
+.DS_Store
+Thumbs.db

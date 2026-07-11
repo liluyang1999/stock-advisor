@@ -1,0 +1,15 @@
+{
+  "timestamp":"YYYY-MM-DDTHH:MM:SS+09:00",
+  "run_id":"RUN-...",
+  "work_item_id":"WI-...",
+  "action":"",
+  "result":"",
+  "files_changed":[],
+  "commands":[],
+  "evidence_ids":[],
+  "decision_ids":[],
+  "risk_changes":[],
+  "next_action":"",
+  "commit":""
+}
+

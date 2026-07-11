@@ -1,0 +1,15 @@
+{
+  "$schema":"../schemas/dependency-baseline.schema.json",
+  "schema_version": "1.0.0",
+  "captured_at": "2026-07-10T22:07:31+09:00",
+  "environment": "Windows-11-10.0.26200-SP0 AMD64 / CPython 3.14.4",
+  "dependencies": [
+    {"name":"Python","category":"runtime","declared":">=3.12","observed":"3.14.4","locked":false,"license":"PSF","status":"current"},
+    {"name":"tkinter","category":"runtime_gui","declared":"stdlib","observed":"available","locked":true,"license":"Python/ Tcl-Tk distribution terms","status":"current_to_be_replaced"},
+    {"name":"PySide6","category":"runtime_gui","declared":null,"observed":"not-installed","locked":false,"license":"LGPLv3/GPLv3/commercial","status":"target_requires_gate"},
+    {"name":"PyInstaller","category":"build","declared":">=6.15","observed":"6.21.0","locked":false,"license":"GPLv2-or-later with special exception","status":"current_requires_exact_pin"},
+    {"name":"Ruff","category":"development","declared":null,"observed":"not-measured","locked":false,"license":"MIT","status":"proposed"},
+    {"name":"mypy","category":"development","declared":null,"observed":"not-measured","locked":false,"license":"MIT","status":"proposed"},
+    {"name":"coverage.py","category":"development","declared":null,"observed":"not-measured","locked":false,"license":"Apache-2.0","status":"proposed"}
+  ]
+}

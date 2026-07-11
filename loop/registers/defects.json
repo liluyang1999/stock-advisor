@@ -1,0 +1,1 @@
+{"$schema":"../schemas/defects.schema.json","schema_version":"1.0.0","defects":[],"note":"Known architectural gaps are tracked as risks/work items until they have a reproducible defect instance."}

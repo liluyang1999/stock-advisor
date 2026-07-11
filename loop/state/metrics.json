@@ -1,0 +1,11 @@
+{
+  "$schema":"../schemas/metrics.schema.json",
+  "schema_version":"1.0.0",
+  "updated_at":"2026-07-11T00:09:17+09:00",
+  "engineering":{"requirements_total":30,"requirements_verified":0,"acceptance_total":12,"acceptance_verified":1,"work_items_total":26,"work_items_accepted":1,"risks_open":10,"defects_open":0},
+  "control_plane":{"tool_tests_total":13,"tool_tests_passed":13,"schema_documents_validated":20,"requirements_traced":30,"operational_json_schema_coverage":1.0,"canonical_sources_reconciled":true,"independent_verification":true},
+  "tests":{"modules":23,"methods":449,"passed":449,"failed":0,"errors":0,"skipped":0,"duration_seconds":44.448,"tk_specific":187,"qt_specific":0},
+  "coverage":{"statement":"not_measured","branch":"not_measured"},
+  "tooling":{"ci":false,"pyproject":false,"lockfile":false,"ruff":false,"mypy":false,"coverage":false,"pyside6_installed":false},
+  "release":{"ready":false,"full_green_streak":0,"packaged_self_test_current_commit":false,"license_gate":false,"packaging_gate":false,"release_gate":false}
+}

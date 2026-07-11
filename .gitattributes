@@ -1,0 +1,9 @@
+# Windows 批处理/安装脚本必须 CRLF 行尾——cmd.exe 与 Inno Setup(ISCC) 对纯 LF 会整文件误解析
+# （曾致 build.bat 每行片段被当命令执行、报大量 "... 不是内部或外部命令"）。强制 CRLF 以防复发。
+# 注意：用 Write 工具整体重写这些文件会写出 LF，绕过 git 的 checkout 平滑；改这些文件后须确保工作区为 CRLF。
+build.bat text eol=crlf
+run.bat text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+installer.iss text eol=crlf
+*.iss text eol=crlf

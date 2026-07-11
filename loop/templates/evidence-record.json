@@ -1,0 +1,17 @@
+{
+  "id":"EVD-...",
+  "requirement_ids":[],
+  "work_item_id":"WI-...",
+  "type":"test",
+  "command":"",
+  "exit_code":null,
+  "artifact_path":"",
+  "sha256":null,
+  "commit":"",
+  "environment":"",
+  "started_at":null,
+  "finished_at":null,
+  "summary":"",
+  "verified_by":""
+}
+

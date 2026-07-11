@@ -1,0 +1,16 @@
+{
+  "$schema":"../schemas/reliability-targets.schema.json",
+  "schema_version":"1.0.0",
+  "targets":[
+    {"id":"REL-001","metric":"uncaught_ui_exceptions_in_gate","target":0},
+    {"id":"REL-002","metric":"late_result_overwrites","target":0},
+    {"id":"REL-003","metric":"fabricated_market_fallbacks","target":0},
+    {"id":"REL-004","metric":"config_corruption_in_fault_tests","target":0},
+    {"id":"REL-005","metric":"core_repeat_failure_rate","target":0,"runs":20},
+    {"id":"REL-006","metric":"qt_repeat_failure_rate","target":0,"runs":10},
+    {"id":"REL-007","metric":"full_pipeline_consecutive_green","target":5},
+    {"id":"REL-008","metric":"required_network_fault_cases_pass_rate","target":1.0},
+    {"id":"REL-009","metric":"shutdown_with_active_tasks_within_deadline_rate","target":1.0},
+    {"id":"REL-010","metric":"disclaimer_critical_surface_coverage","target":1.0}
+  ]
+}

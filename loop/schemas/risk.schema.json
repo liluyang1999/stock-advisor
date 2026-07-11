@@ -1,0 +1,25 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"risk.schema.json",
+  "type":"object",
+  "required":["schema_version","risks"],
+  "properties":{
+    "risks":{
+      "type":"array",
+      "items":{
+        "type":"object",
+        "required":["id","category","description","trigger","probability","impact","score","mitigation","contingency","owner","status","review_at","related_ids"],
+        "properties":{
+          "id":{"type":"string","pattern":"^RISK-"},
+          "probability":{"type":"integer","minimum":1,"maximum":5},
+          "impact":{"type":"integer","minimum":1,"maximum":5},
+          "score":{"type":"integer","minimum":1,"maximum":25},
+          "status":{"enum":["open","monitoring","mitigated","accepted","closed"]}
+        },
+        "additionalProperties":true
+      }
+    }
+  },
+  "additionalProperties":true
+}
+

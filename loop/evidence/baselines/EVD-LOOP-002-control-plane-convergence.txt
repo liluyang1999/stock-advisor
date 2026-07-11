@@ -1,0 +1,48 @@
+Evidence: EVD-LOOP-002
+Captured: 2026-07-10T23:32:39+09:00
+Working directory: D:\Projects\stock-adviser
+Commit: 881099806deca77a7bf7e784d6786f9bccdf0ce6
+Dirty worktree: true
+Environment: Windows 11 AMD64; CPython 3.14.4
+
+Scope: final convergence of the standalone loop/ engineering control plane after
+canonical-source reconciliation and enforced JSON Schema subset validation.
+
+Command: python loop/scripts/validate_loop.py
+Exit code: 0
+Output: LOOP_VALIDATION_OK json=31 schema_documents=7 jsonl_entries=19 requirements=30 acceptance=10 work_items=26
+
+Command: python loop/scripts/check_traceability.py
+Exit code: 0
+Output: TRACEABILITY_OK 30/30
+
+Command: python loop/scripts/render_status.py --check
+Exit code: 0
+Output: STATUS_OK
+
+Command: python -m unittest discover -s loop/tests -v
+Exit code: 0
+Output summary: Ran 8 tests in 0.039s; OK
+
+Command: python -m compileall -q loop/scripts loop/tests
+Exit code: 0
+Output: (none)
+
+Command: python -m unittest discover -s tests
+Exit code: 0
+Output summary: Ran 449 tests in 44.843s; OK
+
+Command: python main.py --self-test
+Exit code: 0
+Output summary: SELF_TEST_OK
+
+Command: python -m compileall -q main.py build_exe.py src/stock_advisor
+Exit code: 0
+Output: (none)
+
+Isolation check: git status shows only pre-existing product/UI changes plus the new
+untracked loop/ directory; this convergence pass did not edit product source or tests.
+
+Limit: this evidence verifies Loop initialization and preservation of the current
+product baseline. It does not claim that PySide6 migration, Qt packaging, license
+review, visual QA, or release gates are complete.

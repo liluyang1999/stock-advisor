@@ -1,0 +1,10 @@
+# 瞬态运行输出；索引与摘要必须提交。
+evidence/runs/*/stdout/
+evidence/runs/*/raw/
+evidence/packages/*.exe
+evidence/packages/*.zip
+evidence/screenshots/*.tmp.png
+tmp/
+__pycache__/
+*.pyc
+
