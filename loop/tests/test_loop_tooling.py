@@ -140,6 +140,10 @@ class LoopToolingTests(unittest.TestCase):
         self.assertTrue(validate_loop._duplicates(ids), "fixture assumption: decisions.jsonl has status-history duplicates")
         self.assertEqual(validate_loop.validate(), [])
 
+    def test_dereferenced_files_are_declared_required(self) -> None:
+        for needed in ("quality/test-catalog.json", "planning/dependency-graph.json"):
+            self.assertIn(needed, validate_loop.REQUIRED_FILES, needed)
+
 
 if __name__ == "__main__":
     unittest.main()
