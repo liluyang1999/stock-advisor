@@ -128,6 +128,13 @@ def _expected_backlog(work_rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _digest_ok(record: dict[str, Any]) -> bool:
+    """A v2 evidence record matches the tree, or is exempt because it is superseded."""
+    if record.get("superseded_by"):
+        return True
+    return record.get("control_plane_sha256") == control_plane_digest()
+
+
 def validate() -> list[str]:
     errors: list[str] = []
 
@@ -342,7 +349,7 @@ def validate() -> list[str]:
                 errors.append(f"{record.get('id')} v2 evidence missing fields: {missing}")
             if record.get("implemented_by") == record.get("verified_by"):
                 errors.append(f"{record.get('id')} v2 evidence requires an independent verifier")
-            if record.get("control_plane_sha256") != control_plane_digest():
+            if not _digest_ok(record):
                 errors.append(f"{record.get('id')} control-plane digest differs from the current tree")
 
     for item_id, row in work_items.items():

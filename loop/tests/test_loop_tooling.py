@@ -104,6 +104,18 @@ class LoopToolingTests(unittest.TestCase):
         self.assertFalse(state["release_candidate"])
         self.assertNotEqual(state["status"], "complete")
 
+    def test_superseded_v2_evidence_is_exempt_from_digest(self) -> None:
+        record = {
+            "id": "EVD-TEST",
+            "record_version": "2.0.0",
+            "control_plane_sha256": "0" * 64,  # deliberately wrong
+            "superseded_by": "EVD-NEXT",
+        }
+        self.assertTrue(validate_loop._digest_ok(record))
+        record_current = dict(record)
+        record_current.pop("superseded_by")
+        self.assertFalse(validate_loop._digest_ok(record_current))
+
 
 if __name__ == "__main__":
     unittest.main()
