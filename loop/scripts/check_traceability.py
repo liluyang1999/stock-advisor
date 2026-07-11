@@ -34,6 +34,8 @@ def check(release: bool = False) -> list[str]:
     requirement_ids = set(re.findall(r"\bREQ-\d{3}\b", requirements_text))
     work_ids = {row["id"] for row in load_json("planning/work-items.json")["work_items"]}
     test_ids = {row["id"] for row in load_json("quality/test-catalog.json")["tests"]}
+    work_rows = load_json("planning/work-items.json")["work_items"]
+    wi_requirements = {row["id"]: set(row.get("requirements", [])) for row in work_rows}
     evidence_ids = {row["id"] for row in load_json("state/evidence-index.json")["evidence"]}
 
     path = LOOP_ROOT / "quality/traceability.csv"
@@ -62,6 +64,9 @@ def check(release: bool = False) -> list[str]:
         for work_id in _split(row["work_item_ids"]):
             if work_id not in work_ids:
                 errors.append(f"{req_id} references unknown work item {work_id}")
+        for work_id in _split(row["work_item_ids"]):
+            if work_id in wi_requirements and req_id not in wi_requirements[work_id]:
+                errors.append(f"{req_id} trace row names {work_id} but that work item does not list {req_id}")
         for test_id in _split(row["test_ids"]):
             if test_id not in test_ids:
                 errors.append(f"{req_id} references unknown test {test_id}")
@@ -75,6 +80,13 @@ def check(release: bool = False) -> list[str]:
             errors.append(f"{req_id} is not release-verified: {status}")
         if release and not _split(row["evidence_ids"]):
             errors.append(f"{req_id} has no release evidence")
+
+    row_by_req = {r["requirement_id"].strip(): r for r in rows}
+    for work_id, reqs in wi_requirements.items():
+        for req in reqs:
+            trace_row = row_by_req.get(req)
+            if trace_row and work_id not in _split(trace_row["work_item_ids"]):
+                errors.append(f"{req} is owned by {work_id} in work-items.json but its trace row omits {work_id}")
 
     check.stats = {"requirements": len(requirement_ids), "rows": len(rows)}
     return errors
