@@ -4,8 +4,9 @@
   "type":"object",
   "required":["schema_version","project","target_stack","ui_tokens","network_policy","commands","quality_policy","paths"],
   "properties":{
-    "schema_version":{"type":"string"},
-    "project":{"type":"object","required":["name","timezone","text_encoding"]},
+    "$schema":{"type":"string"},
+    "schema_version":{"type":"string","const":"1.0.0"},
+    "project":{"type":"object","required":["name","timezone","text_encoding"],"properties":{"name":{"type":"string"},"package":{"type":"string"},"root":{"type":"string"},"timezone":{"type":"string"},"market_timezone":{"type":"string"},"text_encoding":{"type":"string"},"disclaimer":{"type":"string"}},"additionalProperties":false},
     "target_stack":{"type":"object","required":["python","gui","runtime_font"]},
     "ui_tokens":{"type":"object","required":["font_families","font_points","spacing_dip"]},
     "network_policy":{"type":"object","required":["target_transport","migration_transport","operation_deadlines_seconds","max_attempts","fabricated_fallbacks_allowed"]},
@@ -13,5 +14,5 @@
     "quality_policy":{"type":"object"},
     "paths":{"type":"object"}
   },
-  "additionalProperties":true
+  "additionalProperties":false
 }

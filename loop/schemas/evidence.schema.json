@@ -4,6 +4,8 @@
   "type":"object",
   "required":["schema_version","evidence"],
   "properties":{
+    "$schema":{"type":"string"},
+    "schema_version":{"type":"string","const":"1.0.0"},
     "evidence":{
       "type":"array",
       "items":{
@@ -11,21 +13,31 @@
         "required":["id","requirement_ids","work_item_id","type","command","exit_code","artifact_path","sha256","commit","environment","started_at","finished_at","summary","verified_by"],
         "properties":{
           "id":{"type":"string","pattern":"^EVD-"},
+          "requirement_ids":{"type":"array","items":{"type":"string"}},
+          "acceptance_ids":{"type":"array","items":{"type":"string"}},
+          "work_item_id":{"type":"string"},
+          "type":{"type":"string"},
           "record_version":{"type":"string"},
           "command":{"type":"string"},
           "cwd":{"type":"string"},
           "exit_code":{"type":["integer","null"]},
+          "artifact_path":{"type":"string"},
           "sha256":{"type":["string","null"]},
+          "commit":{"type":"string"},
+          "environment":{"type":"string"},
           "dirty_worktree":{"type":"boolean"},
           "started_at":{"type":["string","null"]},
           "finished_at":{"type":["string","null"]},
+          "summary":{"type":"string"},
           "implemented_by":{"type":"string"},
           "verified_by":{"type":"string"},
-          "control_plane_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"}
+          "superseded_by":{"type":"string"},
+          "control_plane_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+          "verifier_scope_sha256":{"type":"string"}
         },
-        "additionalProperties":true
+        "additionalProperties":false
       }
     }
   },
-  "additionalProperties":true
+  "additionalProperties":false
 }

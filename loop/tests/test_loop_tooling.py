@@ -149,6 +149,16 @@ class LoopToolingTests(unittest.TestCase):
         for needed in ("quality/test-catalog.json", "planning/dependency-graph.json"):
             self.assertIn(needed, validate_loop.REQUIRED_FILES, needed)
 
+    def test_closed_schemas_reject_unknown_fields_and_pin_version(self) -> None:
+        closed = ["state", "loop", "config", "work-items", "quality-gates",
+                  "risk", "evidence", "metrics", "backlog", "milestones"]
+        root = LOOP_ROOT / "schemas"
+        for name in closed:
+            schema = json.loads((root / f"{name}.schema.json").read_text(encoding="utf-8"))
+            self.assertIs(schema.get("additionalProperties"), False, name)
+            sv = schema.get("properties", {}).get("schema_version", {})
+            self.assertTrue("const" in sv or "pattern" in sv, name)
+
 
 if __name__ == "__main__":
     unittest.main()

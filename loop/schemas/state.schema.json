@@ -4,15 +4,29 @@
   "type":"object",
   "required":["schema_version","run_id","objective_id","phase","status","active_milestone_id","active_work_item_id","iteration","baseline_commit","last_updated","completed_ids","in_progress_ids","next_actions","blocker_ids","pending_decision_ids","latest_gate_run_id","quality_summary","release_candidate","terminal_state"],
   "properties":{
-    "schema_version":{"type":"string"},
+    "$schema":{"type":"string"},
+    "schema_version":{"type":"string","const":"1.0.0"},
     "run_id":{"type":"string","pattern":"^RUN-"},
     "objective_id":{"type":"string","pattern":"^OBJ-"},
+    "phase":{"type":"string"},
     "status":{"enum":["initialized","active","verifying","needs_human","blocked","complete","failed"]},
+    "active_milestone_id":{"type":"string"},
+    "active_work_item_id":{"type":"string"},
     "iteration":{"type":"integer","minimum":0},
+    "baseline_commit":{"type":"string"},
+    "branch":{"type":"string"},
     "dirty_worktree":{"type":"boolean"},
+    "last_updated":{"type":"string"},
+    "completed_ids":{"type":"array","items":{"type":"string"}},
+    "in_progress_ids":{"type":"array","items":{"type":"string"}},
     "next_actions":{"type":"array","items":{"type":"string"}},
+    "blocker_ids":{"type":"array","items":{"type":"string"}},
+    "risk_ids":{"type":"array","items":{"type":"string"}},
+    "pending_decision_ids":{"type":"array","items":{"type":"string"}},
+    "latest_gate_run_id":{"type":"string"},
+    "quality_summary":{"type":"object"},
     "release_candidate":{"type":"boolean"},
     "terminal_state":{"enum":[null,"success","needs_human","changes_requested","blocked_external","no_safe_progress","cancelled","superseded","failed"]}
   },
-  "additionalProperties":true
+  "additionalProperties":false
 }

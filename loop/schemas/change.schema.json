@@ -1,0 +1,16 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"change.schema.json",
+  "type":"object",
+  "required":["timestamp","id","scope","summary","authorized_by","breaking","evidence_ids"],
+  "properties":{
+    "timestamp":{"type":"string"},
+    "id":{"type":"string","pattern":"^CHG-"},
+    "scope":{"type":"string"},
+    "summary":{"type":"string"},
+    "authorized_by":{"type":"string"},
+    "breaking":{"type":"boolean"},
+    "evidence_ids":{"type":"array","items":{"type":"string"}}
+  },
+  "additionalProperties":false
+}

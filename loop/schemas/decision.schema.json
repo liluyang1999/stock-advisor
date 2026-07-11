@@ -1,0 +1,13 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"decision.schema.json",
+  "type":"object",
+  "required":["timestamp","id","status","summary"],
+  "properties":{
+    "timestamp":{"type":"string"},
+    "id":{"type":"string","pattern":"^ADR-"},
+    "status":{"type":"string"},
+    "summary":{"type":"string"}
+  },
+  "additionalProperties":false
+}

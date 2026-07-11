@@ -1,0 +1,10 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"waiver.schema.json",
+  "type":"object",
+  "required":["id"],
+  "properties":{
+    "id":{"type":"string"}
+  },
+  "additionalProperties":false
+}

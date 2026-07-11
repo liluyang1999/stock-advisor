@@ -62,6 +62,17 @@ REQUIRED_JSON_KEYS: dict[str, tuple[str, ...]] = {
     "state/metrics.json": ("schema_version", "engineering", "control_plane", "tests", "coverage", "tooling", "release"),
 }
 
+# JSONL registers are parsed line by line rather than loaded as one JSON document, so the
+# generic $schema-driven walk below never reaches them. Each register still has a fixed,
+# known row shape, so it gets its own closed schema validated per-row here.
+REGISTER_SCHEMAS: dict[str, str] = {
+    "registers/experiments.jsonl": "experiment.schema.json",
+    "registers/assumptions.jsonl": "assumption.schema.json",
+    "registers/changes.jsonl": "change.schema.json",
+    "registers/decisions.jsonl": "decision.schema.json",
+    "registers/waivers.jsonl": "waiver.schema.json",
+}
+
 
 def _ids_from_markdown(relative: str, prefix: str) -> set[str]:
     text = (LOOP_ROOT / relative).read_text(encoding="utf-8")
@@ -194,10 +205,19 @@ def validate() -> list[str]:
 
     jsonl_entries = 0
     for path in sorted(LOOP_ROOT.rglob("*.jsonl")):
+        relative_jsonl = path.relative_to(LOOP_ROOT).as_posix()
         try:
-            jsonl_entries += len(parse_jsonl(path))
+            rows = parse_jsonl(path)
         except (OSError, json.JSONDecodeError, ValueError) as exc:
-            errors.append(f"invalid JSONL {path.relative_to(LOOP_ROOT)}: {exc}")
+            errors.append(f"invalid JSONL {relative_jsonl}: {exc}")
+            continue
+        jsonl_entries += len(rows)
+        schema_name = REGISTER_SCHEMAS.get(relative_jsonl)
+        if schema_name is not None:
+            register_schema = json.loads((LOOP_ROOT / "schemas" / schema_name).read_text(encoding="utf-8"))
+            for index, row in enumerate(rows):
+                for issue in validate_against_schema(row, register_schema, f"$[{index}]"):
+                    errors.append(f"register {relative_jsonl}: {issue}")
 
     # "decisions" is deliberately excluded: registers/decisions.jsonl is an append-only
     # ADR status ledger where the same id legitimately reappears every time its status

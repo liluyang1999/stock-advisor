@@ -1,0 +1,16 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"assumption.schema.json",
+  "type":"object",
+  "required":["id","timestamp","statement","status","validation","owner","related_ids"],
+  "properties":{
+    "id":{"type":"string","pattern":"^ASM-"},
+    "timestamp":{"type":"string"},
+    "statement":{"type":"string"},
+    "status":{"type":"string"},
+    "validation":{"type":"string"},
+    "owner":{"type":"string"},
+    "related_ids":{"type":"array","items":{"type":"string"}}
+  },
+  "additionalProperties":false
+}

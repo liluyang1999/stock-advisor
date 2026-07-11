@@ -4,6 +4,8 @@
   "type":"object",
   "required":["schema_version","gates"],
   "properties":{
+    "$schema":{"type":"string"},
+    "schema_version":{"type":"string","const":"1.0.0"},
     "gates":{
       "type":"array",
       "items":{
@@ -20,6 +22,6 @@
       }
     }
   },
-  "additionalProperties":true
+  "additionalProperties":false
 }
 

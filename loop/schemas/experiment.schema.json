@@ -1,0 +1,16 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"experiment.schema.json",
+  "type":"object",
+  "required":["id","status","title","hypothesis","metrics","work_item_id"],
+  "properties":{
+    "id":{"type":"string","pattern":"^EXP-"},
+    "status":{"type":"string"},
+    "title":{"type":"string"},
+    "hypothesis":{"type":"string"},
+    "metrics":{"type":"array","items":{"type":"string"}},
+    "work_item_id":{"type":"string","pattern":"^WI-[0-9]{3}$"},
+    "supersedes":{"type":"string"}
+  },
+  "additionalProperties":false
+}
