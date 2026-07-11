@@ -334,6 +334,11 @@ def validate() -> list[str]:
         if risk.get("score") != expected:
             errors.append(f"{risk.get('id')} score must equal probability * impact")
 
+    register_risk_ids = {risk.get("id") for risk in risks_payload.get("risks", [])}
+    state_risk_ids = set(current.get("risk_ids", []))
+    if unknown := state_risk_ids - register_risk_ids:
+        errors.append(f"state/current.json risk_ids not in register: {sorted(unknown)}")
+
     evidence_payload = load_json("state/evidence-index.json")
     evidence_ids = [row.get("id", "") for row in evidence_payload.get("evidence", [])]
     evidence_by_id = {row["id"]: row for row in evidence_payload.get("evidence", []) if row.get("id")}

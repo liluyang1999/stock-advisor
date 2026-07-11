@@ -106,6 +106,9 @@ class LoopToolingTests(unittest.TestCase):
         for risk in payload["risks"]:
             self.assertEqual(risk["score"], risk["probability"] * risk["impact"], risk["id"])
 
+    def test_state_risk_ids_match_register(self) -> None:
+        self.assertEqual(validate_loop.validate(), [], validate_loop.validate())
+
     def test_current_state_does_not_claim_pyside6_is_complete(self) -> None:
         state = json.loads((LOOP_ROOT / "state/current.json").read_text(encoding="utf-8"))
         self.assertFalse(state["release_candidate"])
