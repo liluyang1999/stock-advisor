@@ -191,6 +191,18 @@ class LoopToolingTests(unittest.TestCase):
             sv = schema.get("properties", {}).get("schema_version", {})
             self.assertTrue("const" in sv or "pattern" in sv, name)
 
+    def test_every_catalog_test_has_measurable_goal(self) -> None:
+        import json as _json
+        cat = _json.loads((LOOP_ROOT / "quality/test-catalog.json").read_text(encoding="utf-8"))
+        work_ids = {w["id"] for w in _json.loads((LOOP_ROOT / "planning/work-items.json").read_text(encoding="utf-8"))["work_items"]}
+        for t in cat["tests"]:
+            self.assertTrue(t.get("expected_goal"), t["id"])
+            self.assertIn(t.get("evidence_level"), {"V0_assumption","V1_static","V2_unit","V3_integration","V4_system","V5_release"}, t["id"])
+            self.assertRegex(t.get("owning_work_item",""), r"^WI-\d{3}$", t["id"])
+            self.assertIn(t["owning_work_item"], work_ids, t["id"])
+            self.assertTrue(t.get("expected_artifact"), t["id"])
+        self.assertEqual(validate_loop.validate(), [])
+
 
 if __name__ == "__main__":
     unittest.main()

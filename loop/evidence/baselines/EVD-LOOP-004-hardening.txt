@@ -1,71 +1,67 @@
 Evidence: EVD-LOOP-004
 Record version: 2.0.0
-Control-plane SHA-256: 7f3b7d3b876240953f2a451906faa802b968b77ceb6fe5b24f6973ca987129ea
+Control-plane SHA-256: 61696a6f011b7440ff82b98cb01b23f440b6637bbe4943bc617f56391c1f58dc
 Working directory: D:\Projects\stock-advisor
-Commit: b606844720d19d6ebce1543183f90b9d179df019
-Dirty worktree: true (Plan 2 Task 2 edits staged for this re-capture, pending commit:
-README.md, loop/architecture/MODULE_BOUNDARIES.md, loop/architecture/core-module-manifest.json,
-loop/baseline/REPOSITORY_INVENTORY.md, loop/baseline/module-map.json,
-loop/registers/decisions.jsonl, loop/state/evidence-index.json (modified) and the new
-loop/decisions/0007-source-package-layering.md; no product source or product test file
-was touched)
-Implemented by: src-restructure-task2-implementer
-Verified by: src-restructure-task2-review
-Verification started: 2026-07-12T09:25:41.673700+09:00
-Verification finished: 2026-07-12T09:28:13.571142+09:00
+Commit: c9979280bea6ef339f8f90ff75f3d5c9e5194200
+Dirty worktree: true (Plan 3 Task 1 edits staged for this re-capture, pending commit:
+loop/schemas/test-catalog.schema.json, loop/quality/test-catalog.json,
+loop/tests/test_loop_tooling.py, loop/state/evidence-index.json (modified); no product
+source or product test file was touched)
+Implemented by: p3-task1-implementer
+Verified by: p3-task1-review
+Verification started: 2026-07-12T19:05:00+09:00
+Verification finished: 2026-07-12T19:08:53+09:00
 
 Context:
 
-This artifact re-captures EVD-LOOP-004 after Plan 2 Task 1 (commit b606844,
-"refactor: reorganize src/stock_advisor into domain/data/services/ui subpackages
-(behavior-preserving)") moved all 22 product modules of src/stock_advisor/ out of a
-flat layout into four layer subpackages: domain/ (12, pure core), data/ (2), services/
-(2), ui/ (6). That move was product-only and left the loop/ control plane's paths
-stale by construction: loop/architecture/core-module-manifest.json still pointed at
-the old flat "<mod>.py" locations and forbidden_internal_modules still listed old flat
-non-pure module names, so check_core_boundaries.py opened this task reporting 12
-"protected module missing" errors (one per domain-protected module) -- expected and
-documented as the intended handoff point between Task 1 and Task 2 in the plan.
+This artifact re-captures EVD-LOOP-004 after Plan 3 Task 1 ("Make test expected-goals
+measurable", WS-3 core) gave every one of the 32 tests in quality/test-catalog.json a
+measurable expected goal, an evidence level, an owning work item and an expected
+artifact:
 
-Plan 2 Task 2 (this capture) synced the control plane to the new layout:
+1. schemas/test-catalog.schema.json re-opened: the test-item object's `required`
+   stayed ["id","scope","level"], and five OPTIONAL properties were added --
+   expected_goal (string, minLength 1), evidence_level (enum of the six V-levels:
+   V0_assumption/V1_static/V2_unit/V3_integration/V4_system/V5_release),
+   owning_work_item (string, pattern ^WI-\d{3}$), expected_artifact (string,
+   minLength 1), tolerance (string, minLength 1) -- while keeping the item's
+   additionalProperties:false. The schema's own root additionalProperties was
+   tightened from true to false (per the Task 1 spec), which required adding $schema
+   and schema_version to the root's properties so the live document (which carries
+   both keys) still validates under the now-closed root.
+2. quality/test-catalog.json: all 32 tests populated with expected_goal (a
+   one-sentence measurable pass condition derived from each test's `scope`),
+   evidence_level (mapped from `level` per the plan's table: unit/property->V2_unit,
+   static->V1_static, integration/gui->V3_integration, system/performance->V4_system,
+   release->V5_release), owning_work_item (the WI whose tests[] array in
+   planning/work-items.json already listed that test id -- cross-checked
+   exhaustively: all 32 catalog tests were already referenced by exactly one work
+   item each, so no test was orphaned and planning/work-items.json and
+   quality/traceability.csv needed no edits), and expected_artifact (the evidence
+   form the test produces, e.g. "offscreen Qt run log", "unittest/pytest report",
+   "benchmark json", "human gate record"). tolerance was added to the two numeric
+   tests TEST-NUM-001 and TEST-BT-001 only, referencing the project's real numeric
+   convention (tests/test_engine.py's bare assertAlmostEqual = 7-decimal default;
+   tests/test_sizing.py's places=2/places=4 for monetary/fractional scale and its
+   1e-9 monotonicity epsilon).
+3. loop/tests/test_loop_tooling.py: added
+   test_every_catalog_test_has_measurable_goal (the plan's Step-2 test verbatim),
+   asserting every catalog test has a truthy expected_goal/expected_artifact, an
+   evidence_level in the six-value V-enum, an owning_work_item matching ^WI-\d{3}$
+   that resolves to a real work-item id, and that validate_loop.validate() stays
+   empty. Confirmed RED first (AssertionError: None is not true : TEST-LOOP-001,
+   since expected_goal was absent before step 3), then GREEN after the catalog was
+   populated.
 
-1. core-module-manifest.json: modules[].path updated to "domain/<mod>.py" for all 12
-   protected modules; forbidden_internal_modules changed from the old flat non-pure
-   module-name list (app/data_provider/manual/store/theme/workflow/qt_app) to the
-   impure SUBPACKAGE-name list (data/services/ui/qt_app). Rationale: a domain/ module's
-   relative import that crosses its own package resolves to from ..<subpackage>.<mod>,
-   and check_core_boundaries.py's _import_targets() inspects only the first path
-   component of such an import, so the forbidden list must name subpackages, not
-   individual module filenames, to remain exhaustive as non-pure modules are added.
-   check_core_boundaries.py now reports CORE_BOUNDARY_OK modules=12 with no boundary
-   violations -- Task 1's domain/ move introduced no real boundary break.
-2. Docs synced to the new layout: loop/architecture/MODULE_BOUNDARIES.md (added a
-   pointer from the dependency principles to the new domain/data/services/ui subpackage
-   split and the manifest's subpackage-based forbidden list), loop/baseline/module-map.json
-   (every module's "module" field now carries its subpackage prefix, e.g.
-   "domain/models.py"; generated_from_commit updated to b606844; the package-marker row
-   documents that there are now 5 __init__.py files, one per subpackage plus the root),
-   loop/baseline/REPOSITORY_INVENTORY.md (module count/layout description updated), and
-   root README.md's "目录结构" block (existing module entries regrouped under their new
-   domain/data/services/ui subdirectories, no entries added or removed). Root AGENTS.md
-   has no directory-tree block to sync (checked; out of scope by construction).
-3. loop/decisions/0007-source-package-layering.md recorded (状态：accepted) with background,
-   the decision, >= 2 rejected alternatives (status quo flat package, and a feature-based
-   vertical split), consequences, rollback (git revert of the Task 1 move + this Task 2
-   sync commit), a revisit trigger tied to the future PySide6 qt_app/ migration, and
-   associations to REQ-011/REQ-027/REQ-028/ADR-0002/WI-000/EVD-LOOP-004. A matching
-   {"id":"ADR-0007","status":"accepted",...} row was appended to
-   loop/registers/decisions.jsonl (registers/decisions.jsonl is an append-only status
-   ledger; ADR-0007 is not added to state/current.json.pending_decision_ids because it
-   is accepted, not proposed).
-
-Editing any loop/ file (manifest, docs, ADR, decisions.jsonl) changes the byte-hash
+Editing any loop/ file (schema, catalog, test file) changes the byte-hash
 control-plane digest (only loop/evidence/ and state/evidence-index.json are excluded
 from it per _common.control_plane_digest()), so this record's control_plane_sha256 and
-sha256 needed refreshing; commit is recorded as b606844 (the Task 1 commit HEAD was at
-while these Task 2 edits were still uncommitted, dirty_worktree=true, consistent with
-prior EVD-LOOP-* captures), and implemented_by/verified_by were given fresh, distinct
-values for this capture rather than reusing the prior hardening pass's identities.
+sha256 needed refreshing; commit is recorded as the HEAD Plan 3 Task 1 was branched
+from (content-hardening == main at c997928, "docs: add Plan 3 ... implementation
+plan") while these Task 1 edits were still uncommitted, dirty_worktree=true,
+consistent with prior EVD-LOOP-* captures; implemented_by/verified_by were given
+fresh, distinct values for this capture rather than reusing the prior hardening
+pass's identities.
 
 Verifier results (the required six control gates, product regression, and self-test;
 captured as one continuous run after control_plane_sha256 was updated to the digest
@@ -77,8 +73,8 @@ baseline):
 - render_status.py --check: exit 0; STATUS_OK.
 - render_backlog.py --check: exit 0; BACKLOG_OK.
 - check_core_boundaries.py: exit 0; CORE_BOUNDARY_OK modules=12 forbidden_roots=6 forbidden_internal=4.
-- loop unit tests (python -m unittest discover -s loop/tests): exit 0; 23 tests in 0.672s; OK.
-- product tests (python -m unittest discover -s tests): exit 0; 449 tests in 53.182s; OK.
+- loop unit tests (python -m unittest discover -s loop/tests): exit 0; 24 tests in 0.772s; OK (was 23 before Task 1's new test).
+- product tests (python -m unittest discover -s tests): exit 0; 449 tests in 57.678s; OK.
 - python main.py --self-test: exit 0; SELF_TEST_OK symbol=SH.600519 action=BUY score=47 confidence=84 L1=BUY L5=BUY plan_shares=1300 backtest_ok=True config_ok=True compare_ok=True alert_ok=True screen_candidates=3 top=600000.
 
 Supplementary checks (not part of the required set, run for extra assurance, matching
@@ -98,8 +94,8 @@ This evidence re-confirms AC-000 (the standalone Loop control plane) only, consi
 with EVD-LOOP-003 and the prior EVD-LOOP-004 captures. It does not claim that the
 PySide6 product migration, dependency/license gates, Qt GUI tests, packaging, visual QA,
 performance targets, security scanning, or release gates are complete. It additionally
-confirms the src/stock_advisor domain/data/services/ui subpackage restructure (Plan 2
-Task 1 + Task 2) is behavior-preserving (449 product tests, self-test) and that the
-loop control plane's protected-module boundary now tracks the new layout. Plan 2's
-remaining tasks (if any beyond Task 2) and the PySide6 migration remain the declared
-next steps.
+confirms Plan 3 Task 1 (measurable per-test goal/evidence-level/owning-WI/artifact for
+all 32 catalog tests) is complete and internally consistent; Task 2 (coverage policy +
+budgets + tk-contract contract), Task 3 (NFR requirements), Task 4 (UI tokens), Task 5
+(planning enrichment) and Task 6 (final Plan 3 re-baseline) remain the declared next
+steps.
