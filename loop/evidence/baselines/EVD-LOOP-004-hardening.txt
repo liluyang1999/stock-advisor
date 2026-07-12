@@ -1,67 +1,93 @@
 Evidence: EVD-LOOP-004
 Record version: 2.0.0
-Control-plane SHA-256: 61696a6f011b7440ff82b98cb01b23f440b6637bbe4943bc617f56391c1f58dc
+Control-plane SHA-256: 0b5aa83bd281c9f4f36945038c78ae3b1d2b3203df23546cda68afa93c362387
 Working directory: D:\Projects\stock-advisor
-Commit: c9979280bea6ef339f8f90ff75f3d5c9e5194200
-Dirty worktree: true (Plan 3 Task 1 edits staged for this re-capture, pending commit:
-loop/schemas/test-catalog.schema.json, loop/quality/test-catalog.json,
+Commit: 6a754999c709305ec4724a5fdf6b5a7d0c2a9034
+Dirty worktree: true (Plan 3 Task 2 edits staged for this re-capture, pending commit:
+loop/schemas/quality-gates.schema.json, loop/quality/quality-gates.json,
+loop/quality/QUALITY_GATES.md, loop/scripts/validate_loop.py,
+loop/quality/performance-budgets.json, loop/quality/reliability-targets.json,
+loop/quality/tk-contract-mapping.csv, loop/scripts/check_traceability.py,
 loop/tests/test_loop_tooling.py, loop/state/evidence-index.json (modified); no product
 source or product test file was touched)
-Implemented by: p3-task1-implementer
-Verified by: p3-task1-review
-Verification started: 2026-07-12T19:05:00+09:00
-Verification finished: 2026-07-12T19:08:53+09:00
+Implemented by: p3-task2-implementer
+Verified by: p3-task2-review
+Verification started: 2026-07-12T21:10:00+09:00
+Verification finished: 2026-07-12T21:24:00+09:00
 
 Context:
 
-This artifact re-captures EVD-LOOP-004 after Plan 3 Task 1 ("Make test expected-goals
-measurable", WS-3 core) gave every one of the 32 tests in quality/test-catalog.json a
-measurable expected goal, an evidence level, an owning work item and an expected
-artifact:
+This artifact re-captures EVD-LOOP-004 after Plan 3 Task 2 ("Coverage policy +
+measurable perf/reliability budgets + tk-contract schema", WS-3 rest):
 
-1. schemas/test-catalog.schema.json re-opened: the test-item object's `required`
-   stayed ["id","scope","level"], and five OPTIONAL properties were added --
-   expected_goal (string, minLength 1), evidence_level (enum of the six V-levels:
-   V0_assumption/V1_static/V2_unit/V3_integration/V4_system/V5_release),
-   owning_work_item (string, pattern ^WI-\d{3}$), expected_artifact (string,
-   minLength 1), tolerance (string, minLength 1) -- while keeping the item's
-   additionalProperties:false. The schema's own root additionalProperties was
-   tightened from true to false (per the Task 1 spec), which required adding $schema
-   and schema_version to the root's properties so the live document (which carries
-   both keys) still validates under the now-closed root.
-2. quality/test-catalog.json: all 32 tests populated with expected_goal (a
-   one-sentence measurable pass condition derived from each test's `scope`),
-   evidence_level (mapped from `level` per the plan's table: unit/property->V2_unit,
-   static->V1_static, integration/gui->V3_integration, system/performance->V4_system,
-   release->V5_release), owning_work_item (the WI whose tests[] array in
-   planning/work-items.json already listed that test id -- cross-checked
-   exhaustively: all 32 catalog tests were already referenced by exactly one work
-   item each, so no test was orphaned and planning/work-items.json and
-   quality/traceability.csv needed no edits), and expected_artifact (the evidence
-   form the test produces, e.g. "offscreen Qt run log", "unittest/pytest report",
-   "benchmark json", "human gate record"). tolerance was added to the two numeric
-   tests TEST-NUM-001 and TEST-BT-001 only, referencing the project's real numeric
-   convention (tests/test_engine.py's bare assertAlmostEqual = 7-decimal default;
-   tests/test_sizing.py's places=2/places=4 for monetary/fractional scale and its
-   1e-9 monotonicity epsilon).
-3. loop/tests/test_loop_tooling.py: added
-   test_every_catalog_test_has_measurable_goal (the plan's Step-2 test verbatim),
-   asserting every catalog test has a truthy expected_goal/expected_artifact, an
-   evidence_level in the six-value V-enum, an owning_work_item matching ^WI-\d{3}$
-   that resolves to a real work-item id, and that validate_loop.validate() stays
-   empty. Confirmed RED first (AssertionError: None is not true : TEST-LOOP-001,
-   since expected_goal was absent before step 3), then GREEN after the catalog was
-   populated.
+1. quality/quality-gates.json: added a G-COVERAGE gate (order 6, right after G-CORE;
+   enabled:false, required_for_release:true; command
+   [["coverage","run","-m","pytest"],["coverage","report","--fail-under=85"]];
+   pass_condition documents the full overall 90%/85% and core 95%/90% (statement/branch)
+   targets from quality/convergence.json.coverage). Every one of the 19 gate objects
+   (18 pre-existing + G-COVERAGE) now carries an owning_work_item: the already-wired
+   gates keep their real owner (G-NUMERIC->WI-008, G-NETWORK->WI-020,
+   G-WORKFLOW->WI-014, G-QT-MODEL->WI-011, G-QT-GUI->WI-019, G-VISUAL->WI-021,
+   G-PERF->WI-022, G-SECURITY->WI-018, G-LICENSE/G-RELEASE->WI-025,
+   G-BUILD/G-EXE->WI-024, G-LOOP/G-CORE/G-TRACE->WI-000); the four dev-tool gates
+   whose real tooling work item does not exist yet (G-FORMAT/G-LINT/G-TYPE/
+   G-COVERAGE) point at the WI-000 control-plane placeholder plus a `note` field
+   explaining the real owner is scheduled in WS-8 (Plan 5). schemas/quality-gates.
+   schema.json was tightened to close the gate-item object (additionalProperties
+   false, matching the item+root closure precedent test-catalog.schema.json set in
+   Task 1) with id/order/name/commands/enabled/required_for_release/pass_condition/
+   evidence_type/environment/owning_work_item/note all listed, owning_work_item
+   added to `required`.
+2. scripts/validate_loop.py: added _gate_ownership_errors(), enforcing exactly
+   required_for_release => (enabled is true) OR (owning_work_item is a non-empty
+   string) -- deliberately NOT checking owning_work_item resolves to an existing
+   work item, since the dev-tool gates' real tooling WIs are scheduled in WS-8 and
+   do not exist yet. Wired into validate().
+3. quality/performance-budgets.json and quality/reliability-targets.json: every
+   budget/target entry gained method (how measured), scenario (the workload) and
+   owning_test (a real TEST-* id already in quality/test-catalog.json); no existing
+   numeric budget/target value was changed. REL-009
+   (shutdown_with_active_tasks_within_deadline_rate) additionally gained a concrete
+   deadline_ms:3000, grounded in the existing "abort() -> quit() -> bounded wait()"
+   shutdown sequence documented in architecture/NETWORK_RESILIENCE.md and
+   architecture/CONCURRENCY_AND_CANCELLATION.md, longer than the 100ms
+   cancel_feedback_ms UI-acknowledgement budget and shorter than the 4s
+   connect_timeout_seconds network budget.
+4. quality/tk-contract-mapping.csv: re-based onto the column contract
+   contract_id,area,disposition,replacement_test_id,notes (disposition in
+   {pure_preserved,qt_replaced,approved_retired}), enforced by new
+   scripts/check_traceability.py functions _tk_contract_mapping_errors()/
+   check_tk_contract_mapping(), wired into check_traceability.py's main() so a plain
+   `python loop/scripts/check_traceability.py` run enforces it. The file's two
+   previous placeholder rows (aggregate "pending" classifications for the 116
+   test_gui_layout.py + 71 test_ui_polish.py legacy Tk tests, using a disposition
+   value the new closed enum no longer accepts) were removed rather than forced into
+   a fabricated terminal disposition: since every allowed disposition value is a
+   completed classification decision, and that classification is explicitly WI-002's
+   job (not yet run), the honest state is a header-only stub with zero data rows.
+   Their informational content is preserved as a documented (not yet enforced)
+   TK_CONTRACT_EXPECTED_ROW_COUNT=187 constant (116+71) referencing WI-002, and the
+   "offscreen evidence cannot replace Windows visual evidence" caveat the old row
+   carried was preserved by moving it onto the G-VISUAL line in quality/
+   QUALITY_GATES.md.
+5. loop/tests/test_loop_tooling.py: added five tests --
+   test_every_gate_has_owning_work_item, test_gate_ownership_invariant_requires_
+   enabled_or_owning_work_item (in-memory-mutated proof the invariant actually
+   bites), test_coverage_gate_is_present_and_disabled_with_placeholder_owner,
+   test_performance_and_reliability_targets_are_measurable, and
+   test_tk_contract_mapping_has_header_and_disposition_contract (proves the header/
+   disposition/qt_replaced-requires-replacement_test_id checks all actually bite on
+   deliberately bad in-memory data, not just on the real file).
 
-Editing any loop/ file (schema, catalog, test file) changes the byte-hash
-control-plane digest (only loop/evidence/ and state/evidence-index.json are excluded
-from it per _common.control_plane_digest()), so this record's control_plane_sha256 and
-sha256 needed refreshing; commit is recorded as the HEAD Plan 3 Task 1 was branched
-from (content-hardening == main at c997928, "docs: add Plan 3 ... implementation
-plan") while these Task 1 edits were still uncommitted, dirty_worktree=true,
-consistent with prior EVD-LOOP-* captures; implemented_by/verified_by were given
-fresh, distinct values for this capture rather than reusing the prior hardening
-pass's identities.
+Editing any loop/ file (schema, gate/budget/target JSON, CSV, script, test file)
+changes the byte-hash control-plane digest (only loop/evidence/ and
+state/evidence-index.json are excluded from it per _common.control_plane_digest()),
+so this record's control_plane_sha256 and sha256 needed refreshing; commit is
+recorded as the HEAD Plan 3 Task 2 was branched from (content-hardening at 6a75499,
+"docs: descope WI-007 from Plan 3 Task 5") while these Task 2 edits were still
+uncommitted, dirty_worktree=true, consistent with prior EVD-LOOP-* captures;
+implemented_by/verified_by were given fresh, distinct values for this capture rather
+than reusing a prior pass's identities.
 
 Verifier results (the required six control gates, product regression, and self-test;
 captured as one continuous run after control_plane_sha256 was updated to the digest
@@ -69,19 +95,18 @@ above, so validate_loop.py's own result below already reflects a live, matching 
 baseline):
 
 - validate_loop.py: exit 0; LOOP_VALIDATION_OK json=49 schema_documents=20 jsonl_entries=32 requirements=30 acceptance=12 work_items=26.
-- check_traceability.py: exit 0; TRACEABILITY_OK 30/30.
+- check_traceability.py: exit 0; TRACEABILITY_OK 30/30 (now also enforcing the tk-contract-mapping.csv column contract).
 - render_status.py --check: exit 0; STATUS_OK.
 - render_backlog.py --check: exit 0; BACKLOG_OK.
 - check_core_boundaries.py: exit 0; CORE_BOUNDARY_OK modules=12 forbidden_roots=6 forbidden_internal=4.
-- loop unit tests (python -m unittest discover -s loop/tests): exit 0; 24 tests in 0.772s; OK (was 23 before Task 1's new test).
-- product tests (python -m unittest discover -s tests): exit 0; 449 tests in 57.678s; OK.
+- loop unit tests (python -m unittest discover -s loop/tests): exit 0; 29 tests in <1s; OK (was 24 before Task 2's five new tests).
+- product tests (python -m unittest discover -s tests): exit 0; 449 tests in 49.087s; OK.
 - python main.py --self-test: exit 0; SELF_TEST_OK symbol=SH.600519 action=BUY score=47 confidence=84 L1=BUY L5=BUY plan_shares=1300 backtest_ok=True config_ok=True compare_ok=True alert_ok=True screen_candidates=3 top=600000.
 
 Supplementary checks (not part of the required set, run for extra assurance, matching
 prior baselines' convention):
 
 - compileall (main.py build_exe.py src/stock_advisor loop/scripts loop/tests): exit 0; no output.
-- git diff --check: exit 0; no line-ending or whitespace advisories (loop/ remains pinned to LF via .gitattributes).
 
 This evidence record is written into state/evidence-index.json only after this artifact
 file is final and hashed above (a path excluded from control_plane_digest()), so the
@@ -93,9 +118,10 @@ Scope limit:
 This evidence re-confirms AC-000 (the standalone Loop control plane) only, consistent
 with EVD-LOOP-003 and the prior EVD-LOOP-004 captures. It does not claim that the
 PySide6 product migration, dependency/license gates, Qt GUI tests, packaging, visual QA,
-performance targets, security scanning, or release gates are complete. It additionally
-confirms Plan 3 Task 1 (measurable per-test goal/evidence-level/owning-WI/artifact for
-all 32 catalog tests) is complete and internally consistent; Task 2 (coverage policy +
-budgets + tk-contract contract), Task 3 (NFR requirements), Task 4 (UI tokens), Task 5
-(planning enrichment) and Task 6 (final Plan 3 re-baseline) remain the declared next
-steps.
+performance targets, security scanning, or release gates are complete -- G-COVERAGE and
+every other still-disabled gate remain disabled here; only their ownership and pass
+conditions are now machine-checked as documented. It additionally confirms Plan 3 Task 2
+(coverage policy, owning_work_item per gate, measurable perf/reliability budgets,
+tk-contract-mapping column contract) is complete and internally consistent; Task 3 (NFR
+requirements), Task 4 (UI tokens), Task 5 (planning enrichment) and Task 6 (final Plan 3
+re-baseline) remain the declared next steps.

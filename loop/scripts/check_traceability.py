@@ -24,9 +24,44 @@ REQUIRED_COLUMNS = {
     "notes",
 }
 
+TK_CONTRACT_COLUMNS = ("contract_id", "area", "disposition", "replacement_test_id", "notes")
+TK_CONTRACT_DISPOSITIONS = {"pure_preserved", "qt_replaced", "approved_retired"}
+# Documented target, not enforced here: WI-002 ("映射 187 个 Tk 行为合同") will populate
+# tk-contract-mapping.csv with exactly 187 rows (116 legacy loop/test_gui_layout.py rows
+# + 71 legacy loop/test_ui_polish.py rows, per the pre-mapping inventory this file used to
+# carry as two aggregate placeholder rows). Until WI-002 runs, the file intentionally
+# stays a header-only stub -- zero data rows -- because every disposition value is a
+# terminal classification (pure_preserved/qt_replaced/approved_retired) and no row should
+# claim one before the real classification work happens.
+TK_CONTRACT_EXPECTED_ROW_COUNT = 187
+
 
 def _split(value: str) -> list[str]:
     return [item.strip() for item in value.split(";") if item.strip()]
+
+
+def _tk_contract_mapping_errors(fieldnames: tuple[str, ...], rows: list[dict[str, str]]) -> list[str]:
+    if tuple(fieldnames) != TK_CONTRACT_COLUMNS:
+        got = ",".join(fieldnames)
+        return [f"tk-contract-mapping.csv header must be {','.join(TK_CONTRACT_COLUMNS)}, got {got}"]
+    errors: list[str] = []
+    for index, row in enumerate(rows):
+        label = (row.get("contract_id") or "").strip() or f"row {index}"
+        disposition = (row.get("disposition") or "").strip()
+        if disposition not in TK_CONTRACT_DISPOSITIONS:
+            errors.append(f"tk-contract-mapping.csv {label} has invalid disposition {disposition!r}")
+        if disposition == "qt_replaced" and not (row.get("replacement_test_id") or "").strip():
+            errors.append(f"tk-contract-mapping.csv {label} is qt_replaced but has no replacement_test_id")
+    return errors
+
+
+def check_tk_contract_mapping() -> list[str]:
+    path = LOOP_ROOT / "quality/tk-contract-mapping.csv"
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = tuple(reader.fieldnames or [])
+        rows = list(reader)
+    return _tk_contract_mapping_errors(fieldnames, rows)
 
 
 def check(release: bool = False) -> list[str]:
@@ -110,7 +145,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Check requirement traceability.")
     parser.add_argument("--release", action="store_true", help="Require every row to be verified with evidence.")
     args = parser.parse_args(argv)
-    errors = check(release=args.release)
+    errors = check(release=args.release) + check_tk_contract_mapping()
     if errors:
         for error in errors:
             print(f"TRACEABILITY_ERROR {error}", file=sys.stderr)

@@ -1,4 +1,1 @@
-test_file,test_name,behavior_contract,disposition,replacement_test_id,status,owner,notes
-test_gui_layout.py,<pending inventory>,All 116 Tk layout and interaction tests must be classified,pending,,not_started,project,Do not delete tests before mapping
-test_ui_polish.py,<pending inventory>,All 71 Tk visual/polish tests must be classified,pending,,not_started,project,Offscreen evidence cannot replace Windows visual evidence
-
+contract_id,area,disposition,replacement_test_id,notes

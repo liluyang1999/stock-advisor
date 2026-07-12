@@ -2,15 +2,15 @@
   "$schema":"../schemas/reliability-targets.schema.json",
   "schema_version":"1.0.0",
   "targets":[
-    {"id":"REL-001","metric":"uncaught_ui_exceptions_in_gate","target":0},
-    {"id":"REL-002","metric":"late_result_overwrites","target":0},
-    {"id":"REL-003","metric":"fabricated_market_fallbacks","target":0},
-    {"id":"REL-004","metric":"config_corruption_in_fault_tests","target":0},
-    {"id":"REL-005","metric":"core_repeat_failure_rate","target":0,"runs":20},
-    {"id":"REL-006","metric":"qt_repeat_failure_rate","target":0,"runs":10},
-    {"id":"REL-007","metric":"full_pipeline_consecutive_green","target":5},
-    {"id":"REL-008","metric":"required_network_fault_cases_pass_rate","target":1.0},
-    {"id":"REL-009","metric":"shutdown_with_active_tasks_within_deadline_rate","target":1.0},
-    {"id":"REL-010","metric":"disclaimer_critical_surface_coverage","target":1.0}
+    {"id":"REL-001","metric":"uncaught_ui_exceptions_in_gate","target":0,"method":"a sys.excepthook / QApplication.notify() wrapper installed for the gate run counts any exception that escapes to it","scenario":"full offscreen Qt gate suite (G-QT-GUI) execution, including the concurrency fault suite","owning_test":"TEST-RACE-001"},
+    {"id":"REL-002","metric":"late_result_overwrites","target":0,"method":"race-suite harness fires a cancel then injects a late-arriving async result and asserts the UI/state was not overwritten by the stale response","scenario":"cancel an in-flight fetch, then deliver its (late) result after a newer request has already completed","owning_test":"TEST-RACE-001"},
+    {"id":"REL-003","metric":"fabricated_market_fallbacks","target":0,"method":"fault-injection harness asserts no synthetic/fabricated price or indicator value is ever substituted for a failed network response","scenario":"each case of the offline fault matrix (timeout, DNS failure, connection refused, malformed payload, partial payload)","owning_test":"TEST-NET-002"},
+    {"id":"REL-004","metric":"config_corruption_in_fault_tests","target":0,"method":"the persisted config/settings file is read and validated as well-formed before and after each fault-injection case","scenario":"each case of the offline fault matrix run with a concurrent config read/write in flight","owning_test":"TEST-NET-002"},
+    {"id":"REL-005","metric":"core_repeat_failure_rate","target":0,"runs":20,"method":"run the full product unittest suite (python -m unittest discover -s tests) 20 times consecutively; failure_rate = failed_runs / 20","scenario":"20 consecutive clean-process runs of the full core test suite with no code changes between runs","owning_test":"TEST-NUM-001"},
+    {"id":"REL-006","metric":"qt_repeat_failure_rate","target":0,"runs":10,"method":"run the full offscreen Qt test suite (QT_QPA_PLATFORM=offscreen) 10 times consecutively; failure_rate = failed_runs / 10","scenario":"10 consecutive offscreen-Qt process runs of the full Qt/GUI test suite with no code changes between runs","owning_test":"TEST-QT-001"},
+    {"id":"REL-007","metric":"full_pipeline_consecutive_green","target":5,"method":"count consecutive full gate-pipeline runs (G-LOOP..G-RELEASE) with zero failing gates, recorded in state/gate-runs.jsonl","scenario":"release-candidate gate pipeline executed end-to-end once per candidate commit","owning_test":"TEST-REL-001"},
+    {"id":"REL-008","metric":"required_network_fault_cases_pass_rate","target":1.0,"method":"fault-injection harness pass_rate = cases_passed / total_required_fault_cases across the documented offline fault matrix","scenario":"the full required offline fault matrix (timeout, DNS, refused, malformed, partial) run once per gate execution","owning_test":"TEST-NET-002"},
+    {"id":"REL-009","metric":"shutdown_with_active_tasks_within_deadline_rate","target":1.0,"deadline_ms":3000,"method":"wall-clock time from close/quit request (with in-flight async tasks) to full process exit; rate = runs completing within deadline_ms / total runs","scenario":"application quit triggered while an individual-stock or screener analysis task is still in flight, covering the abort() -> quit() -> bounded wait() shutdown sequence in NETWORK_RESILIENCE.md","owning_test":"TEST-RACE-001"},
+    {"id":"REL-010","metric":"disclaimer_critical_surface_coverage","target":1.0,"method":"static/manual audit counts critical surfaces (result views, HTML manual, CSV/clipboard export) that render the non-advice disclaimer versus the total number of critical surfaces","scenario":"every result view plus the generated HTML manual plus CSV/clipboard export, once per release candidate","owning_test":"TEST-QT-HELP-001"}
   ]
 }

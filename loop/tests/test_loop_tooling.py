@@ -203,6 +203,104 @@ class LoopToolingTests(unittest.TestCase):
             self.assertTrue(t.get("expected_artifact"), t["id"])
         self.assertEqual(validate_loop.validate(), [])
 
+    def test_every_gate_has_owning_work_item(self) -> None:
+        gates = json.loads((LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8"))["gates"]
+        work_ids = {w["id"] for w in json.loads((LOOP_ROOT / "planning/work-items.json").read_text(encoding="utf-8"))["work_items"]}
+        for gate in gates:
+            self.assertRegex(gate.get("owning_work_item", ""), r"^WI-\d{3}$", gate["id"])
+            # owning_work_item need not be the gate's *real* future owner (dev-tool gates
+            # placeholder to WI-000 until WS-8 exists), but it must always resolve to some
+            # work item that exists today -- never a dangling id.
+            self.assertIn(gate["owning_work_item"], work_ids, gate["id"])
+        self.assertEqual(validate_loop.validate(), [])
+
+    def test_gate_ownership_invariant_requires_enabled_or_owning_work_item(self) -> None:
+        gates = json.loads((LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8"))["gates"]
+
+        # the real gate list satisfies the invariant right now
+        self.assertEqual(validate_loop._gate_ownership_errors(gates), [])
+
+        # in-memory mutation only, nothing written back to quality-gates.json: a
+        # required_for_release gate that is neither enabled nor owned must be rejected.
+        broken = [dict(gate) for gate in gates]
+        broken[0]["required_for_release"] = True
+        broken[0]["enabled"] = False
+        broken[0]["owning_work_item"] = ""
+        errors = validate_loop._gate_ownership_errors(broken)
+        self.assertTrue(any(broken[0]["id"] in error for error in errors), errors)
+
+        # a disabled, required_for_release gate WITH an owner is fine (this is exactly
+        # the dev-tool gate shape: G-FORMAT/G-LINT/G-TYPE/G-COVERAGE).
+        owned_but_disabled = [dict(gate) for gate in gates]
+        owned_but_disabled[0]["required_for_release"] = True
+        owned_but_disabled[0]["enabled"] = False
+        owned_but_disabled[0]["owning_work_item"] = "WI-000"
+        self.assertEqual(validate_loop._gate_ownership_errors(owned_but_disabled), [])
+
+    def test_coverage_gate_is_present_and_disabled_with_placeholder_owner(self) -> None:
+        gates = {g["id"]: g for g in json.loads((LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8"))["gates"]}
+        coverage = gates["G-COVERAGE"]
+        self.assertFalse(coverage["enabled"])
+        self.assertTrue(coverage["required_for_release"])
+        self.assertEqual(coverage["owning_work_item"], "WI-000")
+        self.assertTrue(coverage.get("note"))
+        commands = coverage["commands"]
+        self.assertIn(["coverage", "report", "--fail-under=85"], commands)
+        for gate_id in ("G-FORMAT", "G-LINT", "G-TYPE"):
+            self.assertEqual(gates[gate_id]["owning_work_item"], "WI-000", gate_id)
+            self.assertTrue(gates[gate_id].get("note"), gate_id)
+
+    def test_performance_and_reliability_targets_are_measurable(self) -> None:
+        test_ids = {t["id"] for t in json.loads((LOOP_ROOT / "quality/test-catalog.json").read_text(encoding="utf-8"))["tests"]}
+        budgets = json.loads((LOOP_ROOT / "quality/performance-budgets.json").read_text(encoding="utf-8"))["budgets"]
+        for budget in budgets:
+            self.assertTrue(budget.get("method"), budget["metric"])
+            self.assertTrue(budget.get("scenario"), budget["metric"])
+            self.assertIn(budget.get("owning_test"), test_ids, budget["metric"])
+
+        targets = json.loads((LOOP_ROOT / "quality/reliability-targets.json").read_text(encoding="utf-8"))["targets"]
+        for target in targets:
+            self.assertTrue(target.get("method"), target["id"])
+            self.assertTrue(target.get("scenario"), target["id"])
+            self.assertIn(target.get("owning_test"), test_ids, target["id"])
+        rel009 = next(t for t in targets if t["id"] == "REL-009")
+        self.assertIsInstance(rel009.get("deadline_ms"), int)
+        self.assertGreater(rel009["deadline_ms"], 0)
+
+    def test_tk_contract_mapping_has_header_and_disposition_contract(self) -> None:
+        self.assertEqual(check_traceability.check_tk_contract_mapping(), [])
+        self.assertEqual(check_traceability.TK_CONTRACT_EXPECTED_ROW_COUNT, 187)
+
+        # wrong header is rejected
+        errors = check_traceability._tk_contract_mapping_errors(("wrong", "header"), [])
+        self.assertTrue(any("header must be" in error for error in errors), errors)
+
+        # qt_replaced without a replacement_test_id is rejected
+        bad_rows = [{
+            "contract_id": "TKC-001", "area": "gui_layout", "disposition": "qt_replaced",
+            "replacement_test_id": "", "notes": "",
+        }]
+        errors = check_traceability._tk_contract_mapping_errors(check_traceability.TK_CONTRACT_COLUMNS, bad_rows)
+        self.assertTrue(any("replacement_test_id" in error for error in errors), errors)
+
+        # an unrecognized disposition value is rejected
+        pending_rows = [{
+            "contract_id": "TKC-002", "area": "ui_polish", "disposition": "pending",
+            "replacement_test_id": "", "notes": "",
+        }]
+        errors = check_traceability._tk_contract_mapping_errors(check_traceability.TK_CONTRACT_COLUMNS, pending_rows)
+        self.assertTrue(any("invalid disposition" in error for error in errors), errors)
+
+        # a fully valid row of each disposition passes
+        good_rows = [
+            {"contract_id": "TKC-003", "area": "gui_layout", "disposition": "pure_preserved", "replacement_test_id": "", "notes": ""},
+            {"contract_id": "TKC-004", "area": "gui_layout", "disposition": "qt_replaced", "replacement_test_id": "TEST-QT-001", "notes": ""},
+            {"contract_id": "TKC-005", "area": "ui_polish", "disposition": "approved_retired", "replacement_test_id": "", "notes": ""},
+        ]
+        self.assertEqual(
+            check_traceability._tk_contract_mapping_errors(check_traceability.TK_CONTRACT_COLUMNS, good_rows), []
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

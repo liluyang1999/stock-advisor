@@ -4,16 +4,16 @@
   "status":"provisional_until_first_qt_spike",
   "sample_policy":{"minimum_runs":20,"record_machine":true,"record_versions":true,"report_percentiles":[50,95,99]},
   "budgets":[
-    {"metric":"gui_event_handler_ms","p95_max":50,"p99_max":100},
-    {"metric":"busy_feedback_ms","max":100},
-    {"metric":"cancel_feedback_ms","max":100},
-    {"metric":"table_5000_sort_filter_ms","p95_max":150},
-    {"metric":"table_scroll_fps","min":30,"target":55},
-    {"metric":"cold_start_seconds","p95_max":4.0},
-    {"metric":"warm_start_seconds","p95_max":2.5},
-    {"metric":"idle_rss_mib","max":250},
-    {"metric":"idle_monitor_cpu_percent","average_max":1.0},
-    {"metric":"single_file_exe_mib","max":150,"rebaseline_rule":"after first approved clean Qt build, regression <=10%"},
-    {"metric":"dialog_100_cycles_rss_growth_mib","max":10}
+    {"metric":"gui_event_handler_ms","p95_max":50,"p99_max":100,"method":"QElapsedTimer wraps each Qt slot/event-handler invocation during the benchmark run; p95/p99 computed over all captured samples","scenario":"20-run benchmark exercising typical UI interactions (click, keypress, tab switch) per sample_policy","owning_test":"TEST-PERF-001"},
+    {"metric":"busy_feedback_ms","max":100,"method":"QElapsedTimer measures wall-clock time from the user-triggered action to the busy/loading indicator becoming visible","scenario":"triggering an individual-stock or screener analysis run while idle","owning_test":"TEST-PERF-001"},
+    {"metric":"cancel_feedback_ms","max":100,"method":"QElapsedTimer measures wall-clock time from the cancel/stop request to the UI showing the stopping state","scenario":"cancelling an in-flight individual-stock or screener analysis run","owning_test":"TEST-PERF-001"},
+    {"metric":"table_5000_sort_filter_ms","p95_max":150,"method":"QElapsedTimer measures wall-clock time for a sort or filter operation to complete and repaint","scenario":"5000-row result table, single-column sort then a filter change","owning_test":"TEST-PERF-001"},
+    {"metric":"table_scroll_fps","min":30,"target":55,"method":"frame timestamps captured during a scripted scroll are converted to instantaneous fps","scenario":"continuous scroll through the 5000-row result table","owning_test":"TEST-PERF-001"},
+    {"metric":"cold_start_seconds","p95_max":4.0,"method":"wall-clock time from process launch to the main window's first paint event","scenario":"cold application launch, 20 repeated runs per sample_policy with no prior warm process","owning_test":"TEST-PERF-001"},
+    {"metric":"warm_start_seconds","p95_max":2.5,"method":"wall-clock time from process launch to the main window's first paint event","scenario":"relaunch immediately after a prior run in the same session (OS file cache warm)","owning_test":"TEST-PERF-001"},
+    {"metric":"idle_rss_mib","max":250,"method":"process RSS read via the OS process-info API after the main window is shown and idle","scenario":"application idle at the main window with no analysis in flight, sampled once startup settles","owning_test":"TEST-PERF-001"},
+    {"metric":"idle_monitor_cpu_percent","average_max":1.0,"method":"process CPU percent sampled at 1s intervals over a fixed idle window and averaged","scenario":"application idle at the main window with any monitor/alert timers running, no user interaction","owning_test":"TEST-PERF-001"},
+    {"metric":"single_file_exe_mib","max":150,"rebaseline_rule":"after first approved clean Qt build, regression <=10%","method":"file size of the built onefile executable measured on disk after a clean PyInstaller build","scenario":"clean release build per build_exe.py (see G-BUILD)","owning_test":"TEST-PKG-002"},
+    {"metric":"dialog_100_cycles_rss_growth_mib","max":10,"method":"process RSS sampled before opening and after closing a dialog, repeated 100 times; growth = final RSS minus initial RSS","scenario":"open/close a modal dialog (e.g. help) 100 times in a row with no other user action","owning_test":"TEST-PERF-001"}
   ]
 }

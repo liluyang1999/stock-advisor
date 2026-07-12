@@ -15,19 +15,22 @@
 3. **G-LINT**：Ruff 0 错误、0 未批准 warning。
 4. **G-TYPE**：mypy strict 0 错误；可分阶段但发布全包。
 5. **G-CORE**：纯逻辑/现有全量测试 100% 通过。
-6. **G-NUMERIC**：黄金向量、性质、前视、确定性。
-7. **G-NETWORK**：parser、deadline、fault matrix、无伪造 fallback。
-8. **G-WORKFLOW**：FakeProvider 集成、部分失败/停止。
-9. **G-QT-MODEL**：QAbstractItemModelTester、排序/过滤/增量。
-10. **G-QT-GUI**：offscreen 交互、signals、取消/迟到/销毁。
-11. **G-VISUAL**：Windows DPI/字体/视觉状态矩阵。
-12. **G-PERF**：启动、RSS、event P95、5000 行表格、图表。
-13. **G-SECURITY**：依赖漏洞、导出注入、路径、日志脱敏。
-14. **G-LICENSE**：PySide6/Qt/PyInstaller/SBOM/NOTICE 人工复核。
-15. **G-BUILD**：clean PyInstaller、dist 清单、插件/资源。
-16. **G-EXE**：EXE self-test + Windows 冒烟。
-17. **G-TRACE**：REQ/AC/WI/TEST/EVD 100% 追溯。
-18. **G-RELEASE**：连续 5 次全绿 + HG-RELEASE。
+6. **G-COVERAGE**：`coverage run -m pytest` + `coverage report --fail-under=85`；全量 ≥90%/≥85%（行/分支）、核心 ≥95%/≥90%，见 `quality/convergence.json.coverage`（工具批准后启用）。
+7. **G-NUMERIC**：黄金向量、性质、前视、确定性。
+8. **G-NETWORK**：parser、deadline、fault matrix、无伪造 fallback。
+9. **G-WORKFLOW**：FakeProvider 集成、部分失败/停止。
+10. **G-QT-MODEL**：QAbstractItemModelTester、排序/过滤/增量。
+11. **G-QT-GUI**：offscreen 交互、signals、取消/迟到/销毁。
+12. **G-VISUAL**：Windows DPI/字体/视觉状态矩阵（offscreen 证据不能替代真实 Windows 视觉验证）。
+13. **G-PERF**：启动、RSS、event P95、5000 行表格、图表。
+14. **G-SECURITY**：依赖漏洞、导出注入、路径、日志脱敏。
+15. **G-LICENSE**：PySide6/Qt/PyInstaller/SBOM/NOTICE 人工复核。
+16. **G-BUILD**：clean PyInstaller、dist 清单、插件/资源。
+17. **G-EXE**：EXE self-test + Windows 冒烟。
+18. **G-TRACE**：REQ/AC/WI/TEST/EVD 100% 追溯。
+19. **G-RELEASE**：连续 5 次全绿 + HG-RELEASE。
+
+每个门禁对象在 `quality-gates.json` 中携带 `owning_work_item`（启用它的工作项；尚不存在的工具类工作项——G-FORMAT/G-LINT/G-TYPE/G-COVERAGE——暂以 `WI-000` 占位，`note` 字段说明其真实归属在 WS-8/Plan 5）。
 
 ## 硬指标
 

@@ -141,6 +141,27 @@ def _expected_backlog(work_rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _gate_ownership_errors(gates: list[dict[str, Any]]) -> list[str]:
+    """required_for_release ⇒ (enabled is true) OR (owning_work_item is a non-empty string).
+
+    Deliberately does NOT check that owning_work_item names an existing work item: the
+    dev-tool gates (G-FORMAT/G-LINT/G-TYPE/G-COVERAGE) are turned on by tooling work
+    items a later plan (WS-8) has not created yet, so they carry the WI-000
+    control-plane placeholder plus a `note` explaining that. The point of this
+    invariant is only that no required-for-release gate is left silently unowned.
+    """
+    errors: list[str] = []
+    for gate in gates:
+        if not gate.get("required_for_release"):
+            continue
+        if gate.get("enabled") is True:
+            continue
+        owner = gate.get("owning_work_item")
+        if not isinstance(owner, str) or not owner.strip():
+            errors.append(f"{gate.get('id')} is required_for_release but neither enabled nor owning_work_item-owned")
+    return errors
+
+
 def _digest_ok(record: dict[str, Any], current_digest: str | None = None) -> bool:
     """A v2 evidence record matches the tree, or is exempt because it is superseded."""
     if record.get("superseded_by"):
@@ -516,6 +537,7 @@ def validate() -> list[str]:
     }
     if loop_gate is None or {tuple(command) for command in loop_gate.get("commands", [])} != expected_loop_commands:
         errors.append("G-LOOP commands differ from the mandatory control-plane gate")
+    errors.extend(_gate_ownership_errors(load_json("quality/quality-gates.json").get("gates", [])))
 
     control_metrics = metrics.get("control_plane", {})
     if control_metrics.get("schema_documents_validated") != schema_document_count:

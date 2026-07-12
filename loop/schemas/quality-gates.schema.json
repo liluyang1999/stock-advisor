@@ -10,15 +10,21 @@
       "type":"array",
       "items":{
         "type":"object",
-        "required":["id","order","name","commands","enabled","required_for_release","pass_condition","evidence_type"],
+        "required":["id","order","name","commands","enabled","required_for_release","pass_condition","evidence_type","owning_work_item"],
         "properties":{
           "id":{"type":"string","pattern":"^G-"},
           "order":{"type":"integer","minimum":1},
+          "name":{"type":"string","minLength":1},
           "commands":{"type":"array"},
           "enabled":{"type":"boolean"},
-          "required_for_release":{"type":"boolean"}
+          "required_for_release":{"type":"boolean"},
+          "pass_condition":{"type":"string","minLength":1},
+          "evidence_type":{"type":"string","minLength":1},
+          "environment":{"type":"object"},
+          "owning_work_item":{"type":"string","pattern":"^WI-\\d{3}$"},
+          "note":{"type":"string","minLength":1}
         },
-        "additionalProperties":true
+        "additionalProperties":false
       }
     }
   },
