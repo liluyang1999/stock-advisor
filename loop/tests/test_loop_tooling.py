@@ -177,6 +177,13 @@ class LoopToolingTests(unittest.TestCase):
         self.assertTrue(validate_loop._duplicates(ids), "fixture assumption: decisions.jsonl has status-history duplicates")
         self.assertEqual(validate_loop.validate(), [])
 
+    def test_every_adr_has_an_associations_section(self) -> None:
+        # Every decisions/NNNN-*.md must cite the REQ/AC/WI/RISK/EVD ids it rests
+        # on via a "## 关联" section (loop/templates/ADR.md, decisions/README.md).
+        self.assertEqual(validate_loop._adr_association_errors(), [])
+        self.assertFalse(validate_loop._has_associations_section("# ADR-9999\n\n## 决策\n\nx\n"))
+        self.assertTrue(validate_loop._has_associations_section("## 关联\n\nREQ-001。\n"))
+
     def test_dereferenced_files_are_declared_required(self) -> None:
         for needed in ("quality/test-catalog.json", "planning/dependency-graph.json"):
             self.assertIn(needed, validate_loop.REQUIRED_FILES, needed)

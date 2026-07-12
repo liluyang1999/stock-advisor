@@ -120,6 +120,30 @@ def _adr_statuses() -> tuple[dict[str, str], list[str]]:
     return statuses, errors
 
 
+_ADR_ASSOCIATIONS_PATTERN = re.compile(r"^## 关联\s*$", re.MULTILINE)
+
+
+def _has_associations_section(text: str) -> bool:
+    return _ADR_ASSOCIATIONS_PATTERN.search(text) is not None
+
+
+def _adr_association_errors() -> list[str]:
+    """Every ADR must cite the REQ/AC/WI/RISK/EVD ids it is grounded in.
+
+    Deliberately a narrow presence check (a "## 关联" heading exists) rather than
+    parsing which ids it lists: the project's ADR template (templates/ADR.md,
+    decisions/README.md) mandates the section, but validating that individual
+    cited ids resolve to real REQ/AC/WI/RISK/EVD entries is a judgment call left
+    to review, not a mechanical rule -- an ADR may legitimately cite an ADR id or
+    prose context alongside them.
+    """
+    errors: list[str] = []
+    for path in sorted((LOOP_ROOT / "decisions").glob("[0-9][0-9][0-9][0-9]-*.md")):
+        if not _has_associations_section(path.read_text(encoding="utf-8")):
+            errors.append(f"{path.relative_to(LOOP_ROOT)} lacks a ## 关联 section")
+    return errors
+
+
 def _expected_backlog(work_rows: list[dict[str, Any]]) -> dict[str, Any]:
     status_order = ("in_progress", "verifying", "ready", "proposed", "accepted", "blocked", "deferred", "cancelled")
     counts = {status: 0 for status in status_order}
@@ -397,6 +421,7 @@ def validate() -> list[str]:
 
     adr_statuses, adr_errors = _adr_statuses()
     errors.extend(adr_errors)
+    errors.extend(_adr_association_errors())
     decision_records = parse_jsonl(LOOP_ROOT / "registers" / "decisions.jsonl")
     registered_statuses: dict[str, str] = {}
     for record in decision_records:
