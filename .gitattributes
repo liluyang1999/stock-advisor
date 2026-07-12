@@ -7,3 +7,8 @@ run.bat text eol=crlf
 *.cmd text eol=crlf
 installer.iss text eol=crlf
 *.iss text eol=crlf
+
+# Loop 控制面：control_plane_digest() 按字节哈希工作区文件，必须跨 checkout 行尾稳定。
+# autocrlf 会在 checkout 时把 loop/ 文件转 CRLF，令 control_plane_sha256 不匹配、
+# self-verification 在任何干净克隆/检出上失败。强制 LF 使 digest 可复现。
+loop/** text eol=lf
