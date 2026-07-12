@@ -43,7 +43,7 @@ class LoopToolingTests(unittest.TestCase):
 
     def test_traceability_covers_every_requirement(self) -> None:
         self.assertEqual(check_traceability.check(release=False), [])
-        self.assertEqual(check_traceability.check.stats["requirements"], 30)
+        self.assertEqual(check_traceability.check.stats["requirements"], 34)
 
     def test_traceability_edges_agree_with_work_items(self) -> None:
         self.assertEqual(check_traceability.check(release=False), [], check_traceability.check(release=False))
@@ -79,7 +79,7 @@ class LoopToolingTests(unittest.TestCase):
         self.assertEqual(actual, rendered)
         self.assertIn("Loop tooling tests:", rendered)
         self.assertIn("Loop schemas: `20`", rendered)
-        self.assertIn("Traceability: `30/30`", rendered)
+        self.assertIn("Traceability: `34/34`", rendered)
 
     def test_target_stack_and_font_are_explicit(self) -> None:
         config = json.loads((LOOP_ROOT / "config.json").read_text(encoding="utf-8"))

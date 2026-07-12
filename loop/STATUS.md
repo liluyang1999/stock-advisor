@@ -12,7 +12,7 @@
 - Tests: `449/449`
 - Loop tooling tests: `13/13`
 - Loop schemas: `20`
-- Traceability: `30/30`
+- Traceability: `34/34`
 - Coverage: `not_measured`
 - Release candidate: `false`
 - Latest gate run: `LOOP-20260711-003`
