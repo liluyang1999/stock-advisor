@@ -8,8 +8,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.models import FilterCriteria, MarketSnapshot
-from stock_advisor.screener import (
+from stock_advisor.domain.models import FilterCriteria, MarketSnapshot
+from stock_advisor.domain.screener import (
     ALL_BOARDS,
     BOARD_BJ,
     BOARD_CHINEXT,

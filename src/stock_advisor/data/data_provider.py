@@ -7,7 +7,7 @@ import time
 import urllib.error
 import urllib.request
 
-from .models import DailyBar, FundFlow, MarketSnapshot, Quote, StockSymbol
+from ..domain.models import DailyBar, FundFlow, MarketSnapshot, Quote, StockSymbol
 
 
 # 浏览器 UA：含 "Python" 的 UA 会被东方财富 clist 接口拒绝（连接被直接关闭）。

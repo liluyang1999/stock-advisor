@@ -5,14 +5,14 @@ import csv
 import io
 import re
 
-from .formatting import (
+from ..domain.formatting import (
     _finite_float, _positive_finite_float, _positive_finite_int,
     _fmt, _fmt_amount, _fmt_decimal, _fmt_percent_points, _fmt_percent_value,
     _fmt_plain_number, _fmt_score_value, _fmt_whole_percent, _number_from_cell,
     _looks_negative, _looks_positive, _looks_risky, risk_level,
 )
-from .models import AnalysisResult, ComparisonRow, MarketSnapshot, Recommendation
-from .symbols import normalize_symbol
+from ..domain.models import AnalysisResult, ComparisonRow, MarketSnapshot, Recommendation
+from ..domain.symbols import normalize_symbol
 from .theme import (
     ACTION_ORDER, DETAIL_SECTION_TITLES, DISCLAIMER, FLAT_COLOR, NEG_COLOR, POS_COLOR,
     RISK_ORDER, TABLE_COLUMN_INDEX,

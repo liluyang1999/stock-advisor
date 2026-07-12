@@ -9,7 +9,7 @@ SRC_DIR = CURRENT_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from stock_advisor.app import build_detail_text, make_sample_analysis, run_gui
+from stock_advisor.ui.app import build_detail_text, make_sample_analysis, run_gui
 
 
 def enable_dpi_awareness() -> None:
@@ -34,12 +34,12 @@ def enable_dpi_awareness() -> None:
 
 def _self_test() -> int:
     """离线自测：验证个股分析引擎、决策强度、仓位/回测与全市场选股管线，不触网。"""
-    from stock_advisor.models import MarketSnapshot
-    from stock_advisor.presets import apply_tunables, default_values, get_preset
-    from stock_advisor.screener import recommend
-    from stock_advisor.policy import decide, position_plan
-    from stock_advisor.backtest import backtest_signals
-    from stock_advisor.app import make_sample_measurement, make_sample_history
+    from stock_advisor.domain.models import MarketSnapshot
+    from stock_advisor.domain.presets import apply_tunables, default_values, get_preset
+    from stock_advisor.domain.screener import recommend
+    from stock_advisor.domain.policy import decide, position_plan
+    from stock_advisor.domain.backtest import backtest_signals
+    from stock_advisor.ui.app import make_sample_measurement, make_sample_history
 
     result = make_sample_analysis()
     _ = build_detail_text(result)  # 确认详情文本可生成
@@ -52,12 +52,12 @@ def _self_test() -> int:
     backtest = backtest_signals(make_sample_history(), level=3)
 
     # 二期 2A：持久化 + 横向对比 离线自检
-    from stock_advisor.store import parse_config, config_to_dict
-    from stock_advisor.compare import build_comparison_rows
-    from stock_advisor.models import AppConfig, WatchItem
+    from stock_advisor.services.store import parse_config, config_to_dict
+    from stock_advisor.domain.compare import build_comparison_rows
+    from stock_advisor.domain.models import AppConfig, WatchItem
 
-    from stock_advisor.alerts import check_rules
-    from stock_advisor.models import AlertRule
+    from stock_advisor.domain.alerts import check_rules
+    from stock_advisor.domain.models import AlertRule
 
     alert = AlertRule(result.symbol.normalized, "price", ">=", result.last - 1.0)
     cfg = parse_config(config_to_dict(AppConfig(

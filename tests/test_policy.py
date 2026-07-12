@@ -6,10 +6,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.models import CORE_DISCLAIMER, Measurement, IndicatorSnapshot, FactorScore
-from stock_advisor.symbols import normalize_symbol
-from stock_advisor.policy import LEVELS, decide, level_spec, clamp_level, policy_score, spectrum
-from stock_advisor.theme import DISCLAIMER as THEME_DISCLAIMER
+from stock_advisor.domain.models import CORE_DISCLAIMER, Measurement, IndicatorSnapshot, FactorScore
+from stock_advisor.domain.symbols import normalize_symbol
+from stock_advisor.domain.policy import LEVELS, decide, level_spec, clamp_level, policy_score, spectrum
+from stock_advisor.ui.theme import DISCLAIMER as THEME_DISCLAIMER
 
 
 def make_measurement(objective_score, confidence=70, risk_penalty=0, atr=2.5, history_len=80):

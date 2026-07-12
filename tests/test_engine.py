@@ -9,7 +9,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.engine import (
+from stock_advisor.domain.engine import (
     analyze_stock,
     average_true_range_percent,
     bollinger_position,
@@ -18,8 +18,8 @@ from stock_advisor.engine import (
     rsi,
     support_resistance,
 )
-from stock_advisor.models import DailyBar, Quote
-from stock_advisor.symbols import normalize_symbol
+from stock_advisor.domain.models import DailyBar, Quote
+from stock_advisor.domain.symbols import normalize_symbol
 
 
 def make_quote(code, last, open_price, high, low, previous_close, volume=500000):

@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.data_provider import parse_fund_flow_payload
+from stock_advisor.data.data_provider import parse_fund_flow_payload
 
 
 def payload(klines):

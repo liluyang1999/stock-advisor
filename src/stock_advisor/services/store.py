@@ -6,9 +6,9 @@ import os
 import tempfile
 from pathlib import Path
 
-from .alerts import FIELD_LABELS, OPS
-from .models import AlertRule, AppConfig, STANDARD_LEVEL, WatchItem
-from .symbols import normalize_symbol
+from ..domain.alerts import FIELD_LABELS, OPS
+from ..domain.models import AlertRule, AppConfig, STANDARD_LEVEL, WatchItem
+from ..domain.symbols import normalize_symbol
 
 
 _MAX_WATCH = 100
@@ -27,7 +27,7 @@ def config_path() -> Path:
 
 
 def _valid_preset(preset: str) -> str:
-    from .presets import PRESETS
+    from ..domain.presets import PRESETS
 
     return preset if preset in {p.key for p in PRESETS} else ""
 

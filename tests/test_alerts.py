@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.alerts import (
+from stock_advisor.domain.alerts import (
     FIELD_KEYS_BY_LABEL,
     FIELD_LABELS,
     evaluate_rule,
@@ -12,7 +12,7 @@ from stock_advisor.alerts import (
     rule_summary,
     rule_key,
 )
-from stock_advisor.models import AlertRule
+from stock_advisor.domain.models import AlertRule
 
 
 class FakeResult:

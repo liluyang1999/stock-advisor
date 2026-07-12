@@ -8,8 +8,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.store import parse_config, config_to_dict, load_config, save_config, config_path
-from stock_advisor.models import AlertRule, AppConfig, WatchItem
+from stock_advisor.services.store import parse_config, config_to_dict, load_config, save_config, config_path
+from stock_advisor.domain.models import AlertRule, AppConfig, WatchItem
 
 
 class StoreTests(unittest.TestCase):

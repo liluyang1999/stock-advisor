@@ -1,14 +1,14 @@
 """面向用户的文本构建与文案改写——纯函数。"""
 from __future__ import annotations
 
-from .formatting import (
+from ..domain.formatting import (
     _finite_float, _safe_int,
     _fmt, _fmt_decimal, _fmt_percent, _fmt_percent_points, _fmt_percent_value,
     _fmt_plain_number, _fmt_rate_percent, _fmt_score_value, _fmt_whole_percent, _fmt_yi,
     _fmt_backtest_return, _fmt_backtest_excess, _flow_direction,
     risk_level,
 )
-from .models import (
+from ..domain.models import (
     AnalysisResult,
     BacktestReport,
     FundFlow,
@@ -16,8 +16,8 @@ from .models import (
     Recommendation,
     SpectrumCell,
 )
-from .policy import flip_hint, level_spec
-from .symbols import parse_user_symbols
+from ..domain.policy import flip_hint, level_spec
+from ..domain.symbols import parse_user_symbols
 from .theme import DISCLAIMER, MAX_SYMBOLS
 
 

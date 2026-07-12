@@ -9,7 +9,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from stock_advisor.backtest import backtest_signals, quote_from_bar
+from stock_advisor.domain.backtest import backtest_signals, quote_from_bar
 from test_engine import make_history
 
 
@@ -83,7 +83,7 @@ class BacktestTests(unittest.TestCase):
         def fake_decide(_measurement, _level):
             return SimpleNamespace(action="HOLD")
 
-        with patch("stock_advisor.backtest.measure", fake_measure), patch("stock_advisor.backtest.decide", fake_decide):
+        with patch("stock_advisor.domain.backtest.measure", fake_measure), patch("stock_advisor.domain.backtest.decide", fake_decide):
             backtest_signals(history, level=3, horizon=5, warmup=30)
 
         self.assertTrue(captured)

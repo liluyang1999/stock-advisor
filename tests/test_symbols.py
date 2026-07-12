@@ -7,7 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.symbols import parse_user_symbols, normalize_symbol, symbol_from_market
+from stock_advisor.domain.symbols import parse_user_symbols, normalize_symbol, symbol_from_market
 
 
 class SymbolParsingTests(unittest.TestCase):

@@ -8,10 +8,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.data_provider import MarketDataError
-from stock_advisor.models import DailyBar, FilterCriteria, MarketSnapshot, Quote
-from stock_advisor.symbols import normalize_symbol
-from stock_advisor.workflow import analyze_symbol, screen_and_recommend
+from stock_advisor.data.data_provider import MarketDataError
+from stock_advisor.domain.models import DailyBar, FilterCriteria, MarketSnapshot, Quote
+from stock_advisor.domain.symbols import normalize_symbol
+from stock_advisor.services.workflow import analyze_symbol, screen_and_recommend
 
 
 class FakeProvider:

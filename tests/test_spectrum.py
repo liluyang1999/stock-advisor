@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from stock_advisor.policy import spectrum, flip_hint
+from stock_advisor.domain.policy import spectrum, flip_hint
 from test_policy import make_measurement
 
 

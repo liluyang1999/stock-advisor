@@ -7,8 +7,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.presets import PRESETS, apply_tunables, default_values, get_preset
-from stock_advisor.screener import OBJECTIVES
+from stock_advisor.domain.presets import PRESETS, apply_tunables, default_values, get_preset
+from stock_advisor.domain.screener import OBJECTIVES
 
 
 class PresetCatalogTests(unittest.TestCase):

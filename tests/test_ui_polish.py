@@ -15,7 +15,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.app import (  # noqa: E402
+from stock_advisor.ui.app import (  # noqa: E402
     CARD_BORDER,
     CHILD_WINDOW_WORKAREA_MARGIN,
     WINDOW_ALPHA,
@@ -31,7 +31,7 @@ from stock_advisor.app import (  # noqa: E402
     make_sample_recommendation,
     validate_tunable,
 )
-from stock_advisor.layout import (  # noqa: E402
+from stock_advisor.ui.layout import (  # noqa: E402
     ui_scale,
     compute_child_window_geometry,
     compute_main_geometry,
@@ -40,7 +40,7 @@ from stock_advisor.layout import (  # noqa: E402
     compute_workspace_columns,
     stacked_text_y,
 )
-from stock_advisor.theme import (  # noqa: E402
+from stock_advisor.ui.theme import (  # noqa: E402
     ACCENT,
     CARD_BG,
     COMMAND_BG,

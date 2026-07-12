@@ -5,8 +5,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from stock_advisor.engine import measure, analyze_stock
-from stock_advisor.policy import decide
+from stock_advisor.domain.engine import measure, analyze_stock
+from stock_advisor.domain.policy import decide
 from test_engine import make_quote, make_history
 
 

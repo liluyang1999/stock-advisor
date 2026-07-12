@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from stock_advisor.chart import (
+from stock_advisor.domain.chart import (
     index_to_x,
     price_to_y,
     moving_average_series,
@@ -15,7 +15,7 @@ from stock_advisor.chart import (
     nearest_index,
     volume_heights,
 )
-from stock_advisor.models import DailyBar
+from stock_advisor.domain.models import DailyBar
 from test_engine import make_history
 
 

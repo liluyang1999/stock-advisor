@@ -85,7 +85,7 @@ def _write_manual() -> Path:
     src_dir = PROJECT_ROOT / "src"
     if str(src_dir) not in sys.path:
         sys.path.insert(0, str(src_dir))
-    from stock_advisor.manual import build_manual_html
+    from stock_advisor.ui.manual import build_manual_html
 
     manual_path = DIST_DIR / MANUAL_NAME
     manual_path.write_text(build_manual_html(), encoding="utf-8")

@@ -1,9 +1,9 @@
 """离线样例行情、分析与推荐构造——纯函数，供自测/演示复用。"""
 from __future__ import annotations
 
-from .engine import analyze_stock, measure
-from .models import AnalysisResult, DailyBar, Measurement, MarketSnapshot, Quote, Recommendation
-from .symbols import normalize_symbol
+from ..domain.engine import analyze_stock, measure
+from ..domain.models import AnalysisResult, DailyBar, Measurement, MarketSnapshot, Quote, Recommendation
+from ..domain.symbols import normalize_symbol
 
 
 def _sample_quote_history() -> tuple[Quote, list[DailyBar]]:

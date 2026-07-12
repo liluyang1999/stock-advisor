@@ -4,9 +4,9 @@ from dataclasses import dataclass, field, replace
 import math
 from typing import Callable, Protocol
 
-from .data_provider import MarketDataError
-from .engine import build_analysis_result, measure
-from .models import (
+from ..data.data_provider import MarketDataError
+from ..domain.engine import build_analysis_result, measure
+from ..domain.models import (
     AnalysisResult,
     DailyBar,
     FilterCriteria,
@@ -17,9 +17,9 @@ from .models import (
     STANDARD_LEVEL,
     StockSymbol,
 )
-from .policy import decide
-from .screener import apply_filters, board_of, rank
-from .symbols import symbol_from_market
+from ..domain.policy import decide
+from ..domain.screener import apply_filters, board_of, rank
+from ..domain.symbols import symbol_from_market
 
 
 class MarketDataProvider(Protocol):

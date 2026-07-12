@@ -10,14 +10,14 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Any
 
-from . import store
-from .alerts import FIELD_KEYS_BY_LABEL, FIELD_LABELS, OPS, check_rules, rule_summary
-from .backtest import backtest_signals
-from .chart import candle_layout, moving_average_series, nearest_index, price_bounds, price_to_y, volume_heights
-from .compare import build_comparison_rows
-from .data_provider import EastmoneyProvider
-from .engine import build_analysis_result
-from .models import (
+from ..services import store
+from ..domain.alerts import FIELD_KEYS_BY_LABEL, FIELD_LABELS, OPS, check_rules, rule_summary
+from ..domain.backtest import backtest_signals
+from ..domain.chart import candle_layout, moving_average_series, nearest_index, price_bounds, price_to_y, volume_heights
+from ..domain.compare import build_comparison_rows
+from ..data.data_provider import EastmoneyProvider
+from ..domain.engine import build_analysis_result
+from ..domain.models import (
     AlertRule,
     AnalysisResult,
     AppConfig,
@@ -32,11 +32,11 @@ from .models import (
     SpectrumCell,
     WatchItem,
 )
-from .policy import decide, flip_hint, level_spec, position_plan, spectrum
-from .presets import PRESETS, apply_tunables, get_preset
-from .screener import OBJECTIVE_LABELS
-from .symbols import normalize_symbol, parse_user_symbols
-from .workflow import AnalysisOutcome, ScreenReport, analyze_symbol, screen_and_recommend
+from ..domain.policy import decide, flip_hint, level_spec, position_plan, spectrum
+from ..domain.presets import PRESETS, apply_tunables, get_preset
+from ..domain.screener import OBJECTIVE_LABELS
+from ..domain.symbols import normalize_symbol, parse_user_symbols
+from ..services.workflow import AnalysisOutcome, ScreenReport, analyze_symbol, screen_and_recommend
 
 
 from .theme import (
@@ -63,7 +63,7 @@ def app_asset_path(filename: str) -> Path:
     return ASSET_DIR / filename
 
 
-from .sample_data import (
+from ..data.sample_data import (
     _sample_quote_history, make_sample_analysis, make_sample_measurement,
     make_sample_history, make_sample_recommendation,
 )
@@ -78,7 +78,7 @@ from .view_text import (
 )
 
 
-from .formatting import (
+from ..domain.formatting import (
     _positive_finite_float, _positive_finite_int, _safe_int,
     _fmt_decimal, _fmt_whole_percent, _fmt_percent_points,
     _fmt_rate_percent, _fmt_backtest_return, _fmt_backtest_excess,
@@ -96,7 +96,7 @@ from .view_format import (
 )
 
 
-from .input_validate import (
+from ..domain.input_validate import (
     _parse_optional_positive, _parse_optional_positive_int, _parse_alert_threshold,
     is_partial_number, validate_tunable,
 )

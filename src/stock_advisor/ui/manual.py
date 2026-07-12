@@ -3,8 +3,8 @@ from __future__ import annotations
 from html import escape
 
 from .app import DISCLAIMER, build_help_sections, build_strategy_sections
-from .presets import PRESETS
-from .screener import OBJECTIVE_LABELS
+from ..domain.presets import PRESETS
+from ..domain.screener import OBJECTIVE_LABELS
 
 
 CHARACTERISTICS: tuple[tuple[str, str], ...] = (
