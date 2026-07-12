@@ -37,7 +37,7 @@
 
 - 测试命令：`python -m unittest discover -s tests`，提交前必须全绿。
 - 改动遵循 TDD：先写失败测试，再实现。纯逻辑必须单测；GUI 用 headless 测试覆盖关键布局与交互。
-- 语法检查：`python -m py_compile main.py build_exe.py src/stock_advisor/*.py`。
+- 语法检查：`python -m compileall -q main.py build_exe.py src/stock_advisor`（compileall 递归进子包，与 loop 门禁一致）。
 - 打包后自验：`dist\股市锦囊.exe --self-test` 应退出码 0 并打印 `SELF_TEST_OK`。
 
 ## 行情数据约定
