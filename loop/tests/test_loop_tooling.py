@@ -203,6 +203,14 @@ class LoopToolingTests(unittest.TestCase):
             self.assertTrue(t.get("expected_artifact"), t["id"])
         self.assertEqual(validate_loop.validate(), [])
 
+    def test_every_work_item_has_a_size(self) -> None:
+        work_items = json.loads((LOOP_ROOT / "planning/work-items.json").read_text(encoding="utf-8"))["work_items"]
+        self.assertEqual(len(work_items), 26)
+        for wi in work_items:
+            self.assertIn(wi.get("size"), {"S", "M", "L", "XL"}, wi["id"])
+            self.assertTrue(wi.get("definition_of_done"), wi["id"])
+        self.assertEqual(validate_loop.validate(), [])
+
     def test_every_gate_has_owning_work_item(self) -> None:
         gates = json.loads((LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8"))["gates"]
         work_ids = {w["id"] for w in json.loads((LOOP_ROOT / "planning/work-items.json").read_text(encoding="utf-8"))["work_items"]}
