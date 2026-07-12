@@ -4,23 +4,24 @@
   "source_root":"../src/stock_advisor",
   "package_name":"stock_advisor",
   "forbidden_import_roots":["PySide6","tkinter","urllib","pathlib","os","subprocess"],
-  "forbidden_internal_modules":["app","data_provider","manual","store","theme","workflow","qt_app"],
+  "forbidden_internal_modules":["data","services","ui","qt_app"],
   "modules":[
-    {"path":"models.py","layer":"domain_models"},
-    {"path":"symbols.py","layer":"domain"},
-    {"path":"engine.py","layer":"domain"},
-    {"path":"policy.py","layer":"domain"},
-    {"path":"screener.py","layer":"domain"},
-    {"path":"presets.py","layer":"domain"},
-    {"path":"backtest.py","layer":"domain"},
-    {"path":"alerts.py","layer":"domain"},
-    {"path":"compare.py","layer":"domain"},
-    {"path":"chart.py","layer":"domain_geometry"},
-    {"path":"input_validate.py","layer":"domain_validation"},
-    {"path":"formatting.py","layer":"presentation_pure"}
+    {"path":"domain/models.py","layer":"domain_models"},
+    {"path":"domain/symbols.py","layer":"domain"},
+    {"path":"domain/engine.py","layer":"domain"},
+    {"path":"domain/policy.py","layer":"domain"},
+    {"path":"domain/screener.py","layer":"domain"},
+    {"path":"domain/presets.py","layer":"domain"},
+    {"path":"domain/backtest.py","layer":"domain"},
+    {"path":"domain/alerts.py","layer":"domain"},
+    {"path":"domain/compare.py","layer":"domain"},
+    {"path":"domain/chart.py","layer":"domain_geometry"},
+    {"path":"domain/input_validate.py","layer":"domain_validation"},
+    {"path":"domain/formatting.py","layer":"presentation_pure"}
   ],
   "notes":[
     "The manifest is the single machine authority for protected core modules.",
-    "workflow.py remains application orchestration and must move provider exceptions behind a future port in WI-007/WI-009."
+    "All 12 protected modules live under domain/ (src package restructure, ADR-0007); forbidden_internal_modules now names the impure subpackages (data/services/ui/qt_app) rather than individual module filenames, since a domain/ module's cross-package relative import resolves to from ..<subpackage>.<mod> and the checker inspects only the first path component.",
+    "workflow.py (now services/workflow.py) remains application orchestration and must move provider exceptions behind a future port in WI-007/WI-009."
   ]
 }

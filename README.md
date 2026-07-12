@@ -69,21 +69,25 @@ build.bat / build.sh        一键打包脚本（输出到 dist/）
 main.py                     程序入口（GUI / --self-test）
 build_exe.py                PyInstaller 打包脚本（中间产物 build/，交付物 dist/）
 src/stock_advisor/
-  models.py                 数据结构（行情、K线、指标、快照、测量、决策、仓位、回测）
-  symbols.py                代码规范化与市场号映射
-  data_provider.py          实时行情、历史日线、全市场快照获取（多源容错）
-  engine.py                 客观测量层 measure()（多因子评分），analyze_stock 薄包装
-  policy.py                 决策层：5 档决策强度、decide/仓位/光谱（纯逻辑）
-  backtest.py               可信度回测：同股历史信号事后复盘（纯逻辑）
-  chart.py                  K 线几何映射与 hover 命中（纯函数）
-  store.py                  用户配置持久化（自选股/持仓、本金、档位、预设、预警）
-  compare.py                多股横向对比行组装（纯逻辑）
-  alerts.py                 条件预警规则与边沿触发判定（纯逻辑）
-  screener.py               选股过滤与排序（纯逻辑）
-  presets.py                策略预设与可微调参数
-  workflow.py               个股分析与全市场选股编排（回传测量供改档重判）
-  app.py                    Tkinter 界面（决策强度分段按钮、光谱/K线/计算器/回测、自选股/持仓、横向对比、K线 hover）
-  manual.py                 使用说明 HTML 生成
+  domain/                   纯逻辑核心（无网络、无 GUI）
+    models.py                 数据结构（行情、K线、指标、快照、测量、决策、仓位、回测）
+    symbols.py                代码规范化与市场号映射
+    engine.py                 客观测量层 measure()（多因子评分），analyze_stock 薄包装
+    policy.py                 决策层：5 档决策强度、decide/仓位/光谱（纯逻辑）
+    backtest.py               可信度回测：同股历史信号事后复盘（纯逻辑）
+    chart.py                  K 线几何映射与 hover 命中（纯函数）
+    compare.py                多股横向对比行组装（纯逻辑）
+    alerts.py                 条件预警规则与边沿触发判定（纯逻辑）
+    screener.py               选股过滤与排序（纯逻辑）
+    presets.py                策略预设与可微调参数
+  data/                     行情与样例数据获取
+    data_provider.py          实时行情、历史日线、全市场快照获取（多源容错）
+  services/                 编排与持久化
+    workflow.py               个股分析与全市场选股编排（回传测量供改档重判）
+    store.py                  用户配置持久化（自选股/持仓、本金、档位、预设、预警）
+  ui/                       Tkinter 界面
+    app.py                    Tkinter 界面（决策强度分段按钮、光谱/K线/计算器/回测、自选股/持仓、横向对比、K线 hover）
+    manual.py                 使用说明 HTML 生成
 tests/                      单元测试
 docs/                       设计说明与实现计划
 ```

@@ -6,3 +6,4 @@
 {"timestamp":"2026-07-10T22:07:31+09:00","id":"ADR-0006","status":"proposed","summary":"Use QPainter custom charts reusing pure geometry"}
 {"timestamp":"2026-07-10T23:39:38+09:00","id":"ADR-0003","status":"accepted","summary":"Use a dedicated QObject/QThread QNetworkAccessManager target adapter; retain bounded urllib workers only during migration"}
 {"timestamp":"2026-07-10T23:39:38+09:00","id":"ADR-0006","status":"accepted","summary":"Use QPainter custom charts while preserving pure geometry contracts"}
+{"timestamp":"2026-07-12T09:20:26+09:00","id":"ADR-0007","status":"accepted","summary":"Split src/stock_advisor into domain/data/services/ui subpackages; forbidden_internal_modules now names impure subpackages"}

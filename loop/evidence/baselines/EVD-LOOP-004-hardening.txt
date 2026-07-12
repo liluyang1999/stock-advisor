@@ -1,93 +1,105 @@
 Evidence: EVD-LOOP-004
 Record version: 2.0.0
-Control-plane SHA-256: 8509bc9ea3aa3c86e9c5fd45930b1b3ea678a70956c93f25d4d712e0c309715a
+Control-plane SHA-256: 7f3b7d3b876240953f2a451906faa802b968b77ceb6fe5b24f6973ca987129ea
 Working directory: D:\Projects\stock-advisor
-Commit: 67198251026344f6d09cab5c150c530202fddfbf
-Dirty worktree: true (F1+F2 final-review fix-wave edits to loop/scripts/validate_loop.py,
-loop/tests/test_loop_tooling.py and loop/state/evidence-index.json were staged for this
-re-capture, pending commit; no product source or product test file was touched)
-Implemented by: loop-hardening-implementer
-Verified by: loop-hardening-review
-Verification started: 2026-07-12T16:06:44.476681+09:00
-Verification finished: 2026-07-12T16:07:49.694986+09:00
+Commit: b606844720d19d6ebce1543183f90b9d179df019
+Dirty worktree: true (Plan 2 Task 2 edits staged for this re-capture, pending commit:
+README.md, loop/architecture/MODULE_BOUNDARIES.md, loop/architecture/core-module-manifest.json,
+loop/baseline/REPOSITORY_INVENTORY.md, loop/baseline/module-map.json,
+loop/registers/decisions.jsonl, loop/state/evidence-index.json (modified) and the new
+loop/decisions/0007-source-package-layering.md; no product source or product test file
+was touched)
+Implemented by: src-restructure-task2-implementer
+Verified by: src-restructure-task2-review
+Verification started: 2026-07-12T09:25:41.673700+09:00
+Verification finished: 2026-07-12T09:28:13.571142+09:00
 
 Context:
 
-This artifact re-captures EVD-LOOP-004 after a final-review fix wave (F1 + F2) landed
-on top of the Plan 1 hardening re-baseline that originally created this record (Task 9,
-commits 506b974..d0f2f2a, branch loop-hardening, base dbc5f5b). The fix wave closed two
-holes found on final review of validate_loop.py's control-plane digest invariant:
+This artifact re-captures EVD-LOOP-004 after Plan 2 Task 1 (commit b606844,
+"refactor: reorganize src/stock_advisor into domain/data/services/ui subpackages
+(behavior-preserving)") moved all 22 product modules of src/stock_advisor/ out of a
+flat layout into four layer subpackages: domain/ (12, pure core), data/ (2), services/
+(2), ui/ (6). That move was product-only and left the loop/ control plane's paths
+stale by construction: loop/architecture/core-module-manifest.json still pointed at
+the old flat "<mod>.py" locations and forbidden_internal_modules still listed old flat
+non-pure module names, so check_core_boundaries.py opened this task reporting 12
+"protected module missing" errors (one per domain-protected module) -- expected and
+documented as the intended handoff point between Task 1 and Task 2 in the plan.
 
-F1 - _digest_ok() exempted ANY v2 evidence record with a truthy superseded_by from the
-digest check. If every v2 record were (or became) superseded -- or superseded_by pointed
-at an id that was never created -- the "recorded baseline matches the tree" guarantee
-would hold vacuously, with no live record actually verified against the current digest.
-validate_loop.validate() now:
-  1. requires at least one evidence record with record_version=="2.0.0", no truthy
-     superseded_by, and control_plane_sha256 == control_plane_digest(); absent that, it
-     appends "no live v2 baseline evidence matches the current control plane";
-  2. requires every truthy superseded_by value to name an id present in the evidence
-     index; absent that, it appends "{id} superseded_by references unknown evidence
-     {target}".
-Both checks are implemented in the new _evidence_baseline_errors() helper (called once,
-after the per-record evidence loop, with control_plane_digest() computed exactly once
-per validate() call and threaded through _digest_ok() too) and proved in
-loop/tests/test_loop_tooling.py::test_live_v2_baseline_is_required_and_supersede_refs_resolve,
-which mutates an in-memory copy of the evidence list (never written to disk) to show
-both new errors fire, alongside a manual disk mutate-and-revert demonstration (captured
-in the task report, not committed -- state/evidence-index.json is unchanged by it).
+Plan 2 Task 2 (this capture) synced the control plane to the new layout:
 
-F2 - the per-row register-schema load in validate_loop.py's JSONL loop
-(schemas/<register>.schema.json, for registers/experiments|assumptions|changes|
-decisions|waivers.jsonl) read and json.loads'd the schema file unguarded, unlike the
-sibling operational-schema load a few lines above. A missing or malformed register
-schema file would raise and abort validate() instead of reporting a clean error. It is
-now wrapped in the same try/except (OSError, json.JSONDecodeError) as its sibling: on
-failure it appends "cannot load register schema {schema_name}: {exc}" and continues
-to the next JSONL file rather than raising.
+1. core-module-manifest.json: modules[].path updated to "domain/<mod>.py" for all 12
+   protected modules; forbidden_internal_modules changed from the old flat non-pure
+   module-name list (app/data_provider/manual/store/theme/workflow/qt_app) to the
+   impure SUBPACKAGE-name list (data/services/ui/qt_app). Rationale: a domain/ module's
+   relative import that crosses its own package resolves to from ..<subpackage>.<mod>,
+   and check_core_boundaries.py's _import_targets() inspects only the first path
+   component of such an import, so the forbidden list must name subpackages, not
+   individual module filenames, to remain exhaustive as non-pure modules are added.
+   check_core_boundaries.py now reports CORE_BOUNDARY_OK modules=12 with no boundary
+   violations -- Task 1's domain/ move introduced no real boundary break.
+2. Docs synced to the new layout: loop/architecture/MODULE_BOUNDARIES.md (added a
+   pointer from the dependency principles to the new domain/data/services/ui subpackage
+   split and the manifest's subpackage-based forbidden list), loop/baseline/module-map.json
+   (every module's "module" field now carries its subpackage prefix, e.g.
+   "domain/models.py"; generated_from_commit updated to b606844; the package-marker row
+   documents that there are now 5 __init__.py files, one per subpackage plus the root),
+   loop/baseline/REPOSITORY_INVENTORY.md (module count/layout description updated), and
+   root README.md's "目录结构" block (existing module entries regrouped under their new
+   domain/data/services/ui subdirectories, no entries added or removed). Root AGENTS.md
+   has no directory-tree block to sync (checked; out of scope by construction).
+3. loop/decisions/0007-source-package-layering.md recorded (状态：accepted) with background,
+   the decision, >= 2 rejected alternatives (status quo flat package, and a feature-based
+   vertical split), consequences, rollback (git revert of the Task 1 move + this Task 2
+   sync commit), a revisit trigger tied to the future PySide6 qt_app/ migration, and
+   associations to REQ-011/REQ-027/REQ-028/ADR-0002/WI-000/EVD-LOOP-004. A matching
+   {"id":"ADR-0007","status":"accepted",...} row was appended to
+   loop/registers/decisions.jsonl (registers/decisions.jsonl is an append-only status
+   ledger; ADR-0007 is not added to state/current.json.pending_decision_ids because it
+   is accepted, not proposed).
 
-Editing validate_loop.py and test_loop_tooling.py changes the control-plane digest
-(only loop/evidence/ and state/evidence-index.json are excluded from it), which is why
-this record's control_plane_sha256 and sha256 needed refreshing; its commit field is
-left as-is per the task's explicit instruction, and state/evidence-index.json's
-started_at/finished_at for this record are likewise left at their original Task 9
-values (only control_plane_sha256 and sha256 were updated in the index) -- this
-artifact's own header above carries the fresh verification timestamps for this pass.
-(The digest was recomputed a second time within this same task, after a small
-redundant-line cleanup in the just-written test; the SHA-256 above and the verifier
-results below are from that final, post-cleanup run.)
+Editing any loop/ file (manifest, docs, ADR, decisions.jsonl) changes the byte-hash
+control-plane digest (only loop/evidence/ and state/evidence-index.json are excluded
+from it per _common.control_plane_digest()), so this record's control_plane_sha256 and
+sha256 needed refreshing; commit is recorded as b606844 (the Task 1 commit HEAD was at
+while these Task 2 edits were still uncommitted, dirty_worktree=true, consistent with
+prior EVD-LOOP-* captures), and implemented_by/verified_by were given fresh, distinct
+values for this capture rather than reusing the prior hardening pass's identities.
 
 Verifier results (the required six control gates, product regression, and self-test;
-captured as one continuous run immediately after control_plane_sha256 was updated to
-the digest above, so validate_loop.py's own result below already reflects a live,
-matching v2 baseline):
+captured as one continuous run after control_plane_sha256 was updated to the digest
+above, so validate_loop.py's own result below already reflects a live, matching v2
+baseline):
 
-- validate_loop.py: exit 0; LOOP_VALIDATION_OK json=49 schema_documents=20 jsonl_entries=31 requirements=30 acceptance=12 work_items=26.
+- validate_loop.py: exit 0; LOOP_VALIDATION_OK json=49 schema_documents=20 jsonl_entries=32 requirements=30 acceptance=12 work_items=26.
 - check_traceability.py: exit 0; TRACEABILITY_OK 30/30.
 - render_status.py --check: exit 0; STATUS_OK.
 - render_backlog.py --check: exit 0; BACKLOG_OK.
-- check_core_boundaries.py: exit 0; CORE_BOUNDARY_OK modules=12 forbidden_roots=6 forbidden_internal=7.
-- loop unit tests (python -m unittest discover -s loop/tests): exit 0; 23 tests in 0.711s; OK.
-- product tests (python -m unittest discover -s tests): exit 0; 449 tests in 49.392s; OK.
+- check_core_boundaries.py: exit 0; CORE_BOUNDARY_OK modules=12 forbidden_roots=6 forbidden_internal=4.
+- loop unit tests (python -m unittest discover -s loop/tests): exit 0; 23 tests in 0.672s; OK.
+- product tests (python -m unittest discover -s tests): exit 0; 449 tests in 53.182s; OK.
 - python main.py --self-test: exit 0; SELF_TEST_OK symbol=SH.600519 action=BUY score=47 confidence=84 L1=BUY L5=BUY plan_shares=1300 backtest_ok=True config_ok=True compare_ok=True alert_ok=True screen_candidates=3 top=600000.
 
 Supplementary checks (not part of the required set, run for extra assurance, matching
 prior baselines' convention):
 
 - compileall (main.py build_exe.py src/stock_advisor loop/scripts loop/tests): exit 0; no output.
-- git diff --check: exit 0; only CRLF/LF line-ending advisory notices on the four files touched for this capture (loop/scripts/validate_loop.py, loop/tests/test_loop_tooling.py, loop/state/evidence-index.json, loop/evidence/baselines/EVD-LOOP-004-hardening.txt itself).
+- git diff --check: exit 0; no line-ending or whitespace advisories (loop/ remains pinned to LF via .gitattributes).
 
 This evidence record is written into state/evidence-index.json only after this artifact
 file is final and hashed above (a path excluded from control_plane_digest()), so the
 digest above is unaffected by its own registration or by this artifact's own sha256.
-validate_loop.py enforces this baseline as a standing invariant, not a one-time claim,
-and now -- after F1 -- also enforces that some live (unsuperseded) v2 record must be the
-one doing the enforcing.
+validate_loop.py enforces this baseline as a standing invariant, not a one-time claim.
 
 Scope limit:
 
 This evidence re-confirms AC-000 (the standalone Loop control plane) only, consistent
-with EVD-LOOP-003 and the original EVD-LOOP-004's scope. It does not claim that the
+with EVD-LOOP-003 and the prior EVD-LOOP-004 captures. It does not claim that the
 PySide6 product migration, dependency/license gates, Qt GUI tests, packaging, visual QA,
-performance targets, security scanning, or release gates are complete. Plan 2 (src
-package restructuring) remains the declared next step.
+performance targets, security scanning, or release gates are complete. It additionally
+confirms the src/stock_advisor domain/data/services/ui subpackage restructure (Plan 2
+Task 1 + Task 2) is behavior-preserving (449 product tests, self-test) and that the
+loop control plane's protected-module boundary now tracks the new layout. Plan 2's
+remaining tasks (if any beyond Task 2) and the PySide6 migration remain the declared
+next steps.
