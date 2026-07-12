@@ -7,3 +7,8 @@
 {"timestamp":"2026-07-10T23:39:38+09:00","id":"ADR-0003","status":"accepted","summary":"Use a dedicated QObject/QThread QNetworkAccessManager target adapter; retain bounded urllib workers only during migration"}
 {"timestamp":"2026-07-10T23:39:38+09:00","id":"ADR-0006","status":"accepted","summary":"Use QPainter custom charts while preserving pure geometry contracts"}
 {"timestamp":"2026-07-12T09:20:26+09:00","id":"ADR-0007","status":"accepted","summary":"Split src/stock_advisor into domain/data/services/ui subpackages; forbidden_internal_modules now names impure subpackages"}
+{"timestamp":"2026-07-13T12:00:00+09:00","id":"ADR-0008","status":"accepted","summary":"Adopt ruff+pyright+pytest/pytest-qt+coverage+pre-commit as the dev-only toolchain; pyright's Node dependency is dev-only and never ships in the EXE"}
+{"timestamp":"2026-07-13T12:00:00+09:00","id":"ADR-0009","status":"accepted","summary":"Add AppConfig schema_version and persist Qt window/dock layout in an independent JSON file with its own atomic writes, not QSettings"}
+{"timestamp":"2026-07-13T12:00:00+09:00","id":"ADR-0010","status":"accepted","summary":"Migrate the test runner to pytest/pytest-qt while keeping existing unittest.TestCase tests unrewritten"}
+{"timestamp":"2026-07-13T12:00:00+09:00","id":"ADR-0011","status":"accepted","summary":"Adopt stdlib logging with dual stderr/rotating-file sinks, NDJSON format, and a 7-class error_class taxonomy"}
+{"timestamp":"2026-07-13T12:00:00+09:00","id":"ADR-0012","status":"accepted","summary":"Formalize market_timezone=Asia/Shanghai as the market-semantics timezone and elevate backtest_signals' t-day anti-look-ahead slicing to an architectural invariant"}

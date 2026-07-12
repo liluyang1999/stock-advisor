@@ -25,7 +25,7 @@
 
 ## Qt 布局状态
 
-窗口 geometry、dock state 可作为独立版本化 UI state；不得覆盖业务 JSON。可使用 QSettings 或独立文件，但必须另立 ADR、检查 status/sync 和原子性。默认布局始终可恢复。
+窗口 geometry、dock state 是独立版本化 UI state；不得覆盖业务 JSON。ADR-0009 已决定采用独立 JSON 文件（而非 QSettings）承载该状态：复用与 `config.json` 相同的原子写入流程（同目录临时文件→flush→`os.replace`），拥有自己独立的 `schema_version`（与 `AppConfig.schema_version` 分属不同版本轴），具体取舍与拒绝理由见该 ADR。默认布局始终可恢复。
 
 ## 限制
 
