@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tokens.schema.json",
+  "type": "object",
+  "required": [
+    "schema_version", "font_families", "font_points", "spacing_dip",
+    "control_min_height_dip", "primary_control_height_dip", "table_row_height_dip",
+    "icon_size_dip", "content_max_width_dip", "window_minimum_dip", "border_radius_dip",
+    "colors", "state_colors", "contrast"
+  ],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"type": "string", "const": "1.0.0"},
+    "font_families": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "font_points": {
+      "type": "object",
+      "required": ["caption", "body", "control", "section", "page"],
+      "properties": {
+        "caption": {"type": "number", "minimum": 1},
+        "body": {"type": "number", "minimum": 1},
+        "control": {"type": "number", "minimum": 1},
+        "section": {"type": "number", "minimum": 1},
+        "page": {"type": "number", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "spacing_dip": {"type": "array", "minItems": 1, "items": {"type": "number", "minimum": 0}},
+    "control_min_height_dip": {"type": "number", "minimum": 1},
+    "primary_control_height_dip": {"type": "number", "minimum": 1},
+    "table_row_height_dip": {"type": "number", "minimum": 1},
+    "icon_size_dip": {"type": "array", "minItems": 1, "items": {"type": "number", "minimum": 1}},
+    "content_max_width_dip": {"type": "number", "minimum": 1},
+    "window_minimum_dip": {"type": "array", "minItems": 2, "items": {"type": "number", "minimum": 1}},
+    "border_radius_dip": {"type": "number", "minimum": 0},
+    "colors": {
+      "type": "object",
+      "required": ["page", "panel", "ink", "interactive", "up_red", "down_green", "amber"],
+      "properties": {
+        "page": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "panel": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "ink": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "interactive": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "up_red": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "down_green": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "amber": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"}
+      },
+      "additionalProperties": false
+    },
+    "state_colors": {
+      "type": "object",
+      "required": ["hover", "pressed", "disabled", "selected_row", "gridline", "focus_ring"],
+      "properties": {
+        "hover": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "pressed": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "disabled": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "selected_row": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "gridline": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "focus_ring": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"}
+      },
+      "additionalProperties": false
+    },
+    "state_colors_derivation": {
+      "type": "object",
+      "properties": {
+        "hover": {"type": "string", "minLength": 1},
+        "pressed": {"type": "string", "minLength": 1},
+        "disabled": {"type": "string", "minLength": 1},
+        "selected_row": {"type": "string", "minLength": 1},
+        "gridline": {"type": "string", "minLength": 1},
+        "focus_ring": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "contrast": {
+      "type": "object",
+      "required": ["methodology", "targets", "measured"],
+      "properties": {
+        "methodology": {"type": "string", "minLength": 1},
+        "targets": {
+          "type": "object",
+          "required": ["body_text_min_ratio", "large_text_or_control_min_ratio"],
+          "properties": {
+            "body_text_min_ratio": {"type": "number", "minimum": 1},
+            "large_text_or_control_min_ratio": {"type": "number", "minimum": 1}
+          },
+          "additionalProperties": false
+        },
+        "measured": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["foreground", "background", "ratio", "meets_body_text", "meets_large_or_control"],
+            "properties": {
+              "foreground": {"type": "string", "minLength": 1},
+              "background": {"enum": ["page", "panel"]},
+              "ratio": {"type": "number", "minimum": 1, "maximum": 21},
+              "meets_body_text": {"type": "boolean"},
+              "meets_large_or_control": {"type": "boolean"}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "note": {"type": "string", "minLength": 1}
+  },
+  "additionalProperties": false
+}

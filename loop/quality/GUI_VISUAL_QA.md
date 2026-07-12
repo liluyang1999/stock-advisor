@@ -21,7 +21,7 @@
 ## 字体门禁
 
 - QApplication、每类 QWidget、QPainter 和 HTML 的实际字体为 Microsoft YaHei。
-- caption ≥9pt，body/control ≥10pt，section 12–14pt，page 16–18pt。
+- caption ≥9pt，body/control ≥10.5pt，section 12–14pt，page 16–18pt。
 - 不用缩字解决溢出；调整布局、wrap、elide、scroll。
 
 ## 几何门禁

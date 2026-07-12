@@ -78,7 +78,7 @@ class LoopToolingTests(unittest.TestCase):
         actual = (LOOP_ROOT / "STATUS.md").read_text(encoding="utf-8")
         self.assertEqual(actual, rendered)
         self.assertIn("Loop tooling tests:", rendered)
-        self.assertIn("Loop schemas: `20`", rendered)
+        self.assertIn("Loop schemas: `21`", rendered)
         self.assertIn("Traceability: `34/34`", rendered)
 
     def test_target_stack_and_font_are_explicit(self) -> None:
