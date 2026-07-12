@@ -11,7 +11,7 @@
 - Runtime font target: `Microsoft YaHei`
 - Tests: `449/449`
 - Loop tooling tests: `13/13`
-- Loop schemas: `21`
+- Loop schemas: `22`
 - Traceability: `34/34`
 - Coverage: `not_measured`
 - Release candidate: `false`

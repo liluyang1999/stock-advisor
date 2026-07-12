@@ -2,7 +2,7 @@
   "$schema":"https://json-schema.org/draft/2020-12/schema",
   "$id":"config.schema.json",
   "type":"object",
-  "required":["schema_version","project","target_stack","ui_tokens","network_policy","commands","quality_policy","paths"],
+  "required":["schema_version","project","target_stack","ui_tokens","network_policy","data_freshness","commands","quality_policy","paths"],
   "properties":{
     "$schema":{"type":"string"},
     "schema_version":{"type":"string","const":"1.0.0"},
@@ -10,6 +10,7 @@
     "target_stack":{"type":"object","required":["python","gui","runtime_font"]},
     "ui_tokens":{"type":"object","required":["font_families","font_points","spacing_dip"]},
     "network_policy":{"type":"object","required":["target_transport","migration_transport","operation_deadlines_seconds","max_attempts","fabricated_fallbacks_allowed"]},
+    "data_freshness":{"type":"object","required":["stale_ttl_seconds"],"properties":{"description_ref":{"type":"string"},"stale_ttl_seconds":{"type":"object","required":["quote","history","market_snapshot","fund_flow"],"properties":{"quote":{"type":"integer","minimum":1},"history":{"type":"integer","minimum":1},"market_snapshot":{"type":"integer","minimum":1},"fund_flow":{"type":"integer","minimum":1}},"additionalProperties":false}},"additionalProperties":false},
     "commands":{"type":"object"},
     "quality_policy":{"type":"object"},
     "paths":{"type":"object"}

@@ -1,0 +1,94 @@
+{
+  "$schema":"../schemas/app-config.schema.json",
+  "$id":"app-config.schema.json",
+  "schema_version":"1.0.0",
+  "title":"股市锦囊 AppConfig 持久化 schema",
+  "description":"产品 AppConfig 的持久化 JSON 契约：对应 src/stock_advisor/domain/models.py::AppConfig（+WatchItem/AlertRule）与 services/store.py::config_to_dict()/parse_config() 的读写形状。config_path() 默认写到 %APPDATA%/股市锦囊/config.json（测试用 STOCK_ADVISOR_CONFIG 覆盖）。schema_version 字段是本次治理新增的前瞻性约定（ADR-0009）：截至本文件编写时 store.py 尚未写出该字段，parse_config() 必须继续把缺失 schema_version 的既有文件当作合法输入解析，见 architecture/PERSISTENCE_AND_CONFIG.md 的迁移/向后兼容说明。",
+  "type":"object",
+  "required":["schema_version","watchlist","capital","level","preset","alerts"],
+  "properties":{
+    "schema_version":{
+      "type":"string",
+      "const":"1.0.0",
+      "description":"配置文件格式版本。当前 store.py 尚未写出此字段（前瞻性契约，见顶层 description）；一旦开始写出，缺失该字段的旧文件必须被继续接受、隐式视为版本先于 1.0.0 的形状。"
+    },
+    "watchlist":{
+      "type":"array",
+      "maxItems":100,
+      "description":"自选/持仓列表。上限对应 services/store.py::_MAX_WATCH=100；超出部分在写回时被截断，不报错。",
+      "items":{
+        "type":"object",
+        "required":["code"],
+        "additionalProperties":false,
+        "properties":{
+          "code":{
+            "type":"string",
+            "pattern":"^(sh|sz|bj)\\d{6}$",
+            "description":"规范化代码（domain/symbols.py::normalize_symbol().normalized，即 前缀+6位数字，前缀 ∈ {sh,sz,bj}）。"
+          },
+          "cost":{
+            "type":["number","null"],
+            "exclusiveMinimum":0,
+            "description":"持仓成本价；null 表示仅自选、未持仓。对应 WatchItem.cost。"
+          },
+          "shares":{
+            "type":["integer","null"],
+            "minimum":1,
+            "description":"持仓股数；null 表示未记录股数。对应 WatchItem.shares。"
+          }
+        }
+      }
+    },
+    "capital":{
+      "type":"number",
+      "exclusiveMinimum":0,
+      "description":"可用本金（元）。持久化前经 store.py::_positive_or_none 校验，非正或非有限值一律回退为 100000.0，因此持久化文件里该字段恒为正数。对应 AppConfig.capital。"
+    },
+    "level":{
+      "type":"integer",
+      "minimum":1,
+      "maximum":5,
+      "description":"决策强度档位（1=稳健..5=激进，见 COMPUTATION_SPECIFICATION.md 第4节）。越界值经 store.py::_bounded_level 钳制到 [1,5]。对应 AppConfig.level。"
+    },
+    "preset":{
+      "type":"string",
+      "description":"选股预设 key；空字符串表示使用默认预设（PRESETS[0]）。合法取值集合是 domain/presets.py::PRESETS 的动态注册表，会随预设新增而扩展，因此本 schema 只约束类型为字符串，不在此处枚举穷举——运行时校验见 store.py::_valid_preset。对应 AppConfig.preset。"
+    },
+    "alerts":{
+      "type":"array",
+      "maxItems":100,
+      "description":"条件预警规则列表。上限对应 services/store.py::_MAX_ALERTS=100；超出部分在写回时被截断，不报错。",
+      "items":{
+        "type":"object",
+        "required":["code","field","op","threshold","enabled"],
+        "additionalProperties":false,
+        "properties":{
+          "code":{
+            "type":"string",
+            "pattern":"^(sh|sz|bj)\\d{6}$",
+            "description":"规范化代码，规则同 watchlist[].code。对应 AlertRule.code。"
+          },
+          "field":{
+            "type":"string",
+            "enum":["price","change_pct","score"],
+            "description":"监控字段，取值集合固定为 domain/alerts.py::FIELD_LABELS 的键。对应 AlertRule.field。"
+          },
+          "op":{
+            "type":"string",
+            "enum":[">=","<="],
+            "description":"比较运算符，取值集合固定为 domain/alerts.py::OPS。对应 AlertRule.op。"
+          },
+          "threshold":{
+            "type":"number",
+            "description":"阈值（含义随 field 而定：价格/涨跌幅%/综合分）。对应 AlertRule.threshold。"
+          },
+          "enabled":{
+            "type":"boolean",
+            "description":"规则是否启用；禁用时不参与 check_rules 判定。对应 AlertRule.enabled。"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties":false
+}

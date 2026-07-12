@@ -56,6 +56,10 @@
     "https_to_http_redirect_allowed": false,
     "fabricated_fallbacks_allowed": false
   },
+  "data_freshness": {
+    "description_ref": "architecture/DATA_QUALITY.md#stale-ttl",
+    "stale_ttl_seconds": {"quote": 30, "history": 21600, "market_snapshot": 120, "fund_flow": 180}
+  },
   "commands": {
     "baseline_tests": ["python", "-m", "unittest", "discover", "-s", "tests"],
     "loop_tests": ["python", "-m", "unittest", "discover", "-s", "loop/tests"],

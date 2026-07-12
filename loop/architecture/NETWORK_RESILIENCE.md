@@ -64,6 +64,8 @@ deadline 覆盖所有重试和备用源，不允许每个源重新获得完整�
 
 DNS、TLS、连接/读取超时、429、5xx、断连、空响应、HTML 冒充 JSON、截断 JSON、过大响应、字段漂移、乱序、重复、分页中断、迟到结果、取消。
 
+以上前 9 类（DNS..过大响应）归入 `error_class=network`；字段漂移/乱序/重复/分页中断归入 `error_class=parse`；分类定义与完整枚举见 `OBSERVABILITY.md` 的"错误分类（error_class）"一节，本文不重复维护取值列表。
+
 PR 测试全部离线；定时 live canary 仅发现上游变化，不作为正确性唯一证据。
 
 ## Qt 生命周期故障合同
