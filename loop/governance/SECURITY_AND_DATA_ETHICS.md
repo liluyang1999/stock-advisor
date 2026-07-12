@@ -21,6 +21,7 @@
 - 外部响应按不可信输入验证状态、类型、大小、结构、范围和时间戳。
 - CSV/HTML 导出必须正确编码和转义，避免公式注入与脚本注入。
 - 依赖需要锁定、漏洞扫描、来源和许可证记录。
+- Windows EXE 分发的代码签名/SmartScreen 来源信誉与 Qt LGPL NOTICE/第三方许可归属计划，唯一权威记录在 `architecture/PACKAGING_AND_DEPLOYMENT.md`"分发安全"一节（归属 `WI-025`，受 `HG-LICENSE`/`HG-RELEASE` 约束）；本节不重复维护细节，只标注这是安全与合规的一部分。
 
 ## 用户配置
 

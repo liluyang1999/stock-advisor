@@ -1,0 +1,41 @@
+# 版本与变更控制
+
+本文件是分支模型、提交规范、应用语义化版本（SemVer）和变更日志义务的唯一权威定义。`ENGINEERING_RULES.md`、`DEFINITION_OF_DONE.md`、`LOOP_PROTOCOL.md` 中涉及"如何提交/如何发版"的表述都以本文件为准，不得各自定义冲突规则。
+
+## 分支模型
+
+- `main` 是唯一长期分支，也是随时可展示当前真实状态（含未完成迁移）的主线；不存在第二条 `develop`/`release` 长期分支。
+- 常规产品变更（触及 `src/stock_advisor/`、`tests/`、`main.py`、`build_exe.py` 的行为性修改）使用短生命周期主题分支，经审查后合并回 `main`；分支随合并删除，不长期保留。
+- **当前例外**：`loop/` 工程治理加固（本文件所属的 Plan 1-4 系列）按用户明确的整合请求直接在 `main` 上提交，不开分支——因为这些改动只触及 `loop/` 文档与机器文件、不触碰产品代码，且每个任务都以本文件同级的六项控制面门禁 + 449 产品测试 + `--self-test` 作为绿色标准，回滚成本等价于 `git revert` 单个提交。这是一次性授权的例外，不是分支模型的一般规则；一旦工作恢复触及产品代码（`planning/work-items.json` 中任一 `WI-0*` 从 `ready` 进入 `in_progress` 并开始编辑 `src/`），必须回到"主题分支 + 审查 + 合并"的默认流程。
+- 任何合并到 `main` 的动作仍受 `SCOPE_AND_AUTHORITY.md`"永不自动扩张的权限"约束：推送、合并远程、发布仍需人工门禁；本文件只定义本地分支与提交结构，不授予这些权限。
+
+## 提交信息
+
+- 每个提交是一个原子、可独立回滚的变更；不得在一次提交里混合无关模块的修改（对应 `ENGINEERING_RULES.md`"变更只解决当前工作项"）。
+- 提交信息第一行使用祈使语气（"add/fix/reconcile/quantify..."或对应中文动词开头，不用过去式或名词短语），格式为 `<type>: <summary>`；仓库当前实际在用的 `type` 前缀（按 `git log` 实证，非新发明）：
+  - `loop:` —— `loop/` 控制面（治理、需求、架构、质量、工作项等）的新增或调整。
+  - `docs:` —— 面向人类阅读的说明性文档变更（含 `docs/superpowers/plans/` 下的计划文件本身）。
+  - `refactor:` —— 行为保持的产品代码结构调整（如 `b606844` 的 src 子包重排)。
+  - `chore:` —— 不改变行为的仓库杂务（如 `4adc19a` 的 line-ending 归一化）。
+  - 需要时可扩展 `fix:`（缺陷修复，必须先有复现测试）、`test:`（只新增/调整测试）；新增前缀须在本文件登记，不得静默发明未登记前缀。
+- 摘要行不省略受影响的关键对象（"loop: fix X"优于"loop: update"）；正文（如需要）引用相关 `REQ-*`/`WI-*`/`ADR-*`/`EVD-*` id，便于 `git log` 反查追溯链路。
+- 本文件与 `ENGINEERING_RULES.md`"每项实现必须关联 REQ/AC/WI"呼应：提交信息是这条关联规则在版本控制历史里的落地形式。
+
+## 应用语义化版本（SemVer）
+
+- `src/stock_advisor/__init__.py::__version__` 是应用对外版本号的唯一权威字段，遵循 `MAJOR.MINOR.PATCH`（当前 `1.0.0`，见 `CHANGELOG.md` 的追溯记录）。
+- **MAJOR**：破坏用户可观察的行为合同或持久化兼容性——例如移除/重命名一个现有功能页面、`AppConfig.schema_version`（`ADR-0009`）发生不兼容跃迁且旧配置文件无法被 `parse_config()` 隐式兼容解析、或 EXE 命令行/`--self-test`合同发生不兼容变化。
+- **MINOR**：新增向后兼容的用户可见能力（新增一个 `REQ-*`、新增一个筛选预设、新增一个工作台模块），不破坏任何既有行为。
+- **PATCH**：缺陷修复、内部重构、性能或可观测性改进，且不改变任何用户可观察的合同。
+- 应用 SemVer 与项目内多个独立的 `schema_version`（`config.schema.json`、`product/app-config.schema.json`、`ADR-0009` 的 `ui_state.json`、`loop/` 各机器文件自带的 `schema_version`）是不同的版本轴，互相独立演进：一次 `AppConfig.schema_version` 的兼容性新增字段不必然触发应用 MINOR 版本变化，但一次不兼容的 `schema_version` 跃迁必然要求应用 MAJOR 版本变化（因为它破坏了持久化兼容性，定义见上）。
+- `loop/` 控制面自身的加固（本任务这类文档/机器文件变更）不改变 `src/stock_advisor/`，因此不触发应用版本号变化；它们只记录在 `registers/changes.jsonl`（机器可读变更账本），不进入面向用户的 `CHANGELOG.md`。
+
+## 变更日志义务
+
+- 任何改变 `src/stock_advisor/` 用户可观察行为的已接受工作项，在标记 `accepted` 前必须在 `../CHANGELOG.md` 追加一条对应条目（`[Unreleased]` 或对应版本号下），采用 Added/Changed/Fixed/Deprecated/Removed/Security 分节，并引用触发它的 `REQ-*`/`WI-*`/`ADR-*` id。
+- 缺少 `CHANGELOG.md` 条目的行为性变更视为 `DEFINITION_OF_DONE.md`"设计与代码"一节的缺口，工作项状态最多停在 `verifying`。
+- `CHANGELOG.md` 是面向人类的发布说明；`registers/changes.jsonl` 是机器可读、逐次追加、带 `evidence_ids` 的变更账本。两者记录同一类事实的不同粒度——一次"breaking": true 的 `changes.jsonl` 行必须对应 `CHANGELOG.md` 里同一变更的一条 Changed/Removed 记录且版本号符合上面的 MAJOR 规则；反之，`loop/` 内部文档加固可以只出现在 `changes.jsonl`（如需要）而不出现在面向用户的 `CHANGELOG.md`。
+
+## 关联
+
+`ENGINEERING_RULES.md`（提交与跳过规则的落地参照）、`DEFINITION_OF_DONE.md`（变更日志作为完成条件的一部分）、`ADR-0009`（schema_version 版本轴）、`registers/changes.jsonl`、`../CHANGELOG.md`。

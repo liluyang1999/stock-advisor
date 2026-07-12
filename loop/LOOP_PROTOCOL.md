@@ -147,6 +147,16 @@ OBSERVE -> SPECIFY -> DECIDE -> PLAN -> IMPLEMENT
 - 验证者不得只复述实现者的测试结果；至少复跑关键门禁或检查原始证据。
 - 最终集成者负责解决冲突并完成逐项验收审计。
 
+### 独立性的具体机制
+
+"实现者与验证者逻辑分离"是可核查的具体动作，不是态度声明：
+
+1. **谁可以充当验证者**：必须是（a）一个不携带实现过程上下文的全新会话/进程——只读取规格、代码差异与可复现命令本身，不读取实现者的推理草稿或"为什么这样做没问题"的自我论证；或（b）一个独立的 subagent/角色，其输入限定为 REQ/AC/差异/门禁命令，明确排除实现者对失败原因的解释。两种形式都不接受"同一上下文内换个身份自称验证者"。
+2. **必须复跑的最低门禁集合**：验证者必须亲自重新执行 `README.md`"必跑控制面门禁"六项（`validate_loop`、`check_traceability`、`render_status --check`、`render_backlog --check`、`check_core_boundaries`、`unittest discover -s loop/tests`）以及该工作项相关的产品门禁（至少 `unittest discover -s tests` 与 `main.py --self-test`），独立记录退出码；只读实现者贴出的日志摘要不构成验证。可在此最低集合之上按风险追加门禁，但不得少于这一集合。
+3. **机器可核查的独立性证据**：`state/evidence-index.json` 中 `record_version:"2.0.0"` 的证据行必须同时携带 `implemented_by` 与 `verified_by`；`validate_loop.py` 把"两者不得相同"作为结构化校验规则强制执行，且 `AC-000`（控制面自身的验收）额外要求存在至少一条 `implemented_by != verified_by` 的证据才允许对应工作项进入 `accepted`（见 `_evidence_baseline_errors` 与 `AC-000` 校验段）。字符串不同但实质是同一决策主体的行为，属于违反本节精神，机械校验暂时无法察觉时，复核仍应视为不满足独立性要求并要求补证。
+4. **验证者结论必须能脱离实现者的解释单独成立**：验证者不得以实现者对失败原因的自述、猜测或"应该没问题"的推断作为证据来源；只接受规格文本、diff、命令原始输出和产物哈希；`accept` / `changes_requested` / `needs_human` 结论必须写明依据的是哪条原始证据。
+5. **人工兜底不可被自动化替代**：无论上述机制如何自动化，触及 `SCOPE_AND_AUTHORITY.md` 中 `HG-*` 人工门禁的事项，验证者的 `accept` 结论不能替代人工批准。
+
 ## 8. 每轮必写记录
 
 1. `state/progress.jsonl`：动作、结果、证据、下一步。

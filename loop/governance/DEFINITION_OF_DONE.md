@@ -30,8 +30,8 @@
 ## 验证
 
 - format → lint → type → unit → integration → Qt GUI → fault injection → performance → build → packaged self-test 顺序门禁通过。
-- 必需测试 0 failure、0 error、0 未批准 skip。
-- 相关门禁由独立验证者复核。
+- 必需测试 0 failure、0 error、0 未批准 skip——"已批准"严格等于"在 `registers/waivers.jsonl` 中存在对应记录，且 `status=active` 且 `expires_at` 未过期"；未登记、已过期或 `status` 已变为 `expired`/`revoked`/`superseded` 的 skip 一律视为未批准，即使曾经批准过也不例外。登记与字段要求见 `governance/ENGINEERING_RULES.md`"测试与证据"第 2-3 条，两处定义必须一致，不得任一处单独放宽。
+- 相关门禁由独立验证者复核；复核范围与独立性机制见 `LOOP_PROTOCOL.md` §7。
 - 证据记录含命令、环境、退出码、提交与产物哈希。
 
 ## 发布

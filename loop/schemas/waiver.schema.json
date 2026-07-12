@@ -2,9 +2,19 @@
   "$schema":"https://json-schema.org/draft/2020-12/schema",
   "$id":"waiver.schema.json",
   "type":"object",
-  "required":["id"],
+  "required":["id","gate_or_requirement","reason","risk","owner","approved_by","expires_at","status"],
   "properties":{
-    "id":{"type":"string"}
+    "id":{"type":"string","pattern":"^WVR-"},
+    "gate_or_requirement":{"type":"string","minLength":1},
+    "reason":{"type":"string","minLength":1},
+    "risk":{"type":"string","minLength":1},
+    "compensating_controls":{"type":"array","items":{"type":"string"}},
+    "owner":{"type":"string","minLength":1},
+    "approved_by":{"type":"string","minLength":1},
+    "approved_at":{"type":"string"},
+    "expires_at":{"type":"string","minLength":1},
+    "revalidation_trigger":{"type":"string"},
+    "status":{"type":"string","enum":["active","expired","revoked","superseded"]}
   },
   "additionalProperties":false
 }

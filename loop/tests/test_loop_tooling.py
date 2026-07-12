@@ -316,6 +316,53 @@ class LoopToolingTests(unittest.TestCase):
             check_traceability._tk_contract_mapping_errors(check_traceability.TK_CONTRACT_COLUMNS, good_rows), []
         )
 
+    def test_waiver_schema_requires_owner_and_expiry(self) -> None:
+        # governance/ENGINEERING_RULES.md's approved-skip exception and
+        # governance/DEFINITION_OF_DONE.md's "0 未批准 skip" both resolve to the same
+        # mechanism: a skip only counts as approved if registers/waivers.jsonl carries a
+        # matching row with an owner and an expiry. This test pins the schema as the
+        # mechanical guarantee behind that prose promise, and keeps the pre-existing
+        # templates/waiver-record.json scaffold in lockstep with the closed schema.
+        schema = json.loads((LOOP_ROOT / "schemas/waiver.schema.json").read_text(encoding="utf-8"))
+        self.assertIs(schema.get("additionalProperties"), False)
+        self.assertIn("owner", schema.get("required", []))
+        self.assertIn("expires_at", schema.get("required", []))
+
+        template = json.loads((LOOP_ROOT / "templates/waiver-record.json").read_text(encoding="utf-8"))
+        # the template documents the exact allowed shape: every key it uses must be a
+        # declared schema property (else the closed schema would reject its own docs).
+        self.assertEqual(set(template.keys()), set(schema["properties"].keys()))
+
+        filled = dict(template, **{
+            "id": "WVR-001",
+            "gate_or_requirement": "TEST-EXAMPLE-001",
+            "reason": "example",
+            "risk": "example",
+            "owner": "example-owner",
+            "approved_by": "human",
+            "expires_at": "2026-08-01",
+            "status": "active",
+        })
+        self.assertEqual(validate_against_schema(filled, schema), [])
+
+        missing_owner = dict(filled)
+        missing_owner.pop("owner")
+        errors = validate_against_schema(missing_owner, schema)
+        self.assertTrue(any("owner" in issue for issue in errors), errors)
+
+        missing_expiry = dict(filled)
+        missing_expiry.pop("expires_at")
+        errors = validate_against_schema(missing_expiry, schema)
+        self.assertTrue(any("expires_at" in issue for issue in errors), errors)
+
+    def test_waivers_register_is_empty_pending_a_real_approved_skip(self) -> None:
+        # No test under tests/ or loop/tests/ currently carries a skip decorator, so
+        # there is truthfully no active approved skip to record; inventing an
+        # illustrative row would fabricate a waiver for a skip that does not exist.
+        # governance/ENGINEERING_RULES.md documents the flow so a real skip can be
+        # recorded later without ambiguity. This pins the current, honest state.
+        self.assertEqual(validate_loop.parse_jsonl(LOOP_ROOT / "registers" / "waivers.jsonl"), [])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -36,11 +36,12 @@
 ## 测试与证据
 
 1. Bug 修复先有复现测试。
-2. 禁止删除、跳过或放宽测试只为变绿。
-3. PR 不访问公网；使用 FakeProvider 和固定载荷。
-4. PySide6 迁移需替代每个 Tk 行为合同，不能只追求测试总数。
-5. 命令、退出码、环境和产物路径进入证据索引。
-6. 实现者不能独立批准自己的变更。
+2. 禁止删除、跳过或放宽测试只为变绿；唯一例外是已批准豁免——见下条与 `governance/DEFINITION_OF_DONE.md`"验证"一节"0 未批准 skip"的精确定义，两处对同一机制的表述必须保持一致，不得各自漂移。
+3. **豁免（waiver）机制**：需要跳过某个必需测试或门禁时，必须先在 `registers/waivers.jsonl` 登记一行豁免记录（schema：`schemas/waiver.schema.json`；字段模板：`templates/waiver-record.json`），至少包含 `gate_or_requirement`（跳过对象）、`reason`（原因）、`risk`（跳过后的风险）、`owner`（负责跟踪/复核者）、`approved_by`（批准者，反映 `SCOPE_AND_AUTHORITY.md` 的人工门禁要求）、`expires_at`（到期日）与 `status`。到期（`expires_at` 已过）或 `status` 不为 `active` 的记录不再构成"已批准"，对应的 skip 自动退回"未批准"状态，必须先修复或重新走批准流程续期，不能靠一次批准无限期免检。未登记豁免的任何 skip 一律视为违反本条第 2 款。
+4. PR 不访问公网；使用 FakeProvider 和固定载荷。
+5. PySide6 迁移需替代每个 Tk 行为合同，不能只追求测试总数。
+6. 命令、退出码、环境和产物路径进入证据索引。
+7. 实现者不能独立批准自己的变更。
 
 ## 依赖与发布
 

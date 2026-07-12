@@ -21,6 +21,7 @@
 | 风险 | `registers/risks.json` | 风险分值、缓解、负责人和状态 |
 | 决定 | `decisions/` | ADR 权威记录 |
 | 进度记忆 | `state/progress.jsonl` | 只追加的迭代事实 |
+| 不可妥协原则（INVARIANTS） | `governance/CHARTER.md` | 唯一权威列表；本文件下方"不可妥协原则"与 `AGENTS.md`"不得违反"只做摘要式引用，不独立维护 |
 
 根目录不再保留第二套 `state.json`、`backlog.json`、`loop.yaml` 或重复质量配置。任何工具和协作者都必须读取上表路径。
 
@@ -85,11 +86,13 @@ python -m compileall -q main.py build_exe.py src/stock_advisor
 
 PySide6、pytest-qt、Ruff、mypy、覆盖率、Qt GUI 与打包门在工具链工作项完成前保持未启用/未验证，不能提前声称通过。
 
-## 不可妥协的目标
+## 不可妥协原则（INVARIANTS）
 
-- 生产 GUI 目标为 **PySide6 Qt Widgets**，当前 Tkinter 仅是迁移基线。
+唯一权威列表见 `governance/CHARTER.md`"不可妥协原则"一节（9 条，编号固定）；本节不重复独立维护，只给首次阅读者一个不需要跳转就能看到的摘要，措辞、条目增减与编号均以 CHARTER.md 为准：
+
+- 生产 GUI 目标为 **PySide6 Qt Widgets**，当前 Tkinter 仅是迁移基线；核心领域保持无 Qt、无网络、无文件系统依赖。
 - 所有应用可控制文字统一 **Microsoft YaHei（微软雅黑）**；原生 Windows 标题栏是系统控制的唯一例外。
-- 核心领域保持无 Qt、无网络、无文件系统依赖。
 - 科学计算必须可复现、可解释、防前视、显式处理缺失/极值，并区分工程正确性与策略有效性。
 - 网络和长计算不得阻塞 GUI；请求有总 deadline、有限重试、取消、来源、完整度与降级状态。
-- 没有可信数据时明确失败，绝不伪造行情、资金流、结论、收益或测试证据。
+- 没有可信数据时明确失败，绝不伪造行情、资金流、结论、收益、测试或完成状态；完成声明必须先有证据。
+- 不构成投资建议；用户数据和未提交修改必须被保护。
