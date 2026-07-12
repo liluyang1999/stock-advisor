@@ -1,111 +1,93 @@
 Evidence: EVD-LOOP-004
 Record version: 2.0.0
-Control-plane SHA-256: 1b52dffa3b53633f2f784c2152dd2d0af5c699379a3113a84007baf7cbed521a
+Control-plane SHA-256: 8509bc9ea3aa3c86e9c5fd45930b1b3ea678a70956c93f25d4d712e0c309715a
 Working directory: D:\Projects\stock-advisor
 Commit: 67198251026344f6d09cab5c150c530202fddfbf
-Dirty worktree: true (Task 9 re-baseline edits to state/evidence-index.json and
-state/progress.jsonl were staged for this capture, pending commit; no product
-source, product test, or loop script file was touched)
+Dirty worktree: true (F1+F2 final-review fix-wave edits to loop/scripts/validate_loop.py,
+loop/tests/test_loop_tooling.py and loop/state/evidence-index.json were staged for this
+re-capture, pending commit; no product source or product test file was touched)
 Implemented by: loop-hardening-implementer
 Verified by: loop-hardening-review
-Verification started: 2026-07-12T15:16:03.861262+09:00
-Verification finished: 2026-07-12T15:18:49.063792+09:00
+Verification started: 2026-07-12T16:06:44.476681+09:00
+Verification finished: 2026-07-12T16:07:49.694986+09:00
 
 Context:
 
-This evidence closes Plan 1 (foundation hardening) of the Loop control plane
-and re-baselines it on top of EVD-LOOP-003. Tasks 1-8 (commits 506b974 through
-6719825, all on branch loop-hardening, base dbc5f5b) incrementally hardened
-the control plane:
+This artifact re-captures EVD-LOOP-004 after a final-review fix wave (F1 + F2) landed
+on top of the Plan 1 hardening re-baseline that originally created this record (Task 9,
+commits 506b974..d0f2f2a, branch loop-hardening, base dbc5f5b). The fix wave closed two
+holes found on final review of validate_loop.py's control-plane digest invariant:
 
-  1. 506b974 - exempt superseded v2 evidence from the control-plane digest
-     check (the enabler: without it, no v2 baseline could ever be replaced)
-  2. 80450e5 - enforce per-register id uniqueness; fixes duplicate EXP-003
-  3. a3c2e91 - verify REQ<->WI edge agreement in both directions; reconciles
-     9 mismatches including the orphaned REQ-024
-  4. 973f9c9 - add the acceptance_criteria column so every AC-* is proven
-     traced by at least one traceability.csv row
-  5. bccc17a - cross-check state/current.json risk_ids against
-     registers/risks.json
-  6. 84e2fea - declare quality/test-catalog.json and
-     planning/dependency-graph.json as REQUIRED_FILES
-  7. 3b929be - fix config market_timezone (Asia/Tokyo -> Asia/Shanghai),
-     define the dangling RECOVER state, reconcile the HG-ARCH status
-     contradiction, and add the MS-02->MS-01 milestone dependency edge
-  8. 6719825 - close 10 schemas (additionalProperties:false), pin
-     schema_version, and validate the 5 JSONL registers row-by-row against
-     their own closed schemas
+F1 - _digest_ok() exempted ANY v2 evidence record with a truthy superseded_by from the
+digest check. If every v2 record were (or became) superseded -- or superseded_by pointed
+at an id that was never created -- the "recorded baseline matches the tree" guarantee
+would hold vacuously, with no live record actually verified against the current digest.
+validate_loop.validate() now:
+  1. requires at least one evidence record with record_version=="2.0.0", no truthy
+     superseded_by, and control_plane_sha256 == control_plane_digest(); absent that, it
+     appends "no live v2 baseline evidence matches the current control plane";
+  2. requires every truthy superseded_by value to name an id present in the evidence
+     index; absent that, it appends "{id} superseded_by references unknown evidence
+     {target}".
+Both checks are implemented in the new _evidence_baseline_errors() helper (called once,
+after the per-record evidence loop, with control_plane_digest() computed exactly once
+per validate() call and threaded through _digest_ok() too) and proved in
+loop/tests/test_loop_tooling.py::test_live_v2_baseline_is_required_and_supersede_refs_resolve,
+which mutates an in-memory copy of the evidence list (never written to disk) to show
+both new errors fire, alongside a manual disk mutate-and-revert demonstration (captured
+in the task report, not committed -- state/evidence-index.json is unchanged by it).
 
-Task 1 also marked EVD-LOOP-001 and EVD-LOOP-002 superseded_by EVD-LOOP-003,
-and EVD-LOOP-003 superseded_by EVD-LOOP-004 -- the supersession half of D12.
-From that point the control plane carried a dangling reference to a v2
-baseline that did not yet exist. validate_loop.py kept passing throughout
-Tasks 1-8 only because a superseded v2 record is exempt from the digest
-check (see test_superseded_v2_evidence_is_exempt_from_digest); no baseline
-was actively enforced. This task (9, WI-000) closes that gap:
+F2 - the per-row register-schema load in validate_loop.py's JSONL loop
+(schemas/<register>.schema.json, for registers/experiments|assumptions|changes|
+decisions|waivers.jsonl) read and json.loads'd the schema file unguarded, unlike the
+sibling operational-schema load a few lines above. A missing or malformed register
+schema file would raise and abort validate() instead of reporting a clean error. It is
+now wrapped in the same try/except (OSError, json.JSONDecodeError) as its sibling: on
+failure it appends "cannot load register schema {schema_name}: {exc}" and continues
+to the next JSONL file rather than raising.
 
-- fixes the remaining half of D12 (the cwd typo "stock-adviser" ->
-  "stock-advisor" in the EVD-LOOP-003 record of state/evidence-index.json
-  only; the historical evidence/baselines/*.txt artifacts and their indexed
-  hashes are untouched, since evidence/ is excluded from the digest);
-- appends the Plan 1 completion record to state/progress.jsonl;
-- computes the control-plane digest once all digest-relevant files were
-  final, and registers this record as the new enforced v2 baseline.
+Editing validate_loop.py and test_loop_tooling.py changes the control-plane digest
+(only loop/evidence/ and state/evidence-index.json are excluded from it), which is why
+this record's control_plane_sha256 and sha256 needed refreshing; its commit field is
+left as-is per the task's explicit instruction, and state/evidence-index.json's
+started_at/finished_at for this record are likewise left at their original Task 9
+values (only control_plane_sha256 and sha256 were updated in the index) -- this
+artifact's own header above carries the fresh verification timestamps for this pass.
+(The digest was recomputed a second time within this same task, after a small
+redundant-line cleanup in the just-written test; the SHA-256 above and the verifier
+results below are from that final, post-cleanup run.)
 
-Verifier results (captured before this record existed in the index, i.e.
-against the digest above with no v2 baseline yet enforced -- EVD-LOOP-003
-remains exempt via its own superseded_by):
+Verifier results (the required six control gates, product regression, and self-test;
+captured as one continuous run immediately after control_plane_sha256 was updated to
+the digest above, so validate_loop.py's own result below already reflects a live,
+matching v2 baseline):
 
 - validate_loop.py: exit 0; LOOP_VALIDATION_OK json=49 schema_documents=20 jsonl_entries=31 requirements=30 acceptance=12 work_items=26.
 - check_traceability.py: exit 0; TRACEABILITY_OK 30/30.
 - render_status.py --check: exit 0; STATUS_OK.
 - render_backlog.py --check: exit 0; BACKLOG_OK.
 - check_core_boundaries.py: exit 0; CORE_BOUNDARY_OK modules=12 forbidden_roots=6 forbidden_internal=7.
-- loop unit tests (python -m unittest discover -s loop/tests -v): exit 0; 22 tests in 0.495s; OK.
-- product tests (python -m unittest discover -s tests): exit 0; 449 tests in 86.842s; OK.
+- loop unit tests (python -m unittest discover -s loop/tests): exit 0; 23 tests in 0.711s; OK.
+- product tests (python -m unittest discover -s tests): exit 0; 449 tests in 49.392s; OK.
 - python main.py --self-test: exit 0; SELF_TEST_OK symbol=SH.600519 action=BUY score=47 confidence=84 L1=BUY L5=BUY plan_shares=1300 backtest_ok=True config_ok=True compare_ok=True alert_ok=True screen_candidates=3 top=600000.
+
+Supplementary checks (not part of the required set, run for extra assurance, matching
+prior baselines' convention):
+
 - compileall (main.py build_exe.py src/stock_advisor loop/scripts loop/tests): exit 0; no output.
-- git diff --check: exit 0; only CRLF/LF line-ending advisory notices on the two files modified for this capture (state/evidence-index.json, state/progress.jsonl).
+- git diff --check: exit 0; only CRLF/LF line-ending advisory notices on the four files touched for this capture (loop/scripts/validate_loop.py, loop/tests/test_loop_tooling.py, loop/state/evidence-index.json, loop/evidence/baselines/EVD-LOOP-004-hardening.txt itself).
 
-This evidence record is written into state/evidence-index.json only after
-this artifact file is final and hashed above (a path excluded from
-control_plane_digest()), so the digest above is unaffected by its own
-registration. validate_loop.py enforces this baseline as a standing
-invariant, not a one-time claim: every future run recomputes the digest and
-requires this record's control_plane_sha256 to still match, or to carry its
-own superseded_by. The task's closing verification re-runs the full gate set
-again after registration as an independent, freshly-executed check; those
-results are reported in the task's own progress and completion records
-rather than duplicated in this hash-locked artifact.
-
-Hardening summary -- 13 defects were catalogued in the Plan 1 design spec
-(docs/superpowers/specs/2026-07-11-loop-hardening-and-tooling-design.md,
-D1-D13). 12 are closed by Tasks 1-9 of this plan:
-
-  D1  REQ-024 unclaimed by any work item              -- Task 3
-  D2  duplicate EXP-003 experiment id                  -- Task 2
-  D3  acceptance criteria not entered in traceability   -- Task 4
-  D4  market_timezone mismatch (Asia/Tokyo)             -- Task 7
-  D6  schemas not closed / schema_version unpinned      -- Task 8
-  D7  dangling RECOVER state                            -- Task 7
-  D8  HG-ARCH status contradiction                      -- Task 7
-  D9  REQ<->WI bidirectional inconsistency unchecked    -- Task 3
-  D10 state.risk_ids not cross-checked                  -- Task 5
-  D11 REQUIRED_FILES incomplete                         -- Task 6
-  D12 evidence cwd typo + missing superseded_by links   -- Tasks 1 and 9
-  D13 MS-02 -> MS-01 milestone dependency edge missing  -- Task 7
-
-D5 (required release gates -- G-FORMAT/G-LINT/G-TYPE/G-SECURITY -- can be
-silently skipped because they carry empty commands, no owning work item and
-no enforced invariant) is intentionally deferred to Plan 5/WS-8, where those
-gates gain real commands and owners. It is recorded here, not silently
-dropped: state/metrics.json and this plan's own design spec both keep it
-visible as open, and no check in this repository claims it is closed.
+This evidence record is written into state/evidence-index.json only after this artifact
+file is final and hashed above (a path excluded from control_plane_digest()), so the
+digest above is unaffected by its own registration or by this artifact's own sha256.
+validate_loop.py enforces this baseline as a standing invariant, not a one-time claim,
+and now -- after F1 -- also enforces that some live (unsuperseded) v2 record must be the
+one doing the enforcing.
 
 Scope limit:
 
-This evidence re-confirms AC-000 (the standalone Loop control plane) only,
-consistent with EVD-LOOP-003's scope. It does not claim that the PySide6
-product migration, dependency/license gates, Qt GUI tests, packaging, visual
-QA, performance targets, security scanning, or release gates (D5 among them)
-are complete. Plan 2 (src package restructuring) is the declared next step.
+This evidence re-confirms AC-000 (the standalone Loop control plane) only, consistent
+with EVD-LOOP-003 and the original EVD-LOOP-004's scope. It does not claim that the
+PySide6 product migration, dependency/license gates, Qt GUI tests, packaging, visual QA,
+performance targets, security scanning, or release gates are complete. Plan 2 (src
+package restructuring) remains the declared next step.

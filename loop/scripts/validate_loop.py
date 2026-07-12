@@ -141,11 +141,44 @@ def _expected_backlog(work_rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _digest_ok(record: dict[str, Any]) -> bool:
+def _digest_ok(record: dict[str, Any], current_digest: str | None = None) -> bool:
     """A v2 evidence record matches the tree, or is exempt because it is superseded."""
     if record.get("superseded_by"):
         return True
-    return record.get("control_plane_sha256") == control_plane_digest()
+    if current_digest is None:
+        current_digest = control_plane_digest()
+    return record.get("control_plane_sha256") == current_digest
+
+
+def _evidence_baseline_errors(evidence_records: list[dict[str, Any]], current_digest: str) -> list[str]:
+    """Evidence-index invariants that need only the evidence list plus the live digest.
+
+    Kept separate from validate() (rather than inlined in its evidence loop) so both
+    invariants can be exercised in tests against an in-process, in-memory evidence list
+    -- including a deliberately mutated one -- without ever writing to
+    state/evidence-index.json to prove they bite.
+
+    Closes two ways _digest_ok's per-record exemption could otherwise be vacuous:
+      1. If every v2 record were (or became) superseded, no record would ever be
+         checked against the current digest, so "the recorded baseline matches the
+         tree" would hold trivially with nothing live actually matching.
+      2. superseded_by is only meaningful if it points at evidence that exists; a typo
+         or a reference to a never-created id would silently exempt a record forever.
+    """
+    errors: list[str] = []
+    evidence_by_id = {row["id"]: row for row in evidence_records if row.get("id")}
+    for record in evidence_records:
+        superseded_by = record.get("superseded_by")
+        if superseded_by and superseded_by not in evidence_by_id:
+            errors.append(f"{record.get('id')} superseded_by references unknown evidence {superseded_by}")
+    if not any(
+        record.get("record_version") == "2.0.0"
+        and not record.get("superseded_by")
+        and record.get("control_plane_sha256") == current_digest
+        for record in evidence_records
+    ):
+        errors.append("no live v2 baseline evidence matches the current control plane")
+    return errors
 
 
 def validate() -> list[str]:
@@ -214,7 +247,11 @@ def validate() -> list[str]:
         jsonl_entries += len(rows)
         schema_name = REGISTER_SCHEMAS.get(relative_jsonl)
         if schema_name is not None:
-            register_schema = json.loads((LOOP_ROOT / "schemas" / schema_name).read_text(encoding="utf-8"))
+            try:
+                register_schema = json.loads((LOOP_ROOT / "schemas" / schema_name).read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                errors.append(f"cannot load register schema {schema_name}: {exc}")
+                continue
             for index, row in enumerate(rows):
                 for issue in validate_against_schema(row, register_schema, f"$[{index}]"):
                     errors.append(f"register {relative_jsonl}: {issue}")
@@ -362,11 +399,13 @@ def validate() -> list[str]:
         errors.append(f"state/current.json risk_ids not in register: {sorted(unknown)}")
 
     evidence_payload = load_json("state/evidence-index.json")
-    evidence_ids = [row.get("id", "") for row in evidence_payload.get("evidence", [])]
-    evidence_by_id = {row["id"]: row for row in evidence_payload.get("evidence", []) if row.get("id")}
+    evidence_records = evidence_payload.get("evidence", [])
+    evidence_ids = [row.get("id", "") for row in evidence_records]
+    evidence_by_id = {row["id"]: row for row in evidence_records if row.get("id")}
     if duplicate_ids := _duplicates(evidence_ids):
         errors.append(f"duplicate evidence ids: {sorted(duplicate_ids)}")
-    for record in evidence_payload.get("evidence", []):
+    current_digest = control_plane_digest()
+    for record in evidence_records:
         artifact = LOOP_ROOT / record.get("artifact_path", "")
         if not artifact.is_file():
             errors.append(f"{record.get('id')} artifact missing: {record.get('artifact_path')}")
@@ -395,8 +434,9 @@ def validate() -> list[str]:
                 errors.append(f"{record.get('id')} v2 evidence missing fields: {missing}")
             if record.get("implemented_by") == record.get("verified_by"):
                 errors.append(f"{record.get('id')} v2 evidence requires an independent verifier")
-            if not _digest_ok(record):
+            if not _digest_ok(record, current_digest):
                 errors.append(f"{record.get('id')} control-plane digest differs from the current tree")
+    errors.extend(_evidence_baseline_errors(evidence_records, current_digest))
 
     for item_id, row in work_items.items():
         if row.get("status") != "accepted":

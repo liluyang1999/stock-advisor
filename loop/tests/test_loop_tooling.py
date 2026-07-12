@@ -131,6 +131,38 @@ class LoopToolingTests(unittest.TestCase):
         record_current.pop("superseded_by")
         self.assertFalse(validate_loop._digest_ok(record_current))
 
+    def test_live_v2_baseline_is_required_and_supersede_refs_resolve(self) -> None:
+        # real state passes
+        self.assertEqual(validate_loop.validate(), [], validate_loop.validate())
+
+        real_digest = validate_loop.control_plane_digest()
+        records = json.loads(
+            (LOOP_ROOT / "state" / "evidence-index.json").read_text(encoding="utf-8")
+        )["evidence"]
+
+        # In-process mutation only: copy the loaded dicts, mutate the copies, and call
+        # the small validate_loop._evidence_baseline_errors() helper directly. Nothing
+        # here is written back to state/evidence-index.json.
+
+        # (a) If every v2 record carries a truthy superseded_by -- even one pointing
+        # nowhere -- the live-baseline requirement must fire: no record is left that
+        # both matches the digest and is unsuperseded.
+        holed = [dict(record) for record in records]
+        for record in holed:
+            if record.get("record_version") == "2.0.0":
+                record["superseded_by"] = "EVD-NONE"
+        errors = validate_loop._evidence_baseline_errors(holed, real_digest)
+        self.assertIn("no live v2 baseline evidence matches the current control plane", errors)
+
+        # (b) A superseded_by value that names a nonexistent evidence id must be
+        # rejected as a dangling reference, independent of the check above.
+        dangling = [dict(record) for record in records]
+        dangling[0]["superseded_by"] = "EVD-DOES-NOT-EXIST"
+        errors = validate_loop._evidence_baseline_errors(dangling, real_digest)
+        self.assertTrue(
+            any("superseded_by references unknown evidence" in error for error in errors), errors
+        )
+
     def test_registers_reject_duplicate_ids(self) -> None:
         self.assertEqual(validate_loop.validate(), [], validate_loop.validate())
         self.assertTrue(validate_loop._duplicates(["X", "X"]))
