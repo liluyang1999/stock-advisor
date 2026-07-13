@@ -1,0 +1,76 @@
+# Project + dev-toolchain configuration for stock-advisor (股市锦囊).
+#
+# ADR-0008 (loop/decisions/0008-dev-toolchain.md): ruff + pyright + pytest + coverage + pre-commit,
+# development-only (never shipped in the PyInstaller EXE). This file is the single home for the
+# ruff / pyright / pytest / coverage configuration; pre-commit (.pre-commit-config.yaml) and CI
+# (.github/workflows/ci.yml) require their own files by necessity.
+#
+# There is no [build-system]: the app is not installed from source — it runs via `python main.py`
+# and ships as a PyInstaller EXE. Tests, gates, and self-test run under the repo's Python; `.venv/`
+# is only a PyInstaller build sandbox.
+
+[project]
+name = "stock-advisor"
+version = "1.0.0"                     # mirrors src/stock_advisor/__init__.py::__version__
+description = "股市锦囊 — an offline, rule-based A-share desktop decision-support tool."
+requires-python = ">=3.14"
+# No runtime dependencies: the domain core is pure stdlib and the current GUI is Tkinter (stdlib).
+# PySide6 moves here when ADR-0001's Tkinter→PySide6 migration lands.
+
+[dependency-groups]
+# Development-only tools (PEP 735). Install with:  python -m pip install --group dev
+# Pinned to the versions validated on 2026-07-13 (Python 3.14.4, Windows 11).
+dev = [
+    "ruff==0.15.21",
+    "pyright==1.1.410",
+    "pytest==9.1.1",
+    "coverage[toml]==7.15.1",
+    "pre-commit==4.6.0",
+]
+# gui = ["PySide6", "pytest-qt"]      # activate with the ADR-0001 Tkinter→PySide6 migration.
+
+# --------------------------------------------------------------------------- ruff (format + lint)
+[tool.ruff]
+line-length = 100          # codebase leans long (462 lines >100, 163 >120); 100 balances future churn
+target-version = "py314"
+extend-exclude = ["build", "dist", ".venv"]
+
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes, I isort, UP pyupgrade, B bugbear. E501 (line-too-long) is delegated to
+# the formatter, which owns wrapping. Pre-existing F401/E402 findings are tracked as adoption debt in
+# loop/quality/TOOLCHAIN_BASELINE.md — product-code remediation is a separate, deliberate phase.
+select = ["E", "W", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+# ruff format defaults (black-compatible): double quotes, magic trailing comma, space indent.
+
+# ------------------------------------------------------------------------- pyright (type, dev-only)
+[tool.pyright]
+include = ["src", "loop/scripts", "main.py", "build_exe.py"]
+exclude = ["**/__pycache__", "build", "dist", ".venv"]
+extraPaths = ["src"]       # main.py inserts src/ on sys.path; product imports are `stock_advisor.*`
+pythonVersion = "3.14"
+pythonPlatform = "Windows"
+typeCheckingMode = "basic" # not strict: product code is largely un-annotated today (ADR-0008)
+
+# --------------------------------------------------------------------------- pytest (test runner)
+[tool.pytest.ini_options]
+# pytest is adopted as the test framework (ADR-0010); it runs the domain/data/service/loop suites
+# natively. The legacy Tkinter GUI suite (tests/test_gui_layout.py) has a pytest Tk-lifecycle flakiness
+# on Windows/CPython 3.14, so `unittest discover` stays the authoritative gate runner and coverage runs
+# via unittest — see loop/quality/TOOLCHAIN_BASELINE.md. Full GUI-suite migration is a tracked fast-follow.
+testpaths = ["tests", "loop/tests"]
+pythonpath = ["src", "."]              # resolve `stock_advisor.*` (src/ layout) + loop/ helpers
+addopts = "-q --import-mode=importlib" # importlib avoids sys.path basename collisions across the two trees
+
+# --------------------------------------------------------------------------------------- coverage
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+precision = 1
+# Numeric thresholds (overall stmt >=90 / branch >=85; core stmt >=95 / branch >=90) live in
+# loop/quality/convergence.json; the G-COVERAGE gate enforces the 85% branch floor via --fail-under.
