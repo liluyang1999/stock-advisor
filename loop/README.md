@@ -85,7 +85,7 @@ python main.py --self-test
 python -m compileall -q main.py build_exe.py src/stock_advisor
 ```
 
-PySide6、pytest-qt、Ruff、mypy、覆盖率、Qt GUI 与打包门在工具链工作项完成前保持未启用/未验证，不能提前声称通过。
+PySide6、pytest-qt、Ruff、pyright、覆盖率、Qt GUI 与打包门在工具链工作项完成前保持未启用/未验证，不能提前声称通过。
 
 ## 不可妥协原则（INVARIANTS）
 

@@ -13,9 +13,9 @@
 1. **G-LOOP**：loop JSON/schema、追溯、精确状态渲染、backlog 投影、核心边界与控制脚本一致。
 2. **G-FORMAT**：Ruff format 0 差异（工具批准后启用）。
 3. **G-LINT**：Ruff 0 错误、0 未批准 warning。
-4. **G-TYPE**：mypy strict 0 错误；可分阶段但发布全包。
+4. **G-TYPE**：pyright（basic）0 错误；可分阶段但发布全包。
 5. **G-CORE**：纯逻辑/现有全量测试 100% 通过。
-6. **G-COVERAGE**：`coverage run -m pytest` + `coverage report --fail-under=85`；全量 ≥90%/≥85%（行/分支）、核心 ≥95%/≥90%，见 `quality/convergence.json.coverage`（工具批准后启用）。
+6. **G-COVERAGE**：`coverage run -m unittest discover -s tests` + `coverage report --fail-under=85`；全量 ≥90%/≥85%（行/分支）、核心 ≥95%/≥90%，见 `quality/convergence.json.coverage`（工具批准后启用）。
 7. **G-NUMERIC**：黄金向量、性质、前视、确定性。
 8. **G-NETWORK**：parser、deadline、fault matrix、无伪造 fallback。
 9. **G-WORKFLOW**：FakeProvider 集成、部分失败/停止。
@@ -30,7 +30,7 @@
 18. **G-TRACE**：REQ/AC/WI/TEST/EVD 100% 追溯。
 19. **G-RELEASE**：连续 5 次全绿 + HG-RELEASE。
 
-每个门禁对象在 `quality-gates.json` 中携带 `owning_work_item`（启用它的工作项；尚不存在的工具类工作项——G-FORMAT/G-LINT/G-TYPE/G-COVERAGE——暂以 `WI-000` 占位，`note` 字段说明其真实归属在 WS-8/Plan 5）。
+每个门禁对象在 `quality-gates.json` 中携带 `owning_work_item`（启用它的工作项）。工具类门禁 G-FORMAT/G-LINT/G-TYPE/G-COVERAGE 的命令已在 WS-8/Plan 6 接线（G-TYPE=pyright、G-LINT/G-FORMAT=ruff、G-COVERAGE=coverage via unittest；配置统一在根 `pyproject.toml`），仍以 `WI-000` 占位并暂禁用，直到 `loop/quality/TOOLCHAIN_BASELINE.md` 记录的产品代码适配债清零；拆分独立 dev-tooling 工作项为已登记的后续项。
 
 ## 硬指标
 

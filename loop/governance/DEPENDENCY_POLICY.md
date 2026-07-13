@@ -6,7 +6,7 @@
 |---|---|---|
 | 运行期 | PySide6 | 必须批准、精确锁定、记录许可证和包体影响 |
 | 构建期 | PyInstaller | 精确锁定，和 Python/PySide6 组合验证 |
-| 开发期 | Ruff、mypy、coverage 等 | 不进入运行产物，仍需精确锁定和安全审查 |
+| 开发期 | Ruff、pyright、coverage 等 | 不进入运行产物，仍需精确锁定和安全审查 |
 
 ## 引入门禁
 

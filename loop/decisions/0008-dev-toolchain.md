@@ -35,7 +35,7 @@ REQ-028 要求格式、lint、类型、测试、覆盖率、GUI、性能、构�
 
 负面/成本：
 
-- 本 ADR 只记录决策本身，不改变任何现有文件的执行状态：`quality-gates.json` 的 `G-TYPE` 命令字面量、`quality/QUALITY_GATES.md`、`README.md`、`baseline/dependency-baseline.json` 以及 `state/metrics.json.tooling.mypy` 里提到的 "mypy" 仍然原样保留，不会因为本 ADR accepted 而被同步改写为 pyright；这是刻意的范围控制（本次治理只新增决策记录，不改动这些既有文件），但意味着在 WS-8 开发工具链工作项把这些占位符实际替换为 pyright/pytest 之前，仓库里会持续存在"决策已 accepted、占位文本尚未跟上"的可见落差——WS-8 工作项的 definition_of_done 必须包含把这些占位字符串替换为本 ADR/ADR-0010 实际采用的工具名，作为已知的后续收尾项，不是被本 ADR 忽略的问题。
+- 本 ADR 只记录决策本身，不改变任何现有文件的执行状态：`quality-gates.json` 的 `G-TYPE` 命令字面量、`quality/QUALITY_GATES.md`、`README.md`、`baseline/dependency-baseline.json` 以及 `state/metrics.json.tooling.mypy` 里提到的 "mypy" 仍然原样保留，不会因为本 ADR accepted 而被同步改写为 pyright；这是刻意的范围控制（本次治理只新增决策记录，不改动这些既有文件），但意味着在 WS-8 开发工具链工作项把这些占位符实际替换为 pyright/pytest 之前，仓库里会持续存在"决策已 accepted、占位文本尚未跟上"的可见落差——WS-8 工作项的 definition_of_done 必须包含把这些占位字符串替换为本 ADR/ADR-0010 实际采用的工具名，作为已知的后续收尾项，不是被本 ADR 忽略的问题。（更新 2026-07-13：WS-8/Plan 6 已把 `quality-gates.json`/`QUALITY_GATES.md`/`README.md`/`dependency-baseline.json`/`metrics.json` 中的 mypy 占位替换为 pyright，G-COVERAGE 改为经 unittest 运行 coverage；见 `loop/quality/TOOLCHAIN_BASELINE.md`。本 ADR 正文其余 mypy 提及此后仅作为被否备选与回滚目标保留。）
 - pyright 需要 Node.js 运行时；开发者/CI 机器必须能够运行 Node（或改用自带 Node 的 basedpyright），这是本 ADR 显式接受的开发期依赖面，不影响产品 EXE。
 - 五个工具都需要精确版本锁定和许可证审查（呼应 REQ-029 对开发依赖锁定与许可证的要求），具体锁定和审查是 WS-8 工作项的执行内容，不在本 ADR 范围。
 

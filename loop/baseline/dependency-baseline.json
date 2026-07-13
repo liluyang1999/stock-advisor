@@ -8,8 +8,10 @@
     {"name":"tkinter","category":"runtime_gui","declared":"stdlib","observed":"available","locked":true,"license":"Python/ Tcl-Tk distribution terms","status":"current_to_be_replaced"},
     {"name":"PySide6","category":"runtime_gui","declared":null,"observed":"not-installed","locked":false,"license":"LGPLv3/GPLv3/commercial","status":"target_requires_gate"},
     {"name":"PyInstaller","category":"build","declared":">=6.15","observed":"6.21.0","locked":false,"license":"GPLv2-or-later with special exception","status":"current_requires_exact_pin"},
-    {"name":"Ruff","category":"development","declared":null,"observed":"not-measured","locked":false,"license":"MIT","status":"proposed"},
-    {"name":"mypy","category":"development","declared":null,"observed":"not-measured","locked":false,"license":"MIT","status":"proposed"},
-    {"name":"coverage.py","category":"development","declared":null,"observed":"not-measured","locked":false,"license":"Apache-2.0","status":"proposed"}
+    {"name":"ruff","category":"development","declared":"0.15.21","observed":"0.15.21","locked":true,"license":"MIT","status":"current"},
+    {"name":"pyright","category":"development","declared":"1.1.410","observed":"1.1.410","locked":true,"license":"MIT","status":"current"},
+    {"name":"coverage.py","category":"development","declared":"7.15.1","observed":"7.15.1","locked":true,"license":"Apache-2.0","status":"current"},
+    {"name":"pytest","category":"development","declared":"9.1.1","observed":"9.1.1","locked":true,"license":"MIT","status":"current"},
+    {"name":"pre-commit","category":"development","declared":"4.6.0","observed":"4.6.0","locked":true,"license":"MIT","status":"current"}
   ]
 }

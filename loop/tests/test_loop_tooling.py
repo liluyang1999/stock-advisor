@@ -312,7 +312,13 @@ class LoopToolingTests(unittest.TestCase):
         self.assertEqual(coverage["owning_work_item"], "WI-000")
         self.assertTrue(coverage.get("note"))
         commands = coverage["commands"]
-        self.assertIn(["coverage", "report", "--fail-under=85"], commands)
+        # coverage runs via the authoritative unittest runner, not pytest (Tk-GUI pytest flakiness,
+        # see TOOLCHAIN_BASELINE.md); commands are `python -m ...` for PATH-independence (WS-8 wiring).
+        self.assertIn(
+            ["python", "-m", "coverage", "run", "-m", "unittest", "discover", "-s", "tests"],
+            commands,
+        )
+        self.assertIn(["python", "-m", "coverage", "report", "--fail-under=85"], commands)
         for gate_id in ("G-FORMAT", "G-LINT", "G-TYPE"):
             self.assertEqual(gates[gate_id]["owning_work_item"], "WI-000", gate_id)
             self.assertTrue(gates[gate_id].get("note"), gate_id)
