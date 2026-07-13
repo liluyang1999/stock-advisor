@@ -5,8 +5,15 @@ from datetime import datetime
 
 from _common import LOOP_ROOT, atomic_write_json, load_json
 
-
-VALID_STATUSES = {"initialized", "active", "verifying", "needs_human", "blocked", "complete", "failed"}
+VALID_STATUSES = {
+    "initialized",
+    "active",
+    "verifying",
+    "needs_human",
+    "blocked",
+    "complete",
+    "failed",
+}
 NON_TERMINAL_STATUSES = {"initialized", "active", "verifying"}
 TERMINAL_STATUS_MAP = {
     "needs_human": {"needs_human"},
@@ -16,7 +23,9 @@ TERMINAL_STATUS_MAP = {
 }
 
 
-def validate_transition(state: dict[str, object], status: str, terminal_state: str | None) -> list[str]:
+def validate_transition(
+    state: dict[str, object], status: str, terminal_state: str | None
+) -> list[str]:
     errors: list[str] = []
     allowed_terminal_states = set(load_json("loop.json")["terminal_states"])
     if terminal_state is not None and terminal_state not in allowed_terminal_states:
@@ -27,7 +36,9 @@ def validate_transition(state: dict[str, object], status: str, terminal_state: s
         errors.append(f"status {status} requires one of {sorted(TERMINAL_STATUS_MAP[status])}")
     if status == "complete":
         metrics = load_json("state/metrics.json")
-        required_streak = load_json("config.json")["quality_policy"]["consecutive_full_green_runs_for_release"]
+        required_streak = load_json("config.json")["quality_policy"][
+            "consecutive_full_green_runs_for_release"
+        ]
         if not state.get("release_candidate") or not metrics["release"]["ready"]:
             errors.append("success requires release_candidate=true and release.ready=true")
         if metrics["release"]["full_green_streak"] < required_streak:

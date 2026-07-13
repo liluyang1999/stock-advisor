@@ -6,7 +6,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-
 LOOP_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = LOOP_ROOT.parent
 
@@ -93,7 +92,9 @@ def validate_against_schema(value: Any, schema: dict[str, Any], path: str = "$")
     if expected_types is not None:
         if isinstance(expected_types, str):
             expected_types = [expected_types]
-        if not isinstance(expected_types, list) or not all(isinstance(item, str) for item in expected_types):
+        if not isinstance(expected_types, list) or not all(
+            isinstance(item, str) for item in expected_types
+        ):
             return [f"{path}: schema type must be a string or string array"]
         if not any(_matches_json_type(value, expected) for expected in expected_types):
             return [f"{path}: expected type {expected_types}, got {type(value).__name__}"]
@@ -124,7 +125,9 @@ def validate_against_schema(value: Any, schema: dict[str, Any], path: str = "$")
                 if not isinstance(child_schema, dict):
                     errors.append(f"{path}.{key}: child schema must be an object")
                 else:
-                    errors.extend(validate_against_schema(value[key], child_schema, f"{path}.{key}"))
+                    errors.extend(
+                        validate_against_schema(value[key], child_schema, f"{path}.{key}")
+                    )
 
     if isinstance(value, list):
         minimum_items = schema.get("minItems")

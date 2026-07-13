@@ -6,7 +6,6 @@ import sys
 
 from _common import LOOP_ROOT, atomic_write_json, load_json
 
-
 STATUS_ORDER = (
     "in_progress",
     "verifying",
@@ -24,7 +23,11 @@ def project() -> dict[str, object]:
     counts = {status: 0 for status in STATUS_ORDER}
     for row in rows:
         counts[row["status"]] = counts.get(row["status"], 0) + 1
-    summary = {status: count for status, count in counts.items() if count or status in {"verifying", "ready", "proposed", "accepted", "blocked"}}
+    summary = {
+        status: count
+        for status, count in counts.items()
+        if count or status in {"verifying", "ready", "proposed", "accepted", "blocked"}
+    }
     next_ready = next((row["id"] for row in rows if row["status"] == "ready"), None)
     return {
         "$schema": "../schemas/backlog.schema.json",
@@ -41,7 +44,9 @@ def check_backlog() -> list[str]:
     actual = load_json("state/backlog.json")
     if actual == project():
         return []
-    return ["state/backlog.json differs from planning/work-items.json; run render_backlog.py --write"]
+    return [
+        "state/backlog.json differs from planning/work-items.json; run render_backlog.py --write"
+    ]
 
 
 def main(argv: list[str] | None = None) -> int:

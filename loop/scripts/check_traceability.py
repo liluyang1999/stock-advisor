@@ -7,7 +7,6 @@ import sys
 
 from _common import LOOP_ROOT, load_json
 
-
 REQUIRED_COLUMNS = {
     "requirement_id",
     "priority",
@@ -40,18 +39,26 @@ def _split(value: str) -> list[str]:
     return [item.strip() for item in value.split(";") if item.strip()]
 
 
-def _tk_contract_mapping_errors(fieldnames: tuple[str, ...], rows: list[dict[str, str]]) -> list[str]:
+def _tk_contract_mapping_errors(
+    fieldnames: tuple[str, ...], rows: list[dict[str, str]]
+) -> list[str]:
     if tuple(fieldnames) != TK_CONTRACT_COLUMNS:
         got = ",".join(fieldnames)
-        return [f"tk-contract-mapping.csv header must be {','.join(TK_CONTRACT_COLUMNS)}, got {got}"]
+        return [
+            f"tk-contract-mapping.csv header must be {','.join(TK_CONTRACT_COLUMNS)}, got {got}"
+        ]
     errors: list[str] = []
     for index, row in enumerate(rows):
         label = (row.get("contract_id") or "").strip() or f"row {index}"
         disposition = (row.get("disposition") or "").strip()
         if disposition not in TK_CONTRACT_DISPOSITIONS:
-            errors.append(f"tk-contract-mapping.csv {label} has invalid disposition {disposition!r}")
+            errors.append(
+                f"tk-contract-mapping.csv {label} has invalid disposition {disposition!r}"
+            )
         if disposition == "qt_replaced" and not (row.get("replacement_test_id") or "").strip():
-            errors.append(f"tk-contract-mapping.csv {label} is qt_replaced but has no replacement_test_id")
+            errors.append(
+                f"tk-contract-mapping.csv {label} is qt_replaced but has no replacement_test_id"
+            )
     return errors
 
 
@@ -94,7 +101,15 @@ def check(release: bool = False) -> list[str]:
 
     for row in rows:
         req_id = row["requirement_id"].strip()
-        for field in ("priority", "statement", "design_refs", "work_item_ids", "test_ids", "status", "owner"):
+        for field in (
+            "priority",
+            "statement",
+            "design_refs",
+            "work_item_ids",
+            "test_ids",
+            "status",
+            "owner",
+        ):
             if not row[field].strip():
                 errors.append(f"{req_id} missing {field}")
         for work_id in _split(row["work_item_ids"]):
@@ -102,7 +117,9 @@ def check(release: bool = False) -> list[str]:
                 errors.append(f"{req_id} references unknown work item {work_id}")
         for work_id in _split(row["work_item_ids"]):
             if work_id in wi_requirements and req_id not in wi_requirements[work_id]:
-                errors.append(f"{req_id} trace row names {work_id} but that work item does not list {req_id}")
+                errors.append(
+                    f"{req_id} trace row names {work_id} but that work item does not list {req_id}"
+                )
         for test_id in _split(row["test_ids"]):
             if test_id not in test_ids:
                 errors.append(f"{req_id} references unknown test {test_id}")
@@ -122,7 +139,9 @@ def check(release: bool = False) -> list[str]:
         for req in reqs:
             trace_row = row_by_req.get(req)
             if trace_row and work_id not in _split(trace_row["work_item_ids"]):
-                errors.append(f"{req} is owned by {work_id} in work-items.json but its trace row omits {work_id}")
+                errors.append(
+                    f"{req} is owned by {work_id} in work-items.json but its trace row omits {work_id}"
+                )
 
     acceptance_text = (LOOP_ROOT / "product/ACCEPTANCE_CRITERIA.md").read_text(encoding="utf-8")
     acceptance_ids = set(re.findall(r"\bAC-\d{3}\b", acceptance_text))
@@ -143,7 +162,9 @@ check.stats = {}  # type: ignore[attr-defined]
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Check requirement traceability.")
-    parser.add_argument("--release", action="store_true", help="Require every row to be verified with evidence.")
+    parser.add_argument(
+        "--release", action="store_true", help="Require every row to be verified with evidence."
+    )
     args = parser.parse_args(argv)
     errors = check(release=args.release) + check_tk_contract_mapping()
     if errors:
@@ -156,4 +177,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

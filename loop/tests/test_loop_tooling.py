@@ -6,14 +6,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 LOOP_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = LOOP_ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import check_traceability  # noqa: E402
 import check_core_boundaries  # noqa: E402
+import check_traceability  # noqa: E402
 import render_backlog  # noqa: E402
 import render_status  # noqa: E402
 import update_state  # noqa: E402
@@ -46,10 +45,14 @@ class LoopToolingTests(unittest.TestCase):
         self.assertEqual(check_traceability.check.stats["requirements"], 34)
 
     def test_traceability_edges_agree_with_work_items(self) -> None:
-        self.assertEqual(check_traceability.check(release=False), [], check_traceability.check(release=False))
+        self.assertEqual(
+            check_traceability.check(release=False), [], check_traceability.check(release=False)
+        )
 
     def test_every_acceptance_criterion_is_traced(self) -> None:
-        self.assertEqual(check_traceability.check(release=False), [], check_traceability.check(release=False))
+        self.assertEqual(
+            check_traceability.check(release=False), [], check_traceability.check(release=False)
+        )
         self.assertIn("acceptance_criteria", check_traceability.REQUIRED_COLUMNS)
 
     def test_backlog_is_exact_projection(self) -> None:
@@ -173,8 +176,14 @@ class LoopToolingTests(unittest.TestCase):
         # from the per-register id-uniqueness check so real audit history is never
         # flagged as a defect the way registers/experiments.jsonl's accidental
         # duplicate id is.
-        ids = [row["id"] for row in validate_loop.parse_jsonl(LOOP_ROOT / "registers" / "decisions.jsonl")]
-        self.assertTrue(validate_loop._duplicates(ids), "fixture assumption: decisions.jsonl has status-history duplicates")
+        ids = [
+            row["id"]
+            for row in validate_loop.parse_jsonl(LOOP_ROOT / "registers" / "decisions.jsonl")
+        ]
+        self.assertTrue(
+            validate_loop._duplicates(ids),
+            "fixture assumption: decisions.jsonl has status-history duplicates",
+        )
         self.assertEqual(validate_loop.validate(), [])
 
     def test_every_adr_has_an_associations_section(self) -> None:
@@ -189,8 +198,18 @@ class LoopToolingTests(unittest.TestCase):
             self.assertIn(needed, validate_loop.REQUIRED_FILES, needed)
 
     def test_closed_schemas_reject_unknown_fields_and_pin_version(self) -> None:
-        closed = ["state", "loop", "config", "work-items", "quality-gates",
-                  "risk", "evidence", "metrics", "backlog", "milestones"]
+        closed = [
+            "state",
+            "loop",
+            "config",
+            "work-items",
+            "quality-gates",
+            "risk",
+            "evidence",
+            "metrics",
+            "backlog",
+            "milestones",
+        ]
         root = LOOP_ROOT / "schemas"
         for name in closed:
             schema = json.loads((root / f"{name}.schema.json").read_text(encoding="utf-8"))
@@ -200,18 +219,37 @@ class LoopToolingTests(unittest.TestCase):
 
     def test_every_catalog_test_has_measurable_goal(self) -> None:
         import json as _json
+
         cat = _json.loads((LOOP_ROOT / "quality/test-catalog.json").read_text(encoding="utf-8"))
-        work_ids = {w["id"] for w in _json.loads((LOOP_ROOT / "planning/work-items.json").read_text(encoding="utf-8"))["work_items"]}
+        work_ids = {
+            w["id"]
+            for w in _json.loads(
+                (LOOP_ROOT / "planning/work-items.json").read_text(encoding="utf-8")
+            )["work_items"]
+        }
         for t in cat["tests"]:
             self.assertTrue(t.get("expected_goal"), t["id"])
-            self.assertIn(t.get("evidence_level"), {"V0_assumption","V1_static","V2_unit","V3_integration","V4_system","V5_release"}, t["id"])
-            self.assertRegex(t.get("owning_work_item",""), r"^WI-\d{3}$", t["id"])
+            self.assertIn(
+                t.get("evidence_level"),
+                {
+                    "V0_assumption",
+                    "V1_static",
+                    "V2_unit",
+                    "V3_integration",
+                    "V4_system",
+                    "V5_release",
+                },
+                t["id"],
+            )
+            self.assertRegex(t.get("owning_work_item", ""), r"^WI-\d{3}$", t["id"])
             self.assertIn(t["owning_work_item"], work_ids, t["id"])
             self.assertTrue(t.get("expected_artifact"), t["id"])
         self.assertEqual(validate_loop.validate(), [])
 
     def test_every_work_item_has_a_size(self) -> None:
-        work_items = json.loads((LOOP_ROOT / "planning/work-items.json").read_text(encoding="utf-8"))["work_items"]
+        work_items = json.loads(
+            (LOOP_ROOT / "planning/work-items.json").read_text(encoding="utf-8")
+        )["work_items"]
         self.assertEqual(len(work_items), 26)
         for wi in work_items:
             self.assertIn(wi.get("size"), {"S", "M", "L", "XL"}, wi["id"])
@@ -219,8 +257,15 @@ class LoopToolingTests(unittest.TestCase):
         self.assertEqual(validate_loop.validate(), [])
 
     def test_every_gate_has_owning_work_item(self) -> None:
-        gates = json.loads((LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8"))["gates"]
-        work_ids = {w["id"] for w in json.loads((LOOP_ROOT / "planning/work-items.json").read_text(encoding="utf-8"))["work_items"]}
+        gates = json.loads((LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8"))[
+            "gates"
+        ]
+        work_ids = {
+            w["id"]
+            for w in json.loads(
+                (LOOP_ROOT / "planning/work-items.json").read_text(encoding="utf-8")
+            )["work_items"]
+        }
         for gate in gates:
             self.assertRegex(gate.get("owning_work_item", ""), r"^WI-\d{3}$", gate["id"])
             # owning_work_item need not be the gate's *real* future owner (dev-tool gates
@@ -230,7 +275,9 @@ class LoopToolingTests(unittest.TestCase):
         self.assertEqual(validate_loop.validate(), [])
 
     def test_gate_ownership_invariant_requires_enabled_or_owning_work_item(self) -> None:
-        gates = json.loads((LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8"))["gates"]
+        gates = json.loads((LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8"))[
+            "gates"
+        ]
 
         # the real gate list satisfies the invariant right now
         self.assertEqual(validate_loop._gate_ownership_errors(gates), [])
@@ -253,7 +300,12 @@ class LoopToolingTests(unittest.TestCase):
         self.assertEqual(validate_loop._gate_ownership_errors(owned_but_disabled), [])
 
     def test_coverage_gate_is_present_and_disabled_with_placeholder_owner(self) -> None:
-        gates = {g["id"]: g for g in json.loads((LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8"))["gates"]}
+        gates = {
+            g["id"]: g
+            for g in json.loads(
+                (LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8")
+            )["gates"]
+        }
         coverage = gates["G-COVERAGE"]
         self.assertFalse(coverage["enabled"])
         self.assertTrue(coverage["required_for_release"])
@@ -266,14 +318,23 @@ class LoopToolingTests(unittest.TestCase):
             self.assertTrue(gates[gate_id].get("note"), gate_id)
 
     def test_performance_and_reliability_targets_are_measurable(self) -> None:
-        test_ids = {t["id"] for t in json.loads((LOOP_ROOT / "quality/test-catalog.json").read_text(encoding="utf-8"))["tests"]}
-        budgets = json.loads((LOOP_ROOT / "quality/performance-budgets.json").read_text(encoding="utf-8"))["budgets"]
+        test_ids = {
+            t["id"]
+            for t in json.loads(
+                (LOOP_ROOT / "quality/test-catalog.json").read_text(encoding="utf-8")
+            )["tests"]
+        }
+        budgets = json.loads(
+            (LOOP_ROOT / "quality/performance-budgets.json").read_text(encoding="utf-8")
+        )["budgets"]
         for budget in budgets:
             self.assertTrue(budget.get("method"), budget["metric"])
             self.assertTrue(budget.get("scenario"), budget["metric"])
             self.assertIn(budget.get("owning_test"), test_ids, budget["metric"])
 
-        targets = json.loads((LOOP_ROOT / "quality/reliability-targets.json").read_text(encoding="utf-8"))["targets"]
+        targets = json.loads(
+            (LOOP_ROOT / "quality/reliability-targets.json").read_text(encoding="utf-8")
+        )["targets"]
         for target in targets:
             self.assertTrue(target.get("method"), target["id"])
             self.assertTrue(target.get("scenario"), target["id"])
@@ -291,29 +352,64 @@ class LoopToolingTests(unittest.TestCase):
         self.assertTrue(any("header must be" in error for error in errors), errors)
 
         # qt_replaced without a replacement_test_id is rejected
-        bad_rows = [{
-            "contract_id": "TKC-001", "area": "gui_layout", "disposition": "qt_replaced",
-            "replacement_test_id": "", "notes": "",
-        }]
-        errors = check_traceability._tk_contract_mapping_errors(check_traceability.TK_CONTRACT_COLUMNS, bad_rows)
+        bad_rows = [
+            {
+                "contract_id": "TKC-001",
+                "area": "gui_layout",
+                "disposition": "qt_replaced",
+                "replacement_test_id": "",
+                "notes": "",
+            }
+        ]
+        errors = check_traceability._tk_contract_mapping_errors(
+            check_traceability.TK_CONTRACT_COLUMNS, bad_rows
+        )
         self.assertTrue(any("replacement_test_id" in error for error in errors), errors)
 
         # an unrecognized disposition value is rejected
-        pending_rows = [{
-            "contract_id": "TKC-002", "area": "ui_polish", "disposition": "pending",
-            "replacement_test_id": "", "notes": "",
-        }]
-        errors = check_traceability._tk_contract_mapping_errors(check_traceability.TK_CONTRACT_COLUMNS, pending_rows)
+        pending_rows = [
+            {
+                "contract_id": "TKC-002",
+                "area": "ui_polish",
+                "disposition": "pending",
+                "replacement_test_id": "",
+                "notes": "",
+            }
+        ]
+        errors = check_traceability._tk_contract_mapping_errors(
+            check_traceability.TK_CONTRACT_COLUMNS, pending_rows
+        )
         self.assertTrue(any("invalid disposition" in error for error in errors), errors)
 
         # a fully valid row of each disposition passes
         good_rows = [
-            {"contract_id": "TKC-003", "area": "gui_layout", "disposition": "pure_preserved", "replacement_test_id": "", "notes": ""},
-            {"contract_id": "TKC-004", "area": "gui_layout", "disposition": "qt_replaced", "replacement_test_id": "TEST-QT-001", "notes": ""},
-            {"contract_id": "TKC-005", "area": "ui_polish", "disposition": "approved_retired", "replacement_test_id": "", "notes": ""},
+            {
+                "contract_id": "TKC-003",
+                "area": "gui_layout",
+                "disposition": "pure_preserved",
+                "replacement_test_id": "",
+                "notes": "",
+            },
+            {
+                "contract_id": "TKC-004",
+                "area": "gui_layout",
+                "disposition": "qt_replaced",
+                "replacement_test_id": "TEST-QT-001",
+                "notes": "",
+            },
+            {
+                "contract_id": "TKC-005",
+                "area": "ui_polish",
+                "disposition": "approved_retired",
+                "replacement_test_id": "",
+                "notes": "",
+            },
         ]
         self.assertEqual(
-            check_traceability._tk_contract_mapping_errors(check_traceability.TK_CONTRACT_COLUMNS, good_rows), []
+            check_traceability._tk_contract_mapping_errors(
+                check_traceability.TK_CONTRACT_COLUMNS, good_rows
+            ),
+            [],
         )
 
     def test_waiver_schema_requires_owner_and_expiry(self) -> None:
@@ -328,21 +424,26 @@ class LoopToolingTests(unittest.TestCase):
         self.assertIn("owner", schema.get("required", []))
         self.assertIn("expires_at", schema.get("required", []))
 
-        template = json.loads((LOOP_ROOT / "templates/waiver-record.json").read_text(encoding="utf-8"))
+        template = json.loads(
+            (LOOP_ROOT / "templates/waiver-record.json").read_text(encoding="utf-8")
+        )
         # the template documents the exact allowed shape: every key it uses must be a
         # declared schema property (else the closed schema would reject its own docs).
         self.assertEqual(set(template.keys()), set(schema["properties"].keys()))
 
-        filled = dict(template, **{
-            "id": "WVR-001",
-            "gate_or_requirement": "TEST-EXAMPLE-001",
-            "reason": "example",
-            "risk": "example",
-            "owner": "example-owner",
-            "approved_by": "human",
-            "expires_at": "2026-08-01",
-            "status": "active",
-        })
+        filled = dict(
+            template,
+            **{
+                "id": "WVR-001",
+                "gate_or_requirement": "TEST-EXAMPLE-001",
+                "reason": "example",
+                "risk": "example",
+                "owner": "example-owner",
+                "approved_by": "human",
+                "expires_at": "2026-08-01",
+                "status": "active",
+            },
+        )
         self.assertEqual(validate_against_schema(filled, schema), [])
 
         missing_owner = dict(filled)

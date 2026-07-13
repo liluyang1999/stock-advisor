@@ -18,9 +18,7 @@ def render() -> str:
     state = load_json("state/current.json")
     metrics = load_json("state/metrics.json")
     config = load_json("config.json")
-    work_items = {
-        row["id"]: row for row in load_json("planning/work-items.json")["work_items"]
-    }
+    work_items = {row["id"]: row for row in load_json("planning/work-items.json")["work_items"]}
     control_plane = metrics["control_plane"]
     active = work_items[state["active_work_item_id"]]
     lines = [

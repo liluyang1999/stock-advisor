@@ -5,11 +5,9 @@ import hashlib
 import json
 import re
 import sys
-from pathlib import Path
 from typing import Any
 
 from _common import LOOP_ROOT, control_plane_digest, load_json, parse_jsonl, validate_against_schema
-
 
 REQUIRED_FILES = (
     "AGENTS.md",
@@ -49,17 +47,59 @@ REQUIRED_FILES = (
 )
 
 REQUIRED_JSON_KEYS: dict[str, tuple[str, ...]] = {
-    "loop.json": ("schema_version", "id", "status", "trigger", "goal", "cycle", "memory", "terminal_states", "stop_rules"),
-    "config.json": ("schema_version", "project", "target_stack", "ui_tokens", "network_policy", "commands", "quality_policy", "paths"),
-    "state/current.json": ("schema_version", "run_id", "objective_id", "phase", "status", "active_milestone_id", "iteration", "baseline_commit", "last_updated"),
+    "loop.json": (
+        "schema_version",
+        "id",
+        "status",
+        "trigger",
+        "goal",
+        "cycle",
+        "memory",
+        "terminal_states",
+        "stop_rules",
+    ),
+    "config.json": (
+        "schema_version",
+        "project",
+        "target_stack",
+        "ui_tokens",
+        "network_policy",
+        "commands",
+        "quality_policy",
+        "paths",
+    ),
+    "state/current.json": (
+        "schema_version",
+        "run_id",
+        "objective_id",
+        "phase",
+        "status",
+        "active_milestone_id",
+        "iteration",
+        "baseline_commit",
+        "last_updated",
+    ),
     "planning/work-items.json": ("schema_version", "work_items"),
     "planning/milestones.json": ("schema_version", "milestones"),
     "quality/quality-gates.json": ("schema_version", "gates"),
     "state/evidence-index.json": ("schema_version", "evidence"),
     "registers/risks.json": ("schema_version", "risks"),
-    "architecture/core-module-manifest.json": ("schema_version", "source_root", "forbidden_import_roots", "modules"),
+    "architecture/core-module-manifest.json": (
+        "schema_version",
+        "source_root",
+        "forbidden_import_roots",
+        "modules",
+    ),
     "state/backlog.json": ("schema_version", "source", "summary", "ordered_ids", "next_ready"),
-    "state/metrics.json": ("schema_version", "engineering", "control_plane", "tests", "coverage", "tooling", "release"),
+    "state/metrics.json": (
+        "schema_version",
+        "engineering",
+        "control_plane",
+        "tests",
+        "coverage",
+        "tooling",
+        "release",
+    ),
 }
 
 # JSONL registers are parsed line by line rather than loaded as one JSON document, so the
@@ -145,7 +185,16 @@ def _adr_association_errors() -> list[str]:
 
 
 def _expected_backlog(work_rows: list[dict[str, Any]]) -> dict[str, Any]:
-    status_order = ("in_progress", "verifying", "ready", "proposed", "accepted", "blocked", "deferred", "cancelled")
+    status_order = (
+        "in_progress",
+        "verifying",
+        "ready",
+        "proposed",
+        "accepted",
+        "blocked",
+        "deferred",
+        "cancelled",
+    )
     counts = {status: 0 for status in status_order}
     for row in work_rows:
         counts[row["status"]] = counts.get(row["status"], 0) + 1
@@ -182,7 +231,9 @@ def _gate_ownership_errors(gates: list[dict[str, Any]]) -> list[str]:
             continue
         owner = gate.get("owning_work_item")
         if not isinstance(owner, str) or not owner.strip():
-            errors.append(f"{gate.get('id')} is required_for_release but neither enabled nor owning_work_item-owned")
+            errors.append(
+                f"{gate.get('id')} is required_for_release but neither enabled nor owning_work_item-owned"
+            )
     return errors
 
 
@@ -195,7 +246,9 @@ def _digest_ok(record: dict[str, Any], current_digest: str | None = None) -> boo
     return record.get("control_plane_sha256") == current_digest
 
 
-def _evidence_baseline_errors(evidence_records: list[dict[str, Any]], current_digest: str) -> list[str]:
+def _evidence_baseline_errors(
+    evidence_records: list[dict[str, Any]], current_digest: str
+) -> list[str]:
     """Evidence-index invariants that need only the evidence list plus the live digest.
 
     Kept separate from validate() (rather than inlined in its evidence loop) so both
@@ -215,7 +268,9 @@ def _evidence_baseline_errors(evidence_records: list[dict[str, Any]], current_di
     for record in evidence_records:
         superseded_by = record.get("superseded_by")
         if superseded_by and superseded_by not in evidence_by_id:
-            errors.append(f"{record.get('id')} superseded_by references unknown evidence {superseded_by}")
+            errors.append(
+                f"{record.get('id')} superseded_by references unknown evidence {superseded_by}"
+            )
     if not any(
         record.get("record_version") == "2.0.0"
         and not record.get("superseded_by")
@@ -245,14 +300,18 @@ def validate() -> list[str]:
         relative_path = path.relative_to(LOOP_ROOT)
         schema_reference = payload.get("$schema") if isinstance(payload, dict) else None
         operational = relative_path.parts[0] not in {"schemas", "templates"}
-        if operational and (not isinstance(schema_reference, str) or not schema_reference.startswith(("./", "../"))):
+        if operational and (
+            not isinstance(schema_reference, str) or not schema_reference.startswith(("./", "../"))
+        ):
             errors.append(f"operational JSON lacks a local schema: {relative_path}")
             continue
         if not isinstance(schema_reference, str) or not schema_reference.startswith(("./", "../")):
             continue
         schema_path = (path.parent / schema_reference).resolve()
         if LOOP_ROOT.resolve() not in schema_path.parents:
-            errors.append(f"schema path escapes loop root: {path.relative_to(LOOP_ROOT)} -> {schema_reference}")
+            errors.append(
+                f"schema path escapes loop root: {path.relative_to(LOOP_ROOT)} -> {schema_reference}"
+            )
             continue
         try:
             schema = json.loads(schema_path.read_text(encoding="utf-8"))
@@ -272,7 +331,7 @@ def validate() -> list[str]:
             continue
         try:
             payload = load_json(relative)
-        except (OSError, json.JSONDecodeError):
+        except OSError, json.JSONDecodeError:
             continue
         if not isinstance(payload, dict):
             errors.append(f"{relative} must contain an object")
@@ -293,7 +352,9 @@ def validate() -> list[str]:
         schema_name = REGISTER_SCHEMAS.get(relative_jsonl)
         if schema_name is not None:
             try:
-                register_schema = json.loads((LOOP_ROOT / "schemas" / schema_name).read_text(encoding="utf-8"))
+                register_schema = json.loads(
+                    (LOOP_ROOT / "schemas" / schema_name).read_text(encoding="utf-8")
+                )
             except (OSError, json.JSONDecodeError) as exc:
                 errors.append(f"cannot load register schema {schema_name}: {exc}")
                 continue
@@ -315,7 +376,9 @@ def validate() -> list[str]:
             register_rows = parse_jsonl(register_path)
         else:
             register_payload = json.loads(register_path.read_text(encoding="utf-8"))
-            register_rows = register_payload.get(register, []) if isinstance(register_payload, dict) else []
+            register_rows = (
+                register_payload.get(register, []) if isinstance(register_payload, dict) else []
+            )
         register_id_list = [row.get("id", "") for row in register_rows if isinstance(row, dict)]
         if duplicate_ids := _duplicates(register_id_list):
             errors.append(f"duplicate {register} ids: {sorted(duplicate_ids)}")
@@ -398,11 +461,15 @@ def validate() -> list[str]:
         if active_milestone.get("status") not in {"in_progress", "verifying"}:
             errors.append("active milestone must be in_progress or verifying")
     actual_in_progress = sorted(
-        item_id for item_id, row in work_items.items() if row.get("status") in {"in_progress", "verifying"}
+        item_id
+        for item_id, row in work_items.items()
+        if row.get("status") in {"in_progress", "verifying"}
     )
     if sorted(current.get("in_progress_ids", [])) != actual_in_progress:
         errors.append("state/current.json in_progress_ids differs from work-item statuses")
-    accepted_work_ids = sorted(item_id for item_id, row in work_items.items() if row.get("status") == "accepted")
+    accepted_work_ids = sorted(
+        item_id for item_id, row in work_items.items() if row.get("status") == "accepted"
+    )
     if sorted(current.get("completed_ids", [])) != accepted_work_ids:
         errors.append("state/current.json completed_ids differs from accepted work items")
 
@@ -429,7 +496,9 @@ def validate() -> list[str]:
             registered_statuses[record["id"]] = record.get("status", "")
     if adr_statuses != registered_statuses:
         errors.append("ADR Markdown statuses differ from the latest decision register entries")
-    proposed_adrs = sorted(adr_id for adr_id, adr_status in adr_statuses.items() if adr_status == "proposed")
+    proposed_adrs = sorted(
+        adr_id for adr_id, adr_status in adr_statuses.items() if adr_status == "proposed"
+    )
     if sorted(current.get("pending_decision_ids", [])) != proposed_adrs:
         errors.append("state/current.json pending_decision_ids differs from proposed ADRs")
 
@@ -481,7 +550,9 @@ def validate() -> list[str]:
             if record.get("implemented_by") == record.get("verified_by"):
                 errors.append(f"{record.get('id')} v2 evidence requires an independent verifier")
             if not _digest_ok(record, current_digest):
-                errors.append(f"{record.get('id')} control-plane digest differs from the current tree")
+                errors.append(
+                    f"{record.get('id')} control-plane digest differs from the current tree"
+                )
     errors.extend(_evidence_baseline_errors(evidence_records, current_digest))
 
     for item_id, row in work_items.items():
@@ -492,16 +563,21 @@ def validate() -> list[str]:
             errors.append(f"accepted work item {item_id} has no evidence")
         for evidence_id in evidence_for_item:
             if evidence_id not in evidence_by_id:
-                errors.append(f"accepted work item {item_id} references unknown evidence {evidence_id}")
+                errors.append(
+                    f"accepted work item {item_id} references unknown evidence {evidence_id}"
+                )
         if "AC-000" in row.get("acceptance", []):
             independent = any(
                 evidence_by_id.get(evidence_id, {}).get("implemented_by")
                 and evidence_by_id.get(evidence_id, {}).get("verified_by")
-                and evidence_by_id[evidence_id]["implemented_by"] != evidence_by_id[evidence_id]["verified_by"]
+                and evidence_by_id[evidence_id]["implemented_by"]
+                != evidence_by_id[evidence_id]["verified_by"]
                 for evidence_id in evidence_for_item
             )
             if not independent:
-                errors.append(f"accepted control-plane work item {item_id} lacks independent verification evidence")
+                errors.append(
+                    f"accepted control-plane work item {item_id} lacks independent verification evidence"
+                )
 
     gate_runs = parse_jsonl(LOOP_ROOT / "state" / "gate-runs.jsonl")
     gate_ids = [record.get("id", "") for record in gate_runs]
@@ -545,11 +621,17 @@ def validate() -> list[str]:
         errors.append("config runtime font must be Microsoft YaHei")
     if config.get("network_policy", {}).get("fabricated_fallbacks_allowed") is not False:
         errors.append("fabricated fallbacks must be disabled")
-    if not str(config.get("network_policy", {}).get("target_transport", "")).startswith("QNetworkAccessManager"):
+    if not str(config.get("network_policy", {}).get("target_transport", "")).startswith(
+        "QNetworkAccessManager"
+    ):
         errors.append("target network transport must be an explicit QNetworkAccessManager contract")
 
     loop_gate = next(
-        (gate for gate in load_json("quality/quality-gates.json").get("gates", []) if gate.get("id") == "G-LOOP"),
+        (
+            gate
+            for gate in load_json("quality/quality-gates.json").get("gates", [])
+            if gate.get("id") == "G-LOOP"
+        ),
         None,
     )
     expected_loop_commands = {
@@ -560,7 +642,10 @@ def validate() -> list[str]:
         ("python", "loop/scripts/check_core_boundaries.py"),
         ("python", "-m", "unittest", "discover", "-s", "loop/tests"),
     }
-    if loop_gate is None or {tuple(command) for command in loop_gate.get("commands", [])} != expected_loop_commands:
+    if (
+        loop_gate is None
+        or {tuple(command) for command in loop_gate.get("commands", [])} != expected_loop_commands
+    ):
         errors.append("G-LOOP commands differ from the mandatory control-plane gate")
     errors.extend(_gate_ownership_errors(load_json("quality/quality-gates.json").get("gates", [])))
 
