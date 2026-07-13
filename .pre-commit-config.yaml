@@ -1,0 +1,27 @@
+# Pre-commit hooks for the dev toolchain (ADR-0008). Opt in with:  pre-commit install
+#
+# These are `local` / `system` hooks on purpose: the tool versions are pinned once, in
+# pyproject.toml [dependency-groups].dev (install with `python -m pip install --group dev`), so the
+# hooks invoke that single pinned copy instead of re-pinning ruff here and risking drift. They run
+# only on the files being committed, so the product-code adoption debt (see
+# loop/quality/TOOLCHAIN_BASELINE.md) does not block commits that do not touch those files.
+minimum_pre_commit_version: "3.5.0"
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: ruff format
+        entry: python -m ruff format
+        language: system
+        types_or: [python, pyi]
+      - id: ruff-check
+        name: ruff check (with --fix)
+        entry: python -m ruff check --fix
+        language: system
+        types_or: [python, pyi]
+      - id: validate-loop
+        name: validate loop control plane (enforces the re-baseline invariant)
+        entry: python loop/scripts/validate_loop.py
+        language: system
+        pass_filenames: false
+        files: ^loop/

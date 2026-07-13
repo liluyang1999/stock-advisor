@@ -15,6 +15,7 @@ import check_core_boundaries  # noqa: E402
 import check_traceability  # noqa: E402
 import render_backlog  # noqa: E402
 import render_status  # noqa: E402
+import run_gates  # noqa: E402
 import update_state  # noqa: E402
 import validate_loop  # noqa: E402
 from _common import validate_against_schema  # noqa: E402
@@ -322,6 +323,48 @@ class LoopToolingTests(unittest.TestCase):
         for gate_id in ("G-FORMAT", "G-LINT", "G-TYPE"):
             self.assertEqual(gates[gate_id]["owning_work_item"], "WI-000", gate_id)
             self.assertTrue(gates[gate_id].get("note"), gate_id)
+
+    def test_run_gates_default_excludes_release_phase_gates(self) -> None:
+        gates = json.loads((LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8"))[
+            "gates"
+        ]
+        default_ids = [
+            g["id"]
+            for g in run_gates.select_gates(
+                gates, only=[], include_disabled=False, report_only=False, release=False
+            )
+        ]
+        self.assertIn("G-LOOP", default_ids)
+        self.assertIn("G-CORE", default_ids)
+        # G-TRACE runs release traceability (intentionally red pre-release); excluded by default.
+        self.assertNotIn("G-TRACE", default_ids)
+        self.assertNotIn("G-RELEASE", default_ids)
+        release_ids = [
+            g["id"]
+            for g in run_gates.select_gates(
+                gates, only=[], include_disabled=False, report_only=False, release=True
+            )
+        ]
+        self.assertIn("G-TRACE", release_ids)
+
+    def test_run_gates_classifies_and_degrades_on_missing_tool(self) -> None:
+        self.assertEqual(
+            run_gates.required_tool(["python", "-m", "ruff", "check"]), ("module", "ruff")
+        )
+        self.assertEqual(run_gates.required_tool(["mypy", "src"]), ("exe", "mypy"))
+        self.assertIsNone(run_gates.required_tool(["python", "main.py"]))
+        # a command needing a module that cannot exist degrades to SKIP, not a crash
+        status, _ = run_gates.run_gate({"commands": [["python", "-m", "no_such_module_xyz"]]})
+        self.assertEqual(status, "SKIP")
+
+    def test_run_gates_reports_pass_and_fail(self) -> None:
+        ok, _ = run_gates.run_gate({"commands": [["python", "-c", "pass"]]})
+        self.assertEqual(ok, "PASS")
+        bad, detail = run_gates.run_gate(
+            {"commands": [["python", "-c", "import sys; sys.exit(3)"]]}
+        )
+        self.assertEqual(bad, "FAIL")
+        self.assertIn("exit 3", detail)
 
     def test_performance_and_reliability_targets_are_measurable(self) -> None:
         test_ids = {
