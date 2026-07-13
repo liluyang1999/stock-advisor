@@ -39,8 +39,9 @@ class ModelsTests(unittest.TestCase):
         self.assertEqual(plan.shares, 100)
 
         stat = BacktestStat("BUY", 12, 0.6, 1.5)
-        report = BacktestReport(level=3, horizon=5, sample_size=40, stats={"BUY": stat},
-                                buy_hold_return=0.9, note="x")
+        report = BacktestReport(
+            level=3, horizon=5, sample_size=40, stats={"BUY": stat}, buy_hold_return=0.9, note="x"
+        )
         self.assertTrue(report.ok)
         self.assertEqual(report.stats["BUY"].count, 12)
 

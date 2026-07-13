@@ -8,24 +8,52 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from stock_advisor.domain.models import CORE_DISCLAIMER, Measurement, IndicatorSnapshot, FactorScore
 from stock_advisor.domain.symbols import normalize_symbol
-from stock_advisor.domain.policy import LEVELS, decide, level_spec, clamp_level, policy_score, spectrum
+from stock_advisor.domain.policy import (
+    LEVELS,
+    decide,
+    level_spec,
+    clamp_level,
+    policy_score,
+    spectrum,
+)
 from stock_advisor.ui.theme import DISCLAIMER as THEME_DISCLAIMER
 
 
 def make_measurement(objective_score, confidence=70, risk_penalty=0, atr=2.5, history_len=80):
     ind = IndicatorSnapshot(
-        ma5=10, ma20=10, ma60=10, rsi14=55, macd=0.1, macd_signal=0.05,
-        macd_histogram=0.05, bollinger_position=0.6, atr_percent=atr,
-        support=9.0, resistance=11.0, five_day_win_rate=0.6,
-        max_drawdown_20=5.0, volume_ratio=1.4, intraday_position=0.6,
+        ma5=10,
+        ma20=10,
+        ma60=10,
+        rsi14=55,
+        macd=0.1,
+        macd_signal=0.05,
+        macd_histogram=0.05,
+        bollinger_position=0.6,
+        atr_percent=atr,
+        support=9.0,
+        resistance=11.0,
+        five_day_win_rate=0.6,
+        max_drawdown_20=5.0,
+        volume_ratio=1.4,
+        intraday_position=0.6,
     )
     base = objective_score - risk_penalty
     return Measurement(
-        symbol=normalize_symbol("600519"), name="测试", last=10.0, change_pct=1.0,
-        factors=[FactorScore("均线结构", base, 28, "偏多", "x")], risk_penalty=risk_penalty,
-        base_factor_sum=base, objective_score=objective_score, confidence=confidence,
-        indicators=ind, recent_closes=[9.0, 10.0] * 30, reasons=["r"], risks=["k"],
-        history_len=history_len, expected_move_pct=atr,
+        symbol=normalize_symbol("600519"),
+        name="测试",
+        last=10.0,
+        change_pct=1.0,
+        factors=[FactorScore("均线结构", base, 28, "偏多", "x")],
+        risk_penalty=risk_penalty,
+        base_factor_sum=base,
+        objective_score=objective_score,
+        confidence=confidence,
+        indicators=ind,
+        recent_closes=[9.0, 10.0] * 30,
+        reasons=["r"],
+        risks=["k"],
+        history_len=history_len,
+        expected_move_pct=atr,
     )
 
 
@@ -59,8 +87,8 @@ class PolicyTests(unittest.TestCase):
 
     def test_conservative_sells_more_readily(self):
         m = make_measurement(-18)
-        self.assertEqual(decide(m, 1).action, "SELL")   # 卖出线 -15
-        self.assertEqual(decide(m, 5).action, "HOLD")   # 卖出线 -42
+        self.assertEqual(decide(m, 1).action, "SELL")  # 卖出线 -15
+        self.assertEqual(decide(m, 5).action, "HOLD")  # 卖出线 -42
 
     def test_confidence_gate_only_conservative(self):
         m = make_measurement(45, confidence=50)

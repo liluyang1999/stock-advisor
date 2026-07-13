@@ -1,8 +1,16 @@
 """离线样例行情、分析与推荐构造——纯函数，供自测/演示复用。"""
+
 from __future__ import annotations
 
 from ..domain.engine import analyze_stock, measure
-from ..domain.models import AnalysisResult, DailyBar, Measurement, MarketSnapshot, Quote, Recommendation
+from ..domain.models import (
+    AnalysisResult,
+    DailyBar,
+    Measurement,
+    MarketSnapshot,
+    Quote,
+    Recommendation,
+)
 from ..domain.symbols import normalize_symbol
 
 
@@ -58,10 +66,26 @@ def make_sample_history() -> list[DailyBar]:
 
 def make_sample_recommendation(deep: bool = True) -> Recommendation:
     snapshot = MarketSnapshot(
-        code="600519", market_id="1", name="离线样例", price=26.6, change_pct=1.53, change=0.4,
-        volume=210000, amount=210000 * 26.6, amplitude=2.6, turnover_rate=2.1, pe_ttm=24.0,
-        volume_ratio=1.4, total_cap=3.0e12, float_cap=3.0e12, speed=0.3, pb=8.0,
-        change_60d=12.0, change_ytd=18.0,
+        code="600519",
+        market_id="1",
+        name="离线样例",
+        price=26.6,
+        change_pct=1.53,
+        change=0.4,
+        volume=210000,
+        amount=210000 * 26.6,
+        amplitude=2.6,
+        turnover_rate=2.1,
+        pe_ttm=24.0,
+        volume_ratio=1.4,
+        total_cap=3.0e12,
+        float_cap=3.0e12,
+        speed=0.3,
+        pb=8.0,
+        change_60d=12.0,
+        change_ytd=18.0,
     )
     result = make_sample_analysis() if deep else None
-    return Recommendation(rank=1, snapshot=snapshot, screen_score=42.0, board="沪市主板", result=result)
+    return Recommendation(
+        rank=1, snapshot=snapshot, screen_score=42.0, board="沪市主板", result=result
+    )

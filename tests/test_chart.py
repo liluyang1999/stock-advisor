@@ -22,7 +22,7 @@ from test_engine import make_history
 class ChartTests(unittest.TestCase):
     def test_price_to_y_inverted_and_bounded(self):
         self.assertAlmostEqual(price_to_y(10, 10, 20, 0, 100), 100)  # 最低价在底部
-        self.assertAlmostEqual(price_to_y(20, 10, 20, 0, 100), 0)    # 最高价在顶部
+        self.assertAlmostEqual(price_to_y(20, 10, 20, 0, 100), 0)  # 最高价在顶部
         self.assertAlmostEqual(price_to_y(15, 10, 20, 0, 100), 50)
 
     def test_price_to_y_flat_range_midline(self):
@@ -82,7 +82,9 @@ class ChartTests(unittest.TestCase):
     def test_candle_layout_sanitizes_non_finite_bars(self):
         bars = [
             DailyBar("2026-01-01", 10.0, 11.0, 11.2, 9.8, 100, 1000.0, 1.0, 1.0),
-            DailyBar("2026-01-02", float("nan"), float("inf"), float("inf"), -5.0, 100, 1000.0, 1.0, 1.0),
+            DailyBar(
+                "2026-01-02", float("nan"), float("inf"), float("inf"), -5.0, 100, 1000.0, 1.0, 1.0
+            ),
             DailyBar("2026-01-03", 11.0, 10.5, 11.4, 10.2, 100, 1000.0, -1.0, 1.0),
         ]
 

@@ -12,8 +12,14 @@ _YI = 1.0e8  # 一亿元
 
 def _top_n(default: int = 20) -> TunableParam:
     return TunableParam(
-        key="top_n", label="推荐数量", kind="int", default=float(default),
-        minimum=5, maximum=30, unit="只", help="筛选后保留并深度分析的股票数量（5~30 只）。",
+        key="top_n",
+        label="推荐数量",
+        kind="int",
+        default=float(default),
+        minimum=5,
+        maximum=30,
+        unit="只",
+        help="筛选后保留并深度分析的股票数量（5~30 只）。",
     )
 
 
@@ -24,16 +30,45 @@ PRESETS: tuple[ScreenPreset, ...] = (
         objective="momentum",
         description="今日温和上涨、量能配合、中期趋势向上的强势股，回避过热涨停板。",
         criteria=FilterCriteria(
-            change_pct_min=2.0, change_pct_max=7.0, volume_ratio_min=1.2,
-            amount_min=1.0 * _YI, change_60d_min=0.0, exclude_st=True,
+            change_pct_min=2.0,
+            change_pct_max=7.0,
+            volume_ratio_min=1.2,
+            amount_min=1.0 * _YI,
+            change_60d_min=0.0,
+            exclude_st=True,
         ),
         tunables=(
-            TunableParam("change_pct_min", "今日涨幅下限", "float", 2.0, 0.0, 10.0, "%",
-                         "只看涨幅高于此值的股票。"),
-            TunableParam("volume_ratio_min", "量比下限", "float", 1.2, 0.5, 5.0, "倍",
-                         "量比越高代表成交越活跃。"),
-            TunableParam("amount_min", "成交额下限", "float", 1.0, 0.0, 50.0, "亿",
-                         "过滤流动性过低的股票。", scale=_YI),
+            TunableParam(
+                "change_pct_min",
+                "今日涨幅下限",
+                "float",
+                2.0,
+                0.0,
+                10.0,
+                "%",
+                "只看涨幅高于此值的股票。",
+            ),
+            TunableParam(
+                "volume_ratio_min",
+                "量比下限",
+                "float",
+                1.2,
+                0.5,
+                5.0,
+                "倍",
+                "量比越高代表成交越活跃。",
+            ),
+            TunableParam(
+                "amount_min",
+                "成交额下限",
+                "float",
+                1.0,
+                0.0,
+                50.0,
+                "亿",
+                "过滤流动性过低的股票。",
+                scale=_YI,
+            ),
             _top_n(),
         ),
     ),
@@ -43,16 +78,46 @@ PRESETS: tuple[ScreenPreset, ...] = (
         objective="breakout",
         description="放量上攻、换手活跃的突破型品种，量比要求更高。",
         criteria=FilterCriteria(
-            change_pct_min=1.0, change_pct_max=9.0, volume_ratio_min=1.8,
-            turnover_min=3.0, turnover_max=25.0, amount_min=2.0 * _YI, exclude_st=True,
+            change_pct_min=1.0,
+            change_pct_max=9.0,
+            volume_ratio_min=1.8,
+            turnover_min=3.0,
+            turnover_max=25.0,
+            amount_min=2.0 * _YI,
+            exclude_st=True,
         ),
         tunables=(
-            TunableParam("volume_ratio_min", "量比下限", "float", 1.8, 1.0, 6.0, "倍",
-                         "突破通常伴随明显放量。"),
-            TunableParam("change_pct_min", "今日涨幅下限", "float", 1.0, -2.0, 9.0, "%",
-                         "突破当日通常已转涨。"),
-            TunableParam("amount_min", "成交额下限", "float", 2.0, 0.0, 80.0, "亿",
-                         "突破需要资金承接。", scale=_YI),
+            TunableParam(
+                "volume_ratio_min",
+                "量比下限",
+                "float",
+                1.8,
+                1.0,
+                6.0,
+                "倍",
+                "突破通常伴随明显放量。",
+            ),
+            TunableParam(
+                "change_pct_min",
+                "今日涨幅下限",
+                "float",
+                1.0,
+                -2.0,
+                9.0,
+                "%",
+                "突破当日通常已转涨。",
+            ),
+            TunableParam(
+                "amount_min",
+                "成交额下限",
+                "float",
+                2.0,
+                0.0,
+                80.0,
+                "亿",
+                "突破需要资金承接。",
+                scale=_YI,
+            ),
             _top_n(),
         ),
     ),
@@ -62,16 +127,44 @@ PRESETS: tuple[ScreenPreset, ...] = (
         objective="rebound",
         description="中期超跌但今日开始企稳的品种，寻找修复机会。",
         criteria=FilterCriteria(
-            change_pct_min=-3.0, change_60d_max=-15.0, change_ytd_max=0.0,
-            amount_min=1.0 * _YI, exclude_st=True,
+            change_pct_min=-3.0,
+            change_60d_max=-15.0,
+            change_ytd_max=0.0,
+            amount_min=1.0 * _YI,
+            exclude_st=True,
         ),
         tunables=(
-            TunableParam("change_60d_max", "60日跌幅上限", "float", -15.0, -60.0, 0.0, "%",
-                         "数值越低代表要求跌得越深。"),
-            TunableParam("change_pct_min", "今日企稳下限", "float", -3.0, -8.0, 3.0, "%",
-                         "今日跌幅不超过此值，避免继续杀跌。"),
-            TunableParam("amount_min", "成交额下限", "float", 1.0, 0.0, 50.0, "亿",
-                         "保证一定的流动性。", scale=_YI),
+            TunableParam(
+                "change_60d_max",
+                "60日跌幅上限",
+                "float",
+                -15.0,
+                -60.0,
+                0.0,
+                "%",
+                "数值越低代表要求跌得越深。",
+            ),
+            TunableParam(
+                "change_pct_min",
+                "今日企稳下限",
+                "float",
+                -3.0,
+                -8.0,
+                3.0,
+                "%",
+                "今日跌幅不超过此值，避免继续杀跌。",
+            ),
+            TunableParam(
+                "amount_min",
+                "成交额下限",
+                "float",
+                1.0,
+                0.0,
+                50.0,
+                "亿",
+                "保证一定的流动性。",
+                scale=_YI,
+            ),
             _top_n(),
         ),
     ),
@@ -81,16 +174,32 @@ PRESETS: tuple[ScreenPreset, ...] = (
         objective="value",
         description="低市盈率、低市净率、较大市值的稳健品种。",
         criteria=FilterCriteria(
-            pe_min=0.0, pe_max=20.0, pb_min=0.5, pb_max=3.0,
-            total_cap_min=200.0 * _YI, amount_min=1.0 * _YI, exclude_st=True,
+            pe_min=0.0,
+            pe_max=20.0,
+            pb_min=0.5,
+            pb_max=3.0,
+            total_cap_min=200.0 * _YI,
+            amount_min=1.0 * _YI,
+            exclude_st=True,
         ),
         tunables=(
-            TunableParam("pe_max", "市盈率上限", "float", 20.0, 5.0, 60.0, "倍",
-                         "数值越低估值越便宜。"),
-            TunableParam("pb_max", "市净率上限", "float", 3.0, 1.0, 10.0, "倍",
-                         "数值越低相对净资产越便宜。"),
-            TunableParam("total_cap_min", "总市值下限", "float", 200.0, 0.0, 5000.0, "亿",
-                         "偏好较大市值的蓝筹。", scale=_YI),
+            TunableParam(
+                "pe_max", "市盈率上限", "float", 20.0, 5.0, 60.0, "倍", "数值越低估值越便宜。"
+            ),
+            TunableParam(
+                "pb_max", "市净率上限", "float", 3.0, 1.0, 10.0, "倍", "数值越低相对净资产越便宜。"
+            ),
+            TunableParam(
+                "total_cap_min",
+                "总市值下限",
+                "float",
+                200.0,
+                0.0,
+                5000.0,
+                "亿",
+                "偏好较大市值的蓝筹。",
+                scale=_YI,
+            ),
             _top_n(),
         ),
     ),
@@ -100,16 +209,31 @@ PRESETS: tuple[ScreenPreset, ...] = (
         objective="activity",
         description="换手率高、成交活跃、价格适中的高人气品种。",
         criteria=FilterCriteria(
-            turnover_min=5.0, turnover_max=30.0, volume_ratio_min=1.5,
-            price_min=3.0, price_max=60.0, amount_min=1.0 * _YI, exclude_st=True,
+            turnover_min=5.0,
+            turnover_max=30.0,
+            volume_ratio_min=1.5,
+            price_min=3.0,
+            price_max=60.0,
+            amount_min=1.0 * _YI,
+            exclude_st=True,
         ),
         tunables=(
-            TunableParam("turnover_min", "换手率下限", "float", 5.0, 1.0, 20.0, "%",
-                         "换手越高代表交投越活跃。"),
-            TunableParam("turnover_max", "换手率上限", "float", 30.0, 10.0, 60.0, "%",
-                         "上限避免过度投机。"),
-            TunableParam("volume_ratio_min", "量比下限", "float", 1.5, 0.8, 5.0, "倍",
-                         "活跃通常伴随放量。"),
+            TunableParam(
+                "turnover_min",
+                "换手率下限",
+                "float",
+                5.0,
+                1.0,
+                20.0,
+                "%",
+                "换手越高代表交投越活跃。",
+            ),
+            TunableParam(
+                "turnover_max", "换手率上限", "float", 30.0, 10.0, 60.0, "%", "上限避免过度投机。"
+            ),
+            TunableParam(
+                "volume_ratio_min", "量比下限", "float", 1.5, 0.8, 5.0, "倍", "活跃通常伴随放量。"
+            ),
             _top_n(),
         ),
     ),
@@ -119,17 +243,33 @@ PRESETS: tuple[ScreenPreset, ...] = (
         objective="balanced",
         description="振幅小、换手温和、市值较大、估值合理的稳健品种。",
         criteria=FilterCriteria(
-            amplitude_max=4.0, turnover_min=1.0, turnover_max=8.0,
-            total_cap_min=100.0 * _YI, pe_min=0.0, pe_max=30.0,
-            amount_min=1.0 * _YI, exclude_st=True,
+            amplitude_max=4.0,
+            turnover_min=1.0,
+            turnover_max=8.0,
+            total_cap_min=100.0 * _YI,
+            pe_min=0.0,
+            pe_max=30.0,
+            amount_min=1.0 * _YI,
+            exclude_st=True,
         ),
         tunables=(
-            TunableParam("amplitude_max", "振幅上限", "float", 4.0, 1.0, 10.0, "%",
-                         "数值越低代表波动越小。"),
-            TunableParam("total_cap_min", "总市值下限", "float", 100.0, 0.0, 5000.0, "亿",
-                         "偏好较大市值。", scale=_YI),
-            TunableParam("pe_max", "市盈率上限", "float", 30.0, 5.0, 80.0, "倍",
-                         "排除估值过高的品种。"),
+            TunableParam(
+                "amplitude_max", "振幅上限", "float", 4.0, 1.0, 10.0, "%", "数值越低代表波动越小。"
+            ),
+            TunableParam(
+                "total_cap_min",
+                "总市值下限",
+                "float",
+                100.0,
+                0.0,
+                5000.0,
+                "亿",
+                "偏好较大市值。",
+                scale=_YI,
+            ),
+            TunableParam(
+                "pe_max", "市盈率上限", "float", 30.0, 5.0, 80.0, "倍", "排除估值过高的品种。"
+            ),
             _top_n(),
         ),
     ),
@@ -171,7 +311,7 @@ def apply_tunables(preset: ScreenPreset, values: dict[str, float]) -> tuple[Filt
 def _finite_number(value: object) -> float | None:
     try:
         number = float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     return number if math.isfinite(number) else None
 
@@ -214,9 +354,7 @@ def _check_crossed_bounds(criteria: FilterCriteria, valid: dict[str, TunablePara
         assert param is not None  # for type-checkers；上面已排除两者皆 None
         lo = _format_number(low / param.scale)
         hi = _format_number(high / param.scale)
-        raise ValueError(
-            f"『{_pair_label(param)}』下限 {lo} 高于上限 {hi}，请调低下限或调高上限。"
-        )
+        raise ValueError(f"『{_pair_label(param)}』下限 {lo} 高于上限 {hi}，请调低下限或调高上限。")
 
 
 def _pair_label(param: TunableParam) -> str:

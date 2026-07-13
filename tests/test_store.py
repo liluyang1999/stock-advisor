@@ -8,7 +8,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.services.store import parse_config, config_to_dict, load_config, save_config, config_path
+from stock_advisor.services.store import (
+    parse_config,
+    config_to_dict,
+    load_config,
+    save_config,
+    config_path,
+)
 from stock_advisor.domain.models import AlertRule, AppConfig, WatchItem
 
 
@@ -26,7 +32,9 @@ class StoreTests(unittest.TestCase):
     def test_roundtrip_with_positions(self):
         cfg = AppConfig(
             watchlist=(WatchItem("sh600519", 1700.0, 100), WatchItem("sz000001")),
-            capital=50000.0, level=4, preset="momentum_strong",
+            capital=50000.0,
+            level=4,
+            preset="momentum_strong",
         )
         self.assertTrue(save_config(self.path, cfg))
         loaded = load_config(self.path)
@@ -45,7 +53,8 @@ class StoreTests(unittest.TestCase):
     def test_parse_clamps_and_filters(self):
         cfg = parse_config(
             {
-                "level": 9, "capital": -5,
+                "level": 9,
+                "capital": -5,
                 "watchlist": [
                     {"code": "600519", "cost": -1},
                     {"code": "600519"},
@@ -149,10 +158,12 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(reparsed.alerts, ())
 
     def test_alerts_roundtrip(self):
-        cfg = AppConfig(alerts=(
-            AlertRule("sh600519", "price", ">=", 1700.0, True),
-            AlertRule("sz000001", "change_pct", "<=", -3.0, False),
-        ))
+        cfg = AppConfig(
+            alerts=(
+                AlertRule("sh600519", "price", ">=", 1700.0, True),
+                AlertRule("sz000001", "change_pct", "<=", -3.0, False),
+            )
+        )
         self.assertTrue(save_config(self.path, cfg))
         loaded = load_config(self.path)
         self.assertEqual(len(loaded.alerts), 2)
@@ -160,33 +171,61 @@ class StoreTests(unittest.TestCase):
         self.assertFalse(loaded.alerts[1].enabled)
 
     def test_alert_enabled_parser_respects_string_false_values(self):
-        cfg = parse_config({"alerts": [
-            {"code": "600519", "field": "price", "op": ">=", "threshold": 100, "enabled": "false"},
-            {"code": "000001", "field": "score", "op": ">=", "threshold": 20, "enabled": "0"},
-            {"code": "300750", "field": "change_pct", "op": ">=", "threshold": 3, "enabled": "yes"},
-            {"code": "600000", "field": "price", "op": ">=", "threshold": 10},
-        ]})
+        cfg = parse_config(
+            {
+                "alerts": [
+                    {
+                        "code": "600519",
+                        "field": "price",
+                        "op": ">=",
+                        "threshold": 100,
+                        "enabled": "false",
+                    },
+                    {
+                        "code": "000001",
+                        "field": "score",
+                        "op": ">=",
+                        "threshold": 20,
+                        "enabled": "0",
+                    },
+                    {
+                        "code": "300750",
+                        "field": "change_pct",
+                        "op": ">=",
+                        "threshold": 3,
+                        "enabled": "yes",
+                    },
+                    {"code": "600000", "field": "price", "op": ">=", "threshold": 10},
+                ]
+            }
+        )
 
         self.assertEqual([alert.enabled for alert in cfg.alerts], [False, False, True, True])
 
     def test_config_to_dict_sanitizes_alert_enabled_values(self):
-        cfg = AppConfig(alerts=(
-            AlertRule("sh600519", "price", ">=", 1700.0, "false"),  # type: ignore[arg-type]
-            AlertRule("sz000001", "score", ">=", 20.0, "0"),  # type: ignore[arg-type]
-        ))
+        cfg = AppConfig(
+            alerts=(
+                AlertRule("sh600519", "price", ">=", 1700.0, "false"),  # type: ignore[arg-type]
+                AlertRule("sz000001", "score", ">=", 20.0, "0"),  # type: ignore[arg-type]
+            )
+        )
 
         data = config_to_dict(cfg)
 
         self.assertEqual([alert["enabled"] for alert in data["alerts"]], [False, False])
 
     def test_alerts_invalid_filtered(self):
-        cfg = parse_config({"alerts": [
-            {"code": "600519", "field": "price", "op": ">=", "threshold": 100},
-            {"code": "600519", "field": "bogus", "op": ">=", "threshold": 100},
-            {"code": "600519", "field": "price", "op": "!!", "threshold": 100},
-            {"code": "zzz", "field": "price", "op": ">=", "threshold": 100},
-            {"code": "600519", "field": "price", "op": ">=", "threshold": "x"},
-        ]})
+        cfg = parse_config(
+            {
+                "alerts": [
+                    {"code": "600519", "field": "price", "op": ">=", "threshold": 100},
+                    {"code": "600519", "field": "bogus", "op": ">=", "threshold": 100},
+                    {"code": "600519", "field": "price", "op": "!!", "threshold": 100},
+                    {"code": "zzz", "field": "price", "op": ">=", "threshold": 100},
+                    {"code": "600519", "field": "price", "op": ">=", "threshold": "x"},
+                ]
+            }
+        )
         self.assertEqual(len(cfg.alerts), 1)
         self.assertEqual(cfg.alerts[0].code, "sh600519")
 

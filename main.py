@@ -60,9 +60,15 @@ def _self_test() -> int:
     from stock_advisor.domain.models import AlertRule
 
     alert = AlertRule(result.symbol.normalized, "price", ">=", result.last - 1.0)
-    cfg = parse_config(config_to_dict(AppConfig(
-        watchlist=(WatchItem("sh600519", 20.0, 100),), level=5, alerts=(alert,),
-    )))
+    cfg = parse_config(
+        config_to_dict(
+            AppConfig(
+                watchlist=(WatchItem("sh600519", 20.0, 100),),
+                level=5,
+                alerts=(alert,),
+            )
+        )
+    )
     compare_rows = build_comparison_rows(
         [{"result": result, "measurement": measurement, "risk": "低", "cost": 20.0, "shares": 100}]
     )
@@ -73,10 +79,24 @@ def _self_test() -> int:
 
     snapshots = [
         MarketSnapshot(
-            code=code, market_id="1", name=name, price=price, change_pct=change_pct,
-            change=0.3, volume=200000, amount=3.0e8, amplitude=3.0, turnover_rate=4.0,
-            pe_ttm=18.0, volume_ratio=1.6, total_cap=8.0e10, float_cap=6.0e10,
-            speed=0.4, pb=2.5, change_60d=12.0, change_ytd=20.0,
+            code=code,
+            market_id="1",
+            name=name,
+            price=price,
+            change_pct=change_pct,
+            change=0.3,
+            volume=200000,
+            amount=3.0e8,
+            amplitude=3.0,
+            turnover_rate=4.0,
+            pe_ttm=18.0,
+            volume_ratio=1.6,
+            total_cap=8.0e10,
+            float_cap=6.0e10,
+            speed=0.4,
+            pb=2.5,
+            change_60d=12.0,
+            change_ytd=20.0,
         )
         for code, name, price, change_pct in (
             ("600000", "样例甲", 12.0, 5.0),

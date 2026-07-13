@@ -249,6 +249,7 @@ class AppHelperTests(unittest.TestCase):
 
     def test_colors_use_a_share_native_red_up_green_down(self):
         from stock_advisor.ui.app import _score_color, _action_color
+
         # 红=涨/买，绿=跌/卖：买入与正分同色，卖出与负分同色
         self.assertEqual(_action_color("BUY"), _score_color(10))
         self.assertEqual(_action_color("SELL"), _score_color(-10))
@@ -269,6 +270,7 @@ class AppHelperTests(unittest.TestCase):
 
     def test_position_plan_text_is_actionable(self):
         from stock_advisor.domain.policy import position_plan
+
         m = make_sample_measurement()
         text = build_position_plan_text(position_plan(m, 3, 100000), "标准")
         self.assertIn("止损", text)
@@ -276,10 +278,21 @@ class AppHelperTests(unittest.TestCase):
 
     def test_position_plan_text_omits_zero_stop_for_invalid_plan(self):
         from stock_advisor.domain.models import PositionPlan
+
         plan = PositionPlan(
-            fraction=0.0, shares=0, lots=0, entry=0.0, stop_price=0.0, stop_pct=0.0,
-            target_price=0.0, target_pct=0.0, reward_risk=2.0, cost=0.0,
-            max_loss=0.0, max_loss_pct=0.0, note="价格无效，无法计算仓位。",
+            fraction=0.0,
+            shares=0,
+            lots=0,
+            entry=0.0,
+            stop_price=0.0,
+            stop_pct=0.0,
+            target_price=0.0,
+            target_pct=0.0,
+            reward_risk=2.0,
+            cost=0.0,
+            max_loss=0.0,
+            max_loss_pct=0.0,
+            note="价格无效，无法计算仓位。",
         )
         text = build_position_plan_text(plan, "标准")
         self.assertIn("价格无效", text)
@@ -287,17 +300,20 @@ class AppHelperTests(unittest.TestCase):
 
     def test_share_count_parser_rejects_fractional_input(self):
         from stock_advisor.ui.app import _parse_optional_positive_int
+
         self.assertIsNone(_parse_optional_positive_int("100.5"))
         self.assertEqual(_parse_optional_positive_int("200.0"), 200)
 
     def test_positive_float_parser_rejects_non_finite_input(self):
         from stock_advisor.ui.app import _parse_optional_positive
+
         self.assertIsNone(_parse_optional_positive("NaN"))
         self.assertIsNone(_parse_optional_positive("Infinity"))
         self.assertIsNone(_parse_optional_positive("-Infinity"))
 
     def test_alert_threshold_parser_rejects_non_finite_input(self):
         from stock_advisor.ui.app import _parse_alert_threshold
+
         self.assertEqual(_parse_alert_threshold("12.5"), 12.5)
         self.assertIsNone(_parse_alert_threshold("NaN"))
         self.assertIsNone(_parse_alert_threshold("Infinity"))
@@ -305,6 +321,7 @@ class AppHelperTests(unittest.TestCase):
 
     def test_backtest_text_has_winrate_and_honest_caveat(self):
         from stock_advisor.domain.backtest import backtest_signals
+
         report = backtest_signals(make_sample_history(), level=3)
         text = build_backtest_text(report)
         self.assertIn("胜率", text)
@@ -312,6 +329,7 @@ class AppHelperTests(unittest.TestCase):
 
     def test_backtest_text_hides_non_finite_numbers(self):
         from stock_advisor.domain.models import BacktestReport, BacktestStat
+
         report = BacktestReport(
             level=3,
             horizon=5,
@@ -332,23 +350,26 @@ class AppHelperTests(unittest.TestCase):
 
     def test_spectrum_text_lists_levels_and_hint(self):
         from stock_advisor.domain.policy import spectrum
+
         text = build_spectrum_text(spectrum(make_sample_measurement(), 3))
         self.assertIn("决策强度光谱", text)
         self.assertIn("标准", text)
 
     def test_watchlist_rows_show_pl_when_held_and_analyzed(self):
         from stock_advisor.domain.models import WatchItem
+
         result = make_sample_analysis()  # last≈26.6
         rows = watchlist_rows(
             [WatchItem(result.symbol.normalized, cost=20.0, shares=100)],
             {result.symbol.normalized: result},
         )
         self.assertEqual(rows[0][2], "20.00")  # 成本
-        self.assertIn("%", rows[0][4])         # 浮动盈亏含百分比
-        self.assertIn("元", rows[0][4])        # 含金额
+        self.assertIn("%", rows[0][4])  # 浮动盈亏含百分比
+        self.assertIn("元", rows[0][4])  # 含金额
 
     def test_watchlist_rows_hide_non_finite_cost_and_cached_price(self):
         from stock_advisor.domain.models import WatchItem
+
         result = replace(make_sample_analysis(), last=float("inf"))
 
         rows = watchlist_rows(
@@ -365,12 +386,14 @@ class AppHelperTests(unittest.TestCase):
 
     def test_watchlist_rows_dash_when_no_cost(self):
         from stock_advisor.domain.models import WatchItem
+
         rows = watchlist_rows([WatchItem("sh600519")], {})
         self.assertEqual(rows[0][2], "—")
         self.assertEqual(rows[0][4], "—")
 
     def test_comparison_row_formatter_hides_non_finite_numbers(self):
         from stock_advisor.domain.models import ComparisonRow
+
         row = ComparisonRow(
             code="SH.600519",
             name="bad-cache",
@@ -392,6 +415,7 @@ class AppHelperTests(unittest.TestCase):
 
     def test_fund_flow_text_formats_inflow_and_outflow(self):
         from stock_advisor.domain.models import FundFlow
+
         text = build_fund_flow_text(
             FundFlow(today_main=3.0e8, main_5d=-1.0e8, recent=[("2026-06-24", 3.0e8)]), "测试"
         )
@@ -402,6 +426,7 @@ class AppHelperTests(unittest.TestCase):
 
     def test_fund_flow_text_hides_non_finite_numbers(self):
         from stock_advisor.domain.models import FundFlow
+
         text = build_fund_flow_text(
             FundFlow(
                 today_main=float("nan"),
@@ -515,7 +540,9 @@ class RecommendationRowTests(unittest.TestCase):
         self.assertTrue(snapshot_display(rec.snapshot).startswith(("SH.", "SZ.", "BJ.")))
 
     def test_screener_overview_reports_scan_and_match_counts(self):
-        overview = build_screener_overview("强势动量", total=5865, matched=120, shown=20, failures=1)
+        overview = build_screener_overview(
+            "强势动量", total=5865, matched=120, shown=20, failures=1
+        )
         self.assertIn("强势动量", overview)
         self.assertIn("5865", overview)
         self.assertIn("120", overview)

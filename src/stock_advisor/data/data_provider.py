@@ -44,8 +44,12 @@ SINA_HISTORY_URL = (
     "https://quotes.sina.cn/cn/api/json_v2.php/CN_MarketDataService.getKLineData"
     "?symbol={symbol}&scale=240&ma=no&datalen={limit}"
 )
-TENCENT_FQ_HISTORY_URL = "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={symbol},day,,,{limit},qfq"
-TENCENT_HISTORY_URL = "https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param={symbol},day,,,{limit}"
+TENCENT_FQ_HISTORY_URL = (
+    "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={symbol},day,,,{limit},qfq"
+)
+TENCENT_HISTORY_URL = (
+    "https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param={symbol},day,,,{limit}"
+)
 # 个股资金流（主力净流入日线）。该接口偶发被限流/拒连，调用方需降级处理、不得阻塞主流程。
 FUND_FLOW_HOSTS = ("push2.eastmoney.com", "push2his.eastmoney.com")
 FUND_FLOW_URL = (
@@ -77,7 +81,9 @@ class EastmoneyProvider:
                 )
                 return parse_sina_quote_payload(symbol, payload)
             except MarketDataError as fallback_error:
-                raise MarketDataError(f"实时行情获取失败：{primary_error}；备用源也失败：{fallback_error}") from fallback_error
+                raise MarketDataError(
+                    f"实时行情获取失败：{primary_error}；备用源也失败：{fallback_error}"
+                ) from fallback_error
 
     def fetch_history(self, symbol: StockSymbol, limit: int = 120) -> list[DailyBar]:
         limit = _positive_int(limit, 120)
@@ -106,7 +112,10 @@ class EastmoneyProvider:
             errors.append(f"新浪历史日线失败：{exc}")
 
         for label, url in (
-            ("腾讯前复权日线", TENCENT_FQ_HISTORY_URL.format(symbol=symbol.normalized, limit=limit)),
+            (
+                "腾讯前复权日线",
+                TENCENT_FQ_HISTORY_URL.format(symbol=symbol.normalized, limit=limit),
+            ),
             ("腾讯普通日线", TENCENT_HISTORY_URL.format(symbol=symbol.normalized, limit=limit)),
         ):
             try:
@@ -123,7 +132,9 @@ class EastmoneyProvider:
 
         raise MarketDataError("；".join(errors) or "历史日线获取失败")
 
-    def fetch_market_snapshot(self, page_size: int = 500, max_pages: int = 20) -> list[MarketSnapshot]:
+    def fetch_market_snapshot(
+        self, page_size: int = 500, max_pages: int = 20
+    ) -> list[MarketSnapshot]:
         """分页拉取全 A 股实时快照，多个对等主机做回退。全部失败才报错。"""
         page_size = _positive_int(page_size, 500)
         max_pages = _positive_int(max_pages, 20)
@@ -157,16 +168,21 @@ class EastmoneyProvider:
             errors.append(f"{host} 资金流为空")
         raise MarketDataError("资金流获取失败：" + "；".join(errors))
 
-    def _fetch_clist_all_pages(self, host: str, page_size: int, max_pages: int) -> list[MarketSnapshot]:
+    def _fetch_clist_all_pages(
+        self, host: str, page_size: int, max_pages: int
+    ) -> list[MarketSnapshot]:
         collected: list[MarketSnapshot] = []
         seen: set[str] = set()
         total: int | None = None
         for pn in range(1, max(1, int(max_pages)) + 1):
             try:
                 # 追加时间戳缓存破坏参数，更接近浏览器请求，规避中间缓存/部分 WAF 拦截。
-                url = CLIST_URL.format(host=host, pn=pn, pz=page_size) + f"&_={int(time.time() * 1000)}"
+                url = (
+                    CLIST_URL.format(host=host, pn=pn, pz=page_size)
+                    + f"&_={int(time.time() * 1000)}"
+                )
                 payload = self._request(url)
-            except (MarketDataError, ValueError):
+            except MarketDataError, ValueError:
                 if pn == 1:
                     raise
                 break  # 已取到部分数据，后续页失败则返回已有部分
@@ -184,7 +200,9 @@ class EastmoneyProvider:
                 break
         return collected
 
-    def _request(self, url: str, headers: dict[str, str] | None = None, encoding: str | None = None) -> str:
+    def _request(
+        self, url: str, headers: dict[str, str] | None = None, encoding: str | None = None
+    ) -> str:
         # 用干净的浏览器 UA：东方财富 clist 等接口会对含 "Python" 的 UA 直接断开连接
         # （Remote end closed connection without response）。不要带 Connection: close。
         merged_headers = {
@@ -415,7 +433,10 @@ def parse_clist_payload(payload: str) -> list[MarketSnapshot]:
         amount = _optional_float(item.get("f6"))
         amplitude = _optional_float(item.get("f7"))
         turnover_rate = _optional_float(item.get("f8"))
-        if any(value is None for value in (change_pct, change, volume, amount, amplitude, turnover_rate)):
+        if any(
+            value is None
+            for value in (change_pct, change, volume, amount, amplitude, turnover_rate)
+        ):
             continue
         market_id = _market_id(item.get("f13"))
         if market_id is None:
@@ -450,7 +471,7 @@ def _market_id(value: object) -> str | None:
         return None
     try:
         number = float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     if not math.isfinite(number) or not number.is_integer():
         return None
@@ -474,8 +495,10 @@ def parse_fund_flow_payload(payload: str, limit: int = 5) -> FundFlow | None:
         rows.append((parts[0], value))
     if not rows:
         return None
-    recent = rows[-_positive_int(limit, 5):]
-    return FundFlow(today_main=rows[-1][1], main_5d=sum(value for _, value in rows[-5:]), recent=recent)
+    recent = rows[-_positive_int(limit, 5) :]
+    return FundFlow(
+        today_main=rows[-1][1], main_5d=sum(value for _, value in rows[-5:]), recent=recent
+    )
 
 
 def _clist_total(payload: str) -> int | None:
@@ -487,7 +510,7 @@ def _clist_total(payload: str) -> int | None:
         return None
     try:
         total = float(data.get("total"))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     if not math.isfinite(total) or total < 0:
         return None
@@ -499,7 +522,7 @@ def _optional_float(value: object) -> float | None:
         return None
     try:
         number = float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     return number if math.isfinite(number) else None
 
@@ -511,14 +534,16 @@ def _optional_nonnegative_float(value: object) -> float | None:
     return number
 
 
-def _ohlc_envelope(open_price: float, close_or_last: float, high: float, low: float) -> tuple[float, float]:
+def _ohlc_envelope(
+    open_price: float, close_or_last: float, high: float, low: float
+) -> tuple[float, float]:
     return max(high, open_price, close_or_last), min(low, open_price, close_or_last)
 
 
 def _positive_int(value: object, default: int) -> int:
     try:
         number = float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return max(1, int(default))
     if not math.isfinite(number):
         return max(1, int(default))
@@ -635,7 +660,7 @@ def _safe_float(value: object) -> float:
         return 0.0
     try:
         number = float(value)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return 0.0
     return number if math.isfinite(number) else 0.0
 

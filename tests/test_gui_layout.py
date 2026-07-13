@@ -50,7 +50,9 @@ def _direct_child(widget, ancestor):
 def _canvas_texts(canvas):
     """收集画布上所有 text 类型 item 的文本内容，用于按可见文案断言——不依赖 tag，
     覆盖 _draw_visual（未打 tag）与 _draw_empty_visual（打 tag）两种绘制路径。"""
-    return [canvas.itemcget(item, "text") for item in canvas.find_all() if canvas.type(item) == "text"]
+    return [
+        canvas.itemcget(item, "text") for item in canvas.find_all() if canvas.type(item) == "text"
+    ]
 
 
 def _find_widget_with_textvariable(widget, variable):
@@ -195,7 +197,9 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertTrue(hasattr(self.app, "mode_control_shell"))
         self.assertTrue(hasattr(self.app, "mode_tab_group"))
         self.assertTrue(hasattr(self.app, "level_control_group"))
-        self.assertTrue(all(button.master is self.app.mode_tab_group for button in self.app._tab_buttons))
+        self.assertTrue(
+            all(button.master is self.app.mode_tab_group for button in self.app._tab_buttons)
+        )
         self.assertIs(self.app.mode_tab_group.master.master, self.app.mode_primary_row)
         self.assertIs(self.app.level_control_group.master, self.app.mode_primary_row)
         self.assertIs(self.app.mode_primary_row.master, self.app.mode_control_body)
@@ -232,9 +236,7 @@ class GuiLayoutTests(unittest.TestCase):
         mode_gap = self.app.mode_tab_group.winfo_x() - (
             mode_label.winfo_x() + mode_label.winfo_width()
         )
-        level_gap = level_selector.winfo_x() - (
-            level_label.winfo_x() + level_label.winfo_width()
-        )
+        level_gap = level_selector.winfo_x() - (level_label.winfo_x() + level_label.winfo_width())
         for gap in (mode_gap, level_gap):
             self.assertGreaterEqual(gap, self.app._sc(8))
             self.assertLessEqual(gap, self.app._sc(16))
@@ -297,9 +299,13 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertIn(self.app.results_context_row, self.app.results_toolbar.pack_slaves())
         self.assertNotIn(self.app._overview_label, outer.pack_slaves())
 
-        self.assertGreater(self.app.results_context_row.winfo_y(), self.app.results_action_row.winfo_y())
+        self.assertGreater(
+            self.app.results_context_row.winfo_y(), self.app.results_action_row.winfo_y()
+        )
 
-        self.assertEqual(str(self.app._overview_label.cget("textvariable")), str(self.app.overview_var))
+        self.assertEqual(
+            str(self.app._overview_label.cget("textvariable")), str(self.app.overview_var)
+        )
 
     def test_results_toolbar_uses_two_rows_so_overview_is_not_clipped(self):
         self.root.geometry("1000x680+0+0")
@@ -309,8 +315,12 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertIs(self.app.results_action_row.master, self.app.results_toolbar)
         self.assertIs(self.app.results_context_row.master, self.app.results_toolbar)
         self.assertIs(self.app._overview_label.master, self.app.results_context_row)
-        self.assertGreater(self.app.results_context_row.winfo_y(), self.app.results_action_row.winfo_y())
-        self.assertGreaterEqual(self.app._overview_label.winfo_width(), self.app._overview_label.winfo_reqwidth())
+        self.assertGreater(
+            self.app.results_context_row.winfo_y(), self.app.results_action_row.winfo_y()
+        )
+        self.assertGreaterEqual(
+            self.app._overview_label.winfo_width(), self.app._overview_label.winfo_reqwidth()
+        )
 
     def test_result_progress_is_visible_only_while_running(self):
         self.assertEqual(self.app.progress.winfo_manager(), "")
@@ -342,8 +352,9 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertEqual(self.app.screen_stop_button.winfo_manager(), "")
 
     def test_individual_input_secondary_tools_are_grouped_under_menu(self):
-        self.assertEqual([button.cget("text") for button in self.app.input_primary_buttons],
-                         ["开始分析", "停止"])
+        self.assertEqual(
+            [button.cget("text") for button in self.app.input_primary_buttons], ["开始分析", "停止"]
+        )
         self.assertEqual(self.app.input_tools_button.cget("text"), "输入工具")
         self.assertLessEqual(self.app.input_tools_button.winfo_reqwidth(), 112)
 
@@ -373,7 +384,9 @@ class GuiLayoutTests(unittest.TestCase):
         self.app._on_canvas_configure(_FakeEvent(1376))
         self.root.update_idletasks()
 
-        panel_right = self.app.input_panel_body.winfo_rootx() + self.app.input_panel_body.winfo_width()
+        panel_right = (
+            self.app.input_panel_body.winfo_rootx() + self.app.input_panel_body.winfo_width()
+        )
         for widget in (self.app.analyze_button, self.app.input_tools_button):
             with self.subTest(widget=widget.cget("text")):
                 self.assertTrue(widget.winfo_ismapped())
@@ -614,7 +627,9 @@ class GuiLayoutTests(unittest.TestCase):
             try:
                 self.app.copy_current_detail()
             except tk.TclError as exc:
-                self.fail(f"copy_current_detail leaked clipboard error instead of showing UI error: {exc}")
+                self.fail(
+                    f"copy_current_detail leaked clipboard error instead of showing UI error: {exc}"
+                )
         finally:
             app_module.messagebox.showerror = original_showerror
             self.app.root.clipboard_clear = original_clear
@@ -647,8 +662,10 @@ class GuiLayoutTests(unittest.TestCase):
         from stock_advisor.ui.app import COMMAND_SELECTED_BG, level_summary
 
         self.assertTrue(hasattr(self.app, "level_buttons"))
-        self.assertEqual([button.cget("text") for button in self.app.level_buttons],
-                         ["L1稳健", "L2稳进", "L3标准", "L4积极", "L5激进"])
+        self.assertEqual(
+            [button.cget("text") for button in self.app.level_buttons],
+            ["L1稳健", "L2稳进", "L3标准", "L4积极", "L5激进"],
+        )
 
         self.app.level_buttons[4].invoke()
         self.root.update_idletasks()
@@ -664,7 +681,9 @@ class GuiLayoutTests(unittest.TestCase):
         # 控制栏内确实存在一个可见的 -textvariable 绑定控件，而不仅是变量本身有值。
         from stock_advisor.ui.app import level_summary
 
-        label = _find_widget_with_textvariable(self.app.mode_control_shell, self.app.level_label_var)
+        label = _find_widget_with_textvariable(
+            self.app.mode_control_shell, self.app.level_label_var
+        )
         self.assertIsNotNone(label, "决策强度控制栏内应有一个绑定 level_label_var 的可见 Label")
         self.assertTrue(label.winfo_ismapped())
 
@@ -689,7 +708,9 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertIs(self.app.level_hint_label.master, self.app.mode_control_body)
         self.assertEqual(self.app.level_hint_label.pack_info().get("fill"), "x")
         self.assertGreater(self.app.level_hint_label.winfo_y(), self.app.mode_row.winfo_y())
-        self.assertGreaterEqual(self.app.level_hint_label.winfo_width(), self.app.level_hint_label.winfo_reqwidth())
+        self.assertGreaterEqual(
+            self.app.level_hint_label.winfo_width(), self.app.level_hint_label.winfo_reqwidth()
+        )
 
     def test_visual_dashboard_and_kline_share_one_workspace_row(self):
         workspace = getattr(self.app, "visual_workspace", None)
@@ -699,7 +720,9 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertIs(self.app.kline_canvas.master.master, workspace)
         self.assertEqual(self.app.visual.master.pack_info().get("side"), "left")
         self.assertEqual(self.app.kline_canvas.master.pack_info().get("side"), "left")
-        self.assertEqual(int(self.app.visual.cget("height")), int(self.app.kline_canvas.cget("height")))
+        self.assertEqual(
+            int(self.app.visual.cget("height")), int(self.app.kline_canvas.cget("height"))
+        )
 
     def test_visual_and_kline_share_one_bordered_analysis_panel(self):
         from stock_advisor.ui.app import CARD_BORDER
@@ -878,8 +901,10 @@ class GuiLayoutTests(unittest.TestCase):
 
     def test_visual_summary_uses_spacious_metric_panel(self):
         self.assertTrue(hasattr(self.app, "visual_summary_metrics"))
-        self.assertEqual([metric["title"].cget("text") for metric in self.app.visual_summary_metrics],
-                         ["方向", "仓位", "把握", "波动"])
+        self.assertEqual(
+            [metric["title"].cget("text") for metric in self.app.visual_summary_metrics],
+            ["方向", "仓位", "把握", "波动"],
+        )
         self.assertGreaterEqual(self.app.insight_strip.winfo_reqheight(), 145)
         self.assertLessEqual(self.app.insight_strip.winfo_reqheight(), 240)
 
@@ -911,9 +936,13 @@ class GuiLayoutTests(unittest.TestCase):
 
         value_labels = [metric["value"] for metric in self.app.visual_summary_metrics]
         self.assertEqual(len(value_labels), 4)
-        for key, metric in zip(("action", "position", "confidence", "move"), self.app.visual_summary_metrics):
+        for key, metric in zip(
+            ("action", "position", "confidence", "move"), self.app.visual_summary_metrics
+        ):
             self.assertIs(metric["value_var"], self.app.visual_metric_vars[key])
-            self.assertEqual(str(metric["value"].cget("textvariable")), str(self.app.visual_metric_vars[key]))
+            self.assertEqual(
+                str(metric["value"].cget("textvariable")), str(self.app.visual_metric_vars[key])
+            )
 
         # 四指标行与光谱条都挂在 insight_strip 之下，且共用同一张直属内层卡片——不是两张
         # 并排的独立描边卡。
@@ -968,11 +997,19 @@ class GuiLayoutTests(unittest.TestCase):
         from stock_advisor.ui.app import ACCENT
 
         self.assertTrue(hasattr(self.app, "detail_nav_buttons"))
-        self.assertEqual([button.cget("text") for button in self.app.detail_nav_buttons],
-                         ["结论", "依据", "风险", "操作"])
-        self.assertTrue(all(isinstance(button, tk.Radiobutton) for button in self.app.detail_nav_buttons))
-        self.assertTrue(all(not bool(int(button.cget("indicatoron"))) for button in self.app.detail_nav_buttons))
-        self.assertTrue(all(int(button.cget("width")) <= 8 for button in self.app.detail_nav_buttons))
+        self.assertEqual(
+            [button.cget("text") for button in self.app.detail_nav_buttons],
+            ["结论", "依据", "风险", "操作"],
+        )
+        self.assertTrue(
+            all(isinstance(button, tk.Radiobutton) for button in self.app.detail_nav_buttons)
+        )
+        self.assertTrue(
+            all(not bool(int(button.cget("indicatoron"))) for button in self.app.detail_nav_buttons)
+        )
+        self.assertTrue(
+            all(int(button.cget("width")) <= 8 for button in self.app.detail_nav_buttons)
+        )
 
         self._inject_sample()
         self.app._show_selected_detail()
@@ -1018,13 +1055,15 @@ class GuiLayoutTests(unittest.TestCase):
             format_result_row,
             result_row_tags,
         )
+
         result = make_sample_analysis()
         iid = result.symbol.normalized
         self.app.results[iid] = result
         self.app.measurements[iid] = make_sample_measurement()
         self.app.histories[iid] = make_sample_history()
-        self.app.tree.insert("", tk.END, iid=iid, values=format_result_row(result),
-                             tags=result_row_tags(result))
+        self.app.tree.insert(
+            "", tk.END, iid=iid, values=format_result_row(result), tags=result_row_tags(result)
+        )
         self.app.tree.selection_set(iid)
         return iid
 
@@ -1081,6 +1120,7 @@ class GuiLayoutTests(unittest.TestCase):
 
     def test_level_change_redecides_without_error(self):
         from stock_advisor.ui.app import level_summary
+
         iid = self._inject_sample()
         self.app._show_selected_detail()
         self.app.level_var.set(5)
@@ -1094,7 +1134,9 @@ class GuiLayoutTests(unittest.TestCase):
         from stock_advisor.domain.symbols import normalize_symbol
 
         original = app_module.analyze_symbol
-        app_module.analyze_symbol = lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom"))
+        app_module.analyze_symbol = lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            RuntimeError("boom")
+        )
         self.app.queue = queue.Queue()
         try:
             try:
@@ -1115,7 +1157,9 @@ class GuiLayoutTests(unittest.TestCase):
         from stock_advisor.ui import app as app_module
 
         original = app_module.screen_and_recommend
-        app_module.screen_and_recommend = lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("screen boom"))
+        app_module.screen_and_recommend = lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            RuntimeError("screen boom")
+        )
         self.app.queue = queue.Queue()
         try:
             try:
@@ -1363,8 +1407,10 @@ class GuiLayoutTests(unittest.TestCase):
         try:
             summary = getattr(window, "_comparison_summary_metrics")
 
-            self.assertEqual([metric["title"].cget("text") for metric in summary],
-                             ["对比", "买入", "高风险", "持仓"])
+            self.assertEqual(
+                [metric["title"].cget("text") for metric in summary],
+                ["对比", "买入", "高风险", "持仓"],
+            )
             self.assertEqual(summary[0]["value_var"].get(), "1")
             self.assertEqual(summary[1]["value_var"].get(), "1")
             self.assertTrue(all(int(metric["value"].cget("width")) <= 8 for metric in summary))
@@ -1391,14 +1437,19 @@ class GuiLayoutTests(unittest.TestCase):
             buttons = getattr(window, "_watchlist_primary_buttons")
             more_menu = getattr(window, "_watchlist_actions_menu")
 
-            self.assertEqual([metric["title"].cget("text") for metric in summary],
-                             ["自选", "持仓", "已分析", "待补"])
+            self.assertEqual(
+                [metric["title"].cget("text") for metric in summary],
+                ["自选", "持仓", "已分析", "待补"],
+            )
             self.assertEqual(summary[0]["value_var"].get(), "1")
             self.assertTrue(all(int(metric["value"].cget("width")) <= 8 for metric in summary))
-            self.assertEqual([button.cget("text") for button in buttons],
-                             ["保存持仓", "更多操作", "关闭"])
+            self.assertEqual(
+                [button.cget("text") for button in buttons], ["保存持仓", "更多操作", "关闭"]
+            )
 
-            labels = [more_menu.entrycget(index, "label") for index in range(more_menu.index("end") + 1)]
+            labels = [
+                more_menu.entrycget(index, "label") for index in range(more_menu.index("end") + 1)
+            ]
             self.assertEqual(labels, ["载入到输入框", "删除选中", "清空自选"])
         finally:
             window.destroy()
@@ -1416,6 +1467,7 @@ class GuiLayoutTests(unittest.TestCase):
         app_module.store.save_config = lambda *_args, **_kwargs: False
         app_module.messagebox.showerror = lambda *args, **kwargs: errors.append((args, kwargs))
         try:
+
             def walk(widget):
                 yield widget
                 for child in widget.winfo_children():
@@ -1572,17 +1624,25 @@ class GuiLayoutTests(unittest.TestCase):
             primary_buttons = getattr(window, "_alert_primary_buttons")
             actions_menu = getattr(window, "_alert_actions_menu")
 
-            self.assertEqual([metric["title"].cget("text") for metric in summary],
-                             ["规则", "启用", "触发", "监控"])
-            self.assertEqual([metric["value_var"].get() for metric in summary],
-                             ["2", "1", "1", "关"])
+            self.assertEqual(
+                [metric["title"].cget("text") for metric in summary],
+                ["规则", "启用", "触发", "监控"],
+            )
+            self.assertEqual(
+                [metric["value_var"].get() for metric in summary], ["2", "1", "1", "关"]
+            )
             self.assertTrue(all(int(metric["value"].cget("width")) <= 8 for metric in summary))
             self.assertFalse(bool(int(monitor_button.cget("indicatoron"))))
             self.assertLessEqual(int(monitor_button.cget("width")), 10)
-            self.assertEqual([button.cget("text") for button in primary_buttons],
-                             ["添加", "实时预警 关", "更多操作", "关闭"])
+            self.assertEqual(
+                [button.cget("text") for button in primary_buttons],
+                ["添加", "实时预警 关", "更多操作", "关闭"],
+            )
 
-            labels = [actions_menu.entrycget(index, "label") for index in range(actions_menu.index("end") + 1)]
+            labels = [
+                actions_menu.entrycget(index, "label")
+                for index in range(actions_menu.index("end") + 1)
+            ]
             self.assertEqual(labels, ["启用/停用", "删除选中"])
         finally:
             window.destroy()
@@ -1598,6 +1658,7 @@ class GuiLayoutTests(unittest.TestCase):
         app_module.store.save_config = lambda *_args, **_kwargs: False
         app_module.messagebox.showerror = lambda *args, **kwargs: errors.append((args, kwargs))
         try:
+
             def walk(widget):
                 yield widget
                 for child in widget.winfo_children():
@@ -1621,6 +1682,7 @@ class GuiLayoutTests(unittest.TestCase):
     def test_alert_fires_banner_edge_triggered(self):
         from stock_advisor.ui.app import make_sample_analysis
         from stock_advisor.domain.models import AlertRule
+
         result = make_sample_analysis()
         code = result.symbol.normalized
         self.app.alerts = [AlertRule(code, "price", ">=", 1.0)]
@@ -1629,7 +1691,9 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertEqual(self.app.alert_banner.winfo_manager(), "pack")
         self.assertIn("预警触发", self.app.alert_banner.cget("text"))
         # 边沿触发：再次检查同一真值不重复触发（_fired 已记录）
-        self.assertIn(("%s" % code, "price", ">=", 1.0), {(k[0], k[1], k[2], k[3]) for k in self.app._fired})
+        self.assertIn(
+            ("%s" % code, "price", ">=", 1.0), {(k[0], k[1], k[2], k[3]) for k in self.app._fired}
+        )
 
     def test_monitor_toggle_no_crash(self):
         self.app.monitor_var.set(True)
@@ -1760,6 +1824,7 @@ class GuiLayoutTests(unittest.TestCase):
 
     def test_info_window_opens_without_ttk_notebook(self):
         from tkinter import ttk as _ttk
+
         self.app.show_help()
         tops = [w for w in self.app.root.winfo_children() if isinstance(w, tk.Toplevel)]
         self.assertTrue(tops)
@@ -1829,7 +1894,8 @@ class GuiLayoutTests(unittest.TestCase):
 
             screener_tab = app2._tab_frames[1]
             desc_label = next(
-                widget for widget in screener_tab.winfo_children()
+                widget
+                for widget in screener_tab.winfo_children()
                 if isinstance(widget, ttk.Label)
                 and str(widget.cget("textvariable")) == str(app2.preset_desc_var)
             )
@@ -1858,7 +1924,9 @@ class GuiLayoutTests(unittest.TestCase):
         self.app._configure_styles()
         style = ttk.Style(self.root)
         self.assertEqual(int(style.lookup("Treeview", "rowheight")), self.app._sc(42))
-        self.assertEqual(int(style.lookup("Horizontal.TProgressbar", "thickness")), self.app._sc(14))
+        self.assertEqual(
+            int(style.lookup("Horizontal.TProgressbar", "thickness")), self.app._sc(14)
+        )
         self.assertEqual(int(style.lookup("Vertical.TScrollbar", "width")), self.app._sc(11))
         self.assertEqual(int(style.lookup("Vertical.TScrollbar", "arrowsize")), self.app._sc(11))
         self.assertEqual(int(style.lookup("Horizontal.TScrollbar", "width")), self.app._sc(11))
@@ -1956,7 +2024,11 @@ class GuiLayoutTests(unittest.TestCase):
         root2.withdraw()
         try:
             app2 = _HighDpiStockAdvisorApp(root2)
-            from stock_advisor.ui.app import make_sample_analysis, make_sample_measurement, make_sample_history
+            from stock_advisor.ui.app import (
+                make_sample_analysis,
+                make_sample_measurement,
+                make_sample_history,
+            )
 
             result = make_sample_analysis()
             iid = result.symbol.normalized
@@ -1984,7 +2056,11 @@ class GuiLayoutTests(unittest.TestCase):
                 self.assertEqual(
                     window.minsize(),
                     compute_scaled_minimum(
-                        work_width, work_height, app2._ui_scale, 900, 380,
+                        work_width,
+                        work_height,
+                        app2._ui_scale,
+                        900,
+                        380,
                         margin=CHILD_WINDOW_WORKAREA_MARGIN,
                         frame_width=frame_width,
                         frame_height=frame_height,
@@ -1998,8 +2074,17 @@ class GuiLayoutTests(unittest.TestCase):
 
                 tree = next(w for w in walk(window) if isinstance(w, ttk.Treeview))
                 expected_base_widths = {
-                    "code": 100, "name": 120, "last": 80, "change": 80, "score": 80,
-                    "conf": 70, "risk": 60, "pos": 80, "cost": 90, "pl": 150, "hint": 230,
+                    "code": 100,
+                    "name": 120,
+                    "last": 80,
+                    "change": 80,
+                    "score": 80,
+                    "conf": 70,
+                    "risk": 60,
+                    "pos": 80,
+                    "cost": 90,
+                    "pl": 150,
+                    "hint": 230,
                 }
                 self.assertEqual(list(tree["columns"]), list(expected_base_widths))
                 for col, base in expected_base_widths.items():
@@ -2007,7 +2092,8 @@ class GuiLayoutTests(unittest.TestCase):
                         self.assertEqual(int(tree.column(col, "width")), app2._sc(base))
 
                 hbars = [
-                    w for w in walk(window)
+                    w
+                    for w in walk(window)
                     if isinstance(w, ttk.Scrollbar) and str(w.cget("orient")) == "horizontal"
                 ]
                 self.assertEqual(len(hbars), 1)
@@ -2047,7 +2133,11 @@ class GuiLayoutTests(unittest.TestCase):
                 self.assertEqual(
                     window.minsize(),
                     compute_scaled_minimum(
-                        work_width, work_height, app2._ui_scale, 720, 500,
+                        work_width,
+                        work_height,
+                        app2._ui_scale,
+                        720,
+                        500,
                         margin=CHILD_WINDOW_WORKAREA_MARGIN,
                         frame_width=frame_width,
                         frame_height=frame_height,
@@ -2097,21 +2187,24 @@ class HighDpiCenteredGeometryTests(unittest.TestCase):
             "    app._tk_scaling = lambda w: 3.3366                     # 250%\n"
             "    app._apply_centered_geometry(root)\n"
             "    root.update_idletasks()\n"
-            "    print(root.geometry())                                # 形如 \"3464x1700+180+150\"\n"
+            '    print(root.geometry())                                # 形如 "3464x1700+180+150"\n'
             "finally:\n"
             "    root.destroy()\n"
         )
         result = subprocess.run(
             [sys.executable, "-c", script],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         self.assertEqual(result.returncode, 0, f"stdout={result.stdout!r} stderr={result.stderr!r}")
         geo = result.stdout.strip().splitlines()[-1]
         wh, x, y = geo.split("+")[0], int(geo.split("+")[1]), int(geo.split("+")[2])
         w, h = (int(v) for v in wh.split("x"))
-        self.assertGreaterEqual(w, 3000)      # 非旧 bug 的 1376
-        self.assertGreaterEqual(h, 1600)      # 非旧 bug 的 680
-        self.assertGreater(x, 0); self.assertGreater(y, 0)     # 居中,非左上角
+        self.assertGreaterEqual(w, 3000)  # 非旧 bug 的 1376
+        self.assertGreaterEqual(h, 1600)  # 非旧 bug 的 680
+        self.assertGreater(x, 0)
+        self.assertGreater(y, 0)  # 居中,非左上角
 
 
 if __name__ == "__main__":

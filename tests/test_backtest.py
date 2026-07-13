@@ -66,7 +66,9 @@ class BacktestTests(unittest.TestCase):
         # 在序列尾部加一根未来异动，不应改变更早某日 t 的信号（信号只看 t 及之前）。
         base = make_history(start=20, step=0.2, days=80)
         spiked = list(base)
-        spiked[-1] = spiked[-1].__class__(**{**spiked[-1].__dict__, "close": spiked[-1].close * 1.3})
+        spiked[-1] = spiked[-1].__class__(
+            **{**spiked[-1].__dict__, "close": spiked[-1].close * 1.3}
+        )
         r1 = backtest_signals(base, horizon=5)
         r2 = backtest_signals(spiked, horizon=5)
         # 早期日（不触及尾部 horizon 窗口）的 BUY 计数应一致或仅因尾部样本数变化
@@ -83,7 +85,10 @@ class BacktestTests(unittest.TestCase):
         def fake_decide(_measurement, _level):
             return SimpleNamespace(action="HOLD")
 
-        with patch("stock_advisor.domain.backtest.measure", fake_measure), patch("stock_advisor.domain.backtest.decide", fake_decide):
+        with (
+            patch("stock_advisor.domain.backtest.measure", fake_measure),
+            patch("stock_advisor.domain.backtest.decide", fake_decide),
+        ):
             backtest_signals(history, level=3, horizon=5, warmup=30)
 
         self.assertTrue(captured)

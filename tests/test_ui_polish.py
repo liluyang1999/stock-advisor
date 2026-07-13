@@ -58,13 +58,18 @@ from stock_advisor.ui.theme import (  # noqa: E402
 
 
 def _relative_luminance(color: str) -> float:
-    channels = [int(color[index:index + 2], 16) / 255 for index in (1, 3, 5)]
-    linear = [value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4 for value in channels]
+    channels = [int(color[index : index + 2], 16) / 255 for index in (1, 3, 5)]
+    linear = [
+        value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4
+        for value in channels
+    ]
     return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
 
 
 def _contrast_ratio(foreground: str, background: str) -> float:
-    lighter, darker = sorted((_relative_luminance(foreground), _relative_luminance(background)), reverse=True)
+    lighter, darker = sorted(
+        (_relative_luminance(foreground), _relative_luminance(background)), reverse=True
+    )
     return (lighter + 0.05) / (darker + 0.05)
 
 
@@ -88,7 +93,9 @@ class ResearchWorkbenchThemeTests(unittest.TestCase):
     def test_market_semantic_colors_are_not_reused_as_primary_accent(self):
         self.assertNotIn(ACCENT.lower(), {POS_COLOR.lower(), NEG_COLOR.lower()})
         self.assertNotEqual(POS_COLOR.lower(), NEG_COLOR.lower())
-        self.assertNotIn(DANGER_COLOR.lower(), {POS_COLOR.lower(), NEG_COLOR.lower(), ACCENT.lower()})
+        self.assertNotIn(
+            DANGER_COLOR.lower(), {POS_COLOR.lower(), NEG_COLOR.lower(), ACCENT.lower()}
+        )
 
     def test_workspace_columns_keep_chart_visually_dominant(self):
         visual_w, chart_w = compute_workspace_columns(1200, gap=1)
@@ -208,7 +215,7 @@ class WindowCenteringTests(unittest.TestCase):
             work_w=1024, work_h=700, margin=48, max_w=1600, max_h=1120, min_w=1000, min_h=660
         )
         self.assertEqual(win_w, 1000)  # work-2*margin=928 < min 1000 → floored
-        self.assertEqual(win_h, 660)   # work-2*margin=604 < min 660 → floored
+        self.assertEqual(win_h, 660)  # work-2*margin=604 < min 660 → floored
         self.assertGreaterEqual(x, 0)
         self.assertGreaterEqual(y, 0)
 
@@ -240,8 +247,15 @@ class WindowCenteringTests(unittest.TestCase):
         # 计入标题栏(frame_h)与边框(frame_w)后，按【外框】居中——否则标题栏会把底部空隙吃掉。
         fw, fh = 16, 39
         win_w, win_h, x, y = compute_centered_window(
-            work_w=1536, work_h=816, margin=72, max_w=1600, max_h=1600,
-            min_w=1000, min_h=660, frame_w=fw, frame_h=fh,
+            work_w=1536,
+            work_h=816,
+            margin=72,
+            max_w=1600,
+            max_h=1600,
+            min_w=1000,
+            min_h=660,
+            frame_w=fw,
+            frame_h=fh,
         )
         outer_w, outer_h = win_w + fw, win_h + fh
         # 外框左右、上下空隙相等（整数居中允许 1px 取整误差）。
@@ -253,20 +267,31 @@ class WindowCenteringTests(unittest.TestCase):
 
 class MainGeometryDpiTests(unittest.TestCase):
     def test_ui_scale_from_tk_scaling(self):
-        assert ui_scale(96/72) == 1.0            # 100%
-        assert ui_scale(3.3366) == 2.5           # 250% (4K 本机)
-        assert ui_scale(2.0) == 1.5              # 150%
-        assert ui_scale("bad") == 1.0            # 非法→1.0
-        assert ui_scale(0.5) == 1.0              # 下限 1.0
+        assert ui_scale(96 / 72) == 1.0  # 100%
+        assert ui_scale(3.3366) == 2.5  # 250% (4K 本机)
+        assert ui_scale(2.0) == 1.5  # 150%
+        assert ui_scale("bad") == 1.0  # 非法→1.0
+        assert ui_scale(0.5) == 1.0  # 下限 1.0
 
     def test_main_geometry_high_dpi_centers_and_fills(self):
         # 4K@250%: 物理工作区 3840x2040, ui_scale 2.5 —— 复现被修的 bug 场景
         win_w, win_h, x, y = compute_main_geometry(
-            0, 0, 3840, 2040, 2.5, 1000, 680, 1600, 1600, 72, frame_w=16, frame_h=39,
+            0,
+            0,
+            3840,
+            2040,
+            2.5,
+            1000,
+            680,
+            1600,
+            1600,
+            72,
+            frame_w=16,
+            frame_h=39,
         )
-        assert win_w >= 3000 and win_h >= 1600   # 旧 bug 是 1376x680,现在填满
-        assert x > 0 and y > 0                    # 旧 bug 是 +72+48 贴左上;现居中
-        assert abs((3840 - (win_w + 16)) // 2 - x) <= 1   # 四边留白均匀(按外框)
+        assert win_w >= 3000 and win_h >= 1600  # 旧 bug 是 1376x680,现在填满
+        assert x > 0 and y > 0  # 旧 bug 是 +72+48 贴左上;现居中
+        assert abs((3840 - (win_w + 16)) // 2 - x) <= 1  # 四边留白均匀(按外框)
         assert abs((2040 - (win_h + 39)) // 2 - y) <= 1
 
     def test_main_geometry_no_scaling_matches_plain_centering(self):
@@ -277,7 +302,18 @@ class MainGeometryDpiTests(unittest.TestCase):
 
     def test_main_geometry_small_high_dpi_work_area_never_overflows(self):
         win_w, win_h, x, y = compute_main_geometry(
-            0, 0, 1920, 1040, 2.5, 1000, 680, 1600, 1600, 72, frame_w=32, frame_h=88,
+            0,
+            0,
+            1920,
+            1040,
+            2.5,
+            1000,
+            680,
+            1600,
+            1600,
+            72,
+            frame_w=32,
+            frame_h=88,
         )
         self.assertLessEqual(x + win_w + 32, 1920)
         self.assertLessEqual(y + win_h + 88, 1040)
@@ -457,12 +493,22 @@ class WidgetWiringTests(unittest.TestCase):
         self.assertIs(self.app.input_context_frame.master, self.app.input_panel_body)
 
     def test_screener_parameters_form_one_balanced_horizontal_band(self):
-        spinboxes = [widget for widget in self.app.tunable_frame.winfo_children() if isinstance(widget, ttk.Spinbox)]
-        labels = [widget for widget in self.app.tunable_frame.winfo_children() if isinstance(widget, ttk.Label)]
+        spinboxes = [
+            widget
+            for widget in self.app.tunable_frame.winfo_children()
+            if isinstance(widget, ttk.Spinbox)
+        ]
+        labels = [
+            widget
+            for widget in self.app.tunable_frame.winfo_children()
+            if isinstance(widget, ttk.Label)
+        ]
 
         self.assertEqual(len(spinboxes), 4)
         self.assertEqual({int(spin.grid_info()["row"]) for spin in spinboxes}, {1})
-        self.assertEqual(sorted(int(spin.grid_info()["column"]) for spin in spinboxes), list(range(4)))
+        self.assertEqual(
+            sorted(int(spin.grid_info()["column"]) for spin in spinboxes), list(range(4))
+        )
         self.assertEqual({int(label.grid_info()["row"]) for label in labels}, {0})
         self.assertTrue(all(spin.grid_info()["sticky"] == "ew" for spin in spinboxes))
 
@@ -642,7 +688,9 @@ class WidgetWiringTests(unittest.TestCase):
         self.assertEqual(visible_menus, ["复制", "更多"])
 
     def test_tunable_spinboxes_have_key_validation(self):
-        spinboxes = [w for w in self.app.tunable_frame.winfo_children() if isinstance(w, ttk.Spinbox)]
+        spinboxes = [
+            w for w in self.app.tunable_frame.winfo_children() if isinstance(w, ttk.Spinbox)
+        ]
         self.assertTrue(spinboxes)
         for spin in spinboxes:
             self.assertEqual(str(spin.cget("validate")), "key")

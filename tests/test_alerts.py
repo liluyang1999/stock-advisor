@@ -32,16 +32,26 @@ class AlertsTests(unittest.TestCase):
         self.assertFalse(evaluate_rule(rule(threshold=100), FakeResult(99, 1, 10)))
 
     def test_evaluate_change_le(self):
-        self.assertTrue(evaluate_rule(rule(field="change_pct", op="<=", threshold=-3), FakeResult(10, -5, 0)))
-        self.assertFalse(evaluate_rule(rule(field="change_pct", op="<=", threshold=-3), FakeResult(10, -1, 0)))
+        self.assertTrue(
+            evaluate_rule(rule(field="change_pct", op="<=", threshold=-3), FakeResult(10, -5, 0))
+        )
+        self.assertFalse(
+            evaluate_rule(rule(field="change_pct", op="<=", threshold=-3), FakeResult(10, -1, 0))
+        )
 
     def test_evaluate_score(self):
-        self.assertTrue(evaluate_rule(rule(field="score", op=">=", threshold=25), FakeResult(10, 1, 30)))
+        self.assertTrue(
+            evaluate_rule(rule(field="score", op=">=", threshold=25), FakeResult(10, 1, 30))
+        )
 
     def test_evaluate_rule_ignores_non_finite_values_and_thresholds(self):
         self.assertFalse(evaluate_rule(rule(threshold=100), FakeResult(float("inf"), 1, 10)))
-        self.assertFalse(evaluate_rule(rule(field="change_pct", threshold=1), FakeResult(10, float("nan"), 10)))
-        self.assertFalse(evaluate_rule(rule(field="score", threshold=25), FakeResult(10, 1, float("inf"))))
+        self.assertFalse(
+            evaluate_rule(rule(field="change_pct", threshold=1), FakeResult(10, float("nan"), 10))
+        )
+        self.assertFalse(
+            evaluate_rule(rule(field="score", threshold=25), FakeResult(10, 1, float("inf")))
+        )
         self.assertFalse(evaluate_rule(rule(threshold=float("nan")), FakeResult(101, 1, 10)))
         self.assertFalse(evaluate_rule(rule(threshold=float("inf")), FakeResult(101, 1, 10)))
 
@@ -97,7 +107,9 @@ class AlertsTests(unittest.TestCase):
     def test_field_keys_by_label_maps_chinese_labels_back_to_english_keys(self):
         # 预警"字段"下拉展示 FIELD_LABELS 的中文值；添加规则时需要把选中的中文标签映射回
         # AlertRule.field 实际存储的英文键。FIELD_KEYS_BY_LABEL 就是这个反向映射表。
-        self.assertEqual(FIELD_KEYS_BY_LABEL, {"价格": "price", "涨跌幅": "change_pct", "综合分": "score"})
+        self.assertEqual(
+            FIELD_KEYS_BY_LABEL, {"价格": "price", "涨跌幅": "change_pct", "综合分": "score"}
+        )
         for key, label in FIELD_LABELS.items():
             self.assertEqual(FIELD_KEYS_BY_LABEL[label], key)
         # 值域与 FIELD_LABELS 互为逆映射，一一对应、无遗漏。

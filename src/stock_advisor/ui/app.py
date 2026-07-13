@@ -13,7 +13,14 @@ from typing import Any
 from ..services import store
 from ..domain.alerts import FIELD_KEYS_BY_LABEL, FIELD_LABELS, OPS, check_rules, rule_summary
 from ..domain.backtest import backtest_signals
-from ..domain.chart import candle_layout, moving_average_series, nearest_index, price_bounds, price_to_y, volume_heights
+from ..domain.chart import (
+    candle_layout,
+    moving_average_series,
+    nearest_index,
+    price_bounds,
+    price_to_y,
+    volume_heights,
+)
 from ..domain.compare import build_comparison_rows
 from ..data.data_provider import EastmoneyProvider
 from ..domain.engine import build_analysis_result
@@ -40,18 +47,69 @@ from ..services.workflow import AnalysisOutcome, ScreenReport, analyze_symbol, s
 
 
 from .theme import (
-    MAX_SYMBOLS, MONITOR_INTERVAL_MS, APP_TITLE, APP_ICON_FILENAME, INFO_WINDOW_SIZE,
-    MAIN_MIN_SIZE, WINDOW_MAX_SIZE, WINDOW_WORKAREA_MARGIN, CHILD_WINDOW_WORKAREA_MARGIN,
-    WINDOW_ALPHA, MAX_CONTENT_WIDTH,
-    CONTENT_MARGIN, HEADER_LOGO_SIZE, MENU_BUTTON_SHORT_WIDTH, MENU_BUTTON_TOOL_WIDTH,
-    UI_FONT, MONO_FONT, PAGE_BG, CARD_BG, SURFACE_ALT, CONTROL_BG, CONTROL_HOVER_BG,
-    CONTROL_DISABLED_BG, CARD_BORDER, BORDER_SOFT, GRID_COLOR, INK, INK_SOFT, MUTED_INK,
-    MUTED_LIGHT, ACCENT, ACCENT_HOVER, ACCENT_PRESSED, ACCENT_SOFT, ACCENT_SOFT_HOVER,
-    SELECTION_BG, DANGER_COLOR, DANGER_BG, COMMAND_BG, COMMAND_SURFACE, COMMAND_BORDER, COMMAND_INK,
-    COMMAND_MUTED_INK, COMMAND_SELECTED_BG, COMMAND_SELECTED_INK, TABLE_HEADER_BG,
-    SCROLLBAR_BG, SCROLLBAR_ACTIVE_BG, SCROLLBAR_PRESSED_BG, POS_COLOR, NEG_COLOR, FLAT_COLOR,
-    POS_BG, NEG_BG, HOLD_BG, ACTION_BUTTON_LABELS, TABLE_MIN_VISIBLE_ROWS, TABLE_MAX_VISIBLE_ROWS,
-    TABLE_EMPTY_VISIBLE_ROWS, DETAIL_NAV_SECTIONS, ASSET_DIR, SAMPLE_INPUT, DISCLAIMER,
+    MAX_SYMBOLS,
+    MONITOR_INTERVAL_MS,
+    APP_TITLE,
+    APP_ICON_FILENAME,
+    INFO_WINDOW_SIZE,
+    MAIN_MIN_SIZE,
+    WINDOW_MAX_SIZE,
+    WINDOW_WORKAREA_MARGIN,
+    CHILD_WINDOW_WORKAREA_MARGIN,
+    WINDOW_ALPHA,
+    MAX_CONTENT_WIDTH,
+    CONTENT_MARGIN,
+    HEADER_LOGO_SIZE,
+    MENU_BUTTON_SHORT_WIDTH,
+    MENU_BUTTON_TOOL_WIDTH,
+    UI_FONT,
+    MONO_FONT,
+    PAGE_BG,
+    CARD_BG,
+    SURFACE_ALT,
+    CONTROL_BG,
+    CONTROL_HOVER_BG,
+    CONTROL_DISABLED_BG,
+    CARD_BORDER,
+    BORDER_SOFT,
+    GRID_COLOR,
+    INK,
+    INK_SOFT,
+    MUTED_INK,
+    MUTED_LIGHT,
+    ACCENT,
+    ACCENT_HOVER,
+    ACCENT_PRESSED,
+    ACCENT_SOFT,
+    ACCENT_SOFT_HOVER,
+    SELECTION_BG,
+    DANGER_COLOR,
+    DANGER_BG,
+    COMMAND_BG,
+    COMMAND_SURFACE,
+    COMMAND_BORDER,
+    COMMAND_INK,
+    COMMAND_MUTED_INK,
+    COMMAND_SELECTED_BG,
+    COMMAND_SELECTED_INK,
+    TABLE_HEADER_BG,
+    SCROLLBAR_BG,
+    SCROLLBAR_ACTIVE_BG,
+    SCROLLBAR_PRESSED_BG,
+    POS_COLOR,
+    NEG_COLOR,
+    FLAT_COLOR,
+    POS_BG,
+    NEG_BG,
+    HOLD_BG,
+    ACTION_BUTTON_LABELS,
+    TABLE_MIN_VISIBLE_ROWS,
+    TABLE_MAX_VISIBLE_ROWS,
+    TABLE_EMPTY_VISIBLE_ROWS,
+    DETAIL_NAV_SECTIONS,
+    ASSET_DIR,
+    SAMPLE_INPUT,
+    DISCLAIMER,
     TABLE_COLUMNS,
 )
 
@@ -64,50 +122,102 @@ def app_asset_path(filename: str) -> Path:
 
 
 from ..data.sample_data import (
-    _sample_quote_history, make_sample_analysis, make_sample_measurement,
-    make_sample_history, make_sample_recommendation,
+    _sample_quote_history,
+    make_sample_analysis,
+    make_sample_measurement,
+    make_sample_history,
+    make_sample_recommendation,
 )
 
 
 from .view_text import (
-    level_summary, build_position_plan_text, build_backtest_text, build_spectrum_text,
-    build_fund_flow_text, build_screener_overview, build_recommendation_header,
-    build_visual_summary, build_detail_text, summarize_results, normalize_symbol_input_text,
-    build_portfolio_overview, build_help_sections, build_manual_text, build_strategy_sections,
-    build_strategy_explanation_text, _focus_symbols, _friendly_factor_name, _friendly_verdict,
+    level_summary,
+    build_position_plan_text,
+    build_backtest_text,
+    build_spectrum_text,
+    build_fund_flow_text,
+    build_screener_overview,
+    build_recommendation_header,
+    build_visual_summary,
+    build_detail_text,
+    summarize_results,
+    normalize_symbol_input_text,
+    build_portfolio_overview,
+    build_help_sections,
+    build_manual_text,
+    build_strategy_sections,
+    build_strategy_explanation_text,
+    _focus_symbols,
+    _friendly_factor_name,
+    _friendly_verdict,
 )
 
 
 from ..domain.formatting import (
-    _positive_finite_float, _positive_finite_int, _safe_int,
-    _fmt_decimal, _fmt_whole_percent, _fmt_percent_points,
-    _fmt_rate_percent, _fmt_backtest_return, _fmt_backtest_excess,
-    _format_number, _spin_step, _fmt_yi, _flow_direction,
-    _fmt_percent, _fmt_percent_value, risk_level, _looks_risky, _looks_positive,
+    _positive_finite_float,
+    _positive_finite_int,
+    _safe_int,
+    _fmt_decimal,
+    _fmt_whole_percent,
+    _fmt_percent_points,
+    _fmt_rate_percent,
+    _fmt_backtest_return,
+    _fmt_backtest_excess,
+    _format_number,
+    _spin_step,
+    _fmt_yi,
+    _flow_direction,
+    _fmt_percent,
+    _fmt_percent_value,
+    risk_level,
+    _looks_risky,
+    _looks_positive,
 )
 
 
 from .view_format import (
-    watchlist_rows, format_comparison_row, snapshot_display, format_recommendation_row,
-    build_snapshot_summary, build_snapshot_detail, format_result_row, table_sort_key,
-    result_row_tags, detail_line_tags, _score_color, _action_color,
-    format_results_for_clipboard, format_results_as_csv, format_table_rows_for_clipboard,
+    watchlist_rows,
+    format_comparison_row,
+    snapshot_display,
+    format_recommendation_row,
+    build_snapshot_summary,
+    build_snapshot_detail,
+    format_result_row,
+    table_sort_key,
+    result_row_tags,
+    detail_line_tags,
+    _score_color,
+    _action_color,
+    format_results_for_clipboard,
+    format_results_as_csv,
+    format_table_rows_for_clipboard,
     format_table_rows_as_csv,
 )
 
 
 from ..domain.input_validate import (
-    _parse_optional_positive, _parse_optional_positive_int, _parse_alert_threshold,
-    is_partial_number, validate_tunable,
+    _parse_optional_positive,
+    _parse_optional_positive_int,
+    _parse_alert_threshold,
+    is_partial_number,
+    validate_tunable,
 )
 
 
 from .layout import (
-    compute_centered_geometry, compute_window_position, compute_child_window_geometry,
+    compute_centered_geometry,
+    compute_window_position,
+    compute_child_window_geometry,
     normalize_work_area_to_screen,
-    choose_centering_screen_size, compute_centered_window,
-    compute_content_band, active_mode_action, ui_scale, compute_main_geometry,
-    compute_scaled_minimum, compute_workspace_columns, stacked_text_y,
+    choose_centering_screen_size,
+    compute_centered_window,
+    compute_content_band,
+    active_mode_action,
+    ui_scale,
+    compute_main_geometry,
+    compute_scaled_minimum,
+    compute_workspace_columns,
+    stacked_text_y,
 )
 
 
@@ -179,7 +289,7 @@ class StockAdvisorApp:
         )
         try:
             capital = float(self.capital_var.get())
-        except (ValueError, tk.TclError):
+        except ValueError, tk.TclError:
             capital = fallback_capital
         if not math.isfinite(capital) or capital <= 0:
             capital = fallback_capital
@@ -300,16 +410,22 @@ class StockAdvisorApp:
                 font=(UI_FONT, 10, "bold"),
             )
             value.pack(anchor=tk.W)
-            summary_metrics.append({"frame": cell, "title": title, "value": value, "value_var": summary_vars[key]})
+            summary_metrics.append(
+                {"frame": cell, "title": title, "value": value, "value_var": summary_vars[key]}
+            )
         window._watchlist_summary_metrics = summary_metrics
 
         table_card = tk.Frame(container, bg=CARD_BORDER, padx=1, pady=1)
         table_card.pack(fill=tk.BOTH, expand=True)
-        tree = ttk.Treeview(table_card, columns=("code", "name", "cost", "shares", "pl"),
-                            show="headings", height=10)
+        tree = ttk.Treeview(
+            table_card, columns=("code", "name", "cost", "shares", "pl"), show="headings", height=10
+        )
         watch_headings = {
-            "code": ("代码", 110), "name": ("名称", 130), "cost": ("成本", 90),
-            "shares": ("股数", 90), "pl": ("浮动盈亏", 190),
+            "code": ("代码", 110),
+            "name": ("名称", 130),
+            "cost": ("成本", 90),
+            "shares": ("股数", 90),
+            "pl": ("浮动盈亏", 190),
         }
         watch_anchors = {"code": tk.W, "name": tk.W, "cost": tk.E, "shares": tk.E, "pl": tk.E}
         for col, (title, width) in watch_headings.items():
@@ -326,11 +442,14 @@ class StockAdvisorApp:
             held = sum(
                 1
                 for item in self.watch
-                if _positive_finite_float(item.cost) is not None or _positive_finite_int(item.shares) is not None
+                if _positive_finite_float(item.cost) is not None
+                or _positive_finite_int(item.shares) is not None
             )
             summary_vars["total"].set(str(len(self.watch)))
             summary_vars["held"].set(str(held))
-            summary_vars["analyzed"].set(str(sum(1 for item in self.watch if item.code in results_by_code)))
+            summary_vars["analyzed"].set(
+                str(sum(1 for item in self.watch if item.code in results_by_code))
+            )
             summary_vars["missing"].set(str(max(0, len(self.watch) - held)))
 
         edit = ttk.Frame(container)
@@ -399,7 +518,9 @@ class StockAdvisorApp:
                 self._report_config_save_failure("自选已删除", parent=window)
 
         def clear_all() -> None:
-            if self.watch and messagebox.askyesno("清空自选", "确定清空全部自选/持仓？", parent=window):
+            if self.watch and messagebox.askyesno(
+                "清空自选", "确定清空全部自选/持仓？", parent=window
+            ):
                 self.watch.clear()
                 saved = self._save_persisted()
                 refresh()
@@ -410,7 +531,9 @@ class StockAdvisorApp:
 
         buttons = ttk.Frame(container)
         buttons.pack(fill=tk.X, pady=(6, 0))
-        save_button = ttk.Button(buttons, text="保存持仓", style="Action.TButton", command=save_position)
+        save_button = ttk.Button(
+            buttons, text="保存持仓", style="Action.TButton", command=save_position
+        )
         save_button.pack(side=tk.LEFT)
         more_button = ttk.Menubutton(buttons, text="更多操作", style="Action.TMenubutton")
         more_button.pack(side=tk.LEFT, padx=(8, 0))
@@ -419,7 +542,9 @@ class StockAdvisorApp:
         actions_menu.add_command(label="删除选中", command=remove_selected)
         actions_menu.add_command(label="清空自选", command=clear_all)
         more_button.configure(menu=actions_menu)
-        close_button = ttk.Button(buttons, text="关闭", style="Action.TButton", command=window.destroy)
+        close_button = ttk.Button(
+            buttons, text="关闭", style="Action.TButton", command=window.destroy
+        )
         close_button.pack(side=tk.RIGHT)
         window._watchlist_primary_buttons = [save_button, more_button, close_button]
         window._watchlist_actions_menu = actions_menu
@@ -435,8 +560,11 @@ class StockAdvisorApp:
             held = cost_by_code.get(result.symbol.normalized)
             entries.append(
                 {
-                    "result": result, "measurement": measurement, "risk": risk_level(result),
-                    "cost": held.cost if held else None, "shares": held.shares if held else None,
+                    "result": result,
+                    "measurement": measurement,
+                    "risk": risk_level(result),
+                    "cost": held.cost if held else None,
+                    "shares": held.shares if held else None,
                 }
             )
         return entries
@@ -494,20 +622,39 @@ class StockAdvisorApp:
                 font=(UI_FONT, 10, "bold"),
             )
             value.pack(anchor=tk.W)
-            summary_metrics.append({"frame": cell, "title": title, "value": value, "value_var": summary_vars[key]})
+            summary_metrics.append(
+                {"frame": cell, "title": title, "value": value, "value_var": summary_vars[key]}
+            )
         window._comparison_summary_metrics = summary_metrics
 
         table_card = tk.Frame(container, bg=CARD_BORDER, padx=1, pady=1)
         table_card.pack(fill=tk.BOTH, expand=True)
         headings = {
-            "code": ("代码", 100), "name": ("名称", 120), "last": ("现价", 80), "change": ("涨跌", 80),
-            "score": ("综合分", 80), "conf": ("把握", 70), "risk": ("风险", 60), "pos": ("建议仓位", 80),
-            "cost": ("持仓成本", 90), "pl": ("浮动盈亏", 150), "hint": ("档位提示", 230),
+            "code": ("代码", 100),
+            "name": ("名称", 120),
+            "last": ("现价", 80),
+            "change": ("涨跌", 80),
+            "score": ("综合分", 80),
+            "conf": ("把握", 70),
+            "risk": ("风险", 60),
+            "pos": ("建议仓位", 80),
+            "cost": ("持仓成本", 90),
+            "pl": ("浮动盈亏", 150),
+            "hint": ("档位提示", 230),
         }
         tree = ttk.Treeview(table_card, columns=tuple(headings), show="headings", height=12)
         comparison_anchors = {
-            "code": tk.W, "name": tk.W, "last": tk.E, "change": tk.E, "score": tk.E,
-            "conf": tk.E, "risk": tk.CENTER, "pos": tk.E, "cost": tk.E, "pl": tk.E, "hint": tk.W,
+            "code": tk.W,
+            "name": tk.W,
+            "last": tk.E,
+            "change": tk.E,
+            "score": tk.E,
+            "conf": tk.E,
+            "risk": tk.CENTER,
+            "pos": tk.E,
+            "cost": tk.E,
+            "pl": tk.E,
+            "hint": tk.W,
         }
         for col, (title, width) in headings.items():
             tree.heading(col, text=title)
@@ -516,8 +663,13 @@ class StockAdvisorApp:
         tree.tag_configure("action_sell", background=NEG_BG, foreground=NEG_COLOR)
         tree.tag_configure("action_hold", background=HOLD_BG, foreground=FLAT_COLOR)
         for index, row in enumerate(rows):
-            tree.insert("", tk.END, iid=str(index), values=format_comparison_row(row),
-                        tags=(f"action_{row.action.lower()}",))
+            tree.insert(
+                "",
+                tk.END,
+                iid=str(index),
+                values=format_comparison_row(row),
+                tags=(f"action_{row.action.lower()}",),
+            )
         # 11 列按 DPI 放大后总宽仍可能超出可视区——加一条横向滚动条兜底，避免任意 DPI 下右侧列被裁掉。
         vscroll = ttk.Scrollbar(table_card, orient=tk.VERTICAL, command=tree.yview)
         hscroll = ttk.Scrollbar(table_card, orient=tk.HORIZONTAL, command=tree.xview)
@@ -525,7 +677,9 @@ class StockAdvisorApp:
         vscroll.pack(side=tk.RIGHT, fill=tk.Y)
         hscroll.pack(side=tk.BOTTOM, fill=tk.X)
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        ttk.Button(container, text="关闭", style="Action.TButton", command=window.destroy).pack(anchor=tk.E, pady=(8, 0))
+        ttk.Button(container, text="关闭", style="Action.TButton", command=window.destroy).pack(
+            anchor=tk.E, pady=(8, 0)
+        )
 
     def _on_kline_motion(self, event: tk.Event) -> None:
         state = getattr(self, "_kline_state", None)
@@ -542,19 +696,42 @@ class StockAdvisorApp:
         x = cell["x"]
         canvas.create_line(x, top, x, top + ph, fill=MUTED_LIGHT, dash=(2, 2), tags="crosshair")
         y = max(top, min(top + ph, event.y))
-        canvas.create_line(left, y, max(canvas.winfo_width() - self._sc(12), left + self._sc(10)), y,
-                           fill=BORDER_SOFT, dash=(2, 2), tags="crosshair")
-        text = (f"{bar.date}  开{bar.open:.2f} 高{bar.high:.2f} 低{bar.low:.2f} "
-                f"收{bar.close:.2f}  {bar.pct_change:+.2f}%")
+        canvas.create_line(
+            left,
+            y,
+            max(canvas.winfo_width() - self._sc(12), left + self._sc(10)),
+            y,
+            fill=BORDER_SOFT,
+            dash=(2, 2),
+            tags="crosshair",
+        )
+        text = (
+            f"{bar.date}  开{bar.open:.2f} 高{bar.high:.2f} 低{bar.low:.2f} "
+            f"收{bar.close:.2f}  {bar.pct_change:+.2f}%"
+        )
         # 底框尺寸按字体实测宽/行高绘制（而非固定 7.2*len(text)/20px），避免高 DPI 下文字溢出。
         tooltip_font = tkfont.Font(root=self.root, font=("Microsoft YaHei UI", 8))
         box_w = tooltip_font.measure(text) + self._sc(8)
         box_h = tooltip_font.metrics("linespace") + self._sc(6)
         box_x0, box_y0 = left + self._sc(4), top + self._sc(2)
-        canvas.create_rectangle(box_x0, box_y0, box_x0 + box_w, box_y0 + box_h,
-                                fill=COMMAND_BG, outline="", tags="crosshair")
-        canvas.create_text(box_x0 + self._sc(6), box_y0 + box_h / 2, text=text, anchor=tk.W, fill="#ffffff",
-                           font=("Microsoft YaHei UI", 8), tags="crosshair")
+        canvas.create_rectangle(
+            box_x0,
+            box_y0,
+            box_x0 + box_w,
+            box_y0 + box_h,
+            fill=COMMAND_BG,
+            outline="",
+            tags="crosshair",
+        )
+        canvas.create_text(
+            box_x0 + self._sc(6),
+            box_y0 + box_h / 2,
+            text=text,
+            anchor=tk.W,
+            fill="#ffffff",
+            font=("Microsoft YaHei UI", 8),
+            tags="crosshair",
+        )
 
     def _on_kline_leave(self, _event: object = None) -> None:
         self.kline_canvas.delete("crosshair")
@@ -608,7 +785,9 @@ class StockAdvisorApp:
                 font=(UI_FONT, 10, "bold"),
             )
             value.pack(anchor=tk.W)
-            summary_metrics.append({"frame": cell, "title": title, "value": value, "value_var": summary_vars[key]})
+            summary_metrics.append(
+                {"frame": cell, "title": title, "value": value, "value_var": summary_vars[key]}
+            )
         window._alert_summary_metrics = summary_metrics
 
         table_card = tk.Frame(container, bg=CARD_BORDER, padx=1, pady=1)
@@ -654,8 +833,12 @@ class StockAdvisorApp:
             for child in tree.get_children():
                 tree.delete(child)
             for index, rule in enumerate(self.alerts):
-                tree.insert("", tk.END, iid=str(index),
-                            values=(rule_summary(rule), "是" if rule.enabled else "否"))
+                tree.insert(
+                    "",
+                    tk.END,
+                    iid=str(index),
+                    values=(rule_summary(rule), "是" if rule.enabled else "否"),
+                )
             update_summary()
 
         form = ttk.Frame(container)
@@ -665,13 +848,19 @@ class StockAdvisorApp:
         ttk.Entry(form, textvariable=code_var, width=10).pack(side=tk.LEFT, padx=(4, 10))
         ttk.Label(form, text="字段", style="Hint.TLabel").pack(side=tk.LEFT)
         field_var = tk.StringVar(value=FIELD_LABELS["price"])
-        field_combobox = ttk.Combobox(form, textvariable=field_var, width=9, state="readonly",
-                                       values=list(FIELD_LABELS.values()))
+        field_combobox = ttk.Combobox(
+            form,
+            textvariable=field_var,
+            width=9,
+            state="readonly",
+            values=list(FIELD_LABELS.values()),
+        )
         field_combobox.pack(side=tk.LEFT, padx=(4, 10))
         ttk.Label(form, text="条件", style="Hint.TLabel").pack(side=tk.LEFT)
         op_var = tk.StringVar(value=">=")
-        ttk.Combobox(form, textvariable=op_var, width=4, state="readonly",
-                     values=list(OPS)).pack(side=tk.LEFT, padx=(4, 10))
+        ttk.Combobox(form, textvariable=op_var, width=4, state="readonly", values=list(OPS)).pack(
+            side=tk.LEFT, padx=(4, 10)
+        )
         ttk.Label(form, text="阈值", style="Hint.TLabel").pack(side=tk.LEFT)
         threshold_var = tk.StringVar()
         ttk.Entry(form, textvariable=threshold_var, width=8).pack(side=tk.LEFT, padx=(4, 10))
@@ -691,7 +880,9 @@ class StockAdvisorApp:
             if threshold is None:
                 messagebox.showerror("添加预警", "阈值必须是数字。", parent=window)
                 return
-            self.alerts.append(AlertRule(code=symbol.normalized, field=field, op=op, threshold=threshold))
+            self.alerts.append(
+                AlertRule(code=symbol.normalized, field=field, op=op, threshold=threshold)
+            )
             saved = self._save_persisted()
             refresh()
             code_var.set("")
@@ -710,7 +901,9 @@ class StockAdvisorApp:
                 return
             index = int(selected[0])
             rule = self.alerts[index]
-            self.alerts[index] = AlertRule(rule.code, rule.field, rule.op, rule.threshold, not rule.enabled)
+            self.alerts[index] = AlertRule(
+                rule.code, rule.field, rule.op, rule.threshold, not rule.enabled
+            )
             saved = self._save_persisted()
             refresh()
             if saved:
@@ -762,7 +955,9 @@ class StockAdvisorApp:
         actions_menu.add_command(label="启用/停用", command=toggle_enabled)
         actions_menu.add_command(label="删除选中", command=remove_selected)
         more_button.configure(menu=actions_menu)
-        close_button = ttk.Button(controls, text="关闭", style="Action.TButton", command=window.destroy)
+        close_button = ttk.Button(
+            controls, text="关闭", style="Action.TButton", command=window.destroy
+        )
         close_button.pack(side=tk.RIGHT)
         window._alert_monitor_button = monitor_button
         window._alert_primary_buttons = [add_button, monitor_button, more_button, close_button]
@@ -794,8 +989,11 @@ class StockAdvisorApp:
             codes = sorted({rule.code for rule in self.alerts if rule.enabled})
             if codes:
                 self._monitoring = True
-                threading.Thread(target=self._monitor_worker, args=(codes, self.level_var.get(), generation),
-                                 daemon=True).start()
+                threading.Thread(
+                    target=self._monitor_worker,
+                    args=(codes, self.level_var.get(), generation),
+                    daemon=True,
+                ).start()
         self.root.after(MONITOR_INTERVAL_MS, self._monitor_tick, generation)
 
     def _monitor_worker(self, codes: list, level: int, generation: int) -> None:
@@ -865,8 +1063,9 @@ class StockAdvisorApp:
             messagebox.showinfo("资金流", "请先选择一只已分析的股票。")
             return
         self.status_var.set(f"正在查询 {result.symbol.display} 主力资金流...")
-        threading.Thread(target=self._fund_flow_worker, args=(result.symbol, result.name),
-                         daemon=True).start()
+        threading.Thread(
+            target=self._fund_flow_worker, args=(result.symbol, result.name), daemon=True
+        ).start()
         # 轮询链是常驻单例：懒启动一次即可，后续请求复用同一条链，避免重复排程。
         if not self._fund_flow_polling:
             self._fund_flow_polling = True
@@ -894,7 +1093,9 @@ class StockAdvisorApp:
     def _show_fund_flow_result(self, symbol, name: str, flow) -> None:
         if flow is None:
             self.status_var.set("资金流暂取不到")
-            messagebox.showinfo("资金流", f"{symbol.display} 主力资金流暂取不到（数据源不稳定，可稍后重试）。")
+            messagebox.showinfo(
+                "资金流", f"{symbol.display} 主力资金流暂取不到（数据源不稳定，可稍后重试）。"
+            )
             return
         self.status_var.set(f"{symbol.display} 资金流已更新")
         messagebox.showinfo("主力资金流", build_fund_flow_text(flow, name))
@@ -905,13 +1106,25 @@ class StockAdvisorApp:
         style.configure("TFrame", background=PAGE_BG)
         style.configure("Card.TFrame", background=CARD_BG)
         style.configure("TLabel", background=PAGE_BG, foreground=INK)
-        style.configure("Title.TLabel", font=(UI_FONT, 18, "bold"), foreground=INK, background=PAGE_BG)
-        style.configure("Subtitle.TLabel", foreground=MUTED_INK, font=(UI_FONT, 10), background=PAGE_BG)
+        style.configure(
+            "Title.TLabel", font=(UI_FONT, 18, "bold"), foreground=INK, background=PAGE_BG
+        )
+        style.configure(
+            "Subtitle.TLabel", foreground=MUTED_INK, font=(UI_FONT, 10), background=PAGE_BG
+        )
         style.configure("Hint.TLabel", foreground=MUTED_INK, font=(UI_FONT, 10), background=PAGE_BG)
-        style.configure("SurfaceHint.TLabel", foreground=MUTED_INK, font=(UI_FONT, 10), background=CARD_BG)
-        style.configure("SectionTitle.TLabel", foreground=INK, font=(UI_FONT, 12, "bold"), background=PAGE_BG)
-        style.configure("DialogTitle.TLabel", foreground=INK, font=(UI_FONT, 16, "bold"), background=PAGE_BG)
-        style.configure("HeaderMeta.TLabel", foreground=MUTED_INK, font=(UI_FONT, 9), background=PAGE_BG)
+        style.configure(
+            "SurfaceHint.TLabel", foreground=MUTED_INK, font=(UI_FONT, 10), background=CARD_BG
+        )
+        style.configure(
+            "SectionTitle.TLabel", foreground=INK, font=(UI_FONT, 12, "bold"), background=PAGE_BG
+        )
+        style.configure(
+            "DialogTitle.TLabel", foreground=INK, font=(UI_FONT, 16, "bold"), background=PAGE_BG
+        )
+        style.configure(
+            "HeaderMeta.TLabel", foreground=MUTED_INK, font=(UI_FONT, 9), background=PAGE_BG
+        )
         style.configure(
             "LevelHint.TLabel",
             foreground=COMMAND_MUTED_INK,
@@ -945,76 +1158,170 @@ class StockAdvisorApp:
             focusthickness=1,
             focuscolor=ACCENT_SOFT,
         )
-        style.map("Primary.TButton",
-                  background=[("pressed", ACCENT_PRESSED), ("active", ACCENT_HOVER),
-                              ("disabled", MUTED_LIGHT)],
-                  foreground=[("disabled", SURFACE_ALT)],
-                  relief=[("pressed", "flat"), ("!pressed", "flat")])
+        style.map(
+            "Primary.TButton",
+            background=[
+                ("pressed", ACCENT_PRESSED),
+                ("active", ACCENT_HOVER),
+                ("disabled", MUTED_LIGHT),
+            ],
+            foreground=[("disabled", SURFACE_ALT)],
+            relief=[("pressed", "flat"), ("!pressed", "flat")],
+        )
 
         for name, pad in (
             ("Action.TButton", (self._sc(14), self._sc(10))),
             ("Quiet.TButton", (self._sc(13), self._sc(10))),
             ("Preset.TButton", (self._sc(16), self._sc(11))),
         ):
-            style.configure(name, padding=pad, font=(UI_FONT, 10),
-                            background=CONTROL_BG, foreground=INK_SOFT, borderwidth=0, relief="flat",
-                            focusthickness=1, focuscolor=ACCENT_SOFT)
-            style.map(name,
-                      background=[("pressed", ACCENT_SOFT_HOVER), ("active", CONTROL_HOVER_BG),
-                                  ("disabled", CONTROL_DISABLED_BG)],
-                      foreground=[("disabled", MUTED_LIGHT)],
-                      relief=[("pressed", "flat"), ("!pressed", "flat")])
+            style.configure(
+                name,
+                padding=pad,
+                font=(UI_FONT, 10),
+                background=CONTROL_BG,
+                foreground=INK_SOFT,
+                borderwidth=0,
+                relief="flat",
+                focusthickness=1,
+                focuscolor=ACCENT_SOFT,
+            )
+            style.map(
+                name,
+                background=[
+                    ("pressed", ACCENT_SOFT_HOVER),
+                    ("active", CONTROL_HOVER_BG),
+                    ("disabled", CONTROL_DISABLED_BG),
+                ],
+                foreground=[("disabled", MUTED_LIGHT)],
+                relief=[("pressed", "flat"), ("!pressed", "flat")],
+            )
 
-        style.configure("PresetActive.TButton", padding=(self._sc(16), self._sc(11)), font=(UI_FONT, 10, "bold"),
-                        background=ACCENT, foreground="#ffffff", borderwidth=0, relief="flat", focusthickness=1,
-                        focuscolor=ACCENT_SOFT)
-        style.map("PresetActive.TButton",
-                  background=[("pressed", ACCENT_PRESSED), ("active", ACCENT_HOVER)],
-                  relief=[("pressed", "flat"), ("!pressed", "flat")])
-        style.configure("Action.TMenubutton", padding=(self._sc(14), self._sc(10)), font=(UI_FONT, 10),
-                        background=CONTROL_BG, foreground=INK_SOFT, borderwidth=0, relief="flat",
-                        focusthickness=1, focuscolor=ACCENT_SOFT)
-        style.configure("Quiet.TMenubutton", padding=(self._sc(13), self._sc(10)), font=(UI_FONT, 10),
-                        background=CONTROL_BG, foreground=INK_SOFT, borderwidth=0, relief="flat",
-                        focusthickness=1, focuscolor=ACCENT_SOFT)
+        style.configure(
+            "PresetActive.TButton",
+            padding=(self._sc(16), self._sc(11)),
+            font=(UI_FONT, 10, "bold"),
+            background=ACCENT,
+            foreground="#ffffff",
+            borderwidth=0,
+            relief="flat",
+            focusthickness=1,
+            focuscolor=ACCENT_SOFT,
+        )
+        style.map(
+            "PresetActive.TButton",
+            background=[("pressed", ACCENT_PRESSED), ("active", ACCENT_HOVER)],
+            relief=[("pressed", "flat"), ("!pressed", "flat")],
+        )
+        style.configure(
+            "Action.TMenubutton",
+            padding=(self._sc(14), self._sc(10)),
+            font=(UI_FONT, 10),
+            background=CONTROL_BG,
+            foreground=INK_SOFT,
+            borderwidth=0,
+            relief="flat",
+            focusthickness=1,
+            focuscolor=ACCENT_SOFT,
+        )
+        style.configure(
+            "Quiet.TMenubutton",
+            padding=(self._sc(13), self._sc(10)),
+            font=(UI_FONT, 10),
+            background=CONTROL_BG,
+            foreground=INK_SOFT,
+            borderwidth=0,
+            relief="flat",
+            focusthickness=1,
+            focuscolor=ACCENT_SOFT,
+        )
         for name in ("Action.TMenubutton", "Quiet.TMenubutton"):
-            style.map(name,
-                      background=[("pressed", ACCENT_SOFT_HOVER), ("active", CONTROL_HOVER_BG),
-                                  ("disabled", CONTROL_DISABLED_BG)],
-                      foreground=[("disabled", MUTED_LIGHT)],
-                      relief=[("pressed", "flat"), ("!pressed", "flat")])
+            style.map(
+                name,
+                background=[
+                    ("pressed", ACCENT_SOFT_HOVER),
+                    ("active", CONTROL_HOVER_BG),
+                    ("disabled", CONTROL_DISABLED_BG),
+                ],
+                foreground=[("disabled", MUTED_LIGHT)],
+                relief=[("pressed", "flat"), ("!pressed", "flat")],
+            )
 
         # 选项卡改为自绘分段胶囊（见 _build_tabs / _show_info_window），不再用 ttk.Notebook 样式，
         # 因为 clam 主题的选中标签会明显变矮/位移，难以做到等尺寸精致。
 
-        style.configure("Treeview", rowheight=self._sc(42), font=(UI_FONT, 10), borderwidth=0,
-                        background=CARD_BG, fieldbackground=CARD_BG, foreground=INK)
-        style.configure("Treeview.Heading", font=(UI_FONT, 10, "bold"),
-                        background=TABLE_HEADER_BG, foreground=INK_SOFT, relief="flat", borderwidth=0,
-                        padding=(0, self._sc(8)))
-        style.map("Treeview", background=[("selected", SELECTION_BG)], foreground=[("selected", INK)])
+        style.configure(
+            "Treeview",
+            rowheight=self._sc(42),
+            font=(UI_FONT, 10),
+            borderwidth=0,
+            background=CARD_BG,
+            fieldbackground=CARD_BG,
+            foreground=INK,
+        )
+        style.configure(
+            "Treeview.Heading",
+            font=(UI_FONT, 10, "bold"),
+            background=TABLE_HEADER_BG,
+            foreground=INK_SOFT,
+            relief="flat",
+            borderwidth=0,
+            padding=(0, self._sc(8)),
+        )
+        style.map(
+            "Treeview", background=[("selected", SELECTION_BG)], foreground=[("selected", INK)]
+        )
         style.map("Treeview.Heading", background=[("active", ACCENT_SOFT)])
 
         for field_style in ("TEntry", "TCombobox", "TSpinbox"):
-            style.configure(field_style, fieldbackground=CARD_BG, background=CONTROL_BG,
-                            bordercolor=CARD_BORDER, lightcolor=CARD_BORDER, darkcolor=CARD_BORDER,
-                            foreground=INK, padding=self._sc(7), relief="flat")
-            style.map(field_style, bordercolor=[("focus", ACCENT)], lightcolor=[("focus", ACCENT)],
-                      darkcolor=[("focus", ACCENT)])
+            style.configure(
+                field_style,
+                fieldbackground=CARD_BG,
+                background=CONTROL_BG,
+                bordercolor=CARD_BORDER,
+                lightcolor=CARD_BORDER,
+                darkcolor=CARD_BORDER,
+                foreground=INK,
+                padding=self._sc(7),
+                relief="flat",
+            )
+            style.map(
+                field_style,
+                bordercolor=[("focus", ACCENT)],
+                lightcolor=[("focus", ACCENT)],
+                darkcolor=[("focus", ACCENT)],
+            )
         style.configure("TSpinbox", arrowsize=self._sc(13))
         style.configure("TCheckbutton", background=PAGE_BG, foreground=INK)
         style.map("TCheckbutton", background=[("active", PAGE_BG)])
-        style.configure("Horizontal.TProgressbar", troughcolor=CONTROL_BG, background=ACCENT,
-                        bordercolor=CONTROL_BG, lightcolor=ACCENT, darkcolor=ACCENT,
-                        thickness=self._sc(14))
+        style.configure(
+            "Horizontal.TProgressbar",
+            troughcolor=CONTROL_BG,
+            background=ACCENT,
+            bordercolor=CONTROL_BG,
+            lightcolor=ACCENT,
+            darkcolor=ACCENT,
+            thickness=self._sc(14),
+        )
         # 细窄、低对比的滚动条，避免抢夺工作区视觉焦点。
         for _orient in ("Vertical.TScrollbar", "Horizontal.TScrollbar"):
-            style.configure(_orient, gripcount=0, borderwidth=0, relief="flat",
-                            background=SCROLLBAR_BG, troughcolor=PAGE_BG, bordercolor=PAGE_BG,
-                            lightcolor=PAGE_BG, darkcolor=PAGE_BG, arrowcolor=MUTED_LIGHT,
-                            arrowsize=self._sc(11), width=self._sc(11))
-            style.map(_orient, background=[("active", SCROLLBAR_ACTIVE_BG),
-                                           ("pressed", SCROLLBAR_PRESSED_BG)])
+            style.configure(
+                _orient,
+                gripcount=0,
+                borderwidth=0,
+                relief="flat",
+                background=SCROLLBAR_BG,
+                troughcolor=PAGE_BG,
+                bordercolor=PAGE_BG,
+                lightcolor=PAGE_BG,
+                darkcolor=PAGE_BG,
+                arrowcolor=MUTED_LIGHT,
+                arrowsize=self._sc(11),
+                width=self._sc(11),
+            )
+            style.map(
+                _orient,
+                background=[("active", SCROLLBAR_ACTIVE_BG), ("pressed", SCROLLBAR_PRESSED_BG)],
+            )
 
     def _apply_glass_effect(self) -> None:
         # 整窗不透明：不创建分层窗口，省去逐帧合成开销，桌面底色也不会透出（兼顾性能与观感）。
@@ -1061,7 +1368,9 @@ class StockAdvisorApp:
         heading = ttk.Frame(parent)
         heading.pack(fill=tk.X, pady=(0, self._sc(12)))
         ttk.Label(heading, text=title, style="DialogTitle.TLabel").pack(anchor=tk.W)
-        ttk.Label(heading, text=subtitle, style="Subtitle.TLabel").pack(anchor=tk.W, pady=(self._sc(3), 0))
+        ttk.Label(heading, text=subtitle, style="Subtitle.TLabel").pack(
+            anchor=tk.W, pady=(self._sc(3), 0)
+        )
         return heading
 
     def _build_ui(self) -> None:
@@ -1129,7 +1438,9 @@ class StockAdvisorApp:
             bg=PAGE_BG,
             highlightthickness=0,
         )
-        self.logo_canvas.pack(side=tk.LEFT, anchor=tk.NW, padx=(0, self._sc(14)), pady=(self._sc(2), 0))
+        self.logo_canvas.pack(
+            side=tk.LEFT, anchor=tk.NW, padx=(0, self._sc(14)), pady=(self._sc(2), 0)
+        )
         self._draw_logo(self.logo_canvas)
 
         title_block = ttk.Frame(self.header_frame)
@@ -1233,8 +1544,13 @@ class StockAdvisorApp:
             padx=(self._sc(20), self._sc(18)),
             pady=(self._sc(13), self._sc(11)),
         )
-        tk.Label(self.level_control_group, text="决策强度", bg=COMMAND_BG, fg=COMMAND_MUTED_INK,
-                 font=(UI_FONT, 10, "bold")).pack(side=tk.LEFT, padx=(0, self._sc(12)))
+        tk.Label(
+            self.level_control_group,
+            text="决策强度",
+            bg=COMMAND_BG,
+            fg=COMMAND_MUTED_INK,
+            font=(UI_FONT, 10, "bold"),
+        ).pack(side=tk.LEFT, padx=(0, self._sc(12)))
         selector = tk.Frame(self.level_control_group, bg=COMMAND_BORDER, padx=1, pady=1)
         selector.pack(side=tk.LEFT)
         selector.grid_rowconfigure(0, minsize=self._sc(40))
@@ -1287,15 +1603,25 @@ class StockAdvisorApp:
         self.input_panel_body = tk.Frame(self.input_panel_shell, bg=CARD_BG)
         self.input_panel_body.pack(fill=tk.X)
         self.symbol_input_holder, self.symbol_input, self.symbol_scroll = self._scrolled_text(
-            self.input_panel_body, autohide_scrollbar=True,
-            height=3, wrap=tk.WORD, font=(MONO_FONT, 12), relief=tk.FLAT,
-            borderwidth=0, background=SURFACE_ALT, foreground=INK, insertbackground=ACCENT,
-            padx=self._sc(14), pady=self._sc(10),
+            self.input_panel_body,
+            autohide_scrollbar=True,
+            height=3,
+            wrap=tk.WORD,
+            font=(MONO_FONT, 12),
+            relief=tk.FLAT,
+            borderwidth=0,
+            background=SURFACE_ALT,
+            foreground=INK,
+            insertbackground=ACCENT,
+            padx=self._sc(14),
+            pady=self._sc(10),
         )
         self.symbol_input.insert("1.0", SAMPLE_INPUT)
         self.symbol_input.edit_modified(False)
         self.symbol_input.bind("<<Modified>>", self._on_symbol_input_modified, add="+")
-        self.symbol_input.bind("<Configure>", lambda _event: self._schedule_symbol_scrollbar_refresh(), add="+")
+        self.symbol_input.bind(
+            "<Configure>", lambda _event: self._schedule_symbol_scrollbar_refresh(), add="+"
+        )
         self._schedule_symbol_scrollbar_refresh()
 
         self.input_context_frame = tk.Frame(
@@ -1306,13 +1632,21 @@ class StockAdvisorApp:
         )
         self.input_context_frame.pack(side=tk.TOP, fill=tk.X)
         self.input_context_title = tk.Label(
-            self.input_context_frame, text="研究标的", bg=CARD_BG, fg=INK,
-            font=(UI_FONT, 11, "bold"), anchor=tk.W,
+            self.input_context_frame,
+            text="研究标的",
+            bg=CARD_BG,
+            fg=INK,
+            font=(UI_FONT, 11, "bold"),
+            anchor=tk.W,
         )
         self.input_context_title.pack(side=tk.LEFT, anchor=tk.W)
         self.input_context_hint = tk.Label(
-            self.input_context_frame, text=f"最多 {MAX_SYMBOLS} 只", bg=CARD_BG, fg=MUTED_INK,
-            font=(UI_FONT, 9), anchor=tk.E,
+            self.input_context_frame,
+            text=f"最多 {MAX_SYMBOLS} 只",
+            bg=CARD_BG,
+            fg=MUTED_INK,
+            font=(UI_FONT, 9),
+            anchor=tk.E,
         )
         self.input_context_hint.pack(side=tk.RIGHT, anchor=tk.E)
         self.input_context_divider = tk.Frame(self.input_panel_body, height=1, bg=BORDER_SOFT)
@@ -1333,9 +1667,17 @@ class StockAdvisorApp:
             padx=(self._sc(16), 0),
             pady=self._sc(14),
         )
-        self.analyze_button = ttk.Button(self.input_action_frame, text="开始分析", style="Primary.TButton", command=self.analyze)
+        self.analyze_button = ttk.Button(
+            self.input_action_frame, text="开始分析", style="Primary.TButton", command=self.analyze
+        )
         self.analyze_button.pack(side=tk.LEFT)
-        self.stop_button = ttk.Button(self.input_action_frame, text="停止", style="Action.TButton", command=self.stop, state=tk.DISABLED)
+        self.stop_button = ttk.Button(
+            self.input_action_frame,
+            text="停止",
+            style="Action.TButton",
+            command=self.stop,
+            state=tk.DISABLED,
+        )
         self.input_primary_buttons = [self.analyze_button, self.stop_button]
         self.input_tools_button = ttk.Menubutton(
             self.input_action_frame,
@@ -1376,7 +1718,9 @@ class StockAdvisorApp:
             self.symbol_scroll.pack_forget()
 
     def _build_screener_tab(self, parent: ttk.Frame) -> None:
-        self.screener_section_title = ttk.Label(parent, text="策略扫描", style="SectionTitle.TLabel")
+        self.screener_section_title = ttk.Label(
+            parent, text="策略扫描", style="SectionTitle.TLabel"
+        )
         self.screener_section_title.pack(anchor=tk.W)
         ttk.Label(
             parent,
@@ -1407,21 +1751,32 @@ class StockAdvisorApp:
                 activeforeground=ACCENT,
                 font=(UI_FONT, 10, "bold"),
             )
-            button.grid(row=index // 3, column=index % 3, sticky="ew", padx=(0 if index % 3 == 0 else 1, 0), pady=(0 if index < 3 else 1, 0))
+            button.grid(
+                row=index // 3,
+                column=index % 3,
+                sticky="ew",
+                padx=(0 if index % 3 == 0 else 1, 0),
+                pady=(0 if index < 3 else 1, 0),
+            )
             self.preset_buttons[preset.key] = button
         for column in range(3):
             cards.columnconfigure(column, weight=1)
 
-        ttk.Label(parent, textvariable=self.preset_desc_var, style="Subtitle.TLabel", wraplength=self._sc(760)).pack(
-            anchor=tk.W, pady=(self._sc(12), self._sc(10))
-        )
+        ttk.Label(
+            parent,
+            textvariable=self.preset_desc_var,
+            style="Subtitle.TLabel",
+            wraplength=self._sc(760),
+        ).pack(anchor=tk.W, pady=(self._sc(12), self._sc(10)))
 
         self.tunable_frame = ttk.Frame(parent)
         self.tunable_frame.pack(fill=tk.X, pady=(self._sc(4), self._sc(12)))
 
         run_row = ttk.Frame(parent)
         run_row.pack(fill=tk.X, pady=(self._sc(6), 0))
-        self.screen_button = ttk.Button(run_row, text="开始选股", style="Primary.TButton", command=self.start_screen)
+        self.screen_button = ttk.Button(
+            run_row, text="开始选股", style="Primary.TButton", command=self.start_screen
+        )
         self.screen_button.pack(side=tk.LEFT)
         self.screen_stop_button = ttk.Button(
             run_row, text="停止", style="Action.TButton", command=self.stop, state=tk.DISABLED
@@ -1446,9 +1801,13 @@ class StockAdvisorApp:
         )
         self.deep_toggle_button.pack(side=tk.LEFT, padx=(10, 0))
         self._screen_stop_button_pack_options = {
-            "side": tk.LEFT, "padx": (8, 0), "before": self.deep_toggle_button
+            "side": tk.LEFT,
+            "padx": (8, 0),
+            "before": self.deep_toggle_button,
         }
-        ttk.Label(run_row, text="给买 / 持 / 卖与理由，较慢", style="Hint.TLabel").pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Label(run_row, text="给买 / 持 / 卖与理由，较慢", style="Hint.TLabel").pack(
+            side=tk.LEFT, padx=(8, 0)
+        )
         self._sync_deep_toggle()
 
     def _build_results_region(self, outer: ttk.Frame) -> None:
@@ -1516,8 +1875,15 @@ class StockAdvisorApp:
         ):
             self.secondary_tools_menu.add_command(label=label, command=command)
         self.secondary_tools_button.configure(menu=self.secondary_tools_menu)
-        self._add_to_watchlist_pack_options = {"side": tk.LEFT, "before": self.secondary_tools_button}
-        self._copy_tools_pack_options = {"side": tk.LEFT, "padx": (6, 0), "before": self.secondary_tools_button}
+        self._add_to_watchlist_pack_options = {
+            "side": tk.LEFT,
+            "before": self.secondary_tools_button,
+        }
+        self._copy_tools_pack_options = {
+            "side": tk.LEFT,
+            "padx": (6, 0),
+            "before": self.secondary_tools_button,
+        }
         self.status_var = tk.StringVar(value="就绪")
         self.summary_var = tk.StringVar(value="暂无结果")
         self.results_status_label = tk.Label(
@@ -1550,8 +1916,16 @@ class StockAdvisorApp:
         self._progress_pack_options = {"side": tk.RIGHT, "padx": (self._sc(12), 0)}
 
         # 预警横幅：平时隐藏，命中时显示规则摘要（红底）。
-        self.alert_banner = tk.Label(outer, text="", bg=DANGER_BG, fg=DANGER_COLOR, anchor=tk.W,
-                                     font=(UI_FONT, 10, "bold"), padx=self._sc(12), pady=self._sc(8))
+        self.alert_banner = tk.Label(
+            outer,
+            text="",
+            bg=DANGER_BG,
+            fg=DANGER_COLOR,
+            anchor=tk.W,
+            font=(UI_FONT, 10, "bold"),
+            padx=self._sc(12),
+            pady=self._sc(8),
+        )
 
         self.table_card = tk.Frame(outer, bg=CARD_BORDER, padx=1, pady=1)
         self._table_card_pack_options = {"fill": tk.X, "pady": (0, self._sc(14))}
@@ -1576,8 +1950,12 @@ class StockAdvisorApp:
         ).pack(anchor=tk.W, pady=(self._sc(2), 0))
         self.table_header_divider = tk.Frame(self.table_card, height=1, bg=BORDER_SOFT)
         self.table_header_divider.pack(side=tk.TOP, fill=tk.X)
-        self.tree = ttk.Treeview(self.table_card, columns=TABLE_COLUMNS, show="headings", height=TABLE_EMPTY_VISIBLE_ROWS)
-        self.table_scroll = ttk.Scrollbar(self.table_card, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree = ttk.Treeview(
+            self.table_card, columns=TABLE_COLUMNS, show="headings", height=TABLE_EMPTY_VISIBLE_ROWS
+        )
+        self.table_scroll = ttk.Scrollbar(
+            self.table_card, orient=tk.VERTICAL, command=self.tree.yview
+        )
         self.tree.configure(yscrollcommand=self._on_table_scroll)
         headings = {
             "code": ("代码", 110),
@@ -1600,7 +1978,9 @@ class StockAdvisorApp:
             "risk": tk.CENTER,
         }
         for column, (title, width) in headings.items():
-            self.tree.heading(column, text=title, command=lambda key=column: self._sort_by_column(key))
+            self.tree.heading(
+                column, text=title, command=lambda key=column: self._sort_by_column(key)
+            )
             self.tree.column(column, width=self._sc(width), anchor=anchors[column])
         self._configure_tree_tags()
         self.table_scroll.pack(side=tk.RIGHT, fill=tk.Y)
@@ -1667,7 +2047,12 @@ class StockAdvisorApp:
             )
             value.pack(anchor=tk.W)
             self.visual_summary_metrics.append(
-                {"frame": cell, "title": title, "value": value, "value_var": self.visual_metric_vars[key]}
+                {
+                    "frame": cell,
+                    "title": title,
+                    "value": value,
+                    "value_var": self.visual_metric_vars[key],
+                }
             )
         self.visual_summary_label = self.visual_summary_metrics[0]["value"]
 
@@ -1689,7 +2074,9 @@ class StockAdvisorApp:
         self.visual_workspace.pack(fill=tk.BOTH, expand=True)
 
         self.visual_workspace_header = tk.Frame(self.visual_workspace, bg=CARD_BG)
-        self.visual_workspace_header.pack(side=tk.TOP, fill=tk.X, padx=self._sc(16), pady=self._sc(12))
+        self.visual_workspace_header.pack(
+            side=tk.TOP, fill=tk.X, padx=self._sc(16), pady=self._sc(12)
+        )
         self.visual_workspace_title_label = tk.Label(
             self.visual_workspace_header,
             text="判断依据与价格走势",
@@ -1780,16 +2167,24 @@ class StockAdvisorApp:
 
         self.capital_tools_frame = tk.Frame(self.detail_control_bar, bg=CARD_BG)
         self.capital_tools_frame.pack(side=tk.LEFT)
-        ttk.Label(self.capital_tools_frame, text="本金", style="SurfaceHint.TLabel").pack(side=tk.LEFT)
-        self.capital_entry = ttk.Entry(self.capital_tools_frame, textvariable=self.capital_var, width=14)
+        ttk.Label(self.capital_tools_frame, text="本金", style="SurfaceHint.TLabel").pack(
+            side=tk.LEFT
+        )
+        self.capital_entry = ttk.Entry(
+            self.capital_tools_frame, textvariable=self.capital_var, width=14
+        )
         self.capital_entry.pack(side=tk.LEFT, padx=(self._sc(8), self._sc(8)))
         self.capital_entry.bind("<KeyRelease>", lambda _e: self._refresh_capital())
-        self.capital_hint_label = ttk.Label(self.capital_tools_frame, text="即时重算", style="SurfaceHint.TLabel")
+        self.capital_hint_label = ttk.Label(
+            self.capital_tools_frame, text="即时重算", style="SurfaceHint.TLabel"
+        )
         self.capital_hint_label.pack(side=tk.LEFT)
 
         self.detail_nav_frame = tk.Frame(self.detail_control_bar, bg=CARD_BG)
         self.detail_nav_frame.pack(side=tk.RIGHT)
-        ttk.Label(self.detail_nav_frame, text="详情", style="SurfaceHint.TLabel").pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Label(self.detail_nav_frame, text="详情", style="SurfaceHint.TLabel").pack(
+            side=tk.LEFT, padx=(0, 6)
+        )
         self.detail_nav_var = tk.StringVar(value=DETAIL_NAV_SECTIONS[0][0])
         self.detail_nav_buttons: list[tk.Radiobutton] = []
         for label, target in DETAIL_NAV_SECTIONS:
@@ -1868,8 +2263,9 @@ class StockAdvisorApp:
         self.empty_state_steps: list[tk.Label] = []
         for index, text in enumerate(("01  输入标的", "02  调整强度", "03  阅读结论与依据")):
             if index:
-                tk.Label(empty_steps_row, text="→", bg=CARD_BG, fg=MUTED_LIGHT,
-                         font=(UI_FONT, 10)).pack(side=tk.LEFT, padx=self._sc(12))
+                tk.Label(
+                    empty_steps_row, text="→", bg=CARD_BG, fg=MUTED_LIGHT, font=(UI_FONT, 10)
+                ).pack(side=tk.LEFT, padx=self._sc(12))
             label = tk.Label(
                 empty_steps_row,
                 text=text,
@@ -1882,16 +2278,24 @@ class StockAdvisorApp:
             label.pack(side=tk.LEFT)
             self.empty_state_steps.append(label)
         self._insight_strip_pack_options = {
-            "fill": tk.X, "pady": (0, self._sc(14)), "before": self._results_disclaimer_label,
+            "fill": tk.X,
+            "pady": (0, self._sc(14)),
+            "before": self._results_disclaimer_label,
         }
         self._visual_workspace_shell_pack_options = {
-            "fill": tk.X, "pady": (0, self._sc(14)), "before": self._results_disclaimer_label,
+            "fill": tk.X,
+            "pady": (0, self._sc(14)),
+            "before": self._results_disclaimer_label,
         }
         self._detail_panel_shell_pack_options = {
-            "fill": tk.BOTH, "expand": True, "before": self._results_disclaimer_label,
+            "fill": tk.BOTH,
+            "expand": True,
+            "before": self._results_disclaimer_label,
         }
         self._results_placeholder_pack_options = {
-            "fill": tk.X, "pady": (0, self._sc(14)), "before": self._results_disclaimer_label,
+            "fill": tk.X,
+            "pady": (0, self._sc(14)),
+            "before": self._results_disclaimer_label,
         }
         # 到这里三张卡已按上面的初始 .pack(...) 调用真正展开；先如实置位，再交给
         # _set_results_expanded(False) 折叠，使其“旧值→新值”判断和实际起始状态一致。
@@ -1961,30 +2365,41 @@ class StockAdvisorApp:
         frame_w, frame_h = self._frame_extents(window)
         factor = ui_scale(self._tk_scaling(window))
         win_w, win_h, x, y = compute_main_geometry(
-            left, top, work_w, work_h, factor,
-            MAIN_MIN_SIZE[0], MAIN_MIN_SIZE[1], WINDOW_MAX_SIZE[0], WINDOW_MAX_SIZE[1],
-            WINDOW_WORKAREA_MARGIN, frame_w, frame_h,
+            left,
+            top,
+            work_w,
+            work_h,
+            factor,
+            MAIN_MIN_SIZE[0],
+            MAIN_MIN_SIZE[1],
+            WINDOW_MAX_SIZE[0],
+            WINDOW_MAX_SIZE[1],
+            WINDOW_WORKAREA_MARGIN,
+            frame_w,
+            frame_h,
         )
         window.geometry(f"{win_w}x{win_h}+{x}+{y}")
 
     def _apply_root_minimum(self) -> None:
         _left, _top, work_width, work_height = self._screen_work_area(self.root)
         frame_width, frame_height = self._frame_extents(self.root)
-        self.root.minsize(*compute_scaled_minimum(
-            work_width,
-            work_height,
-            self._ui_scale,
-            MAIN_MIN_SIZE[0],
-            MAIN_MIN_SIZE[1],
-            margin=WINDOW_WORKAREA_MARGIN,
-            frame_width=frame_width,
-            frame_height=frame_height,
-        ))
+        self.root.minsize(
+            *compute_scaled_minimum(
+                work_width,
+                work_height,
+                self._ui_scale,
+                MAIN_MIN_SIZE[0],
+                MAIN_MIN_SIZE[1],
+                margin=WINDOW_WORKAREA_MARGIN,
+                frame_width=frame_width,
+                frame_height=frame_height,
+            )
+        )
 
     def _tk_scaling(self, window: tk.Misc) -> float:
         try:
             return float(window.tk.call("tk", "scaling"))
-        except (tk.TclError, ValueError, TypeError):
+        except tk.TclError, ValueError, TypeError:
             return 96 / 72
 
     def _sc(self, px: float) -> int:
@@ -2037,7 +2452,9 @@ class StockAdvisorApp:
 
             primary_w = ctypes.windll.user32.GetSystemMetrics(0)  # SM_CXSCREEN
             primary_h = ctypes.windll.user32.GetSystemMetrics(1)  # SM_CYSCREEN
-            screen_w, screen_h = choose_centering_screen_size(screen_w, screen_h, primary_w, primary_h)
+            screen_w, screen_h = choose_centering_screen_size(
+                screen_w, screen_h, primary_w, primary_h
+            )
 
             rect = wintypes.RECT()
             # SPI_GETWORKAREA = 0x0030
@@ -2045,7 +2462,9 @@ class StockAdvisorApp:
                 width = rect.right - rect.left
                 height = rect.bottom - rect.top
                 if width > 0 and height > 0:
-                    return normalize_work_area_to_screen(rect.left, rect.top, width, height, screen_w, screen_h)
+                    return normalize_work_area_to_screen(
+                        rect.left, rect.top, width, height, screen_w, screen_h
+                    )
         except Exception:
             pass
         return 0, 0, screen_w, screen_h
@@ -2083,16 +2502,18 @@ class StockAdvisorApp:
         """DPI 放大子窗最小尺寸，但绝不让其外框越过当前屏幕工作区。"""
         _left, _top, work_width, work_height = self._screen_work_area(window)
         frame_width, frame_height = self._child_frame_extents(window)
-        window.minsize(*compute_scaled_minimum(
-            work_width,
-            work_height,
-            self._ui_scale,
-            logical_size[0],
-            logical_size[1],
-            margin=CHILD_WINDOW_WORKAREA_MARGIN,
-            frame_width=frame_width,
-            frame_height=frame_height,
-        ))
+        window.minsize(
+            *compute_scaled_minimum(
+                work_width,
+                work_height,
+                self._ui_scale,
+                logical_size[0],
+                logical_size[1],
+                margin=CHILD_WINDOW_WORKAREA_MARGIN,
+                frame_width=frame_width,
+                frame_height=frame_height,
+            )
+        )
 
     def _set_window_icon(self, window: tk.Tk | tk.Toplevel) -> None:
         icon = app_asset_path(APP_ICON_FILENAME)
@@ -2128,10 +2549,15 @@ class StockAdvisorApp:
         stroke = max(1, round(3 * scale))
         canvas.create_oval(*box(4, 4, 50, 50), fill="#0f2f57", outline="")
         canvas.create_oval(*box(11, 11, 43, 43), fill="#163f73", outline="")
-        canvas.create_polygon(*points(27, 13, 39, 40, 33, 40, 30, 32, 21, 32, 18, 40, 12, 40, 24, 13), fill="#ffffff", outline="")
+        canvas.create_polygon(
+            *points(27, 13, 39, 40, 33, 40, 30, 32, 21, 32, 18, 40, 12, 40, 24, 13),
+            fill="#ffffff",
+            outline="",
+        )
         canvas.create_line(*points(20, 29, 31, 29), fill="#0f2f57", width=stroke)
-        canvas.create_line(*points(13, 39, 22, 31, 31, 34, 41, 20), fill=POS_COLOR,
-                           width=stroke, smooth=True)
+        canvas.create_line(
+            *points(13, 39, 22, 31, 31, 34, 41, 20), fill=POS_COLOR, width=stroke, smooth=True
+        )
         canvas.create_oval(*box(39, 18, 44, 23), fill=POS_COLOR, outline="")
 
     def _configure_tree_tags(self) -> None:
@@ -2157,7 +2583,9 @@ class StockAdvisorApp:
     def _apply_content_band(self, width: int) -> None:
         # 内容填满窗口并水平居中（四边留白均匀）；仅在超宽屏才收窄到上限，避免组件被拉得过长。
         # 上限与边距随 DPI 放大，使内容带在高 DPI 下按比例加宽、留白均匀。
-        x_offset, content_width = compute_content_band(width, self._sc(MAX_CONTENT_WIDTH), self._sc(CONTENT_MARGIN))
+        x_offset, content_width = compute_content_band(
+            width, self._sc(MAX_CONTENT_WIDTH), self._sc(CONTENT_MARGIN)
+        )
         self.page_canvas.itemconfigure(self.page_window, width=content_width)
         self.page_canvas.coords(self.page_window, x_offset, 0)
         if hasattr(self, "visual_panel_frame"):
@@ -2187,7 +2615,9 @@ class StockAdvisorApp:
         if self.busy:
             return
         try:
-            symbols = parse_user_symbols(self.symbol_input.get("1.0", tk.END), max_count=MAX_SYMBOLS)
+            symbols = parse_user_symbols(
+                self.symbol_input.get("1.0", tk.END), max_count=MAX_SYMBOLS
+            )
         except ValueError as exc:
             messagebox.showerror("输入错误", str(exc))
             return
@@ -2250,7 +2680,9 @@ class StockAdvisorApp:
             elif not visible and is_visible:
                 button.pack_forget()
 
-    def _set_result_action_tools_visible(self, has_deep_results: bool, has_visible_rows: bool) -> None:
+    def _set_result_action_tools_visible(
+        self, has_deep_results: bool, has_visible_rows: bool
+    ) -> None:
         controls = (
             (self.add_to_watchlist_button, self._add_to_watchlist_pack_options, has_deep_results),
             (self.copy_tools_button, self._copy_tools_pack_options, has_visible_rows),
@@ -2317,7 +2749,9 @@ class StockAdvisorApp:
         if self.busy:
             return
         try:
-            cleaned = normalize_symbol_input_text(self.symbol_input.get("1.0", tk.END), max_count=MAX_SYMBOLS)
+            cleaned = normalize_symbol_input_text(
+                self.symbol_input.get("1.0", tk.END), max_count=MAX_SYMBOLS
+            )
         except ValueError as exc:
             messagebox.showerror("输入错误", str(exc))
             return
@@ -2470,23 +2904,31 @@ class StockAdvisorApp:
     def _show_info_window(self, title: str, sections: list[tuple[str, str]], subtitle: str) -> None:
         window = tk.Toplevel(self.root)
         window.title(title)
-        self._center_child_window(window, (self._sc(INFO_WINDOW_SIZE[0]), self._sc(INFO_WINDOW_SIZE[1])))
+        self._center_child_window(
+            window, (self._sc(INFO_WINDOW_SIZE[0]), self._sc(INFO_WINDOW_SIZE[1]))
+        )
         self._apply_child_minimum(window, (720, 500))
         window.configure(bg=PAGE_BG)
         window.transient(self.root)
         self._set_window_icon(window)
 
-        container = ttk.Frame(window, padding=(self._sc(18), self._sc(16), self._sc(18), self._sc(14)))
+        container = ttk.Frame(
+            window, padding=(self._sc(18), self._sc(16), self._sc(18), self._sc(14))
+        )
         container.pack(fill=tk.BOTH, expand=True)
 
         header = ttk.Frame(container)
         header.pack(fill=tk.X, pady=(0, 12))
-        logo = tk.Canvas(header, width=self._sc(40), height=self._sc(40), bg=PAGE_BG, highlightthickness=0)
+        logo = tk.Canvas(
+            header, width=self._sc(40), height=self._sc(40), bg=PAGE_BG, highlightthickness=0
+        )
         logo.pack(side=tk.LEFT, padx=(0, 10))
         self._draw_logo(logo)
         title_box = ttk.Frame(header)
         title_box.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ttk.Label(title_box, text=title, font=(UI_FONT, 15, "bold"), foreground=INK).pack(anchor=tk.W)
+        ttk.Label(title_box, text=title, font=(UI_FONT, 15, "bold"), foreground=INK).pack(
+            anchor=tk.W
+        )
         ttk.Label(title_box, text=subtitle, style="Subtitle.TLabel").pack(anchor=tk.W, pady=(3, 0))
 
         body = ttk.Frame(container)
@@ -2502,8 +2944,12 @@ class StockAdvisorApp:
         content = tk.Frame(body, bg=CARD_BORDER, padx=1, pady=1)
         content.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         text_holder, text, _bar = self._scrolled_text(
-            content, wrap=tk.WORD, borderwidth=0, relief=tk.FLAT,
-            font=(UI_FONT, 10), background=CARD_BG,
+            content,
+            wrap=tk.WORD,
+            borderwidth=0,
+            relief=tk.FLAT,
+            font=(UI_FONT, 10),
+            background=CARD_BG,
         )
         text_holder.pack(fill=tk.BOTH, expand=True)
         self._configure_info_text(text)
@@ -2570,7 +3016,9 @@ class StockAdvisorApp:
         footer = ttk.Frame(container)
         footer.pack(fill=tk.X, pady=(10, 0))
         ttk.Label(footer, text=DISCLAIMER, style="Hint.TLabel").pack(side=tk.LEFT)
-        ttk.Button(footer, text="关闭", style="Action.TButton", command=window.destroy).pack(side=tk.RIGHT)
+        ttk.Button(footer, text="关闭", style="Action.TButton", command=window.destroy).pack(
+            side=tk.RIGHT
+        )
 
     def _configure_info_text(self, text: tk.Text) -> None:
         text.configure(
@@ -2583,16 +3031,40 @@ class StockAdvisorApp:
             spacing2=self._sc(1),
             spacing3=self._sc(8),
         )
-        text.tag_configure("title", font=(UI_FONT, 14, "bold"), foreground=INK, spacing3=self._sc(12))
-        text.tag_configure("body", foreground=INK_SOFT, lmargin1=0, lmargin2=0, spacing3=self._sc(7))
-        text.tag_configure("bullet", foreground=INK_SOFT, lmargin1=self._sc(18), lmargin2=self._sc(30),
-                           spacing3=self._sc(6))
-        text.tag_configure("number", foreground=ACCENT, lmargin1=self._sc(18), lmargin2=self._sc(34),
-                           spacing3=self._sc(6))
-        text.tag_configure("risk", foreground=DANGER_COLOR, lmargin1=self._sc(18), lmargin2=self._sc(30),
-                           spacing3=self._sc(6))
-        text.tag_configure("positive", foreground=POS_COLOR, lmargin1=self._sc(18), lmargin2=self._sc(30),
-                           spacing3=self._sc(6))
+        text.tag_configure(
+            "title", font=(UI_FONT, 14, "bold"), foreground=INK, spacing3=self._sc(12)
+        )
+        text.tag_configure(
+            "body", foreground=INK_SOFT, lmargin1=0, lmargin2=0, spacing3=self._sc(7)
+        )
+        text.tag_configure(
+            "bullet",
+            foreground=INK_SOFT,
+            lmargin1=self._sc(18),
+            lmargin2=self._sc(30),
+            spacing3=self._sc(6),
+        )
+        text.tag_configure(
+            "number",
+            foreground=ACCENT,
+            lmargin1=self._sc(18),
+            lmargin2=self._sc(34),
+            spacing3=self._sc(6),
+        )
+        text.tag_configure(
+            "risk",
+            foreground=DANGER_COLOR,
+            lmargin1=self._sc(18),
+            lmargin2=self._sc(30),
+            spacing3=self._sc(6),
+        )
+        text.tag_configure(
+            "positive",
+            foreground=POS_COLOR,
+            lmargin1=self._sc(18),
+            lmargin2=self._sc(30),
+            spacing3=self._sc(6),
+        )
 
     def _insert_info_text(self, text: tk.Text, title: str, body: str) -> None:
         text.insert(tk.END, title + "\n\n", ("title",))
@@ -2602,7 +3074,13 @@ class StockAdvisorApp:
                 text.insert(tk.END, "\n")
                 continue
             if stripped.startswith("- "):
-                tag = "risk" if _looks_risky(stripped) else "positive" if _looks_positive(stripped) else "bullet"
+                tag = (
+                    "risk"
+                    if _looks_risky(stripped)
+                    else "positive"
+                    if _looks_positive(stripped)
+                    else "bullet"
+                )
             elif len(stripped) > 2 and stripped[0].isdigit() and stripped[1] == ".":
                 tag = "number"
             else:
@@ -2668,7 +3146,13 @@ class StockAdvisorApp:
             self.results[item_id] = result
             self.measurements[item_id] = outcome.measurement
             self.histories[item_id] = outcome.history
-            self.tree.insert("", tk.END, iid=item_id, values=format_result_row(result), tags=result_row_tags(result))
+            self.tree.insert(
+                "",
+                tk.END,
+                iid=item_id,
+                values=format_result_row(result),
+                tags=result_row_tags(result),
+            )
         else:
             self.failures += 1
             item_id = f"fail-{self.failures}-{outcome.symbol.normalized}"
@@ -2738,8 +3222,15 @@ class StockAdvisorApp:
             allow_negative = "1" if param.minimum < 0 else "0"
             vcmd = (self.root.register(self._validate_spinbox_key), "%P", allow_negative)
             spin = ttk.Spinbox(
-                self.tunable_frame, textvariable=var, width=12, from_=param.minimum, to=param.maximum,
-                increment=_spin_step(param), justify=tk.CENTER, validate="key", validatecommand=vcmd,
+                self.tunable_frame,
+                textvariable=var,
+                width=12,
+                from_=param.minimum,
+                to=param.maximum,
+                increment=_spin_step(param),
+                justify=tk.CENTER,
+                validate="key",
+                validatecommand=vcmd,
             )
             spin.grid(
                 row=1,
@@ -2749,7 +3240,9 @@ class StockAdvisorApp:
                 padx=(0 if index == 0 else self._sc(12), self._sc(12)),
             )
             self.tunable_vars[param.key] = var
-            self.tunable_frame.columnconfigure(index, minsize=self._sc(180), weight=1, uniform="tunable")
+            self.tunable_frame.columnconfigure(
+                index, minsize=self._sc(180), weight=1, uniform="tunable"
+            )
 
     def _validate_spinbox_key(self, proposed: str, allow_negative: str) -> bool:
         """Spinbox key 级校验：只允许逐字符构造合法数字（按需允许负号）。"""
@@ -2808,17 +3301,27 @@ class StockAdvisorApp:
         worker.start()
         self.root.after(120, self._poll_queue)
 
-    def _screen_worker(self, criteria, objective, top_n, deep, preset_name, level=STANDARD_LEVEL) -> None:
+    def _screen_worker(
+        self, criteria, objective, top_n, deep, preset_name, level=STANDARD_LEVEL
+    ) -> None:
         def progress(done: int, total: int, rec: Recommendation) -> None:
             self.queue.put(("screen_progress", (done, total, rec)))
 
         try:
             report = screen_and_recommend(
-                self.provider, criteria, objective, top_n=top_n, deep=deep,
-                cancel_event=self.cancel_event, progress_cb=progress, level=level,
+                self.provider,
+                criteria,
+                objective,
+                top_n=top_n,
+                deep=deep,
+                cancel_event=self.cancel_event,
+                progress_cb=progress,
+                level=level,
             )
         except Exception as exc:  # noqa: BLE001 - 后台线程异常必须回主线程恢复 UI
-            report = ScreenReport(total=0, matched=0, recommendations=[], error=f"选股任务异常：{exc}")
+            report = ScreenReport(
+                total=0, matched=0, recommendations=[], error=f"选股任务异常：{exc}"
+            )
         self.queue.put(("screen_done", (preset_name, report)))
 
     def _add_recommendation(self, rec: Recommendation, done: int, total: int) -> None:
@@ -2851,7 +3354,9 @@ class StockAdvisorApp:
             return
         failures = sum(1 for rec in report.recommendations if rec.result is None and rec.error)
         shown = len(report.recommendations)
-        self.overview_var.set(build_screener_overview(preset_name, report.total, report.matched, shown, failures))
+        self.overview_var.set(
+            build_screener_overview(preset_name, report.total, report.matched, shown, failures)
+        )
         if report.cancelled:
             self.status_var.set("选股已停止")
         elif shown == 0:
@@ -2859,7 +3364,10 @@ class StockAdvisorApp:
             self.overview_var.set(
                 f"选股概览（{preset_name}）：全市场扫描 {report.total} 只，没有符合条件的股票，请放宽筛选范围。"
             )
-            self._set_detail("没有符合条件的股票，请放宽筛选范围（如降低成交额下限或放宽涨跌幅区间）。\n\n" + DISCLAIMER)
+            self._set_detail(
+                "没有符合条件的股票，请放宽筛选范围（如降低成交额下限或放宽涨跌幅区间）。\n\n"
+                + DISCLAIMER
+            )
             self._draw_empty_visual("没有符合条件的股票，请放宽筛选范围。")
         else:
             self.status_var.set(f"选股完成，共 {shown} 只")
@@ -2909,7 +3417,7 @@ class StockAdvisorApp:
     def _capital_value(self) -> float:
         try:
             value = float(self.capital_var.get())
-        except (ValueError, AttributeError, tk.TclError):
+        except ValueError, AttributeError, tk.TclError:
             return 0.0
         return value if math.isfinite(value) and value > 0 else 0.0
 
@@ -2956,7 +3464,9 @@ class StockAdvisorApp:
             self._draw_empty_visual("图形面板暂不可用")
 
     @staticmethod
-    def _canvas_extent(canvas: tk.Canvas, fallback_width: int, fallback_height: int) -> tuple[int, int]:
+    def _canvas_extent(
+        canvas: tk.Canvas, fallback_width: int, fallback_height: int
+    ) -> tuple[int, int]:
         """返回画布当前真实尺寸；仅在尚未映射（1px）时使用控件请求尺寸兜底。
 
         绘图不得用大于真实可见宽度的设计稿回退值，否则最小窗口下图元会越过画布右缘。
@@ -2966,12 +3476,12 @@ class StockAdvisorApp:
         if width <= 1:
             try:
                 width = int(float(canvas.cget("width")))
-            except (TypeError, ValueError, tk.TclError):
+            except TypeError, ValueError, tk.TclError:
                 width = int(fallback_width)
         if height <= 1:
             try:
                 height = int(float(canvas.cget("height")))
-            except (TypeError, ValueError, tk.TclError):
+            except TypeError, ValueError, tk.TclError:
                 height = int(fallback_height)
         return max(1, width), max(1, height)
 
@@ -2996,7 +3506,11 @@ class StockAdvisorApp:
         level = self.level_var.get()
         cells = spectrum(measurement, level)
         labels = {"BUY": "买入", "SELL": "卖出", "HOLD": "观望"}
-        colors = {"BUY": (POS_BG, POS_COLOR), "SELL": (NEG_BG, NEG_COLOR), "HOLD": (HOLD_BG, FLAT_COLOR)}
+        colors = {
+            "BUY": (POS_BG, POS_COLOR),
+            "SELL": (NEG_BG, NEG_COLOR),
+            "HOLD": (HOLD_BG, FLAT_COLOR),
+        }
         n = len(cells)
         margin, gap = self._sc(8), self._sc(6)
         cell_w = (width - 2 * margin - gap * (n - 1)) / n
@@ -3017,39 +3531,86 @@ class StockAdvisorApp:
             x0 = margin + index * (cell_w + gap)
             x1 = x0 + cell_w
             bg, fg = colors.get(cell.action, (HOLD_BG, FLAT_COLOR))
-            self._round_rect(canvas, x0, box_top, x1, box_bottom, self._sc(7), fill=bg,
-                             outline=ACCENT if cell.is_current else bg, width=2 if cell.is_current else 1)
+            self._round_rect(
+                canvas,
+                x0,
+                box_top,
+                x1,
+                box_bottom,
+                self._sc(7),
+                fill=bg,
+                outline=ACCENT if cell.is_current else bg,
+                width=2 if cell.is_current else 1,
+            )
             mark = " ●" if cell.is_current else ""
-            canvas.create_text((x0 + x1) / 2, row1_y, text=cell.name + mark, fill=fg, font=name_font)
-            canvas.create_text((x0 + x1) / 2, row2_y, text=labels.get(cell.action, cell.action), fill=fg,
-                               font=label_font)
+            canvas.create_text(
+                (x0 + x1) / 2, row1_y, text=cell.name + mark, fill=fg, font=name_font
+            )
+            canvas.create_text(
+                (x0 + x1) / 2,
+                row2_y,
+                text=labels.get(cell.action, cell.action),
+                fill=fg,
+                font=label_font,
+            )
 
     def _draw_kline(self, history: list) -> None:
         canvas = self.kline_canvas
         canvas.delete("all")
         width, height = self._canvas_extent(canvas, self._sc(620), self._sc(300))
-        canvas.create_text(self._sc(12), self._sc(14), text="近期 K 线（红涨绿跌） · MA5/10/20", anchor=tk.W,
-                           fill=INK, font=(UI_FONT, 9, "bold"))
+        canvas.create_text(
+            self._sc(12),
+            self._sc(14),
+            text="近期 K 线（红涨绿跌） · MA5/10/20",
+            anchor=tk.W,
+            fill=INK,
+            font=(UI_FONT, 9, "bold"),
+        )
         bars = list(history[-60:]) if history else []
         if len(bars) < 2:
             self._draw_empty_kline("K线样本不足")
             return
-        left, right, top, ph = self._sc(50), width - self._sc(16), self._sc(32), height - self._sc(104)
+        left, right, top, ph = (
+            self._sc(50),
+            width - self._sc(16),
+            self._sc(32),
+            height - self._sc(104),
+        )
         vol_top, vol_h = top + ph + self._sc(14), self._sc(42)
         lo, hi = price_bounds(bars)
         layout = candle_layout(bars, left, right, top, ph)
         closes = [bar.close for bar in bars]
         bw = max(float(self._sc(2)), (right - left) / len(bars) * 0.6)
-        canvas.create_text(left - self._sc(5), top, text=f"{hi:.2f}", anchor=tk.E, fill=MUTED_INK,
-                           font=(UI_FONT, 8))
-        canvas.create_text(left - self._sc(5), top + ph, text=f"{lo:.2f}", anchor=tk.E, fill=MUTED_INK,
-                           font=(UI_FONT, 8))
+        canvas.create_text(
+            left - self._sc(5),
+            top,
+            text=f"{hi:.2f}",
+            anchor=tk.E,
+            fill=MUTED_INK,
+            font=(UI_FONT, 8),
+        )
+        canvas.create_text(
+            left - self._sc(5),
+            top + ph,
+            text=f"{lo:.2f}",
+            anchor=tk.E,
+            fill=MUTED_INK,
+            font=(UI_FONT, 8),
+        )
         for cell, bar in zip(layout, bars):
             color = POS_COLOR if cell["up"] else NEG_COLOR
-            canvas.create_line(cell["x"], cell["wick_top"], cell["x"], cell["wick_bottom"], fill=color)
+            canvas.create_line(
+                cell["x"], cell["wick_top"], cell["x"], cell["wick_bottom"], fill=color
+            )
             body_bottom = max(cell["body_bottom"], cell["body_top"] + self._sc(1))
-            canvas.create_rectangle(cell["x"] - bw / 2, cell["body_top"], cell["x"] + bw / 2, body_bottom,
-                                    fill=color, outline=color)
+            canvas.create_rectangle(
+                cell["x"] - bw / 2,
+                cell["body_top"],
+                cell["x"] + bw / 2,
+                body_bottom,
+                fill=color,
+                outline=color,
+            )
         for window, color in ((5, "#f59e0b"), (10, "#2563eb"), (20, "#7c3aed")):
             series = moving_average_series(closes, window)
             points: list[float] = []
@@ -3061,8 +3622,14 @@ class StockAdvisorApp:
         volumes = volume_heights(bars, vol_h)
         for cell, _bar, vh in zip(layout, bars, volumes):
             color = "#e7a3a3" if cell["up"] else "#a7d6bd"
-            canvas.create_rectangle(cell["x"] - bw / 2, vol_top + vol_h - vh, cell["x"] + bw / 2,
-                                    vol_top + vol_h, fill=color, outline=color)
+            canvas.create_rectangle(
+                cell["x"] - bw / 2,
+                vol_top + vol_h - vh,
+                cell["x"] + bw / 2,
+                vol_top + vol_h,
+                fill=color,
+                outline=color,
+            )
         # 存几何状态供 hover 十字光标映射
         self._kline_state = {"bars": bars, "layout": layout, "top": top, "ph": ph, "left": left}
 
@@ -3104,7 +3671,10 @@ class StockAdvisorApp:
         else:
             reverse = not self.sort_reverse[column]
         self.sort_reverse[column] = reverse
-        rows = [(table_sort_key(column, tuple(self.tree.item(item, "values"))), item) for item in self.tree.get_children("")]
+        rows = [
+            (table_sort_key(column, tuple(self.tree.item(item, "values"))), item)
+            for item in self.tree.get_children("")
+        ]
         rows.sort(reverse=reverse)
         for index, (_key, item) in enumerate(rows):
             self.tree.move(item, "", index)
@@ -3125,7 +3695,11 @@ class StockAdvisorApp:
             if hasattr(self, "insight_strip"):
                 # 结论卡折叠时 insight_strip 本身未 pack，不能拿来做 before= 锚点（Tk 会报
                 # "isn't packed"）；这时结果表应插在占位提示之前，位置语义不变。
-                anchor = self.insight_strip if self.insight_strip.winfo_manager() else self.results_placeholder
+                anchor = (
+                    self.insight_strip
+                    if self.insight_strip.winfo_manager()
+                    else self.results_placeholder
+                )
                 pack_options["before"] = anchor
             self.table_card.pack(**pack_options)
 
@@ -3136,7 +3710,12 @@ class StockAdvisorApp:
         # 但不再上屏——真正呈现给用户的错误/占位说明统一交给详情面板文本。
         self.visual.delete("all")
         width, height = self._canvas_extent(self.visual, self._sc(340), self._sc(300))
-        left, top, right, bottom = self._sc(20), self._sc(20), width - self._sc(20), height - self._sc(20)
+        left, top, right, bottom = (
+            self._sc(20),
+            self._sc(20),
+            width - self._sc(20),
+            height - self._sc(20),
+        )
 
         # 因子占位条整体在面板可用高度内垂直居中，避免只贴顶留下一大片空白。
         bars_h = self._sc(120)
@@ -3190,7 +3769,12 @@ class StockAdvisorApp:
             font=(UI_FONT, 9, "bold"),
             tags=("empty_kline_title",),
         )
-        left, right, top, bottom = self._sc(50), width - self._sc(16), self._sc(38), height - self._sc(82)
+        left, right, top, bottom = (
+            self._sc(50),
+            width - self._sc(16),
+            self._sc(38),
+            height - self._sc(82),
+        )
         for index in range(5):
             y = top + (bottom - top) * index / 4
             canvas.create_line(left, y, right, y, fill=GRID_COLOR, tags=("empty_kline_grid",))
@@ -3205,8 +3789,14 @@ class StockAdvisorApp:
             body_h = self._sc(18 + (index % 3) * 4)
             y = top + (bottom - top) * ratio
             color = POS_COLOR if index % 3 != 1 else NEG_COLOR
-            canvas.create_line(x, y - self._sc(14), x, y + body_h + self._sc(14),
-                               fill=color, tags=("empty_kline_candles",))
+            canvas.create_line(
+                x,
+                y - self._sc(14),
+                x,
+                y + body_h + self._sc(14),
+                fill=color,
+                tags=("empty_kline_candles",),
+            )
             canvas.create_rectangle(
                 x - self._sc(5),
                 y,
@@ -3217,13 +3807,22 @@ class StockAdvisorApp:
                 tags=("empty_kline_candles",),
             )
         ma_points: list[float] = []
-        for index, ratio in enumerate((0.54, 0.48, 0.51, 0.40, 0.34, 0.37, 0.29, 0.31, 0.25, 0.28, 0.23, 0.20)):
+        for index, ratio in enumerate(
+            (0.54, 0.48, 0.51, 0.40, 0.34, 0.37, 0.29, 0.31, 0.25, 0.28, 0.23, 0.20)
+        ):
             ma_points.extend([left + step * (index + 0.5), top + (bottom - top) * ratio])
-        canvas.create_line(*ma_points, fill=ACCENT_HOVER, width=self._sc(2), smooth=True,
-                           tags=("empty_kline_candles",))
+        canvas.create_line(
+            *ma_points,
+            fill=ACCENT_HOVER,
+            width=self._sc(2),
+            smooth=True,
+            tags=("empty_kline_candles",),
+        )
 
         vol_top, vol_h = bottom + self._sc(18), self._sc(30)
-        for index, ratio in enumerate((0.40, 0.52, 0.31, 0.62, 0.35, 0.48, 0.57, 0.34, 0.64, 0.38, 0.46, 0.55)):
+        for index, ratio in enumerate(
+            (0.40, 0.52, 0.31, 0.62, 0.35, 0.48, 0.57, 0.34, 0.64, 0.38, 0.46, 0.55)
+        ):
             x = left + step * (index + 0.5)
             vh = vol_h * ratio
             canvas.create_rectangle(
@@ -3252,7 +3851,12 @@ class StockAdvisorApp:
         # 结论卡(verdict card)重复，已删除；详情面板的"结论"段同样覆盖了叙述文案。
         self.visual.delete("all")
         width, height = self._canvas_extent(self.visual, self._sc(340), self._sc(300))
-        left, top, right, bottom = self._sc(20), self._sc(20), width - self._sc(20), height - self._sc(20)
+        left, top, right, bottom = (
+            self._sc(20),
+            self._sc(20),
+            width - self._sc(20),
+            height - self._sc(20),
+        )
 
         # 因子分解整体在面板可用高度内垂直居中，避免只贴顶留下一大片空白；与
         # _draw_empty_visual 使用同一组尺寸常量，保证真实/占位两态观感一致。
@@ -3260,7 +3864,16 @@ class StockAdvisorApp:
         bars_y = top + max(0.0, (bottom - top - self._sc(28) - bars_h) / 2) + self._sc(28)
         self._draw_factor_bars(left, bars_y, right - left, bars_h, result)
 
-    def _round_rect(self, canvas: tk.Canvas, x1: float, y1: float, x2: float, y2: float, radius: float, **kwargs: Any) -> None:
+    def _round_rect(
+        self,
+        canvas: tk.Canvas,
+        x1: float,
+        y1: float,
+        x2: float,
+        y2: float,
+        radius: float,
+        **kwargs: Any,
+    ) -> None:
         if x2 <= x1 or y2 <= y1:
             return
         radius = max(0, min(radius, (x2 - x1) / 2, (y2 - y1) / 2))
@@ -3292,9 +3905,12 @@ class StockAdvisorApp:
         ]
         canvas.create_polygon(points, smooth=True, splinesteps=16, **kwargs)
 
-    def _draw_factor_bars(self, x: float, y: float, width: float, height: float, result: AnalysisResult) -> None:
-        self.visual.create_text(x, y - self._sc(9), text="判断拆解", anchor=tk.W, fill=INK,
-                                font=(UI_FONT, 10, "bold"))
+    def _draw_factor_bars(
+        self, x: float, y: float, width: float, height: float, result: AnalysisResult
+    ) -> None:
+        self.visual.create_text(
+            x, y - self._sc(9), text="判断拆解", anchor=tk.W, fill=INK, font=(UI_FONT, 10, "bold")
+        )
         factors = result.factor_scores[:5]
         if not factors:
             self.visual.create_text(x + width / 2, y + height / 2, text="暂无因子", fill=MUTED_INK)
@@ -3305,21 +3921,51 @@ class StockAdvisorApp:
             label_w = self._sc(86)
             bar_x = x + label_w
             bar_w = width - label_w - self._sc(48)
-            self.visual.create_text(x, row_y + row_h / 2, text=_friendly_factor_name(factor.name),
-                                    anchor=tk.W, fill=INK_SOFT, font=(UI_FONT, 8))
-            self._round_rect(self.visual, bar_x, row_y + self._sc(4), bar_x + bar_w,
-                             row_y + row_h - self._sc(4), self._sc(5), fill=CONTROL_BG, outline="")
+            self.visual.create_text(
+                x,
+                row_y + row_h / 2,
+                text=_friendly_factor_name(factor.name),
+                anchor=tk.W,
+                fill=INK_SOFT,
+                font=(UI_FONT, 8),
+            )
+            self._round_rect(
+                self.visual,
+                bar_x,
+                row_y + self._sc(4),
+                bar_x + bar_w,
+                row_y + row_h - self._sc(4),
+                self._sc(5),
+                fill=CONTROL_BG,
+                outline="",
+            )
             zero = bar_x + bar_w / 2
             score = _safe_int(factor.score)
             max_abs_score = max(_safe_int(factor.max_abs_score, default=1), 1)
             ratio = min(1.0, abs(score) / max_abs_score)
             end = zero + (bar_w / 2) * ratio * (1 if score >= 0 else -1)
             color = _score_color(score)
-            self.visual.create_line(zero, row_y + self._sc(2), zero, row_y + row_h - self._sc(2),
-                                    fill=MUTED_LIGHT)
-            self._round_rect(self.visual, min(zero, end), row_y + self._sc(4), max(zero, end), row_y + row_h - self._sc(4), self._sc(5), fill=color, outline="")
-            self.visual.create_text(x + width, row_y + row_h / 2, text=f"{score:+d}", anchor=tk.E,
-                                    fill=color, font=(UI_FONT, 8, "bold"))
+            self.visual.create_line(
+                zero, row_y + self._sc(2), zero, row_y + row_h - self._sc(2), fill=MUTED_LIGHT
+            )
+            self._round_rect(
+                self.visual,
+                min(zero, end),
+                row_y + self._sc(4),
+                max(zero, end),
+                row_y + row_h - self._sc(4),
+                self._sc(5),
+                fill=color,
+                outline="",
+            )
+            self.visual.create_text(
+                x + width,
+                row_y + row_h / 2,
+                text=f"{score:+d}",
+                anchor=tk.E,
+                fill=color,
+                font=(UI_FONT, 8, "bold"),
+            )
 
     def _set_detail(self, text: str) -> None:
         self.detail.configure(state=tk.NORMAL)
@@ -3361,15 +4007,29 @@ class StockAdvisorApp:
             spacing2=self._sc(1),
             spacing3=self._sc(7),
         )
-        self.detail.tag_configure("headline", font=(UI_FONT, 14, "bold"), foreground=INK, spacing3=self._sc(12))
-        self.detail.tag_configure("section", font=(UI_FONT, 12, "bold"), foreground=ACCENT,
-                                  spacing1=self._sc(10), spacing3=self._sc(6))
+        self.detail.tag_configure(
+            "headline", font=(UI_FONT, 14, "bold"), foreground=INK, spacing3=self._sc(12)
+        )
+        self.detail.tag_configure(
+            "section",
+            font=(UI_FONT, 12, "bold"),
+            foreground=ACCENT,
+            spacing1=self._sc(10),
+            spacing3=self._sc(6),
+        )
         self.detail.tag_configure("positive", foreground=POS_COLOR)
         self.detail.tag_configure("negative", foreground=NEG_COLOR)
         self.detail.tag_configure("muted", foreground=MUTED_INK)
-        self.detail.tag_configure("bullet", lmargin1=self._sc(16), lmargin2=self._sc(28), spacing3=self._sc(4))
-        self.detail.tag_configure("risk", foreground=DANGER_COLOR, lmargin1=self._sc(16),
-                                  lmargin2=self._sc(28), spacing3=self._sc(4))
+        self.detail.tag_configure(
+            "bullet", lmargin1=self._sc(16), lmargin2=self._sc(28), spacing3=self._sc(4)
+        )
+        self.detail.tag_configure(
+            "risk",
+            foreground=DANGER_COLOR,
+            lmargin1=self._sc(16),
+            lmargin2=self._sc(28),
+            spacing3=self._sc(4),
+        )
 
     def _insert_styled_detail(self, text: str) -> None:
         lines = text.splitlines()

@@ -37,7 +37,8 @@ class MeasureTests(unittest.TestCase):
 
         l3_score = decide(m, level=3).policy_score
         self.assertEqual(
-            m.objective_score, l3_score,
+            m.objective_score,
+            l3_score,
             f"客观综合分({m.objective_score})与 L3 决策分({l3_score})取整口径不一致",
         )
 

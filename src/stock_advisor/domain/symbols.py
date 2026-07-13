@@ -23,7 +23,9 @@ def normalize_symbol(value: str) -> StockSymbol:
         prefix = _infer_prefix(code)
 
     market_id, exchange = _market_for_prefix(prefix)
-    return StockSymbol(raw=raw, code=code, exchange=exchange, prefix=prefix, secid=f"{market_id}.{code}")
+    return StockSymbol(
+        raw=raw, code=code, exchange=exchange, prefix=prefix, secid=f"{market_id}.{code}"
+    )
 
 
 def symbol_from_market(code: str, market_id: object) -> StockSymbol:
@@ -40,7 +42,9 @@ def symbol_from_market(code: str, market_id: object) -> StockSymbol:
         prefix, exchange = "bj", "北京证券交易所"
     else:
         prefix, exchange = "sz", "深圳证券交易所"
-    return StockSymbol(raw=code, code=code, exchange=exchange, prefix=prefix, secid=f"{market}.{code}")
+    return StockSymbol(
+        raw=code, code=code, exchange=exchange, prefix=prefix, secid=f"{market}.{code}"
+    )
 
 
 def parse_user_symbols(text: str, max_count: int = 30) -> list[StockSymbol]:
@@ -81,4 +85,3 @@ def _market_for_prefix(prefix: str) -> tuple[str, str]:
     if prefix == "bj":
         return "0", "北京证券交易所"
     raise ValueError(f"不支持的交易所前缀：{prefix}")
-

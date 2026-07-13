@@ -1,4 +1,5 @@
 """输入解析与选股可调项校验——纯函数。"""
+
 from __future__ import annotations
 
 import math

@@ -117,7 +117,15 @@ class IndicatorTests(unittest.TestCase):
 class StrategyEngineTests(unittest.TestCase):
     def test_buy_signal_for_confirmed_uptrend_with_intraday_strength(self):
         history = make_history(start=20, step=0.25, days=80, volume=100000)
-        quote = make_quote("600519", last=41.0, open_price=40.2, high=41.2, low=39.9, previous_close=40.0, volume=260000)
+        quote = make_quote(
+            "600519",
+            last=41.0,
+            open_price=40.2,
+            high=41.2,
+            low=39.9,
+            previous_close=40.0,
+            volume=260000,
+        )
 
         result = analyze_stock(quote, history)
 
@@ -135,7 +143,15 @@ class StrategyEngineTests(unittest.TestCase):
 
     def test_sell_signal_for_breakdown_and_weak_intraday_close(self):
         history = make_history(start=40, step=-0.22, days=80, volume=180000)
-        quote = make_quote("000001", last=21.0, open_price=22.2, high=22.4, low=20.9, previous_close=22.0, volume=260000)
+        quote = make_quote(
+            "000001",
+            last=21.0,
+            open_price=22.2,
+            high=22.4,
+            low=20.9,
+            previous_close=22.0,
+            volume=260000,
+        )
 
         result = analyze_stock(quote, history)
 
@@ -145,7 +161,15 @@ class StrategyEngineTests(unittest.TestCase):
 
     def test_hold_signal_for_mixed_evidence(self):
         history = make_history(start=30, step=0.0, days=80, volume=100000)
-        quote = make_quote("300750", last=30.1, open_price=30.0, high=30.5, low=29.7, previous_close=30.0, volume=105000)
+        quote = make_quote(
+            "300750",
+            last=30.1,
+            open_price=30.0,
+            high=30.5,
+            low=29.7,
+            previous_close=30.0,
+            volume=105000,
+        )
 
         result = analyze_stock(quote, history)
 
@@ -163,7 +187,15 @@ class StrategyEngineTests(unittest.TestCase):
             amount=float("inf"),
             pct_change=float("nan"),
         )
-        quote = make_quote("600519", last=36.0, open_price=35.6, high=36.2, low=35.4, previous_close=35.5, volume=260000)
+        quote = make_quote(
+            "600519",
+            last=36.0,
+            open_price=35.6,
+            high=36.2,
+            low=35.4,
+            previous_close=35.5,
+            volume=260000,
+        )
 
         result = analyze_stock(quote, [*history[:-1], bad])
 

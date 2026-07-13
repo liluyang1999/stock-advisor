@@ -13,7 +13,7 @@ from test_policy import make_measurement
 class SizingTests(unittest.TestCase):
     def test_fraction_zero_for_non_buy(self):
         self.assertEqual(size_fraction(make_measurement(-30), 3), 0.0)  # SELL
-        self.assertEqual(size_fraction(make_measurement(0), 3), 0.0)    # HOLD
+        self.assertEqual(size_fraction(make_measurement(0), 3), 0.0)  # HOLD
 
     def test_fraction_monotonic_in_level_for_buy(self):
         m = make_measurement(40, confidence=80)
@@ -30,7 +30,9 @@ class SizingTests(unittest.TestCase):
         plan = position_plan(m, 3, capital=100000)
         self.assertEqual(plan.shares % 100, 0)
         self.assertGreater(plan.shares, 0)
-        self.assertAlmostEqual(plan.max_loss, plan.shares * (plan.entry - plan.stop_price), places=2)
+        self.assertAlmostEqual(
+            plan.max_loss, plan.shares * (plan.entry - plan.stop_price), places=2
+        )
         self.assertGreater(plan.target_price, plan.entry)
         self.assertLess(plan.stop_price, plan.entry)
         self.assertEqual(plan.lots, plan.shares // 100)

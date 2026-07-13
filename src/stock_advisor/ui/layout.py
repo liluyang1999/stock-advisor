@@ -1,8 +1,11 @@
 """窗口居中、工作区归一、内容带几何——纯数学,零依赖,便于单测。"""
+
 from __future__ import annotations
 
 
-def compute_centered_geometry(outer_w: int, outer_h: int, win_w: int, win_h: int) -> tuple[int, int]:
+def compute_centered_geometry(
+    outer_w: int, outer_h: int, win_w: int, win_h: int
+) -> tuple[int, int]:
     """返回让窗口在 outer 区域内居中的左上角坐标，四边留白由 (outer-win)/2 对称给出。"""
     x = max(0, (int(outer_w) - int(win_w)) // 2)
     y = max(0, (int(outer_h) - int(win_h)) // 2)
@@ -94,8 +97,15 @@ def choose_centering_screen_size(
 
 
 def compute_centered_window(
-    work_w: int, work_h: int, margin: int, max_w: int, max_h: int, min_w: int, min_h: int,
-    frame_w: int = 0, frame_h: int = 0,
+    work_w: int,
+    work_h: int,
+    margin: int,
+    max_w: int,
+    max_h: int,
+    min_w: int,
+    min_h: int,
+    frame_w: int = 0,
+    frame_h: int = 0,
 ) -> tuple[int, int, int, int]:
     """主窗口在工作区内居中，四周（含底部任务栏一侧）留出 margin 的均匀空隙。
 
@@ -178,7 +188,7 @@ def ui_scale(tk_scaling: float) -> float:
     """Windows DPI 缩放因子:Tk scaling(点→像素)换算,96 DPI=1.0,按 0.25 档位取整。"""
     try:
         raw = float(tk_scaling) * 72.0 / 96.0
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return 1.0
     if raw <= 1.05:
         return 1.0
@@ -193,17 +203,32 @@ def stacked_text_y(top: int, line_height: int, count: int) -> list[int]:
 
 
 def compute_main_geometry(
-    work_left: int, work_top: int, work_w: int, work_h: int, ui_scale_factor: float,
-    min_w: int, min_h: int, max_w: int, max_h: int, margin: int,
-    frame_w: int = 0, frame_h: int = 0,
+    work_left: int,
+    work_top: int,
+    work_w: int,
+    work_h: int,
+    ui_scale_factor: float,
+    min_w: int,
+    min_h: int,
+    max_w: int,
+    max_h: int,
+    margin: int,
+    frame_w: int = 0,
+    frame_h: int = 0,
 ) -> tuple[int, int, int, int]:
     """DPI 感知进程里 geometry 单位=物理像素:在物理工作区内按外框居中,逻辑尺寸常量
     (min/max/margin)先乘 ui_scale_factor 再夹制,使窗口随 DPI 成比例填满而非缩成逻辑像素。
     返回 (客户区宽, 客户区高, 外框左上角绝对 x, 绝对 y)。"""
     s = max(1.0, float(ui_scale_factor))
     win_w, win_h, off_x, off_y = compute_centered_window(
-        work_w, work_h, round(margin * s),
-        round(max_w * s), round(max_h * s), round(min_w * s), round(min_h * s),
-        frame_w, frame_h,
+        work_w,
+        work_h,
+        round(margin * s),
+        round(max_w * s),
+        round(max_h * s),
+        round(min_w * s),
+        round(min_h * s),
+        frame_w,
+        frame_h,
     )
     return win_w, win_h, int(work_left) + off_x, int(work_top) + off_y

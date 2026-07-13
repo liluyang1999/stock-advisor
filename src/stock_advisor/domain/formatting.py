@@ -1,4 +1,5 @@
 """数值强制、低层格式化、风险分级与文本谓词——纯函数,供 view_text / view_format 复用。"""
+
 from __future__ import annotations
 
 import math
@@ -28,7 +29,7 @@ def _fmt_backtest_excess(value: object, baseline: object, missing: str = "样本
 def _finite_float(value: object) -> float | None:
     try:
         number = float(value)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     return number if math.isfinite(number) else None
 
@@ -47,7 +48,9 @@ def _positive_finite_int(value: object) -> int | None:
     return int(number)
 
 
-def _safe_int(value: object, default: int = 0, minimum: int | None = None, maximum: int | None = None) -> int:
+def _safe_int(
+    value: object, default: int = 0, minimum: int | None = None, maximum: int | None = None
+) -> int:
     number = _finite_float(value)
     result = default if number is None else int(round(number))
     if minimum is not None:
@@ -86,7 +89,9 @@ def _fmt_whole_percent(value: object, missing: str = "—") -> str:
     return f"{max(0, min(100, int(round(number))))}%"
 
 
-def _fmt_percent_points(value: object, digits: int = 2, signed: bool = False, missing: str = "—") -> str:
+def _fmt_percent_points(
+    value: object, digits: int = 2, signed: bool = False, missing: str = "—"
+) -> str:
     number = _finite_float(value)
     if number is None:
         return missing

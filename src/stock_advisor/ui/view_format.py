@@ -1,4 +1,5 @@
 """行/表/剪贴板格式化与行/详情标签配色——纯函数。"""
+
 from __future__ import annotations
 
 import csv
@@ -6,16 +7,34 @@ import io
 import re
 
 from ..domain.formatting import (
-    _finite_float, _positive_finite_float, _positive_finite_int,
-    _fmt, _fmt_amount, _fmt_decimal, _fmt_percent_points, _fmt_percent_value,
-    _fmt_plain_number, _fmt_score_value, _fmt_whole_percent, _number_from_cell,
-    _looks_negative, _looks_positive, _looks_risky, risk_level,
+    _finite_float,
+    _positive_finite_float,
+    _positive_finite_int,
+    _fmt,
+    _fmt_amount,
+    _fmt_decimal,
+    _fmt_percent_points,
+    _fmt_percent_value,
+    _fmt_plain_number,
+    _fmt_score_value,
+    _fmt_whole_percent,
+    _number_from_cell,
+    _looks_negative,
+    _looks_positive,
+    _looks_risky,
+    risk_level,
 )
 from ..domain.models import AnalysisResult, ComparisonRow, MarketSnapshot, Recommendation
 from ..domain.symbols import normalize_symbol
 from .theme import (
-    ACTION_ORDER, DETAIL_SECTION_TITLES, DISCLAIMER, FLAT_COLOR, NEG_COLOR, POS_COLOR,
-    RISK_ORDER, TABLE_COLUMN_INDEX,
+    ACTION_ORDER,
+    DETAIL_SECTION_TITLES,
+    DISCLAIMER,
+    FLAT_COLOR,
+    NEG_COLOR,
+    POS_COLOR,
+    RISK_ORDER,
+    TABLE_COLUMN_INDEX,
 )
 
 
@@ -56,9 +75,17 @@ def format_comparison_row(row: ComparisonRow) -> tuple[str, ...]:
         if pl_amount is not None:
             pl_text += f"（{pl_amount:+.0f}）"
     return (
-        row.code, row.name, _fmt_decimal(row.last), _fmt_percent_points(row.change_pct, signed=True),
-        _fmt_score_value(row.score, signed=True), _fmt_whole_percent(row.confidence), row.risk, _fmt_whole_percent(row.position),
-        cost_text, pl_text, row.level_hint,
+        row.code,
+        row.name,
+        _fmt_decimal(row.last),
+        _fmt_percent_points(row.change_pct, signed=True),
+        _fmt_score_value(row.score, signed=True),
+        _fmt_whole_percent(row.confidence),
+        row.risk,
+        _fmt_whole_percent(row.position),
+        cost_text,
+        pl_text,
+        row.level_hint,
     )
 
 
@@ -161,24 +188,62 @@ def table_sort_key(column: str, row: tuple[str, ...] | list[str]) -> float | str
 
 
 def result_row_tags(result: AnalysisResult) -> tuple[str, ...]:
-    risk_tag = {"低": "risk_low", "中": "risk_medium", "高": "risk_high"}.get(risk_level(result), "risk_medium")
+    risk_tag = {"低": "risk_low", "中": "risk_medium", "高": "risk_high"}.get(
+        risk_level(result), "risk_medium"
+    )
     return (risk_tag, f"action_{result.action.lower()}")
 
 
 def format_results_for_clipboard(results: list[AnalysisResult]) -> str:
     output = io.StringIO()
     writer = csv.writer(output, delimiter="\t", lineterminator="\n")
-    writer.writerow(["代码", "名称", "建议", "分数", "置信度", "最新价", "涨跌幅", "风险等级", "建议仓位", "预测说明", "主要依据"])
+    writer.writerow(
+        [
+            "代码",
+            "名称",
+            "建议",
+            "分数",
+            "置信度",
+            "最新价",
+            "涨跌幅",
+            "风险等级",
+            "建议仓位",
+            "预测说明",
+            "主要依据",
+        ]
+    )
     for result in results:
         row = list(format_result_row(result))
-        writer.writerow([*row, _fmt_whole_percent(result.suggested_position), result.forecast_label, "；".join(result.reasons[:3])])
+        writer.writerow(
+            [
+                *row,
+                _fmt_whole_percent(result.suggested_position),
+                result.forecast_label,
+                "；".join(result.reasons[:3]),
+            ]
+        )
     return output.getvalue().strip()
 
 
 def format_results_as_csv(results: list[AnalysisResult]) -> str:
     output = io.StringIO()
     writer = csv.writer(output, lineterminator="\n")
-    writer.writerow(["代码", "名称", "建议", "分数", "置信度", "最新价", "涨跌幅", "风险等级", "建议仓位", "预测说明", "主要依据", "风险提示"])
+    writer.writerow(
+        [
+            "代码",
+            "名称",
+            "建议",
+            "分数",
+            "置信度",
+            "最新价",
+            "涨跌幅",
+            "风险等级",
+            "建议仓位",
+            "预测说明",
+            "主要依据",
+            "风险提示",
+        ]
+    )
     for result in results:
         row = list(format_result_row(result))
         writer.writerow(

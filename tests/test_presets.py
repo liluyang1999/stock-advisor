@@ -124,9 +124,7 @@ class TunableCrossedBoundValidationTests(unittest.TestCase):
     def test_equal_min_and_max_is_not_treated_as_crossed(self):
         # min == max 是合法（虽然狭窄）的区间，不应误判为交叉
         preset = get_preset("activity_turnover")
-        criteria, _top_n = apply_tunables(
-            preset, {"turnover_min": 12.0, "turnover_max": 12.0}
-        )
+        criteria, _top_n = apply_tunables(preset, {"turnover_min": 12.0, "turnover_max": 12.0})
         self.assertEqual(criteria.turnover_min, 12.0)
         self.assertEqual(criteria.turnover_max, 12.0)
 

@@ -76,7 +76,8 @@ def build_manual_html() -> str:
     )
 
     characteristic_items = "".join(
-        f"<li><strong>{escape(name)}</strong>：{escape(desc)}</li>" for name, desc in CHARACTERISTICS
+        f"<li><strong>{escape(name)}</strong>：{escape(desc)}</li>"
+        for name, desc in CHARACTERISTICS
     )
     sections.append(
         "<h2>可筛选的证券特征</h2>"

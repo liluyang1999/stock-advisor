@@ -16,12 +16,23 @@ from test_engine import make_quote, make_history
 def entry(code, last_price, cost=None, shares=None, step=0.25):
     history = make_history(start=20, step=step, days=80)
     quote = make_quote(
-        code, last=last_price, open_price=last_price - 0.5, high=last_price + 0.3,
-        low=last_price - 0.6, previous_close=last_price - 0.4, volume=200000,
+        code,
+        last=last_price,
+        open_price=last_price - 0.5,
+        high=last_price + 0.3,
+        low=last_price - 0.6,
+        previous_close=last_price - 0.4,
+        volume=200000,
     )
     measurement = measure(quote, history)
     result = build_analysis_result(measurement, decide(measurement, 3))
-    return {"result": result, "measurement": measurement, "risk": "低", "cost": cost, "shares": shares}
+    return {
+        "result": result,
+        "measurement": measurement,
+        "risk": "低",
+        "cost": cost,
+        "shares": shares,
+    }
 
 
 class CompareTests(unittest.TestCase):
@@ -62,7 +73,9 @@ class CompareTests(unittest.TestCase):
         self.assertEqual(display[3], "—")
 
     def test_sorted_by_score_desc(self):
-        rows = build_comparison_rows([entry("600519", 41.0, step=0.25), entry("000001", 21.0, step=-0.22)])
+        rows = build_comparison_rows(
+            [entry("600519", 41.0, step=0.25), entry("000001", 21.0, step=-0.22)]
+        )
         self.assertEqual(len(rows), 2)
         self.assertGreaterEqual(rows[0].score, rows[1].score)
 

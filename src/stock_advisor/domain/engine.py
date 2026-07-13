@@ -69,7 +69,9 @@ def bollinger_position(values: list[float], last: float, window: int = 20) -> fl
     return (last - lower) / span
 
 
-def average_true_range_percent(history: list[DailyBar], last: float, period: int = 14) -> float | None:
+def average_true_range_percent(
+    history: list[DailyBar], last: float, period: int = 14
+) -> float | None:
     if period <= 0 or len(history) < period + 1 or not _finite_positive(last):
         return None
     ranges: list[float] = []
@@ -92,7 +94,9 @@ def average_true_range_percent(history: list[DailyBar], last: float, period: int
     return mean(ranges) / last * 100
 
 
-def support_resistance(history: list[DailyBar], window: int = 20) -> tuple[float | None, float | None]:
+def support_resistance(
+    history: list[DailyBar], window: int = 20
+) -> tuple[float | None, float | None]:
     if window <= 0:
         return None, None
     recent = history[-window:]
@@ -187,7 +191,9 @@ def measure(quote: Quote, history: list[DailyBar]) -> Measurement:
     _extend_factor(factors, reasons, risks, *_score_volume(quote, volume_ratio))
     _extend_factor(factors, reasons, risks, *_score_intraday(quote, intraday_position))
     _extend_factor(factors, reasons, risks, *_score_bollinger(bollinger))
-    _extend_factor(factors, reasons, risks, *_score_support_resistance(quote.last, support, resistance))
+    _extend_factor(
+        factors, reasons, risks, *_score_support_resistance(quote.last, support, resistance)
+    )
     _extend_factor(factors, reasons, risks, *_score_volatility(atr_percent))
 
     risk_penalty, risk_notes = _risk_penalty(quote, history)
@@ -227,7 +233,9 @@ def build_analysis_result(m: Measurement, decision: Decision) -> AnalysisResult:
     """把客观测量 + 某档决策组装成展示用 AnalysisResult（兼容既有消费方）。"""
     factors = list(m.factors)
     if m.risk_penalty:
-        factors.append(FactorScore("风控扣分", m.risk_penalty, 20, "谨慎", "跳空、振幅或回撤触发风险扣分。"))
+        factors.append(
+            FactorScore("风控扣分", m.risk_penalty, 20, "谨慎", "跳空、振幅或回撤触发风险扣分。")
+        )
     return AnalysisResult(
         symbol=m.symbol,
         name=m.name,
@@ -248,7 +256,9 @@ def build_analysis_result(m: Measurement, decision: Decision) -> AnalysisResult:
     )
 
 
-def analyze_stock(quote: Quote, history: list[DailyBar], level: int = STANDARD_LEVEL) -> AnalysisResult:
+def analyze_stock(
+    quote: Quote, history: list[DailyBar], level: int = STANDARD_LEVEL
+) -> AnalysisResult:
     """便捷包装：measure + decide(level) + 组装。默认档复现既有买/持/卖与综合分。"""
     m = measure(quote, history)
     return build_analysis_result(m, decide(m, level))
@@ -258,22 +268,56 @@ def _score_moving_averages(
     last: float, ma5: float | None, ma20: float | None, ma60: float | None
 ) -> tuple[FactorScore, list[str], list[str]]:
     if ma5 is None or ma20 is None:
-        return FactorScore("均线结构", 0, 28, "样本不足", "均线样本不足，趋势信号降权。"), ["均线样本不足，趋势信号降权。"], []
+        return (
+            FactorScore("均线结构", 0, 28, "样本不足", "均线样本不足，趋势信号降权。"),
+            ["均线样本不足，趋势信号降权。"],
+            [],
+        )
 
     price_vs_ma20 = (last - ma20) / max(abs(last), 0.01) * 100
     ma_spread = (ma5 - ma20) / max(abs(ma20), 0.01) * 100
-    if last > ma5 > ma20 and price_vs_ma20 > 0.5 and ma_spread > 0.2 and (ma60 is None or ma20 > ma60):
-        return FactorScore("均线结构", 28, 28, "偏多", "价格站上短中期均线，均线结构偏多。"), ["价格站上短中期均线，均线结构偏多。"], []
-    if last < ma5 < ma20 and price_vs_ma20 < -0.5 and ma_spread < -0.2 and (ma60 is None or ma20 < ma60):
-        return FactorScore("均线结构", -28, 28, "偏空", "价格跌破短中期均线，均线结构弱势。"), ["价格跌破短中期均线，均线结构弱势。"], []
+    if (
+        last > ma5 > ma20
+        and price_vs_ma20 > 0.5
+        and ma_spread > 0.2
+        and (ma60 is None or ma20 > ma60)
+    ):
+        return (
+            FactorScore("均线结构", 28, 28, "偏多", "价格站上短中期均线，均线结构偏多。"),
+            ["价格站上短中期均线，均线结构偏多。"],
+            [],
+        )
+    if (
+        last < ma5 < ma20
+        and price_vs_ma20 < -0.5
+        and ma_spread < -0.2
+        and (ma60 is None or ma20 < ma60)
+    ):
+        return (
+            FactorScore("均线结构", -28, 28, "偏空", "价格跌破短中期均线，均线结构弱势。"),
+            ["价格跌破短中期均线，均线结构弱势。"],
+            [],
+        )
     if price_vs_ma20 > 0.35:
-        return FactorScore("均线结构", 8, 28, "略偏多", "价格位于20日均线上方，但均线结构未完全共振。"), ["价格位于20日均线上方，但均线结构未完全共振。"], []
+        return (
+            FactorScore(
+                "均线结构", 8, 28, "略偏多", "价格位于20日均线上方，但均线结构未完全共振。"
+            ),
+            ["价格位于20日均线上方，但均线结构未完全共振。"],
+            [],
+        )
     if price_vs_ma20 < -0.35:
-        return FactorScore("均线结构", -8, 28, "略偏空", "价格低于20日均线，短线需防守。"), ["价格低于20日均线，短线需防守。"], []
+        return (
+            FactorScore("均线结构", -8, 28, "略偏空", "价格低于20日均线，短线需防守。"),
+            ["价格低于20日均线，短线需防守。"],
+            [],
+        )
     return FactorScore("均线结构", 0, 28, "中性", "价格贴近中期均线，趋势方向暂不清晰。"), [], []
 
 
-def _score_trend(closes: list[float], win_rate: float | None, drawdown: float | None) -> tuple[FactorScore, list[str], list[str]]:
+def _score_trend(
+    closes: list[float], win_rate: float | None, drawdown: float | None
+) -> tuple[FactorScore, list[str], list[str]]:
     score = 0
     reasons: list[str] = []
     risks: list[str] = []
@@ -310,10 +354,18 @@ def _score_trend(closes: list[float], win_rate: float | None, drawdown: float | 
         score -= 4
         risks.append(f"20日最大回撤约{drawdown:.1f}%，趋势修复需要时间。")
     verdict = "偏多" if score > 6 else "偏空" if score < -6 else "中性"
-    return FactorScore("趋势质量", score, 25, verdict, "综合短期斜率、20日斜率、近5日胜率和20日回撤。"), reasons, risks
+    return (
+        FactorScore(
+            "趋势质量", score, 25, verdict, "综合短期斜率、20日斜率、近5日胜率和20日回撤。"
+        ),
+        reasons,
+        risks,
+    )
 
 
-def _score_momentum(rsi14: float | None, macd: tuple[float, float, float] | None) -> tuple[FactorScore, list[str], list[str]]:
+def _score_momentum(
+    rsi14: float | None, macd: tuple[float, float, float] | None
+) -> tuple[FactorScore, list[str], list[str]]:
     score = 0
     reasons: list[str] = []
     risks: list[str] = []
@@ -347,52 +399,156 @@ def _score_momentum(rsi14: float | None, macd: tuple[float, float, float] | None
         risks.append("MACD样本不足，趋势动量确认降权。")
 
     verdict = "偏多" if score > 6 else "偏空" if score < -6 else "中性"
-    return FactorScore("动量指标", score, 18, verdict, "综合 RSI14 与 MACD 快慢线/柱线。"), reasons, risks
+    return (
+        FactorScore("动量指标", score, 18, verdict, "综合 RSI14 与 MACD 快慢线/柱线。"),
+        reasons,
+        risks,
+    )
 
 
-def _score_volume(quote: Quote, volume_ratio: float | None) -> tuple[FactorScore, list[str], list[str]]:
+def _score_volume(
+    quote: Quote, volume_ratio: float | None
+) -> tuple[FactorScore, list[str], list[str]]:
     if volume_ratio is None:
-        return FactorScore("量能确认", 0, 14, "样本不足", "缺少量能样本，成交确认信号降权。"), ["缺少量能样本，成交确认信号降权。"], []
+        return (
+            FactorScore("量能确认", 0, 14, "样本不足", "缺少量能样本，成交确认信号降权。"),
+            ["缺少量能样本，成交确认信号降权。"],
+            [],
+        )
     if quote.change_pct > 0.5 and volume_ratio >= 1.5:
-        return FactorScore("量能确认", 14, 14, "偏多", f"量能放大至近20日均量的{volume_ratio:.2f}倍，上涨得到成交确认。"), [f"量能放大至近20日均量的{volume_ratio:.2f}倍，上涨得到成交确认。"], []
+        return (
+            FactorScore(
+                "量能确认",
+                14,
+                14,
+                "偏多",
+                f"量能放大至近20日均量的{volume_ratio:.2f}倍，上涨得到成交确认。",
+            ),
+            [f"量能放大至近20日均量的{volume_ratio:.2f}倍，上涨得到成交确认。"],
+            [],
+        )
     if quote.change_pct < -0.5 and volume_ratio >= 1.3:
-        return FactorScore("量能确认", -14, 14, "偏空", f"下跌伴随量能放大至{volume_ratio:.2f}倍，抛压需要警惕。"), [f"下跌伴随量能放大至{volume_ratio:.2f}倍，抛压需要警惕。"], []
+        return (
+            FactorScore(
+                "量能确认",
+                -14,
+                14,
+                "偏空",
+                f"下跌伴随量能放大至{volume_ratio:.2f}倍，抛压需要警惕。",
+            ),
+            [f"下跌伴随量能放大至{volume_ratio:.2f}倍，抛压需要警惕。"],
+            [],
+        )
     if volume_ratio < 0.65:
-        return FactorScore("量能确认", -4, 14, "低量", f"量能仅为近20日均量的{volume_ratio:.2f}倍，信号可靠性偏低。"), [f"量能仅为近20日均量的{volume_ratio:.2f}倍，信号可靠性偏低。"], []
-    return FactorScore("量能确认", 0, 14, "中性", f"量能为近20日均量的{volume_ratio:.2f}倍，尚未形成强确认。"), [], []
+        return (
+            FactorScore(
+                "量能确认",
+                -4,
+                14,
+                "低量",
+                f"量能仅为近20日均量的{volume_ratio:.2f}倍，信号可靠性偏低。",
+            ),
+            [f"量能仅为近20日均量的{volume_ratio:.2f}倍，信号可靠性偏低。"],
+            [],
+        )
+    return (
+        FactorScore(
+            "量能确认", 0, 14, "中性", f"量能为近20日均量的{volume_ratio:.2f}倍，尚未形成强确认。"
+        ),
+        [],
+        [],
+    )
 
 
-def _score_intraday(quote: Quote, position: float | None) -> tuple[FactorScore, list[str], list[str]]:
+def _score_intraday(
+    quote: Quote, position: float | None
+) -> tuple[FactorScore, list[str], list[str]]:
     if position is None:
-        return FactorScore("日内位置", 0, 12, "无效", "当日高低价区间无效，日内位置未参与评分。"), [], ["当日高低价区间无效，日内位置未参与评分。"]
+        return (
+            FactorScore("日内位置", 0, 12, "无效", "当日高低价区间无效，日内位置未参与评分。"),
+            [],
+            ["当日高低价区间无效，日内位置未参与评分。"],
+        )
     if quote.change_pct >= 0.8 and position >= 0.72:
-        return FactorScore("日内位置", 12, 12, "强势", "当前价靠近当日高位，日内承接较强。"), ["当前价靠近当日高位，日内承接较强。"], []
+        return (
+            FactorScore("日内位置", 12, 12, "强势", "当前价靠近当日高位，日内承接较强。"),
+            ["当前价靠近当日高位，日内承接较强。"],
+            [],
+        )
     if quote.change_pct <= -0.8 and position <= 0.28:
-        return FactorScore("日内位置", -12, 12, "弱势", "当前价贴近当日低位，日内走势弱势。"), ["当前价贴近当日低位，日内走势弱势。"], []
+        return (
+            FactorScore("日内位置", -12, 12, "弱势", "当前价贴近当日低位，日内走势弱势。"),
+            ["当前价贴近当日低位，日内走势弱势。"],
+            [],
+        )
     if position < 0.2:
-        return FactorScore("日内位置", -5, 12, "偏弱", "当前价处于日内区间低位。"), [], ["当前价处于日内区间低位，需防止尾盘继续走弱。"]
+        return (
+            FactorScore("日内位置", -5, 12, "偏弱", "当前价处于日内区间低位。"),
+            [],
+            ["当前价处于日内区间低位，需防止尾盘继续走弱。"],
+        )
     if position > 0.85:
-        return FactorScore("日内位置", 4, 12, "偏强", "当前价接近日内高位。"), [], ["当前价接近日内高位，追高成本较敏感。"]
+        return (
+            FactorScore("日内位置", 4, 12, "偏强", "当前价接近日内高位。"),
+            [],
+            ["当前价接近日内高位，追高成本较敏感。"],
+        )
     return FactorScore("日内位置", 0, 12, "中性", "当前价处于日内区间中部。"), [], []
 
 
 def _score_bollinger(position: float | None) -> tuple[FactorScore, list[str], list[str]]:
     if position is None:
-        return FactorScore("布林位置", 0, 8, "样本不足", "布林带样本不足。"), [], ["布林带样本不足，波动区间信号未启用。"]
+        return (
+            FactorScore("布林位置", 0, 8, "样本不足", "布林带样本不足。"),
+            [],
+            ["布林带样本不足，波动区间信号未启用。"],
+        )
     if 0.55 <= position <= 0.9:
-        return FactorScore("布林位置", 6, 8, "健康偏强", f"价格处在布林通道{position:.0%}位置，偏强但未明显越界。"), [f"布林带位置{position:.0%}，价格偏强但未明显越界。"], []
+        return (
+            FactorScore(
+                "布林位置",
+                6,
+                8,
+                "健康偏强",
+                f"价格处在布林通道{position:.0%}位置，偏强但未明显越界。",
+            ),
+            [f"布林带位置{position:.0%}，价格偏强但未明显越界。"],
+            [],
+        )
     if position > 1.05:
-        return FactorScore("布林位置", -6, 8, "过热", f"价格突破布林上轨较多，位置{position:.0%}。"), [], ["价格明显高于布林上轨，短线追高风险增加。"]
+        return (
+            FactorScore("布林位置", -6, 8, "过热", f"价格突破布林上轨较多，位置{position:.0%}。"),
+            [],
+            ["价格明显高于布林上轨，短线追高风险增加。"],
+        )
     if position < -0.05:
-        return FactorScore("布林位置", -6, 8, "破位", f"价格跌出布林下轨，位置{position:.0%}。"), ["价格跌出布林下轨，弱势延续风险较高。"], []
+        return (
+            FactorScore("布林位置", -6, 8, "破位", f"价格跌出布林下轨，位置{position:.0%}。"),
+            ["价格跌出布林下轨，弱势延续风险较高。"],
+            [],
+        )
     if position < 0.25:
-        return FactorScore("布林位置", -3, 8, "偏弱", f"价格处在布林通道{position:.0%}位置。"), ["布林带位置偏低，短线承压。"], []
-    return FactorScore("布林位置", 0, 8, "中性", f"布林带位置{position:.0%}，方向信号一般。"), [], []
+        return (
+            FactorScore("布林位置", -3, 8, "偏弱", f"价格处在布林通道{position:.0%}位置。"),
+            ["布林带位置偏低，短线承压。"],
+            [],
+        )
+    return (
+        FactorScore("布林位置", 0, 8, "中性", f"布林带位置{position:.0%}，方向信号一般。"),
+        [],
+        [],
+    )
 
 
-def _score_support_resistance(last: float, support: float | None, resistance: float | None) -> tuple[FactorScore, list[str], list[str]]:
+def _score_support_resistance(
+    last: float, support: float | None, resistance: float | None
+) -> tuple[FactorScore, list[str], list[str]]:
     if support is None or resistance is None or last <= 0:
-        return FactorScore("支撑压力", 0, 8, "样本不足", "支撑压力样本不足。"), [], ["支撑/压力位样本不足。"]
+        return (
+            FactorScore("支撑压力", 0, 8, "样本不足", "支撑压力样本不足。"),
+            [],
+            ["支撑/压力位样本不足。"],
+        )
     score = 0
     reasons: list[str] = []
     risks: list[str] = []
@@ -412,17 +568,39 @@ def _score_support_resistance(last: float, support: float | None, resistance: fl
             score -= 3
             risks.append("下方支撑距离较远，回撤空间需要留意。")
     verdict = "偏多" if score > 0 else "偏空" if score < 0 else "中性"
-    return FactorScore("支撑压力", score, 8, verdict, f"20日支撑约{support:.2f}，压力约{resistance:.2f}。"), reasons, risks
+    return (
+        FactorScore(
+            "支撑压力", score, 8, verdict, f"20日支撑约{support:.2f}，压力约{resistance:.2f}。"
+        ),
+        reasons,
+        risks,
+    )
 
 
 def _score_volatility(atr_percent: float | None) -> tuple[FactorScore, list[str], list[str]]:
     if atr_percent is None:
-        return FactorScore("波动风险", 0, 10, "样本不足", "ATR样本不足。"), [], ["ATR样本不足，波动风险估计降权。"]
+        return (
+            FactorScore("波动风险", 0, 10, "样本不足", "ATR样本不足。"),
+            [],
+            ["ATR样本不足，波动风险估计降权。"],
+        )
     if atr_percent > 6:
-        return FactorScore("波动风险", -10, 10, "高波动", f"ATR约{atr_percent:.2f}%，短线波动偏大。"), [], [f"ATR约{atr_percent:.2f}%，短线波动偏大，仓位应下调。"]
+        return (
+            FactorScore("波动风险", -10, 10, "高波动", f"ATR约{atr_percent:.2f}%，短线波动偏大。"),
+            [],
+            [f"ATR约{atr_percent:.2f}%，短线波动偏大，仓位应下调。"],
+        )
     if atr_percent > 3.5:
-        return FactorScore("波动风险", -4, 10, "中高波动", f"ATR约{atr_percent:.2f}%，波动略高。"), [], [f"ATR约{atr_percent:.2f}%，注意设置止损。"]
-    return FactorScore("波动风险", 4, 10, "可控", f"ATR约{atr_percent:.2f}%，波动处于可控区间。"), ["近期真实波动率处于可控区间。"], []
+        return (
+            FactorScore("波动风险", -4, 10, "中高波动", f"ATR约{atr_percent:.2f}%，波动略高。"),
+            [],
+            [f"ATR约{atr_percent:.2f}%，注意设置止损。"],
+        )
+    return (
+        FactorScore("波动风险", 4, 10, "可控", f"ATR约{atr_percent:.2f}%，波动处于可控区间。"),
+        ["近期真实波动率处于可控区间。"],
+        [],
+    )
 
 
 def _risk_penalty(quote: Quote, history: list[DailyBar]) -> tuple[int, list[str]]:
@@ -588,14 +766,10 @@ def _clean_quote(quote: Quote) -> Quote:
 def clean_history(history: list[DailyBar]) -> list[DailyBar]:
     rows: list[DailyBar] = []
     for bar in history:
-        if not all(
-            _finite_positive(value)
-            for value in (bar.open, bar.close, bar.high, bar.low)
-        ):
+        if not all(_finite_positive(value) for value in (bar.open, bar.close, bar.high, bar.low)):
             continue
         if not all(
-            _finite_nonnegative(value)
-            for value in (bar.volume, bar.amount, bar.turnover_rate)
+            _finite_nonnegative(value) for value in (bar.volume, bar.amount, bar.turnover_rate)
         ):
             continue
         pct_change = bar.pct_change if _finite_number(bar.pct_change) else 0.0

@@ -1,4 +1,5 @@
 """UI 常量单一真源:颜色、尺寸、表列、排序序、免责声明、样例输入。仅依赖标准库。"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -91,7 +92,14 @@ SAMPLE_INPUT = "600519, 000001, 300750, 688981"
 # 仅在此基础上加交易前核验提醒的页脚长文案；本模块为保持"仅依赖标准库"不 import models，
 # 一致性由 tests/test_policy.py::DisclaimerConsistencyTests 兜底校验。
 DISCLAIMER = "模型仅供研究和辅助决策，不构成投资建议；交易前请自行核验行情、公告和风险。"
-DETAIL_SECTION_TITLES = {"核心结论", "看懂结果", "判断拆解", "为什么这样判断", "需要注意", "快照特征"}
+DETAIL_SECTION_TITLES = {
+    "核心结论",
+    "看懂结果",
+    "判断拆解",
+    "为什么这样判断",
+    "需要注意",
+    "快照特征",
+}
 TABLE_COLUMNS = ("code", "name", "action", "score", "confidence", "last", "change", "risk")
 TABLE_COLUMN_INDEX = {column: index for index, column in enumerate(TABLE_COLUMNS)}
 RISK_ORDER = {"低": 0.0, "中": 1.0, "高": 2.0}

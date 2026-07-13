@@ -14,11 +14,16 @@ def payload(klines):
 
 class FundFlowParseTests(unittest.TestCase):
     def test_parse_basic(self):
-        flow = parse_fund_flow_payload(payload([
-            "2026-06-20,100000000,0,0,0,0,0",
-            "2026-06-23,-200000000,0,0,0,0,0",
-            "2026-06-24,300000000,0,0,0,0,0",
-        ]), limit=3)
+        flow = parse_fund_flow_payload(
+            payload(
+                [
+                    "2026-06-20,100000000,0,0,0,0,0",
+                    "2026-06-23,-200000000,0,0,0,0,0",
+                    "2026-06-24,300000000,0,0,0,0,0",
+                ]
+            ),
+            limit=3,
+        )
         self.assertEqual(flow.today_main, 300000000.0)
         self.assertEqual(flow.main_5d, 200000000.0)  # 1e8 - 2e8 + 3e8
         self.assertEqual(len(flow.recent), 3)

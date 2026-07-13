@@ -43,7 +43,7 @@ def _dedupe(items: list[str]) -> list[str]:
 def clamp_level(level: int) -> int:
     try:
         value = float(level)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return STANDARD_LEVEL
     if not math.isfinite(value):
         return STANDARD_LEVEL
@@ -57,7 +57,7 @@ def level_spec(level: int) -> LevelSpec:
 def _finite_number(value: object, default: float = 0.0) -> float:
     try:
         number = float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return default
     return number if math.isfinite(number) else default
 
@@ -72,7 +72,7 @@ def _finite_positive(value: object, default: float | None = None) -> float | Non
 def _confidence_value(value: object) -> float | None:
     try:
         number = float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     if not math.isfinite(number) or number <= 0:
         return None
@@ -82,7 +82,7 @@ def _confidence_value(value: object) -> float | None:
 def _history_len(value: object) -> int:
     try:
         number = float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return 0
     if not math.isfinite(number):
         return 0
@@ -181,7 +181,9 @@ def position_plan(m: Measurement, level: int, capital: float) -> PositionPlan:
         reward_risk=spec.reward_risk,
         cost=round(cost, 2),
         max_loss=round(max_loss, 2),
-        max_loss_pct=round(max_loss / capital, 4) if math.isfinite(capital) and capital > 0 else 0.0,
+        max_loss_pct=round(max_loss / capital, 4)
+        if math.isfinite(capital) and capital > 0
+        else 0.0,
         note=note,
     )
 

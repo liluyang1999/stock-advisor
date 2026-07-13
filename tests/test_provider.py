@@ -160,7 +160,7 @@ class ProviderParsingTests(unittest.TestCase):
     def test_parse_sina_quote_payload_as_realtime_fallback(self):
         payload = (
             'var hq_str_sh600519="贵州茅台,1235.000,1240.000,1215.000,'
-            '1238.870,1211.220,1215.000,1215.280,5747173,7016713941.000,'
+            "1238.870,1211.220,1215.000,1215.280,5747173,7016713941.000,"
             '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2026-06-19,15:00:00,00,";'
         )
 
@@ -177,7 +177,7 @@ class ProviderParsingTests(unittest.TestCase):
     def test_parse_sina_quote_payload_clamps_negative_physical_fields(self):
         payload = (
             'var hq_str_sh600519="贵州茅台,10.000,10.000,9.900,'
-            '10.100,9.800,9.900,9.910,-5747173,-7016713941.000,'
+            "10.100,9.800,9.900,9.910,-5747173,-7016713941.000,"
             '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2026-06-19,15:00:00,00,";'
         )
 
@@ -189,7 +189,7 @@ class ProviderParsingTests(unittest.TestCase):
     def test_parse_sina_quote_payload_normalizes_inconsistent_ohlc_envelope(self):
         payload = (
             'var hq_str_sh600519="bad envelope,10.000,10.000,10.500,'
-            '9.900,10.200,10.500,10.510,1000,10500.000,'
+            "9.900,10.200,10.500,10.510,1000,10500.000,"
             '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2026-06-19,15:00:00,00,";'
         )
 
@@ -451,18 +451,44 @@ class ProviderParsingTests(unittest.TestCase):
                     "total": 2,
                     "diff": [
                         {
-                            "f12": "600519", "f13": 1, "f14": "贵州茅台",
-                            "f2": 1712.34, "f3": 1.92, "f4": 32.3, "f5": 250000,
-                            "f6": 4220000000, "f7": 1.5, "f8": 0.21, "f9": 28.5,
-                            "f10": 1.1, "f20": 2150000000000, "f21": 2150000000000,
-                            "f22": 0.3, "f23": 8.2, "f24": 5.6, "f25": 12.3,
+                            "f12": "600519",
+                            "f13": 1,
+                            "f14": "贵州茅台",
+                            "f2": 1712.34,
+                            "f3": 1.92,
+                            "f4": 32.3,
+                            "f5": 250000,
+                            "f6": 4220000000,
+                            "f7": 1.5,
+                            "f8": 0.21,
+                            "f9": 28.5,
+                            "f10": 1.1,
+                            "f20": 2150000000000,
+                            "f21": 2150000000000,
+                            "f22": 0.3,
+                            "f23": 8.2,
+                            "f24": 5.6,
+                            "f25": 12.3,
                         },
                         {
-                            "f12": "300999", "f13": 0, "f14": "金龙鱼",
-                            "f2": 30.5, "f3": -2.1, "f4": -0.65, "f5": 120000,
-                            "f6": 360000000, "f7": 3.2, "f8": 1.8, "f9": "-",
-                            "f10": "-", "f20": 165000000000, "f21": 80000000000,
-                            "f22": "-", "f23": 2.1, "f24": "-", "f25": "-",
+                            "f12": "300999",
+                            "f13": 0,
+                            "f14": "金龙鱼",
+                            "f2": 30.5,
+                            "f3": -2.1,
+                            "f4": -0.65,
+                            "f5": 120000,
+                            "f6": 360000000,
+                            "f7": 3.2,
+                            "f8": 1.8,
+                            "f9": "-",
+                            "f10": "-",
+                            "f20": 165000000000,
+                            "f21": 80000000000,
+                            "f22": "-",
+                            "f23": 2.1,
+                            "f24": "-",
+                            "f25": "-",
                         },
                     ],
                 },
@@ -492,7 +518,15 @@ class ProviderParsingTests(unittest.TestCase):
 
     def test_parse_clist_payload_keeps_negative_pe_for_loss_making_stocks(self):
         payload = json.dumps(
-            {"data": {"diff": [clist_item(code="688001", name="亏损股", price=12.0, change_pct=0.5, f9=-197.0)]}}
+            {
+                "data": {
+                    "diff": [
+                        clist_item(
+                            code="688001", name="亏损股", price=12.0, change_pct=0.5, f9=-197.0
+                        )
+                    ]
+                }
+            }
         )
 
         rows = parse_clist_payload(payload)
@@ -576,7 +610,9 @@ class ProviderParsingTests(unittest.TestCase):
 
         rows = parse_clist_payload(payload)
 
-        self.assertEqual([(row.code, row.market_id) for row in rows], [("600001", "1"), ("300001", "0")])
+        self.assertEqual(
+            [(row.code, row.market_id) for row in rows], [("600001", "1"), ("300001", "0")]
+        )
 
     def test_parse_clist_payload_sanitizes_negative_physical_fields(self):
         payload = json.dumps(
@@ -584,9 +620,17 @@ class ProviderParsingTests(unittest.TestCase):
                 "data": {
                     "diff": [
                         {
-                            "f12": "600001", "f13": 1, "f14": "异常物理量", "f2": 10.0,
-                            "f3": -2.0, "f4": -0.2, "f5": -100, "f6": -200000,
-                            "f7": -3.5, "f8": -1.2, "f10": -2.0,
+                            "f12": "600001",
+                            "f13": 1,
+                            "f14": "异常物理量",
+                            "f2": 10.0,
+                            "f3": -2.0,
+                            "f4": -0.2,
+                            "f5": -100,
+                            "f6": -200000,
+                            "f7": -3.5,
+                            "f8": -1.2,
+                            "f10": -2.0,
                         },
                     ]
                 }
@@ -654,7 +698,9 @@ class ProviderParsingTests(unittest.TestCase):
                     "data": {
                         "total": 3,
                         "diff": [
-                            clist_item(code=code, name=f"股票{code}", price=10.0 + i, change_pct=1.0)
+                            clist_item(
+                                code=code, name=f"股票{code}", price=10.0 + i, change_pct=1.0
+                            )
                             for i, code in enumerate(codes)
                         ],
                     }
@@ -666,6 +712,7 @@ class ProviderParsingTests(unittest.TestCase):
 
         def fake_request(url, **_kwargs):
             import re as _re
+
             pn = int(_re.search(r"pn=(\d+)", url).group(1))
             seen["pages"].append(pn)
             return pages.get(pn, json.dumps({"data": {"total": 3, "diff": []}}))

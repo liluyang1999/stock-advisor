@@ -50,7 +50,7 @@ def _finite_optional(value: float | None) -> float | None:
         return None
     try:
         number = float(value)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     return number if math.isfinite(number) else None
 
@@ -99,7 +99,9 @@ def passes(snapshot: MarketSnapshot, criteria: FilterCriteria) -> bool:
     return all(_in_range(value, low, high) for value, low, high in checks)
 
 
-def apply_filters(snapshots: list[MarketSnapshot], criteria: FilterCriteria) -> list[MarketSnapshot]:
+def apply_filters(
+    snapshots: list[MarketSnapshot], criteria: FilterCriteria
+) -> list[MarketSnapshot]:
     return [snapshot for snapshot in snapshots if passes(snapshot, criteria)]
 
 
@@ -149,7 +151,7 @@ def rank(snapshots: list[MarketSnapshot], objective: str) -> list[tuple[float, M
 def _top_limit(value: object) -> int:
     try:
         number = float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return 0
     if not math.isfinite(number):
         return 0

@@ -86,7 +86,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(outcome.degraded)
         self.assertIsNotNone(outcome.result)
         self.assertTrue(any("历史数据暂时取不到" in risk for risk in outcome.result.risks))
-        self.assertFalse(any("Remote end" in risk or "connection" in risk for risk in outcome.result.risks))
+        self.assertFalse(
+            any("Remote end" in risk or "connection" in risk for risk in outcome.result.risks)
+        )
 
     def test_quote_failure_returns_failure_outcome(self):
         outcome = analyze_symbol(normalize_symbol("600519"), FakeProvider(quote_error=True))
@@ -125,10 +127,24 @@ class WorkflowTests(unittest.TestCase):
 
 def _snap(code, market_id, change_pct, name="个股"):
     return MarketSnapshot(
-        code=code, market_id=market_id, name=name, price=10.0, change_pct=change_pct,
-        change=0.1, volume=100000, amount=2.0e8, amplitude=3.0, turnover_rate=4.0,
-        pe_ttm=18.0, volume_ratio=1.5, total_cap=5.0e10, float_cap=4.0e10,
-        speed=0.3, pb=2.0, change_60d=10.0, change_ytd=12.0,
+        code=code,
+        market_id=market_id,
+        name=name,
+        price=10.0,
+        change_pct=change_pct,
+        change=0.1,
+        volume=100000,
+        amount=2.0e8,
+        amplitude=3.0,
+        turnover_rate=4.0,
+        pe_ttm=18.0,
+        volume_ratio=1.5,
+        total_cap=5.0e10,
+        float_cap=4.0e10,
+        speed=0.3,
+        pb=2.0,
+        change_60d=10.0,
+        change_ytd=12.0,
     )
 
 
@@ -151,16 +167,31 @@ class FakeMarketProvider:
         if symbol.code in self.quote_fail_codes:
             raise MarketDataError("quote failed")
         return Quote(
-            symbol=symbol, name="深度个股", last=10.2, open=10.0, high=10.3, low=9.9,
-            previous_close=10.0, volume=120000, amount=1224000, turnover_rate=1.0, change_pct=2.0,
+            symbol=symbol,
+            name="深度个股",
+            last=10.2,
+            open=10.0,
+            high=10.3,
+            low=9.9,
+            previous_close=10.0,
+            volume=120000,
+            amount=1224000,
+            turnover_rate=1.0,
+            change_pct=2.0,
         )
 
     def fetch_history(self, symbol):
         return [
             DailyBar(
-                date=f"2026-06-{day + 1:02d}", open=10 + day * 0.01, close=10.02 + day * 0.01,
-                high=10.05 + day * 0.01, low=9.95 + day * 0.01, volume=90000 + day,
-                amount=900000 + day, pct_change=0.2, turnover_rate=1.0,
+                date=f"2026-06-{day + 1:02d}",
+                open=10 + day * 0.01,
+                close=10.02 + day * 0.01,
+                high=10.05 + day * 0.01,
+                low=9.95 + day * 0.01,
+                volume=90000 + day,
+                amount=900000 + day,
+                pct_change=0.2,
+                turnover_rate=1.0,
             )
             for day in range(40)
         ]
@@ -225,7 +256,9 @@ class ScreenAndRecommendTests(unittest.TestCase):
         provider = FakeMarketProvider(self.snapshots)
         cancel = threading.Event()
         cancel.set()
-        report = screen_and_recommend(provider, FilterCriteria(), "momentum", top_n=3, deep=True, cancel_event=cancel)
+        report = screen_and_recommend(
+            provider, FilterCriteria(), "momentum", top_n=3, deep=True, cancel_event=cancel
+        )
 
         self.assertTrue(report.cancelled)
         self.assertEqual(provider.quote_calls, [])
@@ -234,7 +267,11 @@ class ScreenAndRecommendTests(unittest.TestCase):
         provider = FakeMarketProvider(self.snapshots)
         seen = []
         screen_and_recommend(
-            provider, FilterCriteria(), "momentum", top_n=2, deep=True,
+            provider,
+            FilterCriteria(),
+            "momentum",
+            top_n=2,
+            deep=True,
             progress_cb=lambda done, total, rec: seen.append((done, total, rec.snapshot.code)),
         )
         self.assertEqual(seen, [(1, 2, "600001"), (2, 2, "000002")])

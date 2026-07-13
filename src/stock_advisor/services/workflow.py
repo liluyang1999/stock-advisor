@@ -31,7 +31,9 @@ class MarketDataProvider(Protocol):
 
 
 class ScreeningProvider(MarketDataProvider, Protocol):
-    def fetch_market_snapshot(self, page_size: int = 1000, max_pages: int = 12) -> list[MarketSnapshot]:
+    def fetch_market_snapshot(
+        self, page_size: int = 1000, max_pages: int = 12
+    ) -> list[MarketSnapshot]:
         raise NotImplementedError
 
 
@@ -70,14 +72,18 @@ def analyze_symbol(
     degraded = False
     try:
         history = provider.fetch_history(symbol)
-    except (MarketDataError, ValueError):
+    except MarketDataError, ValueError:
         degraded = True
         history = []
-        history_error = "历史数据暂时取不到，系统已改用实时价格做保守判断。建议稍后重试或降低投入比例。"
+        history_error = (
+            "历史数据暂时取不到，系统已改用实时价格做保守判断。建议稍后重试或降低投入比例。"
+        )
     except Exception:
         degraded = True
         history = []
-        history_error = "历史数据暂时取不到，系统已改用实时价格做保守判断。建议稍后重试或降低投入比例。"
+        history_error = (
+            "历史数据暂时取不到，系统已改用实时价格做保守判断。建议稍后重试或降低投入比例。"
+        )
     else:
         history_error = ""
 
@@ -132,7 +138,9 @@ def screen_and_recommend(
     except (MarketDataError, ValueError) as exc:
         return ScreenReport(total=0, matched=0, recommendations=[], error=str(exc))
     except Exception as exc:  # noqa: BLE001 - 兜底为可读错误，避免线程里裸异常
-        return ScreenReport(total=0, matched=0, recommendations=[], error=f"全市场行情获取失败：{exc}")
+        return ScreenReport(
+            total=0, matched=0, recommendations=[], error=f"全市场行情获取失败：{exc}"
+        )
 
     filtered = apply_filters(snapshots, criteria)
     ranked = rank(filtered, objective)
@@ -142,11 +150,16 @@ def screen_and_recommend(
     for index, (score, snapshot) in enumerate(top, start=1):
         if cancel_event is not None and cancel_event.is_set():
             return ScreenReport(
-                total=len(snapshots), matched=len(filtered),
-                recommendations=recommendations, cancelled=True,
+                total=len(snapshots),
+                matched=len(filtered),
+                recommendations=recommendations,
+                cancelled=True,
             )
         recommendation = Recommendation(
-            rank=index, snapshot=snapshot, screen_score=round(score, 2), board=board_of(snapshot),
+            rank=index,
+            snapshot=snapshot,
+            screen_score=round(score, 2),
+            board=board_of(snapshot),
         )
         if deep:
             recommendation = _deep_analyze(recommendation, provider, level)
@@ -154,13 +167,15 @@ def screen_and_recommend(
         if progress_cb is not None:
             progress_cb(index, len(top), recommendation)
 
-    return ScreenReport(total=len(snapshots), matched=len(filtered), recommendations=recommendations)
+    return ScreenReport(
+        total=len(snapshots), matched=len(filtered), recommendations=recommendations
+    )
 
 
 def _top_limit(value: object) -> int | None:
     try:
         number = float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     if not math.isfinite(number) or number <= 0:
         return None

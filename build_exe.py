@@ -21,7 +21,9 @@ ICON_PATH = PROJECT_ROOT / "assets" / "a_stock_strategy.ico"
 
 def main() -> int:
     if not _pyinstaller_available():
-        print("PyInstaller is not installed. Run: python -m pip install pyinstaller", file=sys.stderr)
+        print(
+            "PyInstaller is not installed. Run: python -m pip install pyinstaller", file=sys.stderr
+        )
         return 2
 
     _remove_dir(BUILD_DIR)

@@ -9,7 +9,7 @@ from .policy import flip_hint, spectrum
 def _finite_float(value: object) -> float | None:
     try:
         number = float(value)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     return number if math.isfinite(number) else None
 
@@ -28,7 +28,9 @@ def _positive_finite_int(value: object) -> int | None:
     return int(number)
 
 
-def _safe_int(value: object, default: int = 0, minimum: int | None = None, maximum: int | None = None) -> int:
+def _safe_int(
+    value: object, default: int = 0, minimum: int | None = None, maximum: int | None = None
+) -> int:
     number = _finite_float(value)
     result = default if number is None else int(round(number))
     if minimum is not None:

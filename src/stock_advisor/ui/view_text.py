@@ -1,11 +1,23 @@
 """面向用户的文本构建与文案改写——纯函数。"""
+
 from __future__ import annotations
 
 from ..domain.formatting import (
-    _finite_float, _safe_int,
-    _fmt, _fmt_decimal, _fmt_percent, _fmt_percent_points, _fmt_percent_value,
-    _fmt_plain_number, _fmt_rate_percent, _fmt_score_value, _fmt_whole_percent, _fmt_yi,
-    _fmt_backtest_return, _fmt_backtest_excess, _flow_direction,
+    _finite_float,
+    _safe_int,
+    _fmt,
+    _fmt_decimal,
+    _fmt_percent,
+    _fmt_percent_points,
+    _fmt_percent_value,
+    _fmt_plain_number,
+    _fmt_rate_percent,
+    _fmt_score_value,
+    _fmt_whole_percent,
+    _fmt_yi,
+    _fmt_backtest_return,
+    _fmt_backtest_excess,
+    _flow_direction,
     risk_level,
 )
 from ..domain.models import (
@@ -69,7 +81,9 @@ def build_backtest_text(report: BacktestReport) -> str:
         )
     lines.append(f"- 买入持有基线：{_fmt_backtest_return(report.buy_hold_return)}")
     if buy:
-        lines.append(f"- 买入信号相对基线超额：{_fmt_backtest_excess(buy.avg_return, report.buy_hold_return)}")
+        lines.append(
+            f"- 买入信号相对基线超额：{_fmt_backtest_excess(buy.avg_return, report.buy_hold_return)}"
+        )
     lines.append("- 同股历史事后复盘，仅用当日及之前数据、计入简单成本；样本有限，不预示未来。")
     return "\n".join(lines)
 
@@ -99,7 +113,9 @@ def build_fund_flow_text(flow: FundFlow, name: str = "") -> str:
     return "\n".join(lines)
 
 
-def build_screener_overview(preset_name: str, total: int, matched: int, shown: int, failures: int = 0) -> str:
+def build_screener_overview(
+    preset_name: str, total: int, matched: int, shown: int, failures: int = 0
+) -> str:
     failure_text = f"；深度失败 {failures} 只" if failures else ""
     return (
         f"选股概览（{preset_name}）：全市场扫描 {total} 只，符合条件 {matched} 只，"
@@ -108,7 +124,9 @@ def build_screener_overview(preset_name: str, total: int, matched: int, shown: i
 
 
 def build_recommendation_header(rec: Recommendation) -> str:
-    return f"选股入围：第 {rec.rank} 名 · {rec.board} · 入选评分 {_fmt_plain_number(rec.screen_score)}"
+    return (
+        f"选股入围：第 {rec.rank} 名 · {rec.board} · 入选评分 {_fmt_plain_number(rec.screen_score)}"
+    )
 
 
 def build_visual_summary(result: AnalysisResult) -> str:
@@ -176,7 +194,9 @@ def build_portfolio_overview(results: list[AnalysisResult], failures: int = 0) -
     high_risk = sum(1 for item in results if risk_level(item) == "高")
     confidences = [_finite_float(item.confidence) for item in results]
     valid_confidences = [value for value in confidences if value is not None]
-    average_confidence = round(sum(valid_confidences) / len(valid_confidences)) if valid_confidences else 0
+    average_confidence = (
+        round(sum(valid_confidences) / len(valid_confidences)) if valid_confidences else 0
+    )
     focus = _focus_symbols(results)
     focus_text = f"；优先查看：{focus}" if focus else ""
     return (
@@ -302,7 +322,15 @@ def build_strategy_explanation_text() -> str:
 
 def _focus_symbols(results: list[AnalysisResult]) -> str:
     buy_candidates = [item for item in results if item.action == "BUY" and risk_level(item) != "高"]
-    candidates = buy_candidates or [item for item in results if item.action == "HOLD" and (_finite_float(item.score) or 0.0) > 0] or results
+    candidates = (
+        buy_candidates
+        or [
+            item
+            for item in results
+            if item.action == "HOLD" and (_finite_float(item.score) or 0.0) > 0
+        ]
+        or results
+    )
     ranked = sorted(
         candidates,
         key=lambda item: (_finite_float(item.score) or 0.0, _finite_float(item.confidence) or 0.0),

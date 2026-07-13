@@ -24,16 +24,45 @@ from stock_advisor.domain.screener import (
 )
 
 
-def snap(code="600000", market_id="1", name="测试", price=10.0, change_pct=1.0, change=0.1,
-         volume=100000, amount=1.0e8, amplitude=2.0, turnover_rate=2.0, pe_ttm=15.0,
-         volume_ratio=1.2, total_cap=1.0e10, float_cap=8.0e9, speed=0.2, pb=2.0,
-         change_60d=5.0, change_ytd=8.0):
+def snap(
+    code="600000",
+    market_id="1",
+    name="测试",
+    price=10.0,
+    change_pct=1.0,
+    change=0.1,
+    volume=100000,
+    amount=1.0e8,
+    amplitude=2.0,
+    turnover_rate=2.0,
+    pe_ttm=15.0,
+    volume_ratio=1.2,
+    total_cap=1.0e10,
+    float_cap=8.0e9,
+    speed=0.2,
+    pb=2.0,
+    change_60d=5.0,
+    change_ytd=8.0,
+):
     return MarketSnapshot(
-        code=code, market_id=market_id, name=name, price=price, change_pct=change_pct,
-        change=change, volume=volume, amount=amount, amplitude=amplitude,
-        turnover_rate=turnover_rate, pe_ttm=pe_ttm, volume_ratio=volume_ratio,
-        total_cap=total_cap, float_cap=float_cap, speed=speed, pb=pb,
-        change_60d=change_60d, change_ytd=change_ytd,
+        code=code,
+        market_id=market_id,
+        name=name,
+        price=price,
+        change_pct=change_pct,
+        change=change,
+        volume=volume,
+        amount=amount,
+        amplitude=amplitude,
+        turnover_rate=turnover_rate,
+        pe_ttm=pe_ttm,
+        volume_ratio=volume_ratio,
+        total_cap=total_cap,
+        float_cap=float_cap,
+        speed=speed,
+        pb=pb,
+        change_60d=change_60d,
+        change_ytd=change_ytd,
     )
 
 
@@ -50,19 +79,30 @@ class BoardDerivationTests(unittest.TestCase):
 
 class FilterTests(unittest.TestCase):
     def test_price_and_change_ranges_are_inclusive_bounds(self):
-        rows = [snap(code="a", price=5.0, change_pct=1.0), snap(code="b", price=50.0, change_pct=9.0)]
+        rows = [
+            snap(code="a", price=5.0, change_pct=1.0),
+            snap(code="b", price=50.0, change_pct=9.0),
+        ]
         criteria = FilterCriteria(price_min=4.0, price_max=10.0, change_pct_max=5.0)
         self.assertEqual([s.code for s in apply_filters(rows, criteria)], ["a"])
 
     def test_exclude_st_drops_risk_warning_names(self):
-        rows = [snap(code="ok", name="平安银行"), snap(code="st", name="ST康美"), snap(code="del", name="退市某某")]
+        rows = [
+            snap(code="ok", name="平安银行"),
+            snap(code="st", name="ST康美"),
+            snap(code="del", name="退市某某"),
+        ]
         kept = apply_filters(rows, FilterCriteria(exclude_st=True))
         self.assertEqual([s.code for s in kept], ["ok"])
         kept_all = apply_filters(rows, FilterCriteria(exclude_st=False))
         self.assertEqual(len(kept_all), 3)
 
     def test_exclude_loss_drops_negative_or_missing_pe(self):
-        rows = [snap(code="profit", pe_ttm=20.0), snap(code="loss", pe_ttm=-30.0), snap(code="none", pe_ttm=None)]
+        rows = [
+            snap(code="profit", pe_ttm=20.0),
+            snap(code="loss", pe_ttm=-30.0),
+            snap(code="none", pe_ttm=None),
+        ]
         kept = apply_filters(rows, FilterCriteria(exclude_loss=True))
         self.assertEqual([s.code for s in kept], ["profit"])
 
@@ -78,7 +118,11 @@ class FilterTests(unittest.TestCase):
         self.assertEqual([s.code for s in kept], ["profit"])
 
     def test_board_filter_restricts_to_selected_boards(self):
-        rows = [snap(code="600000", market_id="1"), snap(code="300750", market_id="0"), snap(code="920083", market_id="0")]
+        rows = [
+            snap(code="600000", market_id="1"),
+            snap(code="300750", market_id="0"),
+            snap(code="920083", market_id="0"),
+        ]
         kept = apply_filters(rows, FilterCriteria(boards=frozenset({BOARD_CHINEXT})))
         self.assertEqual([s.code for s in kept], ["300750"])
 

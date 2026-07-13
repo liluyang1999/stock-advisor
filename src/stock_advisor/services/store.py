@@ -35,7 +35,7 @@ def _valid_preset(preset: str) -> str:
 def _positive_or_none(value: object) -> float | None:
     try:
         number = float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     if not math.isfinite(number):
         return None
@@ -45,7 +45,7 @@ def _positive_or_none(value: object) -> float | None:
 def _positive_int_or_none(value: object) -> int | None:
     try:
         number = float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     if not math.isfinite(number):
         return None
@@ -58,7 +58,7 @@ def _positive_int_or_none(value: object) -> int | None:
 def _bounded_level(value: object) -> int:
     try:
         number = float(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return STANDARD_LEVEL
     if not math.isfinite(number):
         return STANDARD_LEVEL
@@ -106,7 +106,7 @@ def parse_config(data: object) -> AppConfig:
 
     try:
         capital = float(data.get("capital", 100000.0))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         capital = 100000.0
     if not math.isfinite(capital) or capital <= 0:
         capital = 100000.0
@@ -152,7 +152,7 @@ def _parse_alert(raw: object) -> AlertRule | None:
         return None
     try:
         threshold = float(raw.get("threshold"))  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     if not math.isfinite(threshold):
         return None
@@ -161,7 +161,10 @@ def _parse_alert(raw: object) -> AlertRule | None:
     except ValueError:
         return None
     return AlertRule(
-        code=symbol.normalized, field=field, op=op, threshold=threshold,
+        code=symbol.normalized,
+        field=field,
+        op=op,
+        threshold=threshold,
         enabled=_bool_or_default(raw.get("enabled", True)),
     )
 
@@ -217,7 +220,7 @@ def load_config(path: Path | None = None) -> AppConfig:
     target = Path(path) if path is not None else config_path()
     try:
         data = json.loads(target.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return AppConfig()
     return parse_config(data)
 
