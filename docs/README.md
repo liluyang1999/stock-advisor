@@ -13,7 +13,7 @@ source of truth for *what* it currently is.
 
 ## Current design & plan docs (kept)
 
-Dated `2026-07-11` or later. These 6 files are the only docs under `docs/superpowers/` still
+Dated `2026-07-11` or later. These 7 files are the only docs under `docs/superpowers/` still
 considered current; everything older there is legacy (see below).
 
 | Doc | One-line description |
@@ -23,7 +23,8 @@ considered current; everything older there is legacy (see below).
 | `docs/superpowers/plans/2026-07-12-02-src-package-restructure.md` | Plan 2/6 (WS-R): behavior-preserving reorganization of `src/stock_advisor/` into `domain/`, `data/`, `services/`, `ui/` subpackages. |
 | `docs/superpowers/plans/2026-07-12-03-plans-requirements-testgoals.md` | Plan 3/6 (WS-3+WS-4+WS-6): measurable test expected-goals, completed requirements (missing NFRs, UI tokens, REQ↔AC linkage), and richer per-work-item planning. |
 | `docs/superpowers/plans/2026-07-13-04-architecture-governance.md` | Plan 4/6 (WS-5+WS-7): quantify the architecture/computation specs, bring every ADR to the project template, add missing ADRs, and lay the governance floor (version control, waivers, SOURCES verification, glossary, invariants, distribution security). |
-| `docs/superpowers/plans/2026-07-13-05-doc-reconciliation.md` | Plan 5/6 (WS-9, this plan): extract remaining unique value from the legacy pre-2026-07-11 docs into `loop/`, add this index and the doc-hygiene policy, then delete the legacy docs. |
+| `docs/superpowers/plans/2026-07-13-05-doc-reconciliation.md` | Plan 5/6 (WS-9): extract remaining unique value from the legacy pre-2026-07-11 docs into `loop/`, add this index and the doc-hygiene policy, then delete the legacy docs. |
+| `docs/superpowers/plans/2026-07-13-06-dev-toolchain-and-ci.md` | Plan 6/6 (WS-8): the unified `pyproject.toml` (ruff/pyright/pytest/coverage config + pinned dev group), local gate runner, pre-commit, and GitHub Actions CI; wires the `G-FORMAT`/`G-LINT`/`G-TYPE`/`G-COVERAGE` quality gates to real commands with a real owning work item. |
 
 ## Legacy `docs/superpowers/` material (pre-2026-07-11, superseded)
 
