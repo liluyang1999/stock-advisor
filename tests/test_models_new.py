@@ -5,14 +5,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from stock_advisor.domain.models import (
-    STANDARD_LEVEL,
     LEVEL_NAMES,
-    LevelSpec,
-    Measurement,
-    Decision,
-    PositionPlan,
-    BacktestStat,
+    STANDARD_LEVEL,
     BacktestReport,
+    BacktestStat,
+    LevelSpec,
+    PositionPlan,
     SpectrumCell,
 )
 

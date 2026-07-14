@@ -6,17 +6,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from test_engine import make_history
+
 from stock_advisor.domain.chart import (
-    index_to_x,
-    price_to_y,
-    moving_average_series,
     candle_layout,
-    price_bounds,
+    index_to_x,
+    moving_average_series,
     nearest_index,
+    price_bounds,
+    price_to_y,
     volume_heights,
 )
 from stock_advisor.domain.models import DailyBar
-from test_engine import make_history
 
 
 class ChartTests(unittest.TestCase):

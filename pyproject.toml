@@ -37,10 +37,15 @@ extend-exclude = ["build", "dist", ".venv"]
 
 [tool.ruff.lint]
 # E/W pycodestyle, F pyflakes, I isort, UP pyupgrade, B bugbear. E501 (line-too-long) is delegated to
-# the formatter, which owns wrapping. Pre-existing F401/E402 findings are tracked as adoption debt in
-# loop/quality/TOOLCHAIN_BASELINE.md — product-code remediation is a separate, deliberate phase.
+# the formatter, which owns wrapping. Product code is lint-clean; the only intentional carve-outs are
+# the main.py bootstrap import (per-line noqa) and the tests' sys.path-bootstrap imports (below).
 select = ["E", "W", "F", "I", "UP", "B"]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test modules insert src/ on sys.path before importing the package (required for `unittest
+# discover`), so their module-level imports legitimately follow that bootstrap.
+"tests/**" = ["E402"]
 
 [tool.ruff.format]
 # ruff format defaults (black-compatible): double quotes, magic trailing comma, space indent.

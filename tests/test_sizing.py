@@ -6,8 +6,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from stock_advisor.domain.policy import size_fraction, position_plan
 from test_policy import make_measurement
+
+from stock_advisor.domain.policy import position_plan, size_fraction
 
 
 class SizingTests(unittest.TestCase):

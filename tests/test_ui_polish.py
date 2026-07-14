@@ -7,42 +7,34 @@ Pure helpers are tested without Tk; widget wiring uses a headless (withdrawn) ro
 import sys
 import tkinter as tk
 import unittest
-from tkinter import ttk
 from pathlib import Path
-
+from tkinter import ttk
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.ui.app import (  # noqa: E402
-    CARD_BORDER,
-    CHILD_WINDOW_WORKAREA_MARGIN,
-    WINDOW_ALPHA,
-    WINDOW_WORKAREA_MARGIN,
-    StockAdvisorApp,
+from stock_advisor.data.sample_data import make_sample_recommendation
+from stock_advisor.domain.input_validate import is_partial_number, validate_tunable
+from stock_advisor.domain.presets import get_preset
+from stock_advisor.ui.app import StockAdvisorApp
+from stock_advisor.ui.layout import (  # noqa: E402
     active_mode_action,
     choose_centering_screen_size,
     compute_centered_window,
-    normalize_work_area_to_screen,
-    detail_line_tags,
-    get_preset,
-    is_partial_number,
-    make_sample_recommendation,
-    validate_tunable,
-)
-from stock_advisor.ui.layout import (  # noqa: E402
-    ui_scale,
     compute_child_window_geometry,
     compute_main_geometry,
-    compute_centered_window,
     compute_scaled_minimum,
     compute_workspace_columns,
+    normalize_work_area_to_screen,
     stacked_text_y,
+    ui_scale,
 )
 from stock_advisor.ui.theme import (  # noqa: E402
     ACCENT,
     CARD_BG,
+    CARD_BORDER,
+    CHILD_WINDOW_WORKAREA_MARGIN,
     COMMAND_BG,
     COMMAND_INK,
     COMMAND_MUTED_INK,
@@ -54,7 +46,9 @@ from stock_advisor.ui.theme import (  # noqa: E402
     NEG_COLOR,
     PAGE_BG,
     POS_COLOR,
+    WINDOW_ALPHA,
 )
+from stock_advisor.ui.view_format import detail_line_tags
 
 
 def _relative_luminance(color: str) -> float:

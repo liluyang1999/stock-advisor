@@ -1,7 +1,7 @@
+import math
 import sys
 import unittest
 from dataclasses import replace
-import math
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -9,8 +9,9 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from stock_advisor.domain.backtest import backtest_signals, quote_from_bar
 from test_engine import make_history
+
+from stock_advisor.domain.backtest import backtest_signals, quote_from_bar
 
 
 class BacktestTests(unittest.TestCase):

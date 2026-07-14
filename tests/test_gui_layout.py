@@ -10,12 +10,14 @@ from pathlib import Path
 from tkinter import font as tkfont
 from tkinter import ttk
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.ui.app import (
+from stock_advisor.data.sample_data import make_sample_recommendation
+from stock_advisor.ui.app import StockAdvisorApp
+from stock_advisor.ui.layout import compute_scaled_minimum
+from stock_advisor.ui.theme import (
     CHILD_WINDOW_WORKAREA_MARGIN,
     CONTENT_MARGIN,
     MAIN_MIN_SIZE,
@@ -24,9 +26,6 @@ from stock_advisor.ui.app import (
     TABLE_EMPTY_VISIBLE_ROWS,
     TABLE_MAX_VISIBLE_ROWS,
     TABLE_MIN_VISIBLE_ROWS,
-    StockAdvisorApp,
-    compute_scaled_minimum,
-    make_sample_recommendation,
 )
 
 
@@ -149,7 +148,8 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertLessEqual(table_y, 680)
 
     def test_main_window_minimum_is_scaled_and_clamped_to_work_area(self):
-        from stock_advisor.ui.app import WINDOW_WORKAREA_MARGIN, compute_scaled_minimum
+        from stock_advisor.ui.layout import compute_scaled_minimum
+        from stock_advisor.ui.theme import WINDOW_WORKAREA_MARGIN
 
         self.assertGreaterEqual(MAIN_MIN_SIZE[1], 680)
         _left, _top, work_width, work_height = self.app._screen_work_area(self.root)
@@ -363,7 +363,7 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertEqual(labels, ["整理代码", "示例", "清空"])
 
     def test_individual_input_uses_unified_command_panel(self):
-        from stock_advisor.ui.app import CARD_BORDER
+        from stock_advisor.ui.theme import CARD_BORDER
 
         self.assertTrue(hasattr(self.app, "input_panel_shell"))
         self.assertEqual(str(self.app.input_panel_shell.cget("background")), CARD_BORDER)
@@ -408,7 +408,7 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertEqual(labels, ["个股分析", "全市场选股"])
 
     def test_selected_tab_keeps_geometry_only_color_changes(self):
-        from stock_advisor.ui.app import COMMAND_SELECTED_BG
+        from stock_advisor.ui.theme import COMMAND_SELECTED_BG
 
         # 自绘分段选项卡：选中只改配色不改尺寸（两胶囊 padding/字体一致 → 天然等尺寸）。
         buttons = self.app._tab_buttons
@@ -429,7 +429,8 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertIn("top_n", self.app.tunable_vars)
 
     def test_screener_presets_use_spacious_radio_buttons(self):
-        from stock_advisor.ui.app import ACCENT, PRESETS
+        from stock_advisor.domain.presets import PRESETS
+        from stock_advisor.ui.theme import ACCENT
 
         buttons = list(self.app.preset_buttons.values())
 
@@ -445,7 +446,7 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertNotEqual(self.app.preset_buttons[PRESETS[0].key].cget("bg"), ACCENT)
 
     def test_screener_deep_analysis_uses_compact_toggle(self):
-        from stock_advisor.ui.app import ACCENT
+        from stock_advisor.ui.theme import ACCENT
 
         self.assertTrue(hasattr(self.app, "deep_toggle_button"))
         self.assertFalse(bool(int(self.app.deep_toggle_button.cget("indicatoron"))))
@@ -543,7 +544,7 @@ class GuiLayoutTests(unittest.TestCase):
     def test_snapshot_only_results_can_be_copied_and_exported(self):
         # copy_results/export_csv now live in app_results; patch messagebox/filedialog there.
         from stock_advisor.ui import app_results as app_module
-        from stock_advisor.ui.app import snapshot_display
+        from stock_advisor.ui.view_format import snapshot_display
 
         rec = make_sample_recommendation(deep=False)
         self.app._add_recommendation(rec, done=1, total=1)
@@ -661,7 +662,8 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertEqual(self.app.level_var.get(), 3)
 
     def test_strength_selector_uses_five_compact_level_buttons(self):
-        from stock_advisor.ui.app import COMMAND_SELECTED_BG, level_summary
+        from stock_advisor.ui.theme import COMMAND_SELECTED_BG
+        from stock_advisor.ui.view_text import level_summary
 
         self.assertTrue(hasattr(self.app, "level_buttons"))
         self.assertEqual(
@@ -681,7 +683,7 @@ class GuiLayoutTests(unittest.TestCase):
         # Task 6: level_label_var 此前只在 Python 侧被 _on_level_change set()，未绑定任何
         # 控件——用户切档看不到"标准档 · 买入线 +25 / 卖出线 -25 · ..."这句摘要。这里断言
         # 控制栏内确实存在一个可见的 -textvariable 绑定控件，而不仅是变量本身有值。
-        from stock_advisor.ui.app import level_summary
+        from stock_advisor.ui.view_text import level_summary
 
         label = _find_widget_with_textvariable(
             self.app.mode_control_shell, self.app.level_label_var
@@ -727,7 +729,7 @@ class GuiLayoutTests(unittest.TestCase):
         )
 
     def test_visual_and_kline_share_one_bordered_analysis_panel(self):
-        from stock_advisor.ui.app import CARD_BORDER
+        from stock_advisor.ui.theme import CARD_BORDER
 
         self.assertTrue(hasattr(self.app, "visual_workspace_shell"))
         self.assertEqual(str(self.app.visual_workspace_shell.cget("background")), CARD_BORDER)
@@ -928,7 +930,7 @@ class GuiLayoutTests(unittest.TestCase):
         # P3 Task2：insight_strip 本身就是结论卡（verdict card）外壳——四指标一行 + 其下五档
         # 光谱条合并进同一张内层白底卡片（不再是并排两张各自描边的卡：visual_summary_frame/
         # spectrum_frame 均已删除）。
-        from stock_advisor.ui.app import CARD_BG, CARD_BORDER
+        from stock_advisor.ui.theme import CARD_BG, CARD_BORDER
 
         self.assertTrue(hasattr(self.app, "insight_strip"))
         self.assertFalse(hasattr(self.app, "visual_summary_frame"))
@@ -996,7 +998,7 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertIn("暂不可用", self.app.spectrum_canvas.itemcget(items[0], "text"))
 
     def test_detail_view_uses_compact_section_navigation(self):
-        from stock_advisor.ui.app import ACCENT
+        from stock_advisor.ui.theme import ACCENT
 
         self.assertTrue(hasattr(self.app, "detail_nav_buttons"))
         self.assertEqual(
@@ -1037,7 +1039,7 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertEqual(self.app.capital_hint_label.cget("text"), "即时重算")
 
     def test_detail_toolbar_and_text_share_one_bordered_panel(self):
-        from stock_advisor.ui.app import CARD_BORDER
+        from stock_advisor.ui.theme import CARD_BORDER
 
         self.assertTrue(hasattr(self.app, "detail_panel_shell"))
         self.assertEqual(str(self.app.detail_panel_shell.cget("background")), CARD_BORDER)
@@ -1050,13 +1052,12 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertEqual(self.app.detail_panel_divider.pack_info().get("fill"), "x")
 
     def _inject_sample(self):
-        from stock_advisor.ui.app import (
+        from stock_advisor.data.sample_data import (
             make_sample_analysis,
-            make_sample_measurement,
             make_sample_history,
-            format_result_row,
-            result_row_tags,
+            make_sample_measurement,
         )
+        from stock_advisor.ui.view_format import format_result_row, result_row_tags
 
         result = make_sample_analysis()
         iid = result.symbol.normalized
@@ -1121,7 +1122,7 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertIn("判断拆解", texts)
 
     def test_level_change_redecides_without_error(self):
-        from stock_advisor.ui.app import level_summary
+        from stock_advisor.ui.view_text import level_summary
 
         iid = self._inject_sample()
         self.app._show_selected_detail()
@@ -1132,8 +1133,8 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertTrue(self.app.tree.exists(iid))
 
     def test_analysis_worker_reports_unexpected_exception_and_finishes(self):
-        from stock_advisor.ui import app as app_module
         from stock_advisor.domain.symbols import normalize_symbol
+        from stock_advisor.ui import app as app_module
 
         original = app_module.analyze_symbol
         app_module.analyze_symbol = lambda *_args, **_kwargs: (_ for _ in ()).throw(
@@ -1179,7 +1180,7 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertIn("screen boom", report.error)
 
     def test_clear_during_running_discards_late_analysis_results(self):
-        from stock_advisor.ui.app import make_sample_analysis
+        from stock_advisor.data.sample_data import make_sample_analysis
         from stock_advisor.services.workflow import AnalysisOutcome
 
         result = make_sample_analysis()
@@ -1683,7 +1684,7 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertIn("未保存", self.app.status_var.get())
 
     def test_alert_fires_banner_edge_triggered(self):
-        from stock_advisor.ui.app import make_sample_analysis
+        from stock_advisor.data.sample_data import make_sample_analysis
         from stock_advisor.domain.models import AlertRule
 
         result = make_sample_analysis()
@@ -1778,9 +1779,9 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertIsNone(queued_flow)
 
     def test_poll_fund_flow_drains_queue_and_renders(self):
-        from stock_advisor.ui import app as app_module
-        from stock_advisor.ui.app import FundFlow
+        from stock_advisor.domain.models import FundFlow
         from stock_advisor.domain.symbols import normalize_symbol
+        from stock_advisor.ui import app as app_module
 
         info_calls = []
         original_showinfo = app_module.messagebox.showinfo
@@ -1805,8 +1806,8 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertTrue(after_calls)
 
     def test_poll_fund_flow_reports_degrade_message_when_flow_missing(self):
-        from stock_advisor.ui import app as app_module
         from stock_advisor.domain.symbols import normalize_symbol
+        from stock_advisor.ui import app as app_module
 
         info_calls = []
         original_showinfo = app_module.messagebox.showinfo
@@ -2027,10 +2028,10 @@ class GuiLayoutTests(unittest.TestCase):
         root2.withdraw()
         try:
             app2 = _HighDpiStockAdvisorApp(root2)
-            from stock_advisor.ui.app import (
+            from stock_advisor.data.sample_data import (
                 make_sample_analysis,
-                make_sample_measurement,
                 make_sample_history,
+                make_sample_measurement,
             )
 
             result = make_sample_analysis()

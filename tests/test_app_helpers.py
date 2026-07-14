@@ -3,55 +3,62 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.ui.app import (
+from stock_advisor.data.sample_data import (
+    make_sample_analysis,
+    make_sample_history,
+    make_sample_measurement,
+    make_sample_recommendation,
+)
+from stock_advisor.ui.app import StockAdvisorApp
+from stock_advisor.ui.layout import (
+    compute_centered_geometry,
+    compute_content_band,
+    compute_window_position,
+)
+from stock_advisor.ui.theme import (
+    ACTION_BUTTON_LABELS,
     APP_ICON_FILENAME,
     APP_TITLE,
-    ACTION_BUTTON_LABELS,
     CONTENT_MARGIN,
     INFO_WINDOW_SIZE,
     MAIN_MIN_SIZE,
     MAX_CONTENT_WIDTH,
     WINDOW_MAX_SIZE,
     WINDOW_WORKAREA_MARGIN,
-    StockAdvisorApp,
-    build_portfolio_overview,
-    build_detail_text,
-    build_help_sections,
-    build_manual_text,
-    build_recommendation_header,
-    build_screener_overview,
+)
+from stock_advisor.ui.view_format import (
     build_snapshot_detail,
     build_snapshot_summary,
-    build_strategy_explanation_text,
-    build_visual_summary,
-    compute_centered_geometry,
-    compute_content_band,
-    compute_window_position,
-    format_recommendation_row,
     format_comparison_row,
+    format_recommendation_row,
     format_result_row,
     format_results_as_csv,
     format_results_for_clipboard,
-    make_sample_analysis,
-    make_sample_history,
-    make_sample_measurement,
-    make_sample_recommendation,
-    level_summary,
-    build_position_plan_text,
-    build_backtest_text,
-    build_spectrum_text,
-    build_fund_flow_text,
-    watchlist_rows,
-    normalize_symbol_input_text,
     result_row_tags,
     snapshot_display,
-    summarize_results,
     table_sort_key,
+    watchlist_rows,
+)
+from stock_advisor.ui.view_text import (
+    build_backtest_text,
+    build_detail_text,
+    build_fund_flow_text,
+    build_help_sections,
+    build_manual_text,
+    build_portfolio_overview,
+    build_position_plan_text,
+    build_recommendation_header,
+    build_screener_overview,
+    build_spectrum_text,
+    build_strategy_explanation_text,
+    build_visual_summary,
+    level_summary,
+    normalize_symbol_input_text,
+    summarize_results,
 )
 
 
@@ -248,7 +255,7 @@ class AppHelperTests(unittest.TestCase):
         self.assertNotIn("绝对预测", text)
 
     def test_colors_use_a_share_native_red_up_green_down(self):
-        from stock_advisor.ui.app import _score_color, _action_color
+        from stock_advisor.ui.view_format import _action_color, _score_color
 
         # 红=涨/买，绿=跌/卖：买入与正分同色，卖出与负分同色
         self.assertEqual(_action_color("BUY"), _score_color(10))
@@ -299,20 +306,20 @@ class AppHelperTests(unittest.TestCase):
         self.assertNotIn("参考止损价", text)
 
     def test_share_count_parser_rejects_fractional_input(self):
-        from stock_advisor.ui.app import _parse_optional_positive_int
+        from stock_advisor.domain.input_validate import _parse_optional_positive_int
 
         self.assertIsNone(_parse_optional_positive_int("100.5"))
         self.assertEqual(_parse_optional_positive_int("200.0"), 200)
 
     def test_positive_float_parser_rejects_non_finite_input(self):
-        from stock_advisor.ui.app import _parse_optional_positive
+        from stock_advisor.domain.input_validate import _parse_optional_positive
 
         self.assertIsNone(_parse_optional_positive("NaN"))
         self.assertIsNone(_parse_optional_positive("Infinity"))
         self.assertIsNone(_parse_optional_positive("-Infinity"))
 
     def test_alert_threshold_parser_rejects_non_finite_input(self):
-        from stock_advisor.ui.app import _parse_alert_threshold
+        from stock_advisor.domain.input_validate import _parse_alert_threshold
 
         self.assertEqual(_parse_alert_threshold("12.5"), 12.5)
         self.assertIsNone(_parse_alert_threshold("NaN"))

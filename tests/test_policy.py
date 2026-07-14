@@ -1,21 +1,21 @@
+import math
 import sys
 import unittest
 from dataclasses import replace
-import math
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.domain.models import CORE_DISCLAIMER, Measurement, IndicatorSnapshot, FactorScore
-from stock_advisor.domain.symbols import normalize_symbol
+from stock_advisor.domain.models import CORE_DISCLAIMER, FactorScore, IndicatorSnapshot, Measurement
 from stock_advisor.domain.policy import (
     LEVELS,
+    clamp_level,
     decide,
     level_spec,
-    clamp_level,
     policy_score,
     spectrum,
 )
+from stock_advisor.domain.symbols import normalize_symbol
 from stock_advisor.ui.theme import DISCLAIMER as THEME_DISCLAIMER
 
 

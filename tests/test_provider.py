@@ -1,9 +1,8 @@
 import json
 import sys
 import unittest
-from unittest.mock import patch
 from pathlib import Path
-
+from unittest.mock import patch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -13,11 +12,11 @@ from stock_advisor.data.data_provider import (
     EastmoneyProvider,
     MarketDataError,
     parse_clist_payload,
-    parse_history_payload,
     parse_fund_flow_payload,
+    parse_history_payload,
     parse_quote_payload,
-    parse_sina_quote_payload,
     parse_sina_history_payload,
+    parse_sina_quote_payload,
     parse_tencent_history_payload,
 )
 from stock_advisor.domain.symbols import normalize_symbol

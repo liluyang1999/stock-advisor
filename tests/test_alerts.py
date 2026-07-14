@@ -7,10 +7,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from stock_advisor.domain.alerts import (
     FIELD_KEYS_BY_LABEL,
     FIELD_LABELS,
-    evaluate_rule,
     check_rules,
-    rule_summary,
+    evaluate_rule,
     rule_key,
+    rule_summary,
 )
 from stock_advisor.domain.models import AlertRule
 

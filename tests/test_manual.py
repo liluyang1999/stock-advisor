@@ -2,13 +2,12 @@ import sys
 import unittest
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.ui.manual import build_manual_html
 from stock_advisor.domain.presets import PRESETS
+from stock_advisor.ui.manual import build_manual_html
 
 
 class ManualHtmlTests(unittest.TestCase):

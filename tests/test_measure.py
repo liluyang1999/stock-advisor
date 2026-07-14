@@ -5,9 +5,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from stock_advisor.domain.engine import measure, analyze_stock
+from test_engine import make_history, make_quote
+
+from stock_advisor.domain.engine import analyze_stock, measure
 from stock_advisor.domain.policy import decide
-from test_engine import make_quote, make_history
 
 
 class MeasureTests(unittest.TestCase):

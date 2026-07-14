@@ -4,7 +4,8 @@ from html import escape
 
 from ..domain.presets import PRESETS
 from ..domain.screener import OBJECTIVE_LABELS
-from .app import DISCLAIMER, build_help_sections, build_strategy_sections
+from .theme import DISCLAIMER
+from .view_text import build_help_sections, build_strategy_sections
 
 CHARACTERISTICS: tuple[tuple[str, str], ...] = (
     ("板块", "沪市主板 / 深市主板 / 创业板 / 科创板 / 北交所，可多选限定选股范围。"),

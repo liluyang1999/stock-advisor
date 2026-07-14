@@ -8,22 +8,9 @@ from tkinter import messagebox, ttk
 from typing import Any
 
 from ..data.data_provider import EastmoneyProvider
-from ..data.sample_data import (
-    make_sample_analysis,
-    make_sample_history,
-    make_sample_measurement,
-    make_sample_recommendation,
-)
 from ..domain.engine import build_analysis_result
 from ..domain.formatting import (
     _format_number,
-)
-from ..domain.input_validate import (
-    _parse_alert_threshold,
-    _parse_optional_positive,
-    _parse_optional_positive_int,
-    is_partial_number,
-    validate_tunable,
 )
 from ..domain.models import (
     STANDARD_LEVEL,
@@ -31,13 +18,12 @@ from ..domain.models import (
     AnalysisResult,
     AppConfig,
     DailyBar,
-    FundFlow,
     Measurement,
     Recommendation,
     WatchItem,
 )
 from ..domain.policy import decide
-from ..domain.presets import PRESETS, get_preset
+from ..domain.presets import PRESETS
 from ..domain.symbols import parse_user_symbols
 from ..services import store
 from ..services.workflow import AnalysisOutcome, analyze_symbol
@@ -51,26 +37,17 @@ from .app_styles import StyleMixin
 from .app_watchlist import WatchlistCompareMixin
 from .layout import (
     active_mode_action,
-    choose_centering_screen_size,
-    compute_centered_geometry,
-    compute_centered_window,
     compute_content_band,
-    compute_scaled_minimum,
-    compute_window_position,
     compute_workspace_columns,
-    normalize_work_area_to_screen,
     ui_scale,
 )
 from .theme import (
     ACCENT,
     ACCENT_SOFT,
-    ACTION_BUTTON_LABELS,
-    APP_ICON_FILENAME,
     APP_TITLE,
     BORDER_SOFT,
     CARD_BG,
     CARD_BORDER,
-    CHILD_WINDOW_WORKAREA_MARGIN,
     COMMAND_BG,
     COMMAND_BORDER,
     COMMAND_INK,
@@ -82,140 +59,28 @@ from .theme import (
     CONTROL_BG,
     DISCLAIMER,
     HEADER_LOGO_SIZE,
-    INFO_WINDOW_SIZE,
     INK,
-    MAIN_MIN_SIZE,
     MAX_CONTENT_WIDTH,
     MAX_SYMBOLS,
     MENU_BUTTON_SHORT_WIDTH,
     MENU_BUTTON_TOOL_WIDTH,
-    MONITOR_INTERVAL_MS,
     MONO_FONT,
     MUTED_INK,
     PAGE_BG,
     SAMPLE_INPUT,
     SURFACE_ALT,
-    TABLE_EMPTY_VISIBLE_ROWS,
-    TABLE_MAX_VISIBLE_ROWS,
-    TABLE_MIN_VISIBLE_ROWS,
     UI_FONT,
-    WINDOW_ALPHA,
-    WINDOW_MAX_SIZE,
-    WINDOW_WORKAREA_MARGIN,
 )
 from .view_format import (
-    _action_color,
-    _score_color,
-    build_snapshot_detail,
-    build_snapshot_summary,
-    detail_line_tags,
-    format_comparison_row,
-    format_recommendation_row,
     format_result_row,
-    format_results_as_csv,
-    format_results_for_clipboard,
     result_row_tags,
-    snapshot_display,
-    table_sort_key,
-    watchlist_rows,
 )
 from .view_text import (
-    build_backtest_text,
-    build_detail_text,
-    build_fund_flow_text,
-    build_help_sections,
-    build_manual_text,
     build_portfolio_overview,
-    build_position_plan_text,
-    build_recommendation_header,
-    build_screener_overview,
-    build_spectrum_text,
-    build_strategy_explanation_text,
-    build_strategy_sections,
-    build_visual_summary,
     level_summary,
     normalize_symbol_input_text,
     summarize_results,
 )
-
-# Backward-compatibility re-export surface: main.py, ui/manual.py and the test suite
-# import these names from stock_advisor.ui.app. Most now live in sibling modules
-# (domain/*, ui/theme, ui/view_*, data/sample_data) or the extracted app_* mixins;
-# they are re-exported here and pinned in __all__ so those imports keep resolving.
-__all__ = [
-    "ACCENT",
-    "ACTION_BUTTON_LABELS",
-    "APP_ICON_FILENAME",
-    "APP_TITLE",
-    "CARD_BG",
-    "CARD_BORDER",
-    "CHILD_WINDOW_WORKAREA_MARGIN",
-    "COMMAND_SELECTED_BG",
-    "CONTENT_MARGIN",
-    "DISCLAIMER",
-    "FundFlow",
-    "INFO_WINDOW_SIZE",
-    "MAIN_MIN_SIZE",
-    "MAX_CONTENT_WIDTH",
-    "MONITOR_INTERVAL_MS",
-    "PRESETS",
-    "StockAdvisorApp",
-    "TABLE_EMPTY_VISIBLE_ROWS",
-    "TABLE_MAX_VISIBLE_ROWS",
-    "TABLE_MIN_VISIBLE_ROWS",
-    "WINDOW_ALPHA",
-    "WINDOW_MAX_SIZE",
-    "WINDOW_WORKAREA_MARGIN",
-    "_action_color",
-    "_parse_alert_threshold",
-    "_parse_optional_positive",
-    "_parse_optional_positive_int",
-    "_score_color",
-    "active_mode_action",
-    "build_backtest_text",
-    "build_detail_text",
-    "build_fund_flow_text",
-    "build_help_sections",
-    "build_manual_text",
-    "build_portfolio_overview",
-    "build_position_plan_text",
-    "build_recommendation_header",
-    "build_screener_overview",
-    "build_snapshot_detail",
-    "build_snapshot_summary",
-    "build_spectrum_text",
-    "build_strategy_explanation_text",
-    "build_strategy_sections",
-    "build_visual_summary",
-    "choose_centering_screen_size",
-    "compute_centered_geometry",
-    "compute_centered_window",
-    "compute_content_band",
-    "compute_scaled_minimum",
-    "compute_window_position",
-    "detail_line_tags",
-    "format_comparison_row",
-    "format_recommendation_row",
-    "format_result_row",
-    "format_results_as_csv",
-    "format_results_for_clipboard",
-    "get_preset",
-    "is_partial_number",
-    "level_summary",
-    "make_sample_analysis",
-    "make_sample_history",
-    "make_sample_measurement",
-    "make_sample_recommendation",
-    "normalize_symbol_input_text",
-    "normalize_work_area_to_screen",
-    "result_row_tags",
-    "run_gui",
-    "snapshot_display",
-    "summarize_results",
-    "table_sort_key",
-    "validate_tunable",
-    "watchlist_rows",
-]
 
 
 class StockAdvisorApp(

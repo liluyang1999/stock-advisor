@@ -9,7 +9,9 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 # Import must follow the sys.path bootstrap above.
-from stock_advisor.ui.app import build_detail_text, make_sample_analysis, run_gui  # noqa: E402
+from stock_advisor.data.sample_data import make_sample_analysis  # noqa: E402
+from stock_advisor.ui.app import run_gui  # noqa: E402
+from stock_advisor.ui.view_text import build_detail_text  # noqa: E402
 
 
 def enable_dpi_awareness() -> None:
@@ -34,12 +36,12 @@ def enable_dpi_awareness() -> None:
 
 def _self_test() -> int:
     """离线自测：验证个股分析引擎、决策强度、仓位/回测与全市场选股管线，不触网。"""
+    from stock_advisor.data.sample_data import make_sample_history, make_sample_measurement
     from stock_advisor.domain.backtest import backtest_signals
     from stock_advisor.domain.models import MarketSnapshot
     from stock_advisor.domain.policy import decide, position_plan
     from stock_advisor.domain.presets import apply_tunables, default_values, get_preset
     from stock_advisor.domain.screener import recommend
-    from stock_advisor.ui.app import make_sample_history, make_sample_measurement
 
     result = make_sample_analysis()
     _ = build_detail_text(result)  # 确认详情文本可生成
