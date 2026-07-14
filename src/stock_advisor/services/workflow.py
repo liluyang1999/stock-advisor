@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 import math
-from typing import Callable, Protocol
+from typing import Protocol
+from collections.abc import Callable
 
 from ..data.data_provider import MarketDataError
 from ..domain.engine import build_analysis_result, measure

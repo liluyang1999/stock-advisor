@@ -185,8 +185,8 @@ class Recommendation:
     snapshot: MarketSnapshot
     screen_score: float
     board: str
-    result: "AnalysisResult | None" = None  # 深度分析结果（可选）
-    measurement: "Measurement | None" = None  # 客观测量（供改档即时重判）
+    result: AnalysisResult | None = None  # 深度分析结果（可选）
+    measurement: Measurement | None = None  # 客观测量（供改档即时重判）
     error: str = ""  # 深度分析失败说明
 
 

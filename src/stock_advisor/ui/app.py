@@ -239,8 +239,8 @@ class StockAdvisorApp:
         self._monitoring = False
         self._monitor_on = False  # 工作线程读的纯布尔镜像（避免跨线程读 tk 变量）
         self._monitor_generation = 0
-        self.monitor_queue: "queue.Queue" = queue.Queue()
-        self.fund_flow_queue: "queue.Queue" = queue.Queue()
+        self.monitor_queue: queue.Queue = queue.Queue()
+        self.fund_flow_queue: queue.Queue = queue.Queue()
         self._fund_flow_polling = False
         self._ready = False
         self._closing = False
@@ -3597,7 +3597,7 @@ class StockAdvisorApp:
             fill=MUTED_INK,
             font=(UI_FONT, 8),
         )
-        for cell, bar in zip(layout, bars):
+        for cell, _bar in zip(layout, bars, strict=False):
             color = POS_COLOR if cell["up"] else NEG_COLOR
             canvas.create_line(
                 cell["x"], cell["wick_top"], cell["x"], cell["wick_bottom"], fill=color
@@ -3620,7 +3620,7 @@ class StockAdvisorApp:
             if len(points) >= 4:
                 canvas.create_line(*points, fill=color, width=self._sc(1), smooth=True)
         volumes = volume_heights(bars, vol_h)
-        for cell, _bar, vh in zip(layout, bars, volumes):
+        for cell, _bar, vh in zip(layout, bars, volumes, strict=False):
             color = "#e7a3a3" if cell["up"] else "#a7d6bd"
             canvas.create_rectangle(
                 cell["x"] - bw / 2,

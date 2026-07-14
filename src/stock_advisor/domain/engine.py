@@ -41,7 +41,7 @@ def macd_snapshot(values: list[float]) -> tuple[float, float, float] | None:
     if len(ema12) < len(ema26):
         return None
     aligned_ema12 = ema12[-len(ema26) :]
-    macd_line = [fast - slow for fast, slow in zip(aligned_ema12, ema26)]
+    macd_line = [fast - slow for fast, slow in zip(aligned_ema12, ema26, strict=True)]
     signal_series = _ema_series(macd_line, 9)
     if not signal_series:
         return None
@@ -118,7 +118,7 @@ def rsi(values: list[float], period: int = 14) -> float | None:
 
     gains: list[float] = []
     losses: list[float] = []
-    for previous, current in zip(recent_values[:-1], recent_values[1:]):
+    for previous, current in zip(recent_values[:-1], recent_values[1:], strict=True):
         delta = current - previous
         if delta > 0:
             gains.append(delta)
@@ -642,7 +642,7 @@ def _ema_series(values: list[float], period: int) -> list[float]:
 def _five_day_win_rate(closes: list[float]) -> float | None:
     if len(closes) < 6:
         return None
-    changes = [current > previous for previous, current in zip(closes[-6:-1], closes[-5:])]
+    changes = [current > previous for previous, current in zip(closes[-6:-1], closes[-5:], strict=True)]
     return sum(1 for item in changes if item) / len(changes)
 
 
