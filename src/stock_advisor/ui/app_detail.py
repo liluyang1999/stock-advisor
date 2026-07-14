@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from ..domain.backtest import backtest_signals
 from ..domain.formatting import _looks_positive, _looks_risky
@@ -34,8 +35,13 @@ from .view_text import (
     build_strategy_sections,
 )
 
+if TYPE_CHECKING:
+    from ._app_members import AppMembers as _MembersBase
+else:
+    _MembersBase = object
 
-class DetailViewMixin:
+
+class DetailViewMixin(_MembersBase):
     """详情文本渲染 + 帮助/策略信息窗 + 强度模块文本——从 StockAdvisorApp 抽出的详情视图关注点。"""
 
     def _build_strength_modules_text(self, iid: str) -> str:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tkinter as tk
+from typing import TYPE_CHECKING
 
 from .assets import app_asset_path
 from .layout import (
@@ -20,8 +21,13 @@ from .theme import (
     WINDOW_WORKAREA_MARGIN,
 )
 
+if TYPE_CHECKING:
+    from ._app_members import AppMembers as _MembersBase
+else:
+    _MembersBase = object
 
-class WindowGeometryMixin:
+
+class WindowGeometryMixin(_MembersBase):
     """窗口居中/缩放/DPI/图标/几何——从 StockAdvisorApp 抽出的窗口管理关注点。
 
     仅承载方法;所有实例状态(self.root/self._ui_scale 等)由 StockAdvisorApp 提供。

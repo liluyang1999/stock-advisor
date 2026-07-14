@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from .theme import (
     ACCENT,
@@ -37,8 +38,13 @@ from .theme import (
     WINDOW_ALPHA,
 )
 
+if TYPE_CHECKING:
+    from ._app_members import AppMembers as _MembersBase
+else:
+    _MembersBase = object
 
-class StyleMixin:
+
+class StyleMixin(_MembersBase):
     """ttk 样式/主题配置 + 毛玻璃 + 表格行标签配色——从 StockAdvisorApp 抽出的视觉样式关注点。"""
 
     def _configure_styles(self) -> None:

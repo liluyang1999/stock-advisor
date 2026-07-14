@@ -4,7 +4,7 @@ import queue
 import threading
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..domain.alerts import FIELD_KEYS_BY_LABEL, FIELD_LABELS, OPS, check_rules, rule_summary
 from ..domain.input_validate import _parse_alert_threshold
@@ -26,8 +26,13 @@ from .theme import (
 )
 from .view_text import build_fund_flow_text
 
+if TYPE_CHECKING:
+    from ._app_members import AppMembers as _MembersBase
+else:
+    _MembersBase = object
 
-class AlertsMonitorMixin:
+
+class AlertsMonitorMixin(_MembersBase):
     """预警规则管理 + 实时监控轮询 + 资金流查询——从 StockAdvisorApp 抽出的预警/监控关注点。"""
 
     def open_alert_manager(self) -> None:

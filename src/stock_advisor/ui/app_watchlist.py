@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..domain.compare import build_comparison_rows
 from ..domain.formatting import (
@@ -31,8 +31,13 @@ from .theme import (
 )
 from .view_format import format_comparison_row, watchlist_rows
 
+if TYPE_CHECKING:
+    from ._app_members import AppMembers as _MembersBase
+else:
+    _MembersBase = object
 
-class WatchlistCompareMixin:
+
+class WatchlistCompareMixin(_MembersBase):
     """自选股加入/管理 + 多股对比窗——从 StockAdvisorApp 抽出的自选/对比关注点。"""
 
     def add_to_watchlist(self) -> None:

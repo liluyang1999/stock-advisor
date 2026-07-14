@@ -4,6 +4,7 @@ import queue
 import threading
 import tkinter as tk
 from tkinter import messagebox, ttk
+from typing import TYPE_CHECKING
 
 from ..domain.formatting import _format_number, _spin_step
 from ..domain.input_validate import is_partial_number, validate_tunable
@@ -34,8 +35,13 @@ from .view_text import (
     summarize_results,
 )
 
+if TYPE_CHECKING:
+    from ._app_members import AppMembers as _MembersBase
+else:
+    _MembersBase = object
 
-class ScreenerMixin:
+
+class ScreenerMixin(_MembersBase):
     """选股 tab 构建 + 预设/可调参数 + 批量选股运行/结果——从 StockAdvisorApp 抽出的选股关注点。"""
 
     def _build_screener_tab(self, parent: ttk.Frame) -> None:

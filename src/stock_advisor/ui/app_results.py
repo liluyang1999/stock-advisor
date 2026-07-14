@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..domain.formatting import (
     _fmt_decimal,
@@ -42,8 +42,13 @@ from .view_format import (
 )
 from .view_text import build_portfolio_overview
 
+if TYPE_CHECKING:
+    from ._app_members import AppMembers as _MembersBase
+else:
+    _MembersBase = object
 
-class ResultsTableMixin:
+
+class ResultsTableMixin(_MembersBase):
     """结果表格构建/排序/高度 + 摘要指标 + 复制/CSV 导出——从 StockAdvisorApp 抽出的结果表关注点。"""
 
     def _build_results_region(self, outer: ttk.Frame) -> None:

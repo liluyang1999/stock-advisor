@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import font as tkfont
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..domain.chart import (
     candle_layout,
@@ -39,8 +39,13 @@ from .theme import (
 from .view_format import _score_color
 from .view_text import _friendly_factor_name
 
+if TYPE_CHECKING:
+    from ._app_members import AppMembers as _MembersBase
+else:
+    _MembersBase = object
 
-class ChartRenderMixin:
+
+class ChartRenderMixin(_MembersBase):
     """K线 / 因子光谱 / 可视化画布渲染 + 悬停提示——从 StockAdvisorApp 抽出的图表绘制关注点。"""
 
     def _on_kline_motion(self, event: tk.Event) -> None:
