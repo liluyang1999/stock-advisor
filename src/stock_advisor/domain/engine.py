@@ -642,7 +642,9 @@ def _ema_series(values: list[float], period: int) -> list[float]:
 def _five_day_win_rate(closes: list[float]) -> float | None:
     if len(closes) < 6:
         return None
-    changes = [current > previous for previous, current in zip(closes[-6:-1], closes[-5:], strict=True)]
+    changes = [
+        current > previous for previous, current in zip(closes[-6:-1], closes[-5:], strict=True)
+    ]
     return sum(1 for item in changes if item) / len(changes)
 
 
