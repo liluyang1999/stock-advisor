@@ -541,7 +541,8 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertFalse(getattr(self.app, "_kline_state", {}).get("layout"))
 
     def test_snapshot_only_results_can_be_copied_and_exported(self):
-        from stock_advisor.ui import app as app_module
+        # copy_results/export_csv now live in app_results; patch messagebox/filedialog there.
+        from stock_advisor.ui import app_results as app_module
         from stock_advisor.ui.app import snapshot_display
 
         rec = make_sample_recommendation(deep=False)
@@ -571,7 +572,8 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertIn("快照", exported)
 
     def test_export_csv_reports_unwritable_path_without_crashing(self):
-        from stock_advisor.ui import app as app_module
+        # export_csv now lives in app_results; patch messagebox/filedialog there.
+        from stock_advisor.ui import app_results as app_module
 
         rec = make_sample_recommendation(deep=False)
         self.app._add_recommendation(rec, done=1, total=1)

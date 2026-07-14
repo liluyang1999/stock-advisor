@@ -2,53 +2,21 @@ from __future__ import annotations
 
 import math
 import queue
-import sys
 import threading
 import tkinter as tk
-from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
-from tkinter import font as tkfont
+from tkinter import messagebox, ttk
 from typing import Any
 
 from ..data.data_provider import EastmoneyProvider
 from ..data.sample_data import (
-    _sample_quote_history,
     make_sample_analysis,
     make_sample_history,
     make_sample_measurement,
     make_sample_recommendation,
 )
-from ..domain.alerts import FIELD_KEYS_BY_LABEL, FIELD_LABELS, OPS, check_rules, rule_summary
-from ..domain.backtest import backtest_signals
-from ..domain.chart import (
-    candle_layout,
-    moving_average_series,
-    nearest_index,
-    price_bounds,
-    price_to_y,
-    volume_heights,
-)
-from ..domain.compare import build_comparison_rows
 from ..domain.engine import build_analysis_result
 from ..domain.formatting import (
-    _flow_direction,
-    _fmt_backtest_excess,
-    _fmt_backtest_return,
-    _fmt_decimal,
-    _fmt_percent,
-    _fmt_percent_points,
-    _fmt_percent_value,
-    _fmt_rate_percent,
-    _fmt_whole_percent,
-    _fmt_yi,
     _format_number,
-    _looks_positive,
-    _looks_risky,
-    _positive_finite_float,
-    _positive_finite_int,
-    _safe_int,
-    _spin_step,
-    risk_level,
 )
 from ..domain.input_validate import (
     _parse_alert_threshold,
@@ -58,26 +26,21 @@ from ..domain.input_validate import (
     validate_tunable,
 )
 from ..domain.models import (
-    LEVEL_NAMES,
     STANDARD_LEVEL,
     AlertRule,
     AnalysisResult,
     AppConfig,
-    BacktestReport,
     DailyBar,
     FundFlow,
     Measurement,
-    PositionPlan,
     Recommendation,
-    SpectrumCell,
     WatchItem,
 )
-from ..domain.policy import decide, flip_hint, level_spec, position_plan, spectrum
-from ..domain.presets import PRESETS, apply_tunables, get_preset
-from ..domain.screener import OBJECTIVE_LABELS
-from ..domain.symbols import normalize_symbol, parse_user_symbols
+from ..domain.policy import decide
+from ..domain.presets import PRESETS, get_preset
+from ..domain.symbols import parse_user_symbols
 from ..services import store
-from ..services.workflow import AnalysisOutcome, ScreenReport, analyze_symbol, screen_and_recommend
+from ..services.workflow import AnalysisOutcome, analyze_symbol
 from .app_alerts import AlertsMonitorMixin
 from .app_charts import ChartRenderMixin
 from .app_detail import DetailViewMixin
@@ -91,26 +54,19 @@ from .layout import (
     choose_centering_screen_size,
     compute_centered_geometry,
     compute_centered_window,
-    compute_child_window_geometry,
     compute_content_band,
-    compute_main_geometry,
     compute_scaled_minimum,
     compute_window_position,
     compute_workspace_columns,
     normalize_work_area_to_screen,
-    stacked_text_y,
     ui_scale,
 )
 from .theme import (
     ACCENT,
-    ACCENT_HOVER,
-    ACCENT_PRESSED,
     ACCENT_SOFT,
-    ACCENT_SOFT_HOVER,
     ACTION_BUTTON_LABELS,
     APP_ICON_FILENAME,
     APP_TITLE,
-    ASSET_DIR,
     BORDER_SOFT,
     CARD_BG,
     CARD_BORDER,
@@ -124,19 +80,10 @@ from .theme import (
     COMMAND_SURFACE,
     CONTENT_MARGIN,
     CONTROL_BG,
-    CONTROL_DISABLED_BG,
-    CONTROL_HOVER_BG,
-    DANGER_BG,
-    DANGER_COLOR,
-    DETAIL_NAV_SECTIONS,
     DISCLAIMER,
-    FLAT_COLOR,
-    GRID_COLOR,
     HEADER_LOGO_SIZE,
-    HOLD_BG,
     INFO_WINDOW_SIZE,
     INK,
-    INK_SOFT,
     MAIN_MIN_SIZE,
     MAX_CONTENT_WIDTH,
     MAX_SYMBOLS,
@@ -145,21 +92,10 @@ from .theme import (
     MONITOR_INTERVAL_MS,
     MONO_FONT,
     MUTED_INK,
-    MUTED_LIGHT,
-    NEG_BG,
-    NEG_COLOR,
     PAGE_BG,
-    POS_BG,
-    POS_COLOR,
     SAMPLE_INPUT,
-    SCROLLBAR_ACTIVE_BG,
-    SCROLLBAR_BG,
-    SCROLLBAR_PRESSED_BG,
-    SELECTION_BG,
     SURFACE_ALT,
-    TABLE_COLUMNS,
     TABLE_EMPTY_VISIBLE_ROWS,
-    TABLE_HEADER_BG,
     TABLE_MAX_VISIBLE_ROWS,
     TABLE_MIN_VISIBLE_ROWS,
     UI_FONT,
@@ -178,17 +114,12 @@ from .view_format import (
     format_result_row,
     format_results_as_csv,
     format_results_for_clipboard,
-    format_table_rows_as_csv,
-    format_table_rows_for_clipboard,
     result_row_tags,
     snapshot_display,
     table_sort_key,
     watchlist_rows,
 )
 from .view_text import (
-    _focus_symbols,
-    _friendly_factor_name,
-    _friendly_verdict,
     build_backtest_text,
     build_detail_text,
     build_fund_flow_text,
@@ -206,6 +137,85 @@ from .view_text import (
     normalize_symbol_input_text,
     summarize_results,
 )
+
+# Backward-compatibility re-export surface: main.py, ui/manual.py and the test suite
+# import these names from stock_advisor.ui.app. Most now live in sibling modules
+# (domain/*, ui/theme, ui/view_*, data/sample_data) or the extracted app_* mixins;
+# they are re-exported here and pinned in __all__ so those imports keep resolving.
+__all__ = [
+    "ACCENT",
+    "ACTION_BUTTON_LABELS",
+    "APP_ICON_FILENAME",
+    "APP_TITLE",
+    "CARD_BG",
+    "CARD_BORDER",
+    "CHILD_WINDOW_WORKAREA_MARGIN",
+    "COMMAND_SELECTED_BG",
+    "CONTENT_MARGIN",
+    "DISCLAIMER",
+    "FundFlow",
+    "INFO_WINDOW_SIZE",
+    "MAIN_MIN_SIZE",
+    "MAX_CONTENT_WIDTH",
+    "MONITOR_INTERVAL_MS",
+    "PRESETS",
+    "StockAdvisorApp",
+    "TABLE_EMPTY_VISIBLE_ROWS",
+    "TABLE_MAX_VISIBLE_ROWS",
+    "TABLE_MIN_VISIBLE_ROWS",
+    "WINDOW_ALPHA",
+    "WINDOW_MAX_SIZE",
+    "WINDOW_WORKAREA_MARGIN",
+    "_action_color",
+    "_parse_alert_threshold",
+    "_parse_optional_positive",
+    "_parse_optional_positive_int",
+    "_score_color",
+    "active_mode_action",
+    "build_backtest_text",
+    "build_detail_text",
+    "build_fund_flow_text",
+    "build_help_sections",
+    "build_manual_text",
+    "build_portfolio_overview",
+    "build_position_plan_text",
+    "build_recommendation_header",
+    "build_screener_overview",
+    "build_snapshot_detail",
+    "build_snapshot_summary",
+    "build_spectrum_text",
+    "build_strategy_explanation_text",
+    "build_strategy_sections",
+    "build_visual_summary",
+    "choose_centering_screen_size",
+    "compute_centered_geometry",
+    "compute_centered_window",
+    "compute_content_band",
+    "compute_scaled_minimum",
+    "compute_window_position",
+    "detail_line_tags",
+    "format_comparison_row",
+    "format_recommendation_row",
+    "format_result_row",
+    "format_results_as_csv",
+    "format_results_for_clipboard",
+    "get_preset",
+    "is_partial_number",
+    "level_summary",
+    "make_sample_analysis",
+    "make_sample_history",
+    "make_sample_measurement",
+    "make_sample_recommendation",
+    "normalize_symbol_input_text",
+    "normalize_work_area_to_screen",
+    "result_row_tags",
+    "run_gui",
+    "snapshot_display",
+    "summarize_results",
+    "table_sort_key",
+    "validate_tunable",
+    "watchlist_rows",
+]
 
 
 class StockAdvisorApp(
