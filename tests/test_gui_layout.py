@@ -1154,10 +1154,11 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertIsNone(done_payload)
 
     def test_screen_worker_reports_unexpected_exception_and_finishes(self):
-        from stock_advisor.ui import app as app_module
+        # _screen_worker now lives in app_screener; patch the name where it is looked up.
+        from stock_advisor.ui import app_screener as screener_module
 
-        original = app_module.screen_and_recommend
-        app_module.screen_and_recommend = lambda *_args, **_kwargs: (_ for _ in ()).throw(
+        original = screener_module.screen_and_recommend
+        screener_module.screen_and_recommend = lambda *_args, **_kwargs: (_ for _ in ()).throw(
             RuntimeError("screen boom")
         )
         self.app.queue = queue.Queue()
@@ -1167,7 +1168,7 @@ class GuiLayoutTests(unittest.TestCase):
             except RuntimeError as exc:
                 self.fail(f"screen worker leaked exception instead of queueing failure: {exc}")
         finally:
-            app_module.screen_and_recommend = original
+            screener_module.screen_and_recommend = original
 
         kind, payload = self.app.queue.get_nowait()
         self.assertEqual(kind, "screen_done")
