@@ -47,6 +47,9 @@ ignore = ["E501"]
 # discover`), so their module-level imports legitimately follow that bootstrap.
 "tests/**" = ["E402"]
 
+[tool.ruff.lint.isort]
+combine-as-imports = true          # merge `import x as y` onto one statement, not one-per-line
+
 [tool.ruff.format]
 # ruff format defaults (black-compatible): double quotes, magic trailing comma, space indent.
 

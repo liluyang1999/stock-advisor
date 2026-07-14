@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import math
-
 from .models import AlertRule
+from .numeric import finite_float as _finite_float
 
 FIELD_LABELS = {"price": "价格", "change_pct": "涨跌幅", "score": "综合分"}
 # 字段下拉展示 FIELD_LABELS 的中文值；选中后需要映射回这里的键写入 AlertRule.field
@@ -19,14 +18,6 @@ def _field_value(field: str, result) -> float | None:
     if field == "score":
         return float(result.score)
     return None
-
-
-def _finite_float(value: object) -> float | None:
-    try:
-        number = float(value)  # type: ignore[arg-type]
-    except TypeError, ValueError:
-        return None
-    return number if math.isfinite(number) else None
 
 
 def evaluate_rule(rule: AlertRule, result) -> bool:

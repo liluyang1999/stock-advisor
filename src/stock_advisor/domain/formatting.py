@@ -5,6 +5,11 @@ from __future__ import annotations
 import math
 
 from .models import AnalysisResult
+from .numeric import (
+    finite_float as _finite_float,
+    positive_finite_float as _positive_finite_float,
+    safe_int as _safe_int,
+)
 
 
 def _fmt_rate_percent(value: object, missing: str = "样本不足") -> str:
@@ -24,40 +29,6 @@ def _fmt_backtest_excess(value: object, baseline: object, missing: str = "样本
     if number is None or base is None:
         return missing
     return _fmt_backtest_return(number - base, missing=missing)
-
-
-def _finite_float(value: object) -> float | None:
-    try:
-        number = float(value)  # type: ignore[arg-type]
-    except TypeError, ValueError:
-        return None
-    return number if math.isfinite(number) else None
-
-
-def _positive_finite_float(value: object) -> float | None:
-    number = _finite_float(value)
-    return number if number is not None and number > 0 else None
-
-
-def _positive_finite_int(value: object) -> int | None:
-    number = _finite_float(value)
-    if number is None or number <= 0:
-        return None
-    if not number.is_integer():
-        return None
-    return int(number)
-
-
-def _safe_int(
-    value: object, default: int = 0, minimum: int | None = None, maximum: int | None = None
-) -> int:
-    number = _finite_float(value)
-    result = default if number is None else int(round(number))
-    if minimum is not None:
-        result = max(minimum, result)
-    if maximum is not None:
-        result = min(maximum, result)
-    return result
 
 
 def _fmt_decimal(value: object, digits: int = 2, signed: bool = False, missing: str = "—") -> str:

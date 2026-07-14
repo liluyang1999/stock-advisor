@@ -21,10 +21,10 @@ from ..domain.formatting import (
     _looks_risky,
     _number_from_cell,
     _positive_finite_float,
-    _positive_finite_int,
     risk_level,
 )
 from ..domain.models import AnalysisResult, ComparisonRow, MarketSnapshot, Recommendation
+from ..domain.numeric import positive_finite_int as _positive_finite_int
 from ..domain.symbols import normalize_symbol
 from .theme import (
     ACTION_ORDER,

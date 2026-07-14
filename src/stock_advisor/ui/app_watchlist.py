@@ -8,11 +8,11 @@ from ..domain.compare import build_comparison_rows
 from ..domain.formatting import (
     _format_number,
     _positive_finite_float,
-    _positive_finite_int,
     risk_level,
 )
 from ..domain.input_validate import _parse_optional_positive, _parse_optional_positive_int
 from ..domain.models import WatchItem
+from ..domain.numeric import positive_finite_int as _positive_finite_int
 from ..domain.symbols import normalize_symbol
 from .theme import (
     BORDER_SOFT,

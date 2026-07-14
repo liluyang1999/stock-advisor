@@ -4,24 +4,11 @@ import math
 from statistics import mean
 
 from .models import DailyBar
-
-
-def _finite_float(value: object) -> float | None:
-    try:
-        number = float(value)  # type: ignore[arg-type]
-    except TypeError, ValueError, OverflowError:
-        return None
-    return number if math.isfinite(number) else None
-
-
-def _positive_finite_float(value: object) -> float | None:
-    number = _finite_float(value)
-    return number if number is not None and number > 0 else None
-
-
-def _nonnegative_finite_float(value: object) -> float | None:
-    number = _finite_float(value)
-    return number if number is not None and number >= 0 else None
+from .numeric import (
+    finite_float as _finite_float,
+    nonnegative_finite_float as _nonnegative_finite_float,
+    positive_finite_float as _positive_finite_float,
+)
 
 
 def index_to_x(i: int, n: int, left: float, right: float) -> float:
