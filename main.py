@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-
 CURRENT_DIR = Path(__file__).resolve().parent
 SRC_DIR = CURRENT_DIR / "src"
 if str(SRC_DIR) not in sys.path:
@@ -34,12 +33,12 @@ def enable_dpi_awareness() -> None:
 
 def _self_test() -> int:
     """离线自测：验证个股分析引擎、决策强度、仓位/回测与全市场选股管线，不触网。"""
+    from stock_advisor.domain.backtest import backtest_signals
     from stock_advisor.domain.models import MarketSnapshot
+    from stock_advisor.domain.policy import decide, position_plan
     from stock_advisor.domain.presets import apply_tunables, default_values, get_preset
     from stock_advisor.domain.screener import recommend
-    from stock_advisor.domain.policy import decide, position_plan
-    from stock_advisor.domain.backtest import backtest_signals
-    from stock_advisor.ui.app import make_sample_measurement, make_sample_history
+    from stock_advisor.ui.app import make_sample_history, make_sample_measurement
 
     result = make_sample_analysis()
     _ = build_detail_text(result)  # 确认详情文本可生成
@@ -52,12 +51,10 @@ def _self_test() -> int:
     backtest = backtest_signals(make_sample_history(), level=3)
 
     # 二期 2A：持久化 + 横向对比 离线自检
-    from stock_advisor.services.store import parse_config, config_to_dict
-    from stock_advisor.domain.compare import build_comparison_rows
-    from stock_advisor.domain.models import AppConfig, WatchItem
-
     from stock_advisor.domain.alerts import check_rules
-    from stock_advisor.domain.models import AlertRule
+    from stock_advisor.domain.compare import build_comparison_rows
+    from stock_advisor.domain.models import AlertRule, AppConfig, WatchItem
+    from stock_advisor.services.store import config_to_dict, parse_config
 
     alert = AlertRule(result.symbol.normalized, "price", ">=", result.last - 1.0)
     cfg = parse_config(

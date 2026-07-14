@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal
 
-
 Action = Literal["BUY", "SELL", "HOLD"]
 
 # 免责声明核心句——单一权威来源。policy.py 每条决策 risks 末尾追加的免责句、theme.py 全文

@@ -7,9 +7,8 @@ import tempfile
 from pathlib import Path
 
 from ..domain.alerts import FIELD_LABELS, OPS
-from ..domain.models import AlertRule, AppConfig, STANDARD_LEVEL, WatchItem
+from ..domain.models import STANDARD_LEVEL, AlertRule, AppConfig, WatchItem
 from ..domain.symbols import normalize_symbol
-
 
 _MAX_WATCH = 100
 _MAX_ALERTS = 100

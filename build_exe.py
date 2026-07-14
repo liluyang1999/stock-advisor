@@ -6,7 +6,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 APP_NAME = "AStockIntradayAdvisor"
 OUTPUT_NAME = "股市锦囊.exe"
 MANUAL_NAME = "使用说明.html"

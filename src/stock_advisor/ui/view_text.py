@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from ..domain.formatting import (
     _finite_float,
-    _safe_int,
+    _flow_direction,
     _fmt,
+    _fmt_backtest_excess,
+    _fmt_backtest_return,
     _fmt_decimal,
     _fmt_percent,
     _fmt_percent_points,
@@ -15,9 +17,7 @@ from ..domain.formatting import (
     _fmt_score_value,
     _fmt_whole_percent,
     _fmt_yi,
-    _fmt_backtest_return,
-    _fmt_backtest_excess,
-    _flow_direction,
+    _safe_int,
     risk_level,
 )
 from ..domain.models import (

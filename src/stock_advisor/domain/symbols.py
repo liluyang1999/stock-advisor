@@ -4,7 +4,6 @@ import re
 
 from .models import StockSymbol
 
-
 _SEPARATORS = re.compile(r"[\s,;，；]+")
 _PREFIXED = re.compile(r"^(sh|sz|bj)[._-]?(\d{6})$", re.IGNORECASE)
 

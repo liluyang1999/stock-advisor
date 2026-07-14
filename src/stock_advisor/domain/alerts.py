@@ -4,7 +4,6 @@ import math
 
 from .models import AlertRule
 
-
 FIELD_LABELS = {"price": "价格", "change_pct": "涨跌幅", "score": "综合分"}
 # 字段下拉展示 FIELD_LABELS 的中文值；选中后需要映射回这里的键写入 AlertRule.field
 # （告警求值/展示逻辑均按键索引，不受下拉展示文案影响）。

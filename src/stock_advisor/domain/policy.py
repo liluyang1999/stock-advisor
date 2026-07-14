@@ -3,16 +3,15 @@ from __future__ import annotations
 import math
 
 from .models import (
-    Action,
     CORE_DISCLAIMER,
+    STANDARD_LEVEL,
+    Action,
     Decision,
     LevelSpec,
     Measurement,
     PositionPlan,
     SpectrumCell,
-    STANDARD_LEVEL,
 )
-
 
 # 决策强度档位表（与设计规格一致）。
 # 阈值非对称且「旋转」：越保守买入门槛越高、卖出门槛越低（快出）；越激进买入门槛越低、

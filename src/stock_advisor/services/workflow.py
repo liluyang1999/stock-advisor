@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field, replace
 import math
-from typing import Protocol
 from collections.abc import Callable
+from dataclasses import dataclass, field, replace
+from typing import Protocol
 
 from ..data.data_provider import MarketDataError
 from ..domain.engine import build_analysis_result, measure
 from ..domain.models import (
+    STANDARD_LEVEL,
     AnalysisResult,
     DailyBar,
     FilterCriteria,
@@ -15,7 +16,6 @@ from ..domain.models import (
     Measurement,
     Quote,
     Recommendation,
-    STANDARD_LEVEL,
     StockSymbol,
 )
 from ..domain.policy import decide

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 MAX_SYMBOLS = 30
 MONITOR_INTERVAL_MS = 60000  # 实时预警轮询间隔（毫秒）
 APP_TITLE = "股市锦囊"

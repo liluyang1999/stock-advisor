@@ -8,8 +8,6 @@ import re
 
 from ..domain.formatting import (
     _finite_float,
-    _positive_finite_float,
-    _positive_finite_int,
     _fmt,
     _fmt_amount,
     _fmt_decimal,
@@ -18,10 +16,12 @@ from ..domain.formatting import (
     _fmt_plain_number,
     _fmt_score_value,
     _fmt_whole_percent,
-    _number_from_cell,
     _looks_negative,
     _looks_positive,
     _looks_risky,
+    _number_from_cell,
+    _positive_finite_float,
+    _positive_finite_int,
     risk_level,
 )
 from ..domain.models import AnalysisResult, ComparisonRow, MarketSnapshot, Recommendation

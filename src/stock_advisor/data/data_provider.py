@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import json
 import http.client
+import json
 import math
 import time
 import urllib.error
 import urllib.request
 
 from ..domain.models import DailyBar, FundFlow, MarketSnapshot, Quote, StockSymbol
-
 
 # 浏览器 UA：含 "Python" 的 UA 会被东方财富 clist 接口拒绝（连接被直接关闭）。
 BROWSER_USER_AGENT = (

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import replace
 import math
+from dataclasses import replace
 
 from .formatting import _format_number
 from .models import FilterCriteria, ScreenPreset, TunableParam
-
 
 _YI = 1.0e8  # 一亿元
 

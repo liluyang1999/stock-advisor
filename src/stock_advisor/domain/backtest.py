@@ -4,9 +4,8 @@ import math
 from statistics import mean
 
 from .engine import clean_history, measure
-from .models import BacktestReport, BacktestStat, DailyBar, Quote, StockSymbol, STANDARD_LEVEL
+from .models import STANDARD_LEVEL, BacktestReport, BacktestStat, DailyBar, Quote, StockSymbol
 from .policy import decide
-
 
 # 回测构造伪行情时不依赖具体证券代码（measure 不读 symbol），用占位 symbol 满足类型。
 _PLACEHOLDER_SYMBOL = StockSymbol(

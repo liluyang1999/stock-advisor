@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import replace
 import math
+from dataclasses import replace
 from statistics import mean, pstdev
 
 from .models import (
+    STANDARD_LEVEL,
     AnalysisResult,
     DailyBar,
     Decision,
@@ -12,7 +13,6 @@ from .models import (
     IndicatorSnapshot,
     Measurement,
     Quote,
-    STANDARD_LEVEL,
 )
 from .policy import decide
 

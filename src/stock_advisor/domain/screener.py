@@ -4,7 +4,6 @@ import math
 
 from .models import FilterCriteria, MarketSnapshot, Recommendation
 
-
 BOARD_SH_MAIN = "沪市主板"
 BOARD_SZ_MAIN = "深市主板"
 BOARD_CHINEXT = "创业板"

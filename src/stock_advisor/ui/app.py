@@ -10,7 +10,14 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Any
 
-from ..services import store
+from ..data.data_provider import EastmoneyProvider
+from ..data.sample_data import (
+    _sample_quote_history,
+    make_sample_analysis,
+    make_sample_history,
+    make_sample_measurement,
+    make_sample_recommendation,
+)
 from ..domain.alerts import FIELD_KEYS_BY_LABEL, FIELD_LABELS, OPS, check_rules, rule_summary
 from ..domain.backtest import backtest_signals
 from ..domain.chart import (
@@ -22,20 +29,46 @@ from ..domain.chart import (
     volume_heights,
 )
 from ..domain.compare import build_comparison_rows
-from ..data.data_provider import EastmoneyProvider
 from ..domain.engine import build_analysis_result
+from ..domain.formatting import (
+    _flow_direction,
+    _fmt_backtest_excess,
+    _fmt_backtest_return,
+    _fmt_decimal,
+    _fmt_percent,
+    _fmt_percent_points,
+    _fmt_percent_value,
+    _fmt_rate_percent,
+    _fmt_whole_percent,
+    _fmt_yi,
+    _format_number,
+    _looks_positive,
+    _looks_risky,
+    _positive_finite_float,
+    _positive_finite_int,
+    _safe_int,
+    _spin_step,
+    risk_level,
+)
+from ..domain.input_validate import (
+    _parse_alert_threshold,
+    _parse_optional_positive,
+    _parse_optional_positive_int,
+    is_partial_number,
+    validate_tunable,
+)
 from ..domain.models import (
+    LEVEL_NAMES,
+    STANDARD_LEVEL,
     AlertRule,
     AnalysisResult,
     AppConfig,
     BacktestReport,
     DailyBar,
     FundFlow,
-    LEVEL_NAMES,
     Measurement,
     PositionPlan,
     Recommendation,
-    STANDARD_LEVEL,
     SpectrumCell,
     WatchItem,
 )
@@ -43,74 +76,127 @@ from ..domain.policy import decide, flip_hint, level_spec, position_plan, spectr
 from ..domain.presets import PRESETS, apply_tunables, get_preset
 from ..domain.screener import OBJECTIVE_LABELS
 from ..domain.symbols import normalize_symbol, parse_user_symbols
+from ..services import store
 from ..services.workflow import AnalysisOutcome, ScreenReport, analyze_symbol, screen_and_recommend
-
-
+from .layout import (
+    active_mode_action,
+    choose_centering_screen_size,
+    compute_centered_geometry,
+    compute_centered_window,
+    compute_child_window_geometry,
+    compute_content_band,
+    compute_main_geometry,
+    compute_scaled_minimum,
+    compute_window_position,
+    compute_workspace_columns,
+    normalize_work_area_to_screen,
+    stacked_text_y,
+    ui_scale,
+)
 from .theme import (
-    MAX_SYMBOLS,
-    MONITOR_INTERVAL_MS,
-    APP_TITLE,
-    APP_ICON_FILENAME,
-    INFO_WINDOW_SIZE,
-    MAIN_MIN_SIZE,
-    WINDOW_MAX_SIZE,
-    WINDOW_WORKAREA_MARGIN,
-    CHILD_WINDOW_WORKAREA_MARGIN,
-    WINDOW_ALPHA,
-    MAX_CONTENT_WIDTH,
-    CONTENT_MARGIN,
-    HEADER_LOGO_SIZE,
-    MENU_BUTTON_SHORT_WIDTH,
-    MENU_BUTTON_TOOL_WIDTH,
-    UI_FONT,
-    MONO_FONT,
-    PAGE_BG,
-    CARD_BG,
-    SURFACE_ALT,
-    CONTROL_BG,
-    CONTROL_HOVER_BG,
-    CONTROL_DISABLED_BG,
-    CARD_BORDER,
-    BORDER_SOFT,
-    GRID_COLOR,
-    INK,
-    INK_SOFT,
-    MUTED_INK,
-    MUTED_LIGHT,
     ACCENT,
     ACCENT_HOVER,
     ACCENT_PRESSED,
     ACCENT_SOFT,
     ACCENT_SOFT_HOVER,
-    SELECTION_BG,
-    DANGER_COLOR,
-    DANGER_BG,
+    ACTION_BUTTON_LABELS,
+    APP_ICON_FILENAME,
+    APP_TITLE,
+    ASSET_DIR,
+    BORDER_SOFT,
+    CARD_BG,
+    CARD_BORDER,
+    CHILD_WINDOW_WORKAREA_MARGIN,
     COMMAND_BG,
-    COMMAND_SURFACE,
     COMMAND_BORDER,
     COMMAND_INK,
     COMMAND_MUTED_INK,
     COMMAND_SELECTED_BG,
     COMMAND_SELECTED_INK,
-    TABLE_HEADER_BG,
-    SCROLLBAR_BG,
-    SCROLLBAR_ACTIVE_BG,
-    SCROLLBAR_PRESSED_BG,
-    POS_COLOR,
-    NEG_COLOR,
-    FLAT_COLOR,
-    POS_BG,
-    NEG_BG,
-    HOLD_BG,
-    ACTION_BUTTON_LABELS,
-    TABLE_MIN_VISIBLE_ROWS,
-    TABLE_MAX_VISIBLE_ROWS,
-    TABLE_EMPTY_VISIBLE_ROWS,
+    COMMAND_SURFACE,
+    CONTENT_MARGIN,
+    CONTROL_BG,
+    CONTROL_DISABLED_BG,
+    CONTROL_HOVER_BG,
+    DANGER_BG,
+    DANGER_COLOR,
     DETAIL_NAV_SECTIONS,
-    ASSET_DIR,
-    SAMPLE_INPUT,
     DISCLAIMER,
+    FLAT_COLOR,
+    GRID_COLOR,
+    HEADER_LOGO_SIZE,
+    HOLD_BG,
+    INFO_WINDOW_SIZE,
+    INK,
+    INK_SOFT,
+    MAIN_MIN_SIZE,
+    MAX_CONTENT_WIDTH,
+    MAX_SYMBOLS,
+    MENU_BUTTON_SHORT_WIDTH,
+    MENU_BUTTON_TOOL_WIDTH,
+    MONITOR_INTERVAL_MS,
+    MONO_FONT,
+    MUTED_INK,
+    MUTED_LIGHT,
+    NEG_BG,
+    NEG_COLOR,
+    PAGE_BG,
+    POS_BG,
+    POS_COLOR,
+    SAMPLE_INPUT,
+    SCROLLBAR_ACTIVE_BG,
+    SCROLLBAR_BG,
+    SCROLLBAR_PRESSED_BG,
+    SELECTION_BG,
+    SURFACE_ALT,
     TABLE_COLUMNS,
+    TABLE_EMPTY_VISIBLE_ROWS,
+    TABLE_HEADER_BG,
+    TABLE_MAX_VISIBLE_ROWS,
+    TABLE_MIN_VISIBLE_ROWS,
+    UI_FONT,
+    WINDOW_ALPHA,
+    WINDOW_MAX_SIZE,
+    WINDOW_WORKAREA_MARGIN,
+)
+from .view_format import (
+    _action_color,
+    _score_color,
+    build_snapshot_detail,
+    build_snapshot_summary,
+    detail_line_tags,
+    format_comparison_row,
+    format_recommendation_row,
+    format_result_row,
+    format_results_as_csv,
+    format_results_for_clipboard,
+    format_table_rows_as_csv,
+    format_table_rows_for_clipboard,
+    result_row_tags,
+    snapshot_display,
+    table_sort_key,
+    watchlist_rows,
+)
+from .view_text import (
+    _focus_symbols,
+    _friendly_factor_name,
+    _friendly_verdict,
+    build_backtest_text,
+    build_detail_text,
+    build_fund_flow_text,
+    build_help_sections,
+    build_manual_text,
+    build_portfolio_overview,
+    build_position_plan_text,
+    build_recommendation_header,
+    build_screener_overview,
+    build_spectrum_text,
+    build_strategy_explanation_text,
+    build_strategy_sections,
+    build_visual_summary,
+    level_summary,
+    normalize_symbol_input_text,
+    summarize_results,
 )
 
 
@@ -119,106 +205,6 @@ def app_asset_path(filename: str) -> Path:
     if bundle_root:
         return Path(bundle_root) / "assets" / filename
     return ASSET_DIR / filename
-
-
-from ..data.sample_data import (
-    _sample_quote_history,
-    make_sample_analysis,
-    make_sample_measurement,
-    make_sample_history,
-    make_sample_recommendation,
-)
-
-
-from .view_text import (
-    level_summary,
-    build_position_plan_text,
-    build_backtest_text,
-    build_spectrum_text,
-    build_fund_flow_text,
-    build_screener_overview,
-    build_recommendation_header,
-    build_visual_summary,
-    build_detail_text,
-    summarize_results,
-    normalize_symbol_input_text,
-    build_portfolio_overview,
-    build_help_sections,
-    build_manual_text,
-    build_strategy_sections,
-    build_strategy_explanation_text,
-    _focus_symbols,
-    _friendly_factor_name,
-    _friendly_verdict,
-)
-
-
-from ..domain.formatting import (
-    _positive_finite_float,
-    _positive_finite_int,
-    _safe_int,
-    _fmt_decimal,
-    _fmt_whole_percent,
-    _fmt_percent_points,
-    _fmt_rate_percent,
-    _fmt_backtest_return,
-    _fmt_backtest_excess,
-    _format_number,
-    _spin_step,
-    _fmt_yi,
-    _flow_direction,
-    _fmt_percent,
-    _fmt_percent_value,
-    risk_level,
-    _looks_risky,
-    _looks_positive,
-)
-
-
-from .view_format import (
-    watchlist_rows,
-    format_comparison_row,
-    snapshot_display,
-    format_recommendation_row,
-    build_snapshot_summary,
-    build_snapshot_detail,
-    format_result_row,
-    table_sort_key,
-    result_row_tags,
-    detail_line_tags,
-    _score_color,
-    _action_color,
-    format_results_for_clipboard,
-    format_results_as_csv,
-    format_table_rows_for_clipboard,
-    format_table_rows_as_csv,
-)
-
-
-from ..domain.input_validate import (
-    _parse_optional_positive,
-    _parse_optional_positive_int,
-    _parse_alert_threshold,
-    is_partial_number,
-    validate_tunable,
-)
-
-
-from .layout import (
-    compute_centered_geometry,
-    compute_window_position,
-    compute_child_window_geometry,
-    normalize_work_area_to_screen,
-    choose_centering_screen_size,
-    compute_centered_window,
-    compute_content_band,
-    active_mode_action,
-    ui_scale,
-    compute_main_geometry,
-    compute_scaled_minimum,
-    compute_workspace_columns,
-    stacked_text_y,
-)
 
 
 class StockAdvisorApp:
