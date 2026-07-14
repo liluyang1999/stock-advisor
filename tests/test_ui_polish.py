@@ -324,7 +324,7 @@ class StackedTextLayoutTests(unittest.TestCase):
     def test_stacked_text_y_handles_arbitrary_line_counts(self):
         ys = stacked_text_y(top=10, line_height=20, count=4)
         self.assertEqual(ys, [10, 30, 50, 70])
-        for earlier, later in zip(ys, ys[1:]):
+        for earlier, later in zip(ys, ys[1:], strict=False):
             self.assertGreaterEqual(later - earlier, 20)
 
     def test_stacked_text_y_single_line_is_just_top(self):

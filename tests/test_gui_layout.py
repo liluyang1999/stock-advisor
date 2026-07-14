@@ -941,7 +941,9 @@ class GuiLayoutTests(unittest.TestCase):
         value_labels = [metric["value"] for metric in self.app.visual_summary_metrics]
         self.assertEqual(len(value_labels), 4)
         for key, metric in zip(
-            ("action", "position", "confidence", "move"), self.app.visual_summary_metrics
+            ("action", "position", "confidence", "move"),
+            self.app.visual_summary_metrics,
+            strict=True,
         ):
             self.assertIs(metric["value_var"], self.app.visual_metric_vars[key])
             self.assertEqual(
@@ -1696,7 +1698,7 @@ class GuiLayoutTests(unittest.TestCase):
         self.assertIn("预警触发", self.app.alert_banner.cget("text"))
         # 边沿触发：再次检查同一真值不重复触发（_fired 已记录）
         self.assertIn(
-            ("%s" % code, "price", ">=", 1.0), {(k[0], k[1], k[2], k[3]) for k in self.app._fired}
+            (f"{code}", "price", ">=", 1.0), {(k[0], k[1], k[2], k[3]) for k in self.app._fired}
         )
 
     def test_monitor_toggle_no_crash(self):
