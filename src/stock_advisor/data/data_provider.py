@@ -676,10 +676,6 @@ def _safe_float(value: object) -> float:
     return number if math.isfinite(number) else 0.0
 
 
-def _safe_int(value: object) -> int:
-    return int(_safe_float(value))
-
-
 def _nonnegative_float(value: object) -> float:
     return max(0.0, _safe_float(value))
 

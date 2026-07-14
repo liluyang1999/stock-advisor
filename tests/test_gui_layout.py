@@ -1411,7 +1411,7 @@ class GuiLayoutTests(unittest.TestCase):
         self.app.open_comparison()
         window = [w for w in self.app.root.winfo_children() if isinstance(w, tk.Toplevel)][0]
         try:
-            summary = getattr(window, "_comparison_summary_metrics")
+            summary = window._comparison_summary_metrics
 
             self.assertEqual(
                 [metric["title"].cget("text") for metric in summary],
@@ -1439,9 +1439,9 @@ class GuiLayoutTests(unittest.TestCase):
         self.app.open_watchlist_manager()
         window = [w for w in self.app.root.winfo_children() if isinstance(w, tk.Toplevel)][0]
         try:
-            summary = getattr(window, "_watchlist_summary_metrics")
-            buttons = getattr(window, "_watchlist_primary_buttons")
-            more_menu = getattr(window, "_watchlist_actions_menu")
+            summary = window._watchlist_summary_metrics
+            buttons = window._watchlist_primary_buttons
+            more_menu = window._watchlist_actions_menu
 
             self.assertEqual(
                 [metric["title"].cget("text") for metric in summary],
@@ -1487,7 +1487,7 @@ class GuiLayoutTests(unittest.TestCase):
             entries[1].delete(0, tk.END)
             entries[1].insert(0, "100")
 
-            getattr(window, "_watchlist_primary_buttons")[0].invoke()
+            window._watchlist_primary_buttons[0].invoke()
         finally:
             app_module.store.save_config = original_save
             app_module.messagebox.showerror = original_showerror
@@ -1584,7 +1584,7 @@ class GuiLayoutTests(unittest.TestCase):
         self.app.open_alert_manager()
         window = [w for w in self.app.root.winfo_children() if isinstance(w, tk.Toplevel)][0]
         try:
-            combobox = getattr(window, "_alert_field_combobox")
+            combobox = window._alert_field_combobox
             displayed = list(combobox.cget("values"))
             self.assertEqual(displayed, list(FIELD_LABELS.values()))
             for key in FIELD_LABELS:
@@ -1606,7 +1606,7 @@ class GuiLayoutTests(unittest.TestCase):
             combobox.set(FIELD_LABELS["change_pct"])  # 选中中文标签"涨跌幅"
 
             before = len(self.app.alerts)
-            getattr(window, "_alert_primary_buttons")[0].invoke()
+            window._alert_primary_buttons[0].invoke()
 
             self.assertEqual(len(self.app.alerts), before + 1)
             self.assertEqual(self.app.alerts[-1].field, "change_pct")
@@ -1625,10 +1625,10 @@ class GuiLayoutTests(unittest.TestCase):
         self.app.open_alert_manager()
         window = [w for w in self.app.root.winfo_children() if isinstance(w, tk.Toplevel)][0]
         try:
-            summary = getattr(window, "_alert_summary_metrics")
-            monitor_button = getattr(window, "_alert_monitor_button")
-            primary_buttons = getattr(window, "_alert_primary_buttons")
-            actions_menu = getattr(window, "_alert_actions_menu")
+            summary = window._alert_summary_metrics
+            monitor_button = window._alert_monitor_button
+            primary_buttons = window._alert_primary_buttons
+            actions_menu = window._alert_actions_menu
 
             self.assertEqual(
                 [metric["title"].cget("text") for metric in summary],
@@ -1675,7 +1675,7 @@ class GuiLayoutTests(unittest.TestCase):
                 entry.delete(0, tk.END)
                 entry.insert(0, "600519")
 
-            getattr(window, "_alert_primary_buttons")[0].invoke()
+            window._alert_primary_buttons[0].invoke()
         finally:
             app_module.store.save_config = original_save
             app_module.messagebox.showerror = original_showerror
@@ -1848,8 +1848,8 @@ class GuiLayoutTests(unittest.TestCase):
         self.app.show_help()
         window = [w for w in self.app.root.winfo_children() if isinstance(w, tk.Toplevel)][0]
         try:
-            buttons = getattr(window, "_info_nav_buttons")
-            text = getattr(window, "_info_text")
+            buttons = window._info_nav_buttons
+            text = window._info_text
 
             self.assertTrue(buttons)
             self.assertTrue(all(isinstance(button, tk.Radiobutton) for button in buttons))
@@ -1911,7 +1911,7 @@ class GuiLayoutTests(unittest.TestCase):
             app2.show_help()
             info_window = [w for w in app2.root.winfo_children() if isinstance(w, tk.Toplevel)][0]
             try:
-                nav_buttons = getattr(info_window, "_info_nav_buttons")
+                nav_buttons = info_window._info_nav_buttons
                 self.assertTrue(nav_buttons)
                 for button in nav_buttons:
                     self.assertEqual(int(button.cget("wraplength")), app2._sc(112))
@@ -2150,11 +2150,11 @@ class GuiLayoutTests(unittest.TestCase):
                     ),
                 )
 
-                nav_frame = getattr(window, "_info_nav_frame")
+                nav_frame = window._info_nav_frame
                 self.assertEqual(int(nav_frame.cget("width")), app2._sc(154))
                 self.assertEqual(int(nav_frame.cget("width")), 385)
 
-                nav_buttons = getattr(window, "_info_nav_buttons")
+                nav_buttons = window._info_nav_buttons
                 self.assertTrue(nav_buttons)
                 for button in nav_buttons:
                     # 章节名不再贴边裁切：框宽须比换行宽度多出可见的内边距余量。
