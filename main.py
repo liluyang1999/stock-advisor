@@ -8,7 +8,8 @@ SRC_DIR = CURRENT_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from stock_advisor.ui.app import build_detail_text, make_sample_analysis, run_gui
+# Import must follow the sys.path bootstrap above.
+from stock_advisor.ui.app import build_detail_text, make_sample_analysis, run_gui  # noqa: E402
 
 
 def enable_dpi_awareness() -> None:
