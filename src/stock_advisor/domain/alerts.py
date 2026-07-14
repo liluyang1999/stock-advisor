@@ -23,7 +23,7 @@ def _field_value(field: str, result) -> float | None:
 
 def _finite_float(value: object) -> float | None:
     try:
-        number = float(value)
+        number = float(value)  # type: ignore[arg-type]
     except TypeError, ValueError:
         return None
     return number if math.isfinite(number) else None

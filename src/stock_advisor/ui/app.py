@@ -190,7 +190,7 @@ class StockAdvisorApp(
         messagebox.showerror(
             "配置未保存",
             "当前更改只在本次运行中生效，配置文件暂时写入失败；请检查权限或磁盘空间后重试。",
-            parent=parent,
+            parent=parent,  # type: ignore[arg-type]
         )
 
     def close(self) -> None:

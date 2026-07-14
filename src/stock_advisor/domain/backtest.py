@@ -4,7 +4,15 @@ import math
 from statistics import mean
 
 from .engine import clean_history, measure
-from .models import STANDARD_LEVEL, BacktestReport, BacktestStat, DailyBar, Quote, StockSymbol
+from .models import (
+    STANDARD_LEVEL,
+    Action,
+    BacktestReport,
+    BacktestStat,
+    DailyBar,
+    Quote,
+    StockSymbol,
+)
 from .policy import decide
 
 # 回测构造伪行情时不依赖具体证券代码（measure 不读 symbol），用占位 symbol 满足类型。
@@ -78,7 +86,7 @@ def backtest_signals(
             ok=False,
             message="历史样本不足，暂不回测（需要更多交易日）。",
         )
-    rows: dict[str, list[float]] = {"BUY": [], "SELL": [], "HOLD": []}
+    rows: dict[Action, list[float]] = {"BUY": [], "SELL": [], "HOLD": []}
     gross_all: list[float] = []
     for t in range(warmup, n - horizon):
         as_of = history[: t + 1]

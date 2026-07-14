@@ -326,8 +326,16 @@ def parse_history_payload(payload: str) -> list[DailyBar]:
         amount = _optional_float(parts[6])
         pct_change = _optional_float(parts[8])
         turnover_rate = _optional_float(parts[10])
-        values = (open_price, close, high, low, volume, amount, pct_change, turnover_rate)
-        if any(value is None for value in values):
+        if (
+            open_price is None
+            or close is None
+            or high is None
+            or low is None
+            or volume is None
+            or amount is None
+            or pct_change is None
+            or turnover_rate is None
+        ):
             continue
         if open_price <= 0 or close <= 0 or high <= 0 or low <= 0:
             continue
@@ -432,9 +440,13 @@ def parse_clist_payload(payload: str) -> list[MarketSnapshot]:
         amount = _optional_float(item.get("f6"))
         amplitude = _optional_float(item.get("f7"))
         turnover_rate = _optional_float(item.get("f8"))
-        if any(
-            value is None
-            for value in (change_pct, change, volume, amount, amplitude, turnover_rate)
+        if (
+            change_pct is None
+            or change is None
+            or volume is None
+            or amount is None
+            or amplitude is None
+            or turnover_rate is None
         ):
             continue
         market_id = _market_id(item.get("f13"))
@@ -508,7 +520,7 @@ def _clist_total(payload: str) -> int | None:
     if not isinstance(data, dict):
         return None
     try:
-        total = float(data.get("total"))
+        total = float(data.get("total"))  # type: ignore[arg-type]
     except TypeError, ValueError:
         return None
     if not math.isfinite(total) or total < 0:
@@ -658,7 +670,7 @@ def _safe_float(value: object) -> float:
     if value in (None, "", "-"):
         return 0.0
     try:
-        number = float(value)
+        number = float(value)  # type: ignore[arg-type]
     except TypeError, ValueError:
         return 0.0
     return number if math.isfinite(number) else 0.0

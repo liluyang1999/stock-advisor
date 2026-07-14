@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from typing import overload
 
 from .models import (
     CORE_DISCLAIMER,
@@ -61,6 +62,10 @@ def _finite_number(value: object, default: float = 0.0) -> float:
     return number if math.isfinite(number) else default
 
 
+@overload
+def _finite_positive(value: object, default: float) -> float: ...
+@overload
+def _finite_positive(value: object, default: None = None) -> float | None: ...
 def _finite_positive(value: object, default: float | None = None) -> float | None:
     number = _finite_number(value, math.nan)
     if math.isfinite(number) and number > 0:

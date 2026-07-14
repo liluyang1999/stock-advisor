@@ -30,6 +30,7 @@ from .theme import (
     UI_FONT,
 )
 from .view_format import format_comparison_row, watchlist_rows
+from .widgets import StatefulToplevel
 
 if TYPE_CHECKING:
     from ._app_members import AppMembers as _MembersBase
@@ -62,7 +63,7 @@ class WatchlistCompareMixin(_MembersBase):
         return {result.symbol.normalized: result for result in self.results.values()}
 
     def open_watchlist_manager(self) -> None:
-        window = tk.Toplevel(self.root)
+        window = StatefulToplevel(self.root)
         window.title("自选股 / 持仓")
         self._center_child_window(window, (self._sc(720), self._sc(520)))
         self._apply_child_minimum(window, (620, 420))
@@ -128,7 +129,7 @@ class WatchlistCompareMixin(_MembersBase):
         watch_anchors = {"code": tk.W, "name": tk.W, "cost": tk.E, "shares": tk.E, "pl": tk.E}
         for col, (title, width) in watch_headings.items():
             tree.heading(col, text=title)
-            tree.column(col, width=self._sc(width), anchor=watch_anchors[col])
+            tree.column(col, width=self._sc(width), anchor=watch_anchors[col])  # type: ignore[arg-type]
         tree.pack(fill=tk.BOTH, expand=True)
 
         def refresh() -> None:
@@ -273,7 +274,7 @@ class WatchlistCompareMixin(_MembersBase):
             messagebox.showinfo("横向对比", "先分析一些股票（个股分析或选股深度分析）再对比。")
             return
         rows = build_comparison_rows(entries)
-        window = tk.Toplevel(self.root)
+        window = StatefulToplevel(self.root)
         window.title("横向对比")
         self._center_child_window(window, (self._sc(1200), self._sc(560)))
         self._apply_child_minimum(window, (900, 380))
@@ -356,7 +357,7 @@ class WatchlistCompareMixin(_MembersBase):
         }
         for col, (title, width) in headings.items():
             tree.heading(col, text=title)
-            tree.column(col, width=self._sc(width), anchor=comparison_anchors[col])
+            tree.column(col, width=self._sc(width), anchor=comparison_anchors[col])  # type: ignore[arg-type]
         tree.tag_configure("action_buy", background=POS_BG, foreground=POS_COLOR)
         tree.tag_configure("action_sell", background=NEG_BG, foreground=NEG_COLOR)
         tree.tag_configure("action_hold", background=HOLD_BG, foreground=FLAT_COLOR)

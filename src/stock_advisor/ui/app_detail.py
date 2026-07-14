@@ -34,6 +34,7 @@ from .view_text import (
     build_spectrum_text,
     build_strategy_sections,
 )
+from .widgets import StatefulToplevel
 
 if TYPE_CHECKING:
     from ._app_members import AppMembers as _MembersBase
@@ -77,7 +78,7 @@ class DetailViewMixin(_MembersBase):
         )
 
     def _show_info_window(self, title: str, sections: list[tuple[str, str]], subtitle: str) -> None:
-        window = tk.Toplevel(self.root)
+        window = StatefulToplevel(self.root)
         window.title(title)
         self._center_child_window(
             window, (self._sc(INFO_WINDOW_SIZE[0]), self._sc(INFO_WINDOW_SIZE[1]))

@@ -25,6 +25,7 @@ from .theme import (
     UI_FONT,
 )
 from .view_text import build_fund_flow_text
+from .widgets import StatefulToplevel
 
 if TYPE_CHECKING:
     from ._app_members import AppMembers as _MembersBase
@@ -36,7 +37,7 @@ class AlertsMonitorMixin(_MembersBase):
     """预警规则管理 + 实时监控轮询 + 资金流查询——从 StockAdvisorApp 抽出的预警/监控关注点。"""
 
     def open_alert_manager(self) -> None:
-        window = tk.Toplevel(self.root)
+        window = StatefulToplevel(self.root)
         window.title("条件预警")
         self._center_child_window(window, (self._sc(780), self._sc(560)))
         self._apply_child_minimum(window, (660, 460))
