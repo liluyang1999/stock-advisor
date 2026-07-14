@@ -6,7 +6,9 @@ import math
 import time
 import urllib.error
 import urllib.request
+from decimal import Decimal
 
+from ..domain import money
 from ..domain.models import DailyBar, FundFlow, MarketSnapshot, Quote, StockSymbol
 
 # 浏览器 UA：含 "Python" 的 UA 会被东方财富 clist 接口拒绝（连接被直接关闭）。
@@ -249,7 +251,7 @@ def parse_quote_payload(symbol: StockSymbol, payload: str) -> Quote:
     high, low = _ohlc_envelope(open_price, last, high, low)
     change_pct = _scaled_percent(data.get("f170"))
     if change_pct is None and previous_close:
-        change_pct = (last - previous_close) / previous_close * 100
+        change_pct = float((last - previous_close) / previous_close * 100)
 
     return Quote(
         symbol=symbol,
@@ -286,7 +288,7 @@ def parse_sina_quote_payload(symbol: StockSymbol, payload: str) -> Quote:
     high, low = _ohlc_envelope(open_price, last, high, low)
     volume = _nonnegative_int(parts[8])
     amount = _nonnegative_float(parts[9])
-    change_pct = (last - previous_close) / previous_close * 100 if previous_close else 0.0
+    change_pct = float((last - previous_close) / previous_close * 100) if previous_close else 0.0
     timestamp = ""
     if len(parts) > 31:
         timestamp = f"{parts[30]} {parts[31]}".strip()
@@ -318,10 +320,10 @@ def parse_history_payload(payload: str) -> list[DailyBar]:
         parts = str(line).split(",")
         if len(parts) < 11:
             continue
-        open_price = _optional_float(parts[1])
-        close = _optional_float(parts[2])
-        high = _optional_float(parts[3])
-        low = _optional_float(parts[4])
+        open_price = money.parse_money(parts[1])
+        close = money.parse_money(parts[2])
+        high = money.parse_money(parts[3])
+        low = money.parse_money(parts[4])
         volume = _optional_float(parts[5])
         amount = _optional_float(parts[6])
         pct_change = _optional_float(parts[8])
@@ -361,7 +363,7 @@ def parse_history_payload(payload: str) -> list[DailyBar]:
 def parse_sina_history_payload(payload: str) -> list[DailyBar]:
     items = _json_array(payload)
     rows: list[DailyBar] = []
-    previous_close: float | None = None
+    previous_close: Decimal | None = None
     for item in items:
         if not isinstance(item, dict):
             continue
@@ -396,7 +398,7 @@ def parse_tencent_history_payload(symbol: StockSymbol, payload: str) -> list[Dai
         return []
 
     rows: list[DailyBar] = []
-    previous_close: float | None = None
+    previous_close: Decimal | None = None
     for item in raw_rows:
         if not isinstance(item, list | tuple) or len(item) < 6:
             continue
@@ -430,12 +432,12 @@ def parse_clist_payload(payload: str) -> list[MarketSnapshot]:
     for item in diff:
         if not isinstance(item, dict):
             continue
-        price = _optional_float(item.get("f2"))
+        price = money.parse_money(item.get("f2"))
         code = str(item.get("f12") or "").strip()
         if price is None or price <= 0 or not code:
             continue
         change_pct = _optional_float(item.get("f3"))
-        change = _optional_float(item.get("f4"))
+        change = money.parse_money(item.get("f4"))
         volume = _optional_float(item.get("f5"))
         amount = _optional_float(item.get("f6"))
         amplitude = _optional_float(item.get("f7"))
@@ -546,8 +548,8 @@ def _optional_nonnegative_float(value: object) -> float | None:
 
 
 def _ohlc_envelope(
-    open_price: float, close_or_last: float, high: float, low: float
-) -> tuple[float, float]:
+    open_price: Decimal, close_or_last: Decimal, high: Decimal, low: Decimal
+) -> tuple[Decimal, Decimal]:
     return max(high, open_price, close_or_last), min(low, open_price, close_or_last)
 
 
@@ -601,19 +603,19 @@ def _daily_bar_from_ohlcv(
     high_value: object,
     low_value: object,
     volume_value: object,
-    previous_close: float | None,
+    previous_close: Decimal | None,
     volume_multiplier: int = 1,
 ) -> DailyBar | None:
     date_text = str(date or "").strip()
-    open_price = _safe_float(open_value)
-    close = _safe_float(close_value)
-    high = _safe_float(high_value)
-    low = _safe_float(low_value)
-    if not date_text or open_price <= 0 or close <= 0:
+    open_price = money.parse_money(open_value)
+    close = money.parse_money(close_value)
+    high = money.parse_money(high_value)
+    low = money.parse_money(low_value)
+    if not date_text or open_price is None or open_price <= 0 or close is None or close <= 0:
         return None
-    if high <= 0:
+    if high is None or high <= 0:
         high = max(open_price, close)
-    if low <= 0:
+    if low is None or low <= 0:
         low = min(open_price, close)
     high = max(high, open_price, close)
     low = min(low, open_price, close)
@@ -624,7 +626,7 @@ def _daily_bar_from_ohlcv(
     volume = int(raw_volume * volume_multiplier)
     pct_change = 0.0
     if previous_close and previous_close > 0:
-        pct_change = (close - previous_close) / previous_close * 100
+        pct_change = float((close - previous_close) / previous_close * 100)
     return DailyBar(
         date=date_text,
         open=open_price,
@@ -632,24 +634,24 @@ def _daily_bar_from_ohlcv(
         high=high,
         low=low,
         volume=volume,
-        amount=volume * close,
+        amount=float(volume * close),
         pct_change=round(pct_change, 4),
         turnover_rate=0.0,
     )
 
 
-def _scaled_price(value: object, label: str) -> float:
-    number = _safe_float(value)
-    if number <= 0:
+def _scaled_price(value: object, label: str) -> Decimal:
+    price = money.scaled_price(value, 100)
+    if price is None or price <= 0:
         raise MarketDataError(f"{label} 缺失或无效。")
-    return round(number / 100, 4)
+    return price
 
 
-def _positive_float(value: object, label: str) -> float:
-    number = _safe_float(value)
-    if number <= 0:
+def _positive_float(value: object, label: str) -> Decimal:
+    price = money.positive_money(value)
+    if price is None:
         raise MarketDataError(f"{label} 缺失或无效。")
-    return number
+    return price
 
 
 def _scaled_percent(value: object) -> float | None:

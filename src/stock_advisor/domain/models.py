@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Literal
 
 Action = Literal["BUY", "SELL", "HOLD"]
@@ -33,13 +34,13 @@ class StockSymbol:
 class Quote:
     symbol: StockSymbol
     name: str
-    last: float
-    open: float
-    high: float
-    low: float
-    previous_close: float
+    last: Decimal
+    open: Decimal
+    high: Decimal
+    low: Decimal
+    previous_close: Decimal
     volume: int
-    amount: float
+    amount: float  # 成交额（元）：市场聚合量,展示到亿/万、仅按区间过滤,不入精确金额运算,保留 float
     turnover_rate: float
     change_pct: float
     timestamp: str = ""
@@ -48,12 +49,12 @@ class Quote:
 @dataclass(frozen=True)
 class DailyBar:
     date: str
-    open: float
-    close: float
-    high: float
-    low: float
+    open: Decimal
+    close: Decimal
+    high: Decimal
+    low: Decimal
     volume: int
-    amount: float
+    amount: float  # 成交额（元）：市场聚合量,保留 float（同 Quote.amount）
     pct_change: float
     turnover_rate: float
 
@@ -93,11 +94,11 @@ class MarketSnapshot:
     code: str
     market_id: str  # "1"=沪, "0"=深/北（东方财富 f13）
     name: str
-    price: float
+    price: Decimal
     change_pct: float
-    change: float
+    change: Decimal  # 涨跌额（元）：报价级金额,精确到分
     volume: int
-    amount: float
+    amount: float  # 成交额（元）：市场聚合量,保留 float
     amplitude: float
     turnover_rate: float
     pe_ttm: float | None  # 可为负（亏损）
@@ -197,7 +198,7 @@ class AnalysisResult:
     action_label: str
     score: int
     confidence: int
-    last: float
+    last: Decimal
     change_pct: float
     suggested_position: int
     forecast_label: str
@@ -236,7 +237,7 @@ class Measurement:
 
     symbol: StockSymbol
     name: str
-    last: float
+    last: Decimal
     change_pct: float
     factors: list[FactorScore]  # 8 个测量因子（不含风控扣分）
     risk_penalty: int  # 风控扣分（≤0），供决策层按档加权
@@ -272,14 +273,14 @@ class PositionPlan:
     fraction: float
     shares: int
     lots: int
-    entry: float
-    stop_price: float
+    entry: Decimal
+    stop_price: Decimal
     stop_pct: float
-    target_price: float
+    target_price: Decimal
     target_pct: float
     reward_risk: float
-    cost: float
-    max_loss: float
+    cost: Decimal
+    max_loss: Decimal
     max_loss_pct: float
     note: str = ""
 
@@ -329,7 +330,7 @@ class WatchItem:
     """一条自选/持仓：code 为规范化形式（如 "sh600519"）；cost/shares 可选。"""
 
     code: str
-    cost: float | None = None  # 持仓成本价（None 表示仅自选未持仓）
+    cost: Decimal | None = None  # 持仓成本价（None 表示仅自选未持仓）
     shares: int | None = None  # 持仓股数（可选）
 
 
@@ -349,7 +350,7 @@ class AppConfig:
     """跨会话持久化的用户配置。"""
 
     watchlist: tuple[WatchItem, ...] = ()
-    capital: float = 100000.0
+    capital: Decimal = Decimal("100000.00")
     level: int = 3
     preset: str = ""  # 空表示用 PRESETS[0]
     alerts: tuple[AlertRule, ...] = ()
@@ -359,7 +360,7 @@ class AppConfig:
 class ComparisonRow:
     code: str
     name: str
-    last: float | None
+    last: Decimal | None
     change_pct: float | None
     score: int
     confidence: int
@@ -367,6 +368,6 @@ class ComparisonRow:
     position: int
     level_hint: str
     action: Action = "HOLD"
-    cost: float | None = None
+    cost: Decimal | None = None
     pl_pct: float | None = None
-    pl_amount: float | None = None
+    pl_amount: Decimal | None = None

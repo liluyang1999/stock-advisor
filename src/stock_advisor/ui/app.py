@@ -4,10 +4,12 @@ import math
 import queue
 import threading
 import tkinter as tk
+from decimal import Decimal
 from tkinter import messagebox, ttk
 from typing import Any
 
 from ..data.data_provider import EastmoneyProvider
+from ..domain import money
 from ..domain.engine import build_analysis_result
 from ..domain.formatting import (
     _format_number,
@@ -158,11 +160,8 @@ class StockAdvisorApp(
             if math.isfinite(self._config.capital) and self._config.capital > 0
             else AppConfig().capital
         )
-        try:
-            capital = float(self.capital_var.get())
-        except ValueError, tk.TclError:
-            capital = fallback_capital
-        if not math.isfinite(capital) or capital <= 0:
+        capital = self._capital_value()
+        if capital <= 0:
             capital = fallback_capital
         return AppConfig(
             watchlist=tuple(self.watch),
@@ -949,12 +948,12 @@ class StockAdvisorApp(
 
     # ---- 全市场选股 ----
 
-    def _capital_value(self) -> float:
+    def _capital_value(self) -> Decimal:
         try:
-            value = float(self.capital_var.get())
-        except ValueError, AttributeError, tk.TclError:
-            return 0.0
-        return value if math.isfinite(value) and value > 0 else 0.0
+            value = money.parse_money(self.capital_var.get())
+        except AttributeError, tk.TclError:
+            return money.ZERO_MONEY
+        return value if value is not None and value > 0 else money.ZERO_MONEY
 
     def _refresh_capital(self) -> None:
         saved = self._save_persisted()

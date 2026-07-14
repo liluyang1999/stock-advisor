@@ -63,11 +63,11 @@ class ProviderParsingTests(unittest.TestCase):
         quote = parse_quote_payload(normalize_symbol("600519"), payload)
 
         self.assertEqual(quote.name, "贵州茅台")
-        self.assertAlmostEqual(quote.last, 1712.34)
-        self.assertAlmostEqual(quote.open, 1700.0)
-        self.assertAlmostEqual(quote.high, 1720.0)
-        self.assertAlmostEqual(quote.low, 1695.0)
-        self.assertAlmostEqual(quote.previous_close, 1680.0)
+        self.assertAlmostEqual(float(quote.last), 1712.34)
+        self.assertAlmostEqual(float(quote.open), 1700.0)
+        self.assertAlmostEqual(float(quote.high), 1720.0)
+        self.assertAlmostEqual(float(quote.low), 1695.0)
+        self.assertAlmostEqual(float(quote.previous_close), 1680.0)
         self.assertAlmostEqual(quote.change_pct, 1.92)
         self.assertAlmostEqual(quote.turnover_rate, 1.1)
 
@@ -153,8 +153,8 @@ class ProviderParsingTests(unittest.TestCase):
 
         quote = parse_quote_payload(normalize_symbol("600519"), payload)
 
-        self.assertAlmostEqual(quote.high, 10.5)
-        self.assertAlmostEqual(quote.low, 10.0)
+        self.assertAlmostEqual(float(quote.high), 10.5)
+        self.assertAlmostEqual(float(quote.low), 10.0)
 
     def test_parse_sina_quote_payload_as_realtime_fallback(self):
         payload = (
@@ -166,11 +166,11 @@ class ProviderParsingTests(unittest.TestCase):
         quote = parse_sina_quote_payload(normalize_symbol("600519"), payload)
 
         self.assertEqual(quote.name, "贵州茅台")
-        self.assertAlmostEqual(quote.open, 1235.0)
-        self.assertAlmostEqual(quote.previous_close, 1240.0)
-        self.assertAlmostEqual(quote.last, 1215.0)
-        self.assertAlmostEqual(quote.high, 1238.87)
-        self.assertAlmostEqual(quote.low, 1211.22)
+        self.assertAlmostEqual(float(quote.open), 1235.0)
+        self.assertAlmostEqual(float(quote.previous_close), 1240.0)
+        self.assertAlmostEqual(float(quote.last), 1215.0)
+        self.assertAlmostEqual(float(quote.high), 1238.87)
+        self.assertAlmostEqual(float(quote.low), 1211.22)
         self.assertLess(quote.change_pct, 0)
 
     def test_parse_sina_quote_payload_clamps_negative_physical_fields(self):
@@ -194,8 +194,8 @@ class ProviderParsingTests(unittest.TestCase):
 
         quote = parse_sina_quote_payload(normalize_symbol("600519"), payload)
 
-        self.assertAlmostEqual(quote.high, 10.5)
-        self.assertAlmostEqual(quote.low, 10.0)
+        self.assertAlmostEqual(float(quote.high), 10.5)
+        self.assertAlmostEqual(float(quote.low), 10.0)
 
     def test_parse_history_payload_keeps_valid_rows(self):
         payload = json.dumps(
@@ -213,7 +213,7 @@ class ProviderParsingTests(unittest.TestCase):
 
         self.assertEqual(len(rows), 2)
         self.assertEqual(rows[0].date, "2026-06-18")
-        self.assertAlmostEqual(rows[1].close, 10.2)
+        self.assertAlmostEqual(float(rows[1].close), 10.2)
         self.assertEqual(rows[1].volume, 120000)
 
     def test_parse_history_payload_drops_non_finite_rows(self):
@@ -248,8 +248,8 @@ class ProviderParsingTests(unittest.TestCase):
         rows = parse_history_payload(payload)
 
         self.assertEqual(len(rows), 1)
-        self.assertAlmostEqual(rows[0].high, 10.5)
-        self.assertAlmostEqual(rows[0].low, 10.0)
+        self.assertAlmostEqual(float(rows[0].high), 10.5)
+        self.assertAlmostEqual(float(rows[0].low), 10.0)
 
     def test_parse_sina_history_payload_as_daily_fallback(self):
         payload = json.dumps(
@@ -351,7 +351,7 @@ class ProviderParsingTests(unittest.TestCase):
 
         self.assertEqual(len(rows), 2)
         self.assertEqual(rows[0].date, "2026-06-18")
-        self.assertAlmostEqual(rows[1].close, 10.2)
+        self.assertAlmostEqual(float(rows[1].close), 10.2)
         self.assertEqual(rows[1].volume, 120000)
 
     def test_parse_tencent_history_payload_drops_negative_volume_rows(self):
@@ -440,7 +440,7 @@ class ProviderParsingTests(unittest.TestCase):
             rows = provider.fetch_history(normalize_symbol("600519"), limit=1)
 
         self.assertEqual(len(rows), 1)
-        self.assertAlmostEqual(rows[0].close, 10.5)
+        self.assertAlmostEqual(float(rows[0].close), 10.5)
 
     def test_parse_clist_payload_reads_snapshot_fields_and_handles_missing(self):
         payload = json.dumps(
@@ -502,7 +502,7 @@ class ProviderParsingTests(unittest.TestCase):
         self.assertEqual(moutai.code, "600519")
         self.assertEqual(moutai.market_id, "1")
         self.assertEqual(moutai.name, "贵州茅台")
-        self.assertAlmostEqual(moutai.price, 1712.34)
+        self.assertAlmostEqual(float(moutai.price), 1712.34)
         self.assertAlmostEqual(moutai.change_pct, 1.92)
         self.assertAlmostEqual(moutai.pe_ttm, 28.5)
         self.assertAlmostEqual(moutai.volume_ratio, 1.1)

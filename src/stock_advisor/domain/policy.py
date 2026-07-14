@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from decimal import Decimal
 from typing import overload
 
 from .models import (
@@ -13,6 +14,7 @@ from .models import (
     PositionPlan,
     SpectrumCell,
 )
+from .money import ZERO_MONEY, positive_money, quantize_money
 
 # 决策强度档位表（与设计规格一致）。
 # 阈值非对称且「旋转」：越保守买入门槛越高、卖出门槛越低（快出）；越激进买入门槛越低、
@@ -128,33 +130,38 @@ def size_fraction(m: Measurement, level: int) -> float:
     return max(0.0, min(spec.position_cap, frac))
 
 
-def position_plan(m: Measurement, level: int, capital: float) -> PositionPlan:
-    """结合本金把投入比例落到绝对股数/止损/止盈/最大亏损。A股 1 手=100 股。"""
+def position_plan(m: Measurement, level: int, capital: Decimal | int | float) -> PositionPlan:
+    """结合本金把投入比例落到绝对股数/止损/止盈/最大亏损。A股 1 手=100 股。
+
+    金额与价格全程用 Decimal（精确 2 位）：整手取整、成本、最大亏损不丢精度；比率（止损/止盈
+    百分比、仓位比例）为 float，仅在参与价格运算时于此就地转 Decimal。
+    """
     spec = level_spec(level)
-    entry = _finite_positive(m.last)
+    entry = positive_money(m.last)
     if entry is None:
         return PositionPlan(
             fraction=0.0,
             shares=0,
             lots=0,
-            entry=0.0,
-            stop_price=0.0,
+            entry=ZERO_MONEY,
+            stop_price=ZERO_MONEY,
             stop_pct=0.0,
-            target_price=0.0,
+            target_price=ZERO_MONEY,
             target_pct=0.0,
             reward_risk=spec.reward_risk,
-            cost=0.0,
-            max_loss=0.0,
+            cost=ZERO_MONEY,
+            max_loss=ZERO_MONEY,
             max_loss_pct=0.0,
             note="价格无效，无法计算仓位。",
         )
     stop_pct = _stop_pct(m)
-    stop_price = round(entry * (1 - stop_pct / 100.0), 2)
+    stop_price = quantize_money(entry * (Decimal(1) - Decimal(str(stop_pct)) / 100))
     target_pct = stop_pct * spec.reward_risk
-    target_price = round(entry * (1 + target_pct / 100.0), 2)
+    target_price = quantize_money(entry * (Decimal(1) + Decimal(str(target_pct)) / 100))
     frac = size_fraction(m, level)
+    capital_money = positive_money(capital)  # None if 非正/非有限（含 int/float 入参）
     note = ""
-    if not math.isfinite(capital) or capital <= 0:
+    if capital_money is None:
         frac = 0.0
         note = "本金需大于0，无法计算买入仓位。"
         shares = 0
@@ -165,16 +172,21 @@ def position_plan(m: Measurement, level: int, capital: float) -> PositionPlan:
             note = "本档观望/减仓，不建议新建多头仓位。"
         shares = 0
     else:
-        shares = int(capital * frac / entry // 100) * 100
+        shares = int(capital_money * Decimal(str(frac)) / entry // 100) * 100
         if shares <= 0:
             note = f"本金不足以买入 1 手（约 {entry * 100:.0f} 元）。"
     if shares <= 0:
         frac = 0.0
-    cost = shares * entry
-    max_loss = shares * (entry - stop_price)
-    actual_fraction = cost / capital if math.isfinite(capital) and capital > 0 else 0.0
+    cost = quantize_money(shares * entry)
+    max_loss = quantize_money(shares * (entry - stop_price))
+    if capital_money is not None:
+        actual_fraction = round(float(cost / capital_money), 4)
+        max_loss_pct = round(float(max_loss / capital_money), 4)
+    else:
+        actual_fraction = 0.0
+        max_loss_pct = 0.0
     return PositionPlan(
-        fraction=round(actual_fraction, 4),
+        fraction=actual_fraction,
         shares=shares,
         lots=shares // 100,
         entry=entry,
@@ -183,11 +195,9 @@ def position_plan(m: Measurement, level: int, capital: float) -> PositionPlan:
         target_price=target_price,
         target_pct=round(target_pct, 2),
         reward_risk=spec.reward_risk,
-        cost=round(cost, 2),
-        max_loss=round(max_loss, 2),
-        max_loss_pct=round(max_loss / capital, 4)
-        if math.isfinite(capital) and capital > 0
-        else 0.0,
+        cost=cost,
+        max_loss=max_loss,
+        max_loss_pct=max_loss_pct,
         note=note,
     )
 

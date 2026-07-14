@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import replace
+from decimal import Decimal
 from statistics import mean, pstdev
 
 from .models import (
@@ -76,19 +77,20 @@ def average_true_range_percent(
         return None
     ranges: list[float] = []
     recent = history[-period - 1 :]
-    previous_close = recent[0].close
+    previous_close = float(recent[0].close)
     if not _finite_positive(previous_close):
         return None
     for bar in recent[1:]:
-        if not all(_finite_positive(value) for value in (bar.high, bar.low, bar.close)):
+        high, low, close = float(bar.high), float(bar.low), float(bar.close)
+        if not all(_finite_positive(value) for value in (high, low, close)):
             return None
         true_range = max(
-            bar.high - bar.low,
-            abs(bar.high - previous_close),
-            abs(bar.low - previous_close),
+            high - low,
+            abs(high - previous_close),
+            abs(low - previous_close),
         )
         ranges.append(true_range)
-        previous_close = bar.close
+        previous_close = close
     if not ranges:
         return None
     return mean(ranges) / last * 100
@@ -102,8 +104,8 @@ def support_resistance(
     recent = history[-window:]
     if not recent:
         return None, None
-    lows = [bar.low for bar in recent if _finite_positive(bar.low)]
-    highs = [bar.high for bar in recent if _finite_positive(bar.high)]
+    lows = [float(bar.low) for bar in recent if _finite_positive(bar.low)]
+    highs = [float(bar.high) for bar in recent if _finite_positive(bar.high)]
     if not lows or not highs:
         return None, None
     return min(lows), max(highs)
@@ -146,17 +148,19 @@ def measure(quote: Quote, history: list[DailyBar]) -> Measurement:
     """客观测量层：算指标 + 8 因子 + 风控扣分 + 置信度，结果与决策档位无关。"""
     quote = _clean_quote(quote)
     history = clean_history(history)
-    closes = [bar.close for bar in history if _finite_positive(bar.close)]
-    if not closes or abs(closes[-1] - quote.last) / max(quote.last, 0.01) > 0.001:
-        closes = closes + [quote.last]
+    # 报价是 Decimal（精确 2 位）；指标层是统计量,在此边界一次性转 float,不回流到金额/价格。
+    last_f = float(quote.last)
+    closes = [float(bar.close) for bar in history if _finite_positive(bar.close)]
+    if not closes or abs(closes[-1] - last_f) / max(last_f, 0.01) > 0.001:
+        closes = closes + [last_f]
 
     ma5 = moving_average(closes, 5)
     ma20 = moving_average(closes, 20)
     ma60 = moving_average(closes, 60)
     rsi14 = rsi(closes, 14)
     macd = macd_snapshot(closes)
-    bollinger = bollinger_position(closes, quote.last)
-    atr_percent = average_true_range_percent(history, quote.last)
+    bollinger = bollinger_position(closes, last_f)
+    atr_percent = average_true_range_percent(history, last_f)
     support, resistance = support_resistance(history)
     win_rate = _five_day_win_rate(closes)
     drawdown = _max_drawdown(closes[-20:])
@@ -185,15 +189,13 @@ def measure(quote: Quote, history: list[DailyBar]) -> Measurement:
     risks: list[str] = []
     factors: list[FactorScore] = []
 
-    _extend_factor(factors, reasons, risks, *_score_moving_averages(quote.last, ma5, ma20, ma60))
+    _extend_factor(factors, reasons, risks, *_score_moving_averages(last_f, ma5, ma20, ma60))
     _extend_factor(factors, reasons, risks, *_score_trend(closes, win_rate, drawdown))
     _extend_factor(factors, reasons, risks, *_score_momentum(rsi14, macd))
     _extend_factor(factors, reasons, risks, *_score_volume(quote, volume_ratio))
     _extend_factor(factors, reasons, risks, *_score_intraday(quote, intraday_position))
     _extend_factor(factors, reasons, risks, *_score_bollinger(bollinger))
-    _extend_factor(
-        factors, reasons, risks, *_score_support_resistance(quote.last, support, resistance)
-    )
+    _extend_factor(factors, reasons, risks, *_score_support_resistance(last_f, support, resistance))
     _extend_factor(factors, reasons, risks, *_score_volatility(atr_percent))
 
     risk_penalty, risk_notes = _risk_penalty(quote, history)
@@ -621,7 +623,7 @@ def _risk_penalty(quote: Quote, history: list[DailyBar]) -> tuple[int, list[str]
             risks.append(f"当日振幅{amplitude:.2f}%，波动风险较高。")
     if history:
         recent_high = max(bar.high for bar in history[-20:])
-        if quote.last < recent_high * 0.88:
+        if float(quote.last) < float(recent_high) * 0.88:
             penalty -= 4
             risks.append("价格距离20日高点回撤较深，趋势修复仍需时间。")
     return penalty, risks
@@ -671,7 +673,7 @@ def _intraday_position(quote: Quote) -> float | None:
     span = quote.high - quote.low
     if span <= 0:
         return None
-    return max(0.0, min(1.0, (quote.last - quote.low) / span))
+    return max(0.0, min(1.0, float((quote.last - quote.low) / span)))
 
 
 def _confidence(score: int, history: list[DailyBar], indicators: IndicatorSnapshot) -> int:
@@ -696,7 +698,7 @@ def _expected_move_pct(quote: Quote, atr_percent: float | None) -> float | None:
     if atr_percent is not None:
         return round(max(0.8, min(12.0, atr_percent)), 2)
     if quote.low > 0:
-        return round(max(0.8, min(12.0, (quote.high - quote.low) / quote.low * 100)), 2)
+        return round(max(0.8, min(12.0, float((quote.high - quote.low) / quote.low * 100))), 2)
     return None
 
 
@@ -724,7 +726,7 @@ def _dedupe_factors(items: list[FactorScore]) -> list[FactorScore]:
     return result
 
 
-def _finite_number(value: float | int) -> bool:
+def _finite_number(value: float | int | Decimal) -> bool:
     return math.isfinite(float(value))
 
 
@@ -732,11 +734,11 @@ def _all_finite(values: list[float] | tuple[float, ...]) -> bool:
     return all(_finite_number(value) for value in values)
 
 
-def _finite_positive(value: float | int) -> bool:
+def _finite_positive(value: float | int | Decimal) -> bool:
     return _finite_number(value) and float(value) > 0
 
 
-def _finite_nonnegative(value: float | int) -> bool:
+def _finite_nonnegative(value: float | int | Decimal) -> bool:
     return _finite_number(value) and float(value) >= 0
 
 
@@ -753,7 +755,7 @@ def _clean_quote(quote: Quote) -> Quote:
             raise ValueError(f"{quote.symbol.display} 实时行情{label}无效。")
     change_pct = quote.change_pct
     if not _finite_number(change_pct):
-        change_pct = (quote.last - quote.previous_close) / quote.previous_close * 100
+        change_pct = float((quote.last - quote.previous_close) / quote.previous_close * 100)
     return replace(
         quote,
         high=max(quote.high, quote.open, quote.last),

@@ -4,8 +4,10 @@ import json
 import math
 import os
 import tempfile
+from decimal import Decimal
 from pathlib import Path
 
+from ..domain import money
 from ..domain.alerts import FIELD_LABELS, OPS
 from ..domain.models import STANDARD_LEVEL, AlertRule, AppConfig, WatchItem
 from ..domain.symbols import normalize_symbol
@@ -85,7 +87,7 @@ def _parse_item(raw: object) -> WatchItem | None:
         cost = shares = None
     elif isinstance(raw, dict):
         code_raw = raw.get("code", "")
-        cost = _positive_or_none(raw.get("cost"))
+        cost = money.positive_money(raw.get("cost"))
         shares = _positive_int_or_none(raw.get("shares"))
     else:
         return None
@@ -103,12 +105,9 @@ def parse_config(data: object) -> AppConfig:
 
     level = _bounded_level(data.get("level", STANDARD_LEVEL))
 
-    try:
-        capital = float(data.get("capital", 100000.0))
-    except TypeError, ValueError:
-        capital = 100000.0
-    if not math.isfinite(capital) or capital <= 0:
-        capital = 100000.0
+    capital = money.parse_money(data.get("capital")) or Decimal("100000.00")
+    if capital <= 0:
+        capital = Decimal("100000.00")
 
     items: list[WatchItem] = []
     seen: set[str] = set()
@@ -176,7 +175,8 @@ def config_to_dict(cfg: AppConfig) -> dict:
         if item is None or item.code in seen:
             continue
         seen.add(item.code)
-        watchlist.append({"code": item.code, "cost": item.cost, "shares": item.shares})
+        cost_text = str(item.cost) if item.cost is not None else None
+        watchlist.append({"code": item.code, "cost": cost_text, "shares": item.shares})
         if len(watchlist) >= _MAX_WATCH:
             break
 
@@ -207,7 +207,7 @@ def config_to_dict(cfg: AppConfig) -> dict:
 
     return {
         "watchlist": watchlist,
-        "capital": _positive_or_none(cfg.capital) or 100000.0,
+        "capital": str(cfg.capital),
         "level": _bounded_level(cfg.level),
         "preset": _valid_preset(cfg.preset) if isinstance(cfg.preset, str) else "",
         "alerts": alerts,

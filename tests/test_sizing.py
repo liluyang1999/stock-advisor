@@ -42,7 +42,7 @@ class SizingTests(unittest.TestCase):
         m = make_measurement(40, confidence=80, atr=2.5)
         plan = position_plan(m, 3, capital=100000)
 
-        self.assertAlmostEqual(plan.fraction, plan.cost / 100000, places=4)
+        self.assertAlmostEqual(plan.fraction, float(plan.cost) / 100000, places=4)
 
     def test_capital_too_small_zero_shares(self):
         m = make_measurement(40, confidence=80)  # last=10 → 1手≈1000元

@@ -44,11 +44,11 @@ def _in_range(value: float | None, low: float | None, high: float | None) -> boo
     return True
 
 
-def _finite_optional(value: float | None) -> float | None:
+def _finite_optional(value: object) -> float | None:
     if value is None:
         return None
     try:
-        number = float(value)
+        number = float(value)  # type: ignore[arg-type]
     except TypeError, ValueError:
         return None
     return number if math.isfinite(number) else None
@@ -82,7 +82,7 @@ def passes(snapshot: MarketSnapshot, criteria: FilterCriteria) -> bool:
     if criteria.boards and board_of(snapshot) not in criteria.boards:
         return False
     checks: tuple[tuple[float | None, float | None, float | None], ...] = (
-        (snapshot.price, criteria.price_min, criteria.price_max),
+        (float(snapshot.price), criteria.price_min, criteria.price_max),
         (snapshot.change_pct, criteria.change_pct_min, criteria.change_pct_max),
         (snapshot.amplitude, criteria.amplitude_min, criteria.amplitude_max),
         (snapshot.turnover_rate, criteria.turnover_min, criteria.turnover_max),

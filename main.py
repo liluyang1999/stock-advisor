@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -59,11 +60,11 @@ def _self_test() -> int:
     from stock_advisor.domain.models import AlertRule, AppConfig, WatchItem
     from stock_advisor.services.store import config_to_dict, parse_config
 
-    alert = AlertRule(result.symbol.normalized, "price", ">=", result.last - 1.0)
+    alert = AlertRule(result.symbol.normalized, "price", ">=", float(result.last) - 1.0)
     cfg = parse_config(
         config_to_dict(
             AppConfig(
-                watchlist=(WatchItem("sh600519", 20.0, 100),),
+                watchlist=(WatchItem("sh600519", Decimal("20.00"), 100),),
                 level=5,
                 alerts=(alert,),
             )
@@ -84,7 +85,7 @@ def _self_test() -> int:
             name=name,
             price=price,
             change_pct=change_pct,
-            change=0.3,
+            change=Decimal("0.30"),
             volume=200000,
             amount=3.0e8,
             amplitude=3.0,
@@ -99,9 +100,9 @@ def _self_test() -> int:
             change_ytd=20.0,
         )
         for code, name, price, change_pct in (
-            ("600000", "样例甲", 12.0, 5.0),
-            ("600001", "样例乙", 18.0, 3.5),
-            ("600002", "样例丙", 9.0, 2.6),
+            ("600000", "样例甲", Decimal("12.00"), 5.0),
+            ("600001", "样例乙", Decimal("18.00"), 3.5),
+            ("600002", "样例丙", Decimal("9.00"), 2.6),
         )
     ]
     preset = get_preset("momentum_strong")

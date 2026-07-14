@@ -23,7 +23,7 @@ _PLACEHOLDER_SYMBOL = StockSymbol(
 
 def quote_from_bar(bar: DailyBar, prev: DailyBar | None) -> Quote:
     prev_close = prev.close if prev else bar.open
-    change = (bar.close - prev_close) / prev_close * 100 if prev_close else 0.0
+    change = float((bar.close - prev_close) / prev_close * 100) if prev_close else 0.0
     return Quote(
         symbol=_PLACEHOLDER_SYMBOL,
         name="",
@@ -92,7 +92,7 @@ def backtest_signals(
         as_of = history[: t + 1]
         quote = quote_from_bar(history[t], history[t - 1] if t > 0 else None)
         action = decide(measure(quote, as_of), level).action
-        gross = (history[t + horizon].close - history[t].close) / history[t].close * 100
+        gross = float((history[t + horizon].close - history[t].close) / history[t].close * 100)
         rows[action].append(gross - cost_pct)
         gross_all.append(gross)
 

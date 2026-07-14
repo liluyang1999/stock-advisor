@@ -4,13 +4,14 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Any
 
+from ..domain import money
 from ..domain.compare import build_comparison_rows
 from ..domain.formatting import (
     _format_number,
     _positive_finite_float,
     risk_level,
 )
-from ..domain.input_validate import _parse_optional_positive, _parse_optional_positive_int
+from ..domain.input_validate import _parse_optional_positive_int
 from ..domain.models import WatchItem
 from ..domain.numeric import positive_finite_int as _positive_finite_int
 from ..domain.symbols import normalize_symbol
@@ -177,7 +178,7 @@ class WatchlistCompareMixin(_MembersBase):
             if not selected:
                 messagebox.showinfo("保存持仓", "请先选中一只自选股。", parent=window)
                 return
-            cost = _parse_optional_positive(cost_var.get())
+            cost = money.positive_money(cost_var.get())
             shares = _parse_optional_positive_int(shares_var.get())
             if cost_var.get().strip() and cost is None:
                 messagebox.showerror("保存持仓", "成本必须是正数或留空。", parent=window)

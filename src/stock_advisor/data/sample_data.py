@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from ..domain.engine import analyze_stock, measure
 from ..domain.models import (
     AnalysisResult,
@@ -16,19 +18,19 @@ from ..domain.symbols import normalize_symbol
 
 def _sample_quote_history() -> tuple[Quote, list[DailyBar]]:
     history: list[DailyBar] = []
-    price = 20.0
+    price = Decimal("20.00")
     for day in range(80):
-        close = price + 0.08
+        close = price + Decimal("0.08")
         history.append(
             DailyBar(
                 date=f"2026-05-{day + 1:02d}",
                 open=price,
                 close=close,
-                high=close + 0.06,
-                low=price - 0.04,
+                high=close + Decimal("0.06"),
+                low=price - Decimal("0.04"),
                 volume=120000 + day * 300,
-                amount=(120000 + day * 300) * close,
-                pct_change=(close - price) / price * 100,
+                amount=float((120000 + day * 300) * close),
+                pct_change=float((close - price) / price * 100),
                 turnover_rate=1.2,
             )
         )
@@ -36,11 +38,11 @@ def _sample_quote_history() -> tuple[Quote, list[DailyBar]]:
     quote = Quote(
         symbol=normalize_symbol("600519"),
         name="离线样例",
-        last=26.6,
-        open=26.3,
-        high=26.8,
-        low=26.1,
-        previous_close=26.2,
+        last=Decimal("26.60"),
+        open=Decimal("26.30"),
+        high=Decimal("26.80"),
+        low=Decimal("26.10"),
+        previous_close=Decimal("26.20"),
         volume=210000,
         amount=210000 * 26.6,
         turnover_rate=2.1,
@@ -69,9 +71,9 @@ def make_sample_recommendation(deep: bool = True) -> Recommendation:
         code="600519",
         market_id="1",
         name="离线样例",
-        price=26.6,
+        price=Decimal("26.60"),
         change_pct=1.53,
-        change=0.4,
+        change=Decimal("0.40"),
         volume=210000,
         amount=210000 * 26.6,
         amplitude=2.6,

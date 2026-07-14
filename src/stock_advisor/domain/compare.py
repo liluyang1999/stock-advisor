@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
+from . import money
 from .models import AnalysisResult, ComparisonRow, Measurement
 from .numeric import (
     finite_float as _finite_float,
-    positive_finite_float as _positive_finite_float,
     positive_finite_int as _positive_finite_int,
     safe_int as _safe_int,
 )
@@ -20,16 +22,16 @@ def build_comparison_rows(entries: list[dict]) -> list[ComparisonRow]:
     for entry in entries:
         result: AnalysisResult = entry["result"]
         measurement: Measurement = entry["measurement"]
-        cost = _positive_finite_float(entry.get("cost"))
+        cost = money.positive_money(entry.get("cost"))
         shares = _positive_finite_int(entry.get("shares"))
-        last = _finite_float(result.last)
+        last = money.parse_money(result.last)
         change_pct = _finite_float(result.change_pct)
         pl_pct: float | None = None
-        pl_amount: float | None = None
+        pl_amount: Decimal | None = None
         if cost is not None and last is not None:
-            pl_pct = (last - cost) / cost * 100
+            pl_pct = float((last - cost) / cost * 100)
             if shares is not None:
-                pl_amount = (last - cost) * shares
+                pl_amount = money.quantize_money((last - cost) * shares)
         rows.append(
             ComparisonRow(
                 code=result.symbol.display,
