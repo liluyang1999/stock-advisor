@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_engine import make_history, make_quote
 
-from stock_advisor.domain.engine import analyze_stock, measure
+from stock_advisor.domain.engine import _score_bollinger, analyze_stock, measure
 from stock_advisor.domain.policy import decide
 
 
@@ -57,6 +57,60 @@ class MeasureTests(unittest.TestCase):
         conservative = analyze_stock(q, h, level=1)
         order = {"SELL": 0, "HOLD": 1, "BUY": 2}
         self.assertGreaterEqual(order[aggressive.action], order[conservative.action])
+
+
+class FactorDeclaredRangeTests(unittest.TestCase):
+    """因子条按 min(1, |score|/max_abs_score) 绘制，故 max_abs_score 必须正好等于该因子
+    真实可达的最大 |score|：声明偏小会让越界部分被裁成满格、彼此不可区分；声明偏大则因子
+    条永远画不满、低估信号强度。两者都只影响展示，不影响客观分（客观分只累加 score）。"""
+
+    @staticmethod
+    def _quote_at_series_end(history, spread=0.005):
+        last = float(history[-1].close)
+        return make_quote(
+            "600519",
+            last,
+            last,
+            last * (1 + spread),
+            last * (1 - spread),
+            last * 1.01,
+            volume=260000,
+        )
+
+    def test_trend_factor_negative_floor_stays_within_declared_max(self):
+        # 趋势质量 的四项里只有回撤是单向扣分（-4），故负向底 -29 比正向顶 +25 深 4。
+        # 稳定下跌序列同时点燃四项负分（5日斜率<-2、20日斜率<-1、胜率<=0.3、回撤>8），
+        # 是打到 -29 的最小复现。此前声明 25，使 -25..-29 一律被裁成满格、无法区分。
+        history = make_history(start=40.0, step=-0.15, days=80)
+        trend = next(
+            f
+            for f in measure(self._quote_at_series_end(history), history).factors
+            if f.name == "趋势质量"
+        )
+        self.assertEqual(trend.score, -29)
+        self.assertLessEqual(abs(trend.score), trend.max_abs_score)
+
+    def test_bollinger_declared_max_matches_its_reachable_score_set(self):
+        # 布林位置 只有 {-6,-3,0,+6} 四种取值（各分支代表位置：样本不足/偏强/过热/破位/
+        # 偏弱/中性）。此前声明 8，使因子条最多只画到 6/8=75%。
+        factors = [_score_bollinger(p)[0] for p in (None, 0.7, 1.2, -0.1, 0.1, 0.4, 0.95)]
+        self.assertEqual({f.max_abs_score for f in factors}, {6})
+        self.assertEqual(max(abs(f.score) for f in factors), 6)
+
+    def test_no_factor_score_exceeds_its_declared_max_abs(self):
+        # 全 8 因子的通用不变量，覆盖上涨/下跌/横盘/短样本四种形态。
+        for start, step, days in (
+            (40.0, 0.25, 80),
+            (40.0, -0.15, 80),
+            (40.0, 0.0, 80),
+            (40.0, -0.02, 35),
+        ):
+            with self.subTest(step=step, days=days):
+                history = make_history(start=start, step=step, days=days)
+                for factor in measure(self._quote_at_series_end(history, 0.02), history).factors:
+                    self.assertLessEqual(
+                        abs(factor.score), factor.max_abs_score, f"{factor.name} 越过声明量程"
+                    )
 
 
 if __name__ == "__main__":
