@@ -3,7 +3,7 @@
   "schema_version":"1.0.0",
   "requirements":{"traceability":1.0,"acceptance_coverage":1.0,"evidence_coverage_for_verified":1.0,"orphans":0},
   "tests":{"required_pass_rate":1.0,"required_skips":0,"flaky_critical":0,"core_repeat_runs":20,"qt_repeat_runs":10},
-  "coverage":{"overall_statement_min":0.90,"overall_branch_min":0.85,"core_statement_min":0.95,"core_branch_min":0.90,"qt_controller_statement_min":0.90,"qt_controller_branch_min":0.85,"current":"not_measured"},
+  "coverage":{"overall_statement_min":0.90,"overall_branch_min":0.85,"core_statement_min":0.95,"core_branch_min":0.90,"qt_controller_statement_min":0.90,"qt_controller_branch_min":0.85,"current":{"measured_at":"2026-07-15","commit":"d915ddc","command":"python -m coverage run -m unittest discover -s tests; python -m coverage report","omit":["*/ui/_app_members.py"],"overall_statement":0.889,"overall_branch":0.788,"core_statement":0.947,"core_branch":0.878,"combined_total":0.868,"verdict":"below_target","note":"四条门槛均未达标（overall stmt 88.9<90、branch 78.8<85；core stmt 94.7<95、branch 87.8<90）。合并总数 86.8% 只说明 --fail-under=85 会通过，不等于达标；G-COVERAGE 因此保持 enabled=false。qt_controller_* 待 PySide6 迁移后方可测量。"}},
   "numeric":{"golden_pass_rate":1.0,"nan_inf_leaks":0,"deterministic_repeat_runs":100,"mutation_score_target":0.80},
   "network":{"fault_matrix_pass_rate":1.0,"fabricated_fallbacks":0,"late_result_overwrites":0,"public_network_in_pr":false},
   "gui":{"font_token_violations":0,"duplicate_brand_headers":0,"main_thread_blocking_operations":0,"required_dpi_profiles_pass_rate":1.0,"accessible_name_coverage":1.0},

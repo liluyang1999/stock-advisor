@@ -76,9 +76,15 @@ addopts = "-q --import-mode=importlib" # importlib avoids sys.path basename coll
 [tool.coverage.run]
 source = ["src"]
 branch = true
+omit = [
+    # 仅供 pyright 的类型基座（ADR-0014）：运行期从不被导入，310 条声明无一可执行，
+    # 任何测试都不可能覆盖它。计入只会稀释真实数字（曾把总数从 86.8% 压到 82.7%）。
+    "*/ui/_app_members.py",
+]
 
 [tool.coverage.report]
 show_missing = true
 precision = 1
 # Numeric thresholds (overall stmt >=90 / branch >=85; core stmt >=95 / branch >=90) live in
-# loop/quality/convergence.json; the G-COVERAGE gate enforces the 85% branch floor via --fail-under.
+# loop/quality/convergence.json. Note: --fail-under compares coverage.py's *combined* statement+
+# branch total, not the branch floor; it does not assert any of those four thresholds.
