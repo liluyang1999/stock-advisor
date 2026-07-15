@@ -104,6 +104,16 @@ class AlertsTests(unittest.TestCase):
         self.assertIn("1700", summary)
         self.assertIn(">=", summary)
 
+    def test_evaluate_rule_false_for_unknown_operator(self):
+        # op 既非 ">=" 也非 "<="（如历史遗留/损坏的 "=="）→ 不触发，安全返回 False。
+        self.assertFalse(evaluate_rule(rule(op="=="), FakeResult(100, 1, 10)))
+
+    def test_rule_summary_falls_back_to_raw_code_when_unnormalizable(self):
+        # 代码无法规范化（非6位）时，摘要用原始 code 兜底而不抛错。
+        summary = rule_summary(rule(code="notacode", field="price", op=">=", threshold=100))
+        self.assertIn("notacode", summary)
+        self.assertIn(">=", summary)
+
     def test_field_keys_by_label_maps_chinese_labels_back_to_english_keys(self):
         # 预警"字段"下拉展示 FIELD_LABELS 的中文值；添加规则时需要把选中的中文标签映射回
         # AlertRule.field 实际存储的英文键。FIELD_KEYS_BY_LABEL 就是这个反向映射表。

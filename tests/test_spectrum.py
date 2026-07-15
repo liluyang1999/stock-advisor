@@ -7,7 +7,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_policy import make_measurement
 
+from stock_advisor.domain.models import SpectrumCell
 from stock_advisor.domain.policy import flip_hint, spectrum
+
+_LEVEL_NAMES = ("稳健", "稳进", "标准", "积极", "激进")
+
+
+def _cells(actions):
+    return [SpectrumCell(i + 1, _LEVEL_NAMES[i], action, False) for i, action in enumerate(actions)]
 
 
 class SpectrumTests(unittest.TestCase):
@@ -37,6 +44,24 @@ class SpectrumTests(unittest.TestCase):
     def test_flip_hint_all_buy(self):
         hint = flip_hint(spectrum(make_measurement(60, confidence=90), 3))
         self.assertIn("各档均建议买入", hint)
+
+
+class FlipHintSellSideTests(unittest.TestCase):
+    """flip_hint 卖出/观望侧文案（买入侧由 SpectrumTests 覆盖）。直接构造 SpectrumCell 以隔离档位阈值。"""
+
+    def test_all_cells_sell(self):
+        hint = flip_hint(_cells(["SELL"] * 5))
+        self.assertIn("各档均建议卖出/减仓", hint)
+
+    def test_some_cells_sell_names_the_boundary_level(self):
+        # 仅稳健/稳进两档卖出：提示以最后一个卖出档（稳进）为界。
+        hint = flip_hint(_cells(["SELL", "SELL", "HOLD", "HOLD", "HOLD"]))
+        self.assertIn("及以下偏向卖出/减仓", hint)
+        self.assertIn("稳进", hint)
+
+    def test_no_buy_no_sell_is_all_watch(self):
+        hint = flip_hint(_cells(["HOLD"] * 5))
+        self.assertIn("各档均建议观望", hint)
 
 
 if __name__ == "__main__":

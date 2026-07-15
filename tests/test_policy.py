@@ -9,6 +9,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from stock_advisor.domain.models import CORE_DISCLAIMER, FactorScore, IndicatorSnapshot, Measurement
 from stock_advisor.domain.policy import (
     LEVELS,
+    _confidence_value,
+    _dedupe,
+    _finite_number,
+    _history_len,
+    _stop_pct,
     clamp_level,
     decide,
     level_spec,
@@ -132,6 +137,30 @@ class PolicyTests(unittest.TestCase):
                 self.assertEqual(decision.action, "HOLD")
                 self.assertEqual(decision.suggested_position, 0)
                 self.assertTrue(any("把握" in risk for risk in decision.risks))
+
+
+class PolicyHelperGuardTests(unittest.TestCase):
+    """policy.py 私有数值/去重守卫（非数、非有限、缺失 ATR 的兜底口径）。"""
+
+    def test_dedupe_preserves_first_occurrence_order(self):
+        self.assertEqual(_dedupe(["a", "a", "b"]), ["a", "b"])
+
+    def test_finite_number_returns_default_on_non_numeric_or_none(self):
+        self.assertEqual(_finite_number("xyz", -1.0), -1.0)
+        self.assertEqual(_finite_number(None, 7.0), 7.0)
+
+    def test_confidence_value_none_on_non_numeric(self):
+        self.assertIsNone(_confidence_value("xyz"))
+
+    def test_history_len_zero_on_non_numeric_or_non_finite(self):
+        self.assertEqual(_history_len("xyz"), 0)
+        self.assertEqual(_history_len(float("nan")), 0)
+
+    def test_stop_pct_falls_back_to_three_percent_when_atr_and_move_missing(self):
+        # 指标层 ATR 与预期波动都缺失 → 用 3% 兜底：max(2, min(12, 1.8*3)) = 5.4。
+        m = make_measurement(20, atr=None)
+        self.assertIsNone(m.indicators.atr_percent)
+        self.assertEqual(_stop_pct(m), 5.4)
 
 
 class DisclaimerConsistencyTests(unittest.TestCase):

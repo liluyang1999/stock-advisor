@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from test_engine import make_history
 
 from stock_advisor.domain.chart import (
+    _fallback_price,
     candle_layout,
     index_to_x,
     moving_average_series,
@@ -124,6 +125,21 @@ class ChartTests(unittest.TestCase):
         layout = [{"x": float("nan")}, {"x": 10}, {"x": float("inf")}, {"x": 30}]
         self.assertEqual(nearest_index(12, layout), 1)
         self.assertEqual(nearest_index(float("nan"), layout), -1)
+
+
+class ChartGuardTests(unittest.TestCase):
+    def test_price_to_y_negative_height_collapses_to_midpoint(self):
+        # 高度非有限/为负 → 夹为 0，纵坐标退化为 top+0/2=top（此处 0）。
+        self.assertAlmostEqual(price_to_y(12.0, 10.0, 20.0, 0.0, -5.0), 0.0)
+
+    def test_volume_heights_all_zero_when_no_positive_volume(self):
+        flat = DailyBar("2026-01-01", 10.0, 10.0, 10.0, 10.0, 0, 0.0, 0.0, 0.0)
+        self.assertEqual(volume_heights([flat, flat], 40.0), [0.0, 0.0])
+
+    def test_fallback_price_prefers_positive_low_then_half(self):
+        # hi<=lo：优先取正的 lo；lo<=0 时兜底 0.5。
+        self.assertAlmostEqual(_fallback_price(5.0, 3.0), 5.0)
+        self.assertAlmostEqual(_fallback_price(0.0, 0.0), 0.5)
 
 
 if __name__ == "__main__":

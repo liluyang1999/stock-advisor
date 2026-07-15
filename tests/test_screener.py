@@ -15,6 +15,9 @@ from stock_advisor.domain.screener import (
     BOARD_SH_MAIN,
     BOARD_STAR,
     BOARD_SZ_MAIN,
+    _finite_optional,
+    _liquidity_bonus,
+    _top_limit,
     apply_filters,
     board_of,
     rank,
@@ -234,6 +237,21 @@ class RecommendTests(unittest.TestCase):
         recs = recommend(rows, FilterCriteria(), "momentum", top_n=2)
 
         self.assertEqual([rec.snapshot.code for rec in recs], ["good"])
+
+
+class ScreenerGuardTests(unittest.TestCase):
+    def test_finite_optional_none_for_non_numeric(self):
+        self.assertIsNone(_finite_optional("abc"))
+
+    def test_liquidity_bonus_zero_for_non_positive_amount(self):
+        self.assertEqual(_liquidity_bonus(0.0), 0.0)
+
+    def test_score_for_unknown_objective_falls_back_to_change_pct(self):
+        # 未知目标 → 直接返回当日涨跌幅（cp）作为分数。
+        self.assertEqual(score_for(snap(change_pct=2.5), "unknown"), 2.5)
+
+    def test_top_limit_zero_for_non_numeric(self):
+        self.assertEqual(_top_limit("abc"), 0)
 
 
 if __name__ == "__main__":
