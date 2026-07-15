@@ -356,9 +356,12 @@ def _score_trend(
         score -= 4
         risks.append(f"20日最大回撤约{drawdown:.1f}%，趋势修复需要时间。")
     verdict = "偏多" if score > 6 else "偏空" if score < -6 else "中性"
+    # 取值域 -29..+25：斜率 ±12/±8 与胜率 ±5 对称，但回撤只扣分（-4），故负向比正向多 4。
+    # max_abs_score 取 29 以覆盖最坏情况：因子条按 min(1, |score|/max) 裁剪，此前误标 25
+    # 会把 -25..-29 一律画成满格、彼此不可区分（见 ui/app_charts.py 因子条）。
     return (
         FactorScore(
-            "趋势质量", score, 25, verdict, "综合短期斜率、20日斜率、近5日胜率和20日回撤。"
+            "趋势质量", score, 29, verdict, "综合短期斜率、20日斜率、近5日胜率和20日回撤。"
         ),
         reasons,
         risks,
@@ -499,9 +502,10 @@ def _score_intraday(
 
 
 def _score_bollinger(position: float | None) -> tuple[FactorScore, list[str], list[str]]:
+    # 取值集合 {-6, -3, 0, +6}，故 max_abs_score=6（此前误标 8，使因子条最多只画到 75%）。
     if position is None:
         return (
-            FactorScore("布林位置", 0, 8, "样本不足", "布林带样本不足。"),
+            FactorScore("布林位置", 0, 6, "样本不足", "布林带样本不足。"),
             [],
             ["布林带样本不足，波动区间信号未启用。"],
         )
@@ -510,7 +514,7 @@ def _score_bollinger(position: float | None) -> tuple[FactorScore, list[str], li
             FactorScore(
                 "布林位置",
                 6,
-                8,
+                6,
                 "健康偏强",
                 f"价格处在布林通道{position:.0%}位置，偏强但未明显越界。",
             ),
@@ -519,24 +523,24 @@ def _score_bollinger(position: float | None) -> tuple[FactorScore, list[str], li
         )
     if position > 1.05:
         return (
-            FactorScore("布林位置", -6, 8, "过热", f"价格突破布林上轨较多，位置{position:.0%}。"),
+            FactorScore("布林位置", -6, 6, "过热", f"价格突破布林上轨较多，位置{position:.0%}。"),
             [],
             ["价格明显高于布林上轨，短线追高风险增加。"],
         )
     if position < -0.05:
         return (
-            FactorScore("布林位置", -6, 8, "破位", f"价格跌出布林下轨，位置{position:.0%}。"),
+            FactorScore("布林位置", -6, 6, "破位", f"价格跌出布林下轨，位置{position:.0%}。"),
             ["价格跌出布林下轨，弱势延续风险较高。"],
             [],
         )
     if position < 0.25:
         return (
-            FactorScore("布林位置", -3, 8, "偏弱", f"价格处在布林通道{position:.0%}位置。"),
+            FactorScore("布林位置", -3, 6, "偏弱", f"价格处在布林通道{position:.0%}位置。"),
             ["布林带位置偏低，短线承压。"],
             [],
         )
     return (
-        FactorScore("布林位置", 0, 8, "中性", f"布林带位置{position:.0%}，方向信号一般。"),
+        FactorScore("布林位置", 0, 6, "中性", f"布林带位置{position:.0%}，方向信号一般。"),
         [],
         [],
     )
