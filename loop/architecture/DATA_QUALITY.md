@@ -34,6 +34,7 @@
 
 ## 数值规则
 
+- **数值表示（ADR-0013，全工程单一约定）**：金额与报价用 `Decimal`，量化到 2 位小数、`ROUND_HALF_UP`（工具见 `domain/money.py`）；数量用 `int`；比率/百分比/评分/统计指标（MA/MACD/RSI/ATR/布林）用 `float`（安全解析器见 `domain/numeric.py`）；成交额、市值、资金流净额等**仅供展示（按亿/万舍入）与区间过滤**的大额聚合量保持 `float`，不汇入用户金额的精确运算。边界：入口把东方财富的整数标度价精确解析为 Decimal（不经 float）；指标层仅在喂给 `mean`/`pstdev`/EMA 等统计函数处一次性转 float，且不回流成金额；持久化把金额写为 JSON **字符串**（JSON 无 Decimal 类型，写成 float 即放弃精度）。
 - 价格 >0 且有限。
 - 成交量/额/换手 ≥0 且有限。
 - PE 可负；缺失为 None。
