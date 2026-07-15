@@ -10,7 +10,12 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from stock_advisor.data.data_provider import MarketDataError
 from stock_advisor.domain.models import DailyBar, FilterCriteria, MarketSnapshot, Quote
 from stock_advisor.domain.symbols import normalize_symbol
-from stock_advisor.services.workflow import analyze_symbol, screen_and_recommend
+from stock_advisor.services.workflow import (
+    CancelToken,
+    ScreeningProvider,
+    analyze_symbol,
+    screen_and_recommend,
+)
 
 
 class FakeProvider:
@@ -294,6 +299,110 @@ class ScreenAndRecommendTests(unittest.TestCase):
                 self.assertIn("推荐数量", report.error)
                 self.assertEqual(report.recommendations, [])
                 self.assertEqual(provider.snapshot_calls, 0)
+
+
+class BoomQuoteProvider(FakeProvider):
+    def fetch_quote(self, symbol):
+        raise RuntimeError("boom")
+
+
+class BoomHistoryProvider(FakeProvider):
+    def fetch_history(self, symbol):
+        raise RuntimeError("boom")
+
+
+class BoomMarketProvider(FakeMarketProvider):
+    def fetch_market_snapshot(self, page_size=1000, max_pages=12):
+        raise RuntimeError("boom")
+
+
+class WorkflowProtocolTests(unittest.TestCase):
+    def test_protocol_method_bodies_raise_not_implemented(self):
+        # Protocol 方法体是声明式的 raise NotImplementedError：锁定"父类体不可直接复用"，
+        # 防止将来误加默认实现让漏实现的子类被静默放行。
+        class Impl(ScreeningProvider):
+            def fetch_quote(self, symbol):
+                return super().fetch_quote(symbol)
+
+            def fetch_history(self, symbol):
+                return super().fetch_history(symbol)
+
+            def fetch_market_snapshot(self, page_size=1000, max_pages=12):
+                return super().fetch_market_snapshot(page_size, max_pages)
+
+        class Token(CancelToken):
+            def is_set(self):
+                return super().is_set()
+
+        impl = Impl()
+        with self.assertRaises(NotImplementedError):
+            impl.fetch_quote(None)
+        with self.assertRaises(NotImplementedError):
+            impl.fetch_history(None)
+        with self.assertRaises(NotImplementedError):
+            impl.fetch_market_snapshot()
+        with self.assertRaises(NotImplementedError):
+            Token().is_set()
+
+
+class WorkflowGenericFailureTests(unittest.TestCase):
+    # RuntimeError 不在 (MarketDataError, ValueError) 之列（MarketDataError 是其子类，反之不然），
+    # 应走"except Exception"兜底分支：给出可展示错误，绝不让后台线程抛裸异常。
+
+    def test_generic_quote_exception_becomes_readable_error(self):
+        outcome = analyze_symbol(normalize_symbol("600519"), BoomQuoteProvider())
+
+        self.assertFalse(outcome.ok)
+        self.assertIsNone(outcome.result)
+        self.assertIn("实时行情获取失败", outcome.error)
+        self.assertIn("boom", outcome.error)
+
+    def test_generic_history_exception_degrades_like_market_error(self):
+        outcome = analyze_symbol(normalize_symbol("600519"), BoomHistoryProvider())
+
+        self.assertTrue(outcome.ok)
+        self.assertTrue(outcome.degraded)
+        self.assertEqual(outcome.history, [])
+        self.assertTrue(any("历史数据暂时取不到" in risk for risk in outcome.result.risks))
+
+    def test_generic_market_snapshot_exception_becomes_report_error(self):
+        report = screen_and_recommend(BoomMarketProvider([]), FilterCriteria(), "momentum")
+
+        self.assertFalse(report.ok)
+        self.assertIn("全市场行情获取失败", report.error)
+        self.assertIn("boom", report.error)
+        self.assertEqual(report.recommendations, [])
+
+
+class ScreenReportEdgeTests(unittest.TestCase):
+    def test_successful_report_is_ok(self):
+        provider = FakeMarketProvider([_snap("600001", "1", 2.0)])
+        report = screen_and_recommend(provider, FilterCriteria(), "momentum", top_n=1, deep=False)
+
+        self.assertTrue(report.ok)
+
+    def test_unparseable_top_n_returns_parameter_error_without_fetching(self):
+        # None/字符串等完全不可解析的 top_n（异常路径，区别于已测的 NaN/非正数路径）
+        for top_n in (None, "abc"):
+            with self.subTest(top_n=top_n):
+                provider = FakeMarketProvider([_snap("600001", "1", 2.0)])
+                report = screen_and_recommend(provider, FilterCriteria(), "momentum", top_n=top_n)
+
+                self.assertIn("推荐数量", report.error)
+                self.assertEqual(report.recommendations, [])
+                self.assertEqual(provider.snapshot_calls, 0)
+
+    def test_deep_analysis_flags_snapshot_with_unknown_market_id(self):
+        # 快照市场号未知（既非沪 1 也非深/北 0）：深度分析应明确报"代码市场信息缺失"，
+        # 不猜 secid、也不为该股发起任何行情请求
+        provider = FakeMarketProvider([_snap("600001", "9", 2.0)])
+        report = screen_and_recommend(provider, FilterCriteria(), "momentum", top_n=1, deep=True)
+
+        self.assertTrue(report.ok)
+        recommendation = report.recommendations[0]
+        self.assertIsNone(recommendation.result)
+        self.assertIn("代码市场信息缺失", recommendation.error)
+        self.assertEqual(provider.quote_calls, [])
 
 
 if __name__ == "__main__":

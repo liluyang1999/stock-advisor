@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from stock_advisor.domain.models import AlertRule, AppConfig, WatchItem
 from stock_advisor.services.store import (
+    _positive_or_none,
     config_path,
     config_to_dict,
     load_config,
@@ -228,6 +229,98 @@ class StoreTests(unittest.TestCase):
         )
         self.assertEqual(len(cfg.alerts), 1)
         self.assertEqual(cfg.alerts[0].code, "sh600519")
+
+
+class StoreEdgeTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_positive_or_none_contract(self):
+        # 注：_positive_or_none 目前在 src 内无任何调用点（疑似遗留死代码）。
+        # 直测锁定其契约（不可解析/非有限/非正 → None），防止将来复用时行为漂移。
+        self.assertIsNone(_positive_or_none("abc"))
+        self.assertIsNone(_positive_or_none(None))
+        self.assertIsNone(_positive_or_none(float("nan")))
+        self.assertIsNone(_positive_or_none(0))
+        self.assertIsNone(_positive_or_none(-1.5))
+        self.assertEqual(_positive_or_none("2.5"), 2.5)
+
+    def test_unparseable_level_falls_back_to_standard(self):
+        # level 完全不可解析（异常路径，区别于已测的非有限数路径）→ 回退标准档 3
+        self.assertEqual(parse_config({"level": "abc"}).level, 3)
+        self.assertEqual(parse_config({"level": None}).level, 3)
+
+    def test_alert_enabled_accepts_loose_value_types(self):
+        def rule(enabled):
+            return {
+                "code": "600519",
+                "field": "price",
+                "op": ">=",
+                "threshold": 1,
+                "enabled": enabled,
+            }
+
+        cfg = parse_config(
+            {"alerts": [rule("maybe"), rule(2), rule(0.0), rule(None), rule(float("nan"))]}
+        )
+
+        # 未知字符串 / None / NaN → 默认启用；数值按"非零为真"
+        self.assertEqual([alert.enabled for alert in cfg.alerts], [True, True, False, True, True])
+
+    def test_watchlist_skips_non_string_non_dict_entries(self):
+        cfg = parse_config({"watchlist": [123, None, ["x"], "600519"]})
+
+        self.assertEqual([item.code for item in cfg.watchlist], ["sh600519"])
+
+    def test_alerts_skip_non_dict_entries(self):
+        cfg = parse_config({"alerts": ["x", 42, None]})
+
+        self.assertEqual(cfg.alerts, ())
+
+    def test_parse_config_caps_watchlist_and_alerts_at_100(self):
+        codes = [f"{600000 + i}" for i in range(105)]
+        cfg = parse_config(
+            {
+                "watchlist": codes,
+                "alerts": [
+                    {"code": code, "field": "price", "op": ">=", "threshold": 1} for code in codes
+                ],
+            }
+        )
+
+        self.assertEqual(len(cfg.watchlist), 100)
+        self.assertEqual(len(cfg.alerts), 100)
+
+    def test_config_to_dict_skips_invalid_and_duplicate_watch_items(self):
+        cfg = AppConfig(watchlist=(WatchItem("zzz"), WatchItem("sh600519"), WatchItem("sh600519")))
+
+        data = config_to_dict(cfg)
+
+        self.assertEqual([item["code"] for item in data["watchlist"]], ["sh600519"])
+
+    def test_config_to_dict_caps_watchlist_and_alerts_at_100(self):
+        cfg = AppConfig(
+            watchlist=tuple(WatchItem(f"sh{600000 + i}") for i in range(105)),
+            alerts=tuple(
+                AlertRule(f"sh{600000 + i}", "price", ">=", 1.0, True) for i in range(105)
+            ),
+        )
+
+        data = config_to_dict(cfg)
+
+        self.assertEqual(len(data["watchlist"]), 100)
+        self.assertEqual(len(data["alerts"]), 100)
+
+    def test_save_config_fails_cleanly_when_target_is_directory(self):
+        # 目标路径被目录占位：os.replace 失败 → 返回 False，且不残留 .cfg*.tmp 临时文件
+        target = Path(self.tmp) / "config.json"
+        target.mkdir()
+
+        self.assertFalse(save_config(target, AppConfig()))
+        self.assertEqual(list(Path(self.tmp).glob(".cfg*.tmp")), [])
 
 
 if __name__ == "__main__":

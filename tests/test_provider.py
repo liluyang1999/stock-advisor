@@ -1,6 +1,8 @@
 import json
 import sys
 import unittest
+import urllib.error
+from decimal import Decimal
 from pathlib import Path
 from unittest.mock import patch
 
@@ -782,6 +784,576 @@ class ProviderParsingTests(unittest.TestCase):
 
         self.assertEqual(payload, '{"data":{}}')
         self.assertEqual(calls["count"], 2)
+
+
+class FetchQuoteTests(unittest.TestCase):
+    """fetch_quote 的主源→新浪备源→双失败回退链（全部离线，沿用 _request 打桩边界）。"""
+
+    QUOTE_PAYLOAD = json.dumps(
+        {
+            "data": {
+                "f58": "贵州茅台",
+                "f43": 171234,
+                "f46": 170000,
+                "f44": 172000,
+                "f45": 169500,
+                "f60": 168000,
+                "f47": 250000,
+                "f48": 4220000000,
+                "f168": 110,
+                "f170": 192,
+            }
+        },
+        ensure_ascii=False,
+    )
+    SINA_PAYLOAD = (
+        'var hq_str_sh600519="贵州茅台,1235.000,1240.000,1215.000,'
+        "1238.870,1211.220,1215.000,1215.280,5747173,7016713941.000,"
+        '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2026-06-19,15:00:00,00,";'
+    )
+
+    def test_fetch_quote_uses_primary_source_only_when_it_succeeds(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+        seen = []
+
+        def fake_request(url, **_kwargs):
+            seen.append(url)
+            return self.QUOTE_PAYLOAD
+
+        with patch.object(provider, "_request", fake_request):
+            quote = provider.fetch_quote(normalize_symbol("600519"))
+
+        # 主源成功即返回：只发一次请求、不触碰新浪备源
+        self.assertEqual(len(seen), 1)
+        self.assertIn("push2.eastmoney.com/api/qt/stock/get", seen[0])
+        self.assertIn("secid=1.600519", seen[0])
+        self.assertEqual(quote.name, "贵州茅台")
+        self.assertEqual(quote.last, Decimal("1712.34"))
+
+    def test_fetch_quote_falls_back_to_sina_when_primary_fails(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+
+        def fake_request(url, **_kwargs):
+            if "sinajs" not in url:
+                raise MarketDataError("primary closed")
+            return self.SINA_PAYLOAD
+
+        with patch.object(provider, "_request", fake_request):
+            quote = provider.fetch_quote(normalize_symbol("600519"))
+
+        self.assertEqual(quote.name, "贵州茅台")
+        self.assertEqual(quote.last, Decimal("1215.00"))
+
+    def test_fetch_quote_reports_both_failures_when_fallback_also_fails(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+
+        def fake_request(url, **_kwargs):
+            raise MarketDataError("closed")
+
+        with patch.object(provider, "_request", fake_request):
+            with self.assertRaises(MarketDataError) as ctx:
+                provider.fetch_quote(normalize_symbol("600519"))
+
+        message = str(ctx.exception)
+        self.assertIn("实时行情获取失败", message)
+        self.assertIn("备用源也失败", message)
+
+
+class FetchHistorySourceChainTests(unittest.TestCase):
+    EM_PAYLOAD = json.dumps(
+        {
+            "data": {
+                "klines": [
+                    "2026-06-18,10.00,10.50,10.70,9.90,100000,105000000,8.0,5.0,0.5,1.2",
+                ]
+            }
+        }
+    )
+
+    def test_fetch_history_returns_primary_rows_without_touching_fallbacks(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+        seen = []
+
+        def fake_request(url, **_kwargs):
+            seen.append(url)
+            return self.EM_PAYLOAD
+
+        with patch.object(provider, "_request", fake_request):
+            rows = provider.fetch_history(normalize_symbol("600519"), limit=1)
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].date, "2026-06-18")
+        # 主源成功即返回：不应再请求新浪/腾讯备源
+        self.assertEqual(len(seen), 1)
+        self.assertIn("push2his.eastmoney.com", seen[0])
+
+    def test_fetch_history_reports_every_empty_source(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+
+        def fake_request(url, **_kwargs):
+            # 新浪返回空数组，其余源返回无 data 的 JSON —— 四个源都"有响应但没数据"
+            return "[]" if "json_v2" in url else json.dumps({"data": None})
+
+        with patch.object(provider, "_request", fake_request):
+            with self.assertRaises(MarketDataError) as ctx:
+                provider.fetch_history(normalize_symbol("600519"), limit=5)
+
+        message = str(ctx.exception)
+        for label in (
+            "东方财富历史日线为空",
+            "新浪历史日线为空",
+            "腾讯前复权日线为空",
+            "腾讯普通日线为空",
+        ):
+            self.assertIn(label, message)
+
+    def test_fetch_history_reports_every_failed_source(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+
+        def fake_request(url, **_kwargs):
+            raise MarketDataError("closed")
+
+        with patch.object(provider, "_request", fake_request):
+            with self.assertRaises(MarketDataError) as ctx:
+                provider.fetch_history(normalize_symbol("600519"), limit=5)
+
+        message = str(ctx.exception)
+        for label in (
+            "东方财富历史日线失败",
+            "新浪历史日线失败",
+            "腾讯前复权日线失败",
+            "腾讯普通日线失败",
+        ):
+            self.assertIn(label, message)
+
+
+class FetchMarketSnapshotPagingTests(unittest.TestCase):
+    @staticmethod
+    def _page(codes, total=None):
+        data = {"diff": [clist_item(code=code) for code in codes]}
+        if total is not None:
+            data["total"] = total
+        return json.dumps({"data": data})
+
+    @staticmethod
+    def _pn(url):
+        import re as _re
+
+        return int(_re.search(r"pn=(\d+)", url).group(1))
+
+    def test_later_page_failure_keeps_already_fetched_rows(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+        pages = {1: self._page(["600001", "600002"], total=4)}
+
+        def fake_request(url, **_kwargs):
+            pn = self._pn(url)
+            if pn in pages:
+                return pages[pn]
+            raise MarketDataError("page closed")
+
+        with patch.object(provider, "_request", fake_request):
+            rows = provider.fetch_market_snapshot(page_size=2)
+
+        # 第 1 页成功后续页失败：返回已取到的部分，而不是整体报错
+        self.assertEqual([row.code for row in rows], ["600001", "600002"])
+
+    def test_duplicate_codes_across_pages_are_deduplicated(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+        pages = {
+            1: self._page(["600001", "600002"], total=3),
+            2: self._page(["600002", "600003"], total=3),
+        }
+
+        def fake_request(url, **_kwargs):
+            return pages[self._pn(url)]
+
+        with patch.object(provider, "_request", fake_request):
+            rows = provider.fetch_market_snapshot(page_size=2)
+
+        self.assertEqual([row.code for row in rows], ["600001", "600002", "600003"])
+
+    def test_max_pages_limit_stops_paging_and_returns_partial(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+        seen = []
+
+        def fake_request(url, **_kwargs):
+            seen.append(self._pn(url))
+            return self._page(["600001"], total=5)
+
+        with patch.object(provider, "_request", fake_request):
+            rows = provider.fetch_market_snapshot(page_size=1, max_pages=1)
+
+        self.assertEqual([row.code for row in rows], ["600001"])
+        self.assertEqual(seen, [1])
+
+    def test_missing_total_is_treated_as_unknown_and_paging_stops_on_empty_page(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+        pages = {1: self._page(["600001"]), 2: self._page([])}
+
+        def fake_request(url, **_kwargs):
+            return pages[self._pn(url)]
+
+        with patch.object(provider, "_request", fake_request):
+            rows = provider.fetch_market_snapshot(page_size=1)
+
+        self.assertEqual([row.code for row in rows], ["600001"])
+
+    def test_empty_data_from_all_hosts_raises(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+
+        def fake_request(url, **_kwargs):
+            return json.dumps({"data": None})
+
+        with patch.object(provider, "_request", fake_request):
+            with self.assertRaises(MarketDataError) as ctx:
+                provider.fetch_market_snapshot()
+
+        self.assertIn("返回为空", str(ctx.exception))
+
+    def test_invalid_json_from_first_host_falls_back_to_peer_host(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+
+        def fake_request(url, **_kwargs):
+            if "push2delay" in url:
+                return self._page(["600001"], total=1)
+            return "not json"
+
+        with patch.object(provider, "_request", fake_request):
+            rows = provider.fetch_market_snapshot()
+
+        self.assertEqual([row.code for row in rows], ["600001"])
+
+
+class FetchFundFlowTests(unittest.TestCase):
+    FLOW_PAYLOAD = json.dumps(
+        {
+            "data": {
+                "klines": [
+                    "2026-06-10,1.0,0,0,0,0",
+                    "2026-06-11,2.0,0,0,0,0",
+                    "2026-06-12,3.0,0,0,0,0",
+                    "2026-06-13,4.0,0,0,0,0",
+                    "2026-06-14,5.0,0,0,0,0",
+                    "2026-06-15,6.0,0,0,0,0",
+                ]
+            }
+        }
+    )
+
+    def test_fetch_fund_flow_returns_recent_flow(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+        seen = []
+
+        def fake_request(url, **_kwargs):
+            seen.append(url)
+            return self.FLOW_PAYLOAD
+
+        with patch.object(provider, "_request", fake_request):
+            flow = provider.fetch_fund_flow(normalize_symbol("600519"), limit=6)
+
+        self.assertEqual(len(seen), 1)
+        self.assertIn("secid=1.600519", seen[0])
+        self.assertIn("lmt=6", seen[0])
+        self.assertAlmostEqual(flow.today_main, 6.0)
+        self.assertAlmostEqual(flow.main_5d, 20.0)  # 近5日 = 2+3+4+5+6
+        self.assertEqual(len(flow.recent), 6)
+
+    def test_fetch_fund_flow_falls_back_to_peer_host(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+
+        def fake_request(url, **_kwargs):
+            if "push2his" not in url:
+                raise MarketDataError("host down")
+            return self.FLOW_PAYLOAD
+
+        with patch.object(provider, "_request", fake_request):
+            flow = provider.fetch_fund_flow(normalize_symbol("600519"))
+
+        self.assertAlmostEqual(flow.today_main, 6.0)
+
+    def test_fetch_fund_flow_raises_when_all_hosts_empty(self):
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+
+        def fake_request(url, **_kwargs):
+            return json.dumps({"data": None})
+
+        with patch.object(provider, "_request", fake_request):
+            with self.assertRaises(MarketDataError) as ctx:
+                provider.fetch_fund_flow(normalize_symbol("600519"))
+
+        self.assertIn("资金流为空", str(ctx.exception))
+
+
+class RequestBehaviorTests(unittest.TestCase):
+    def test_request_merges_custom_headers_and_decodes_with_explicit_encoding(self):
+        captured = {}
+
+        class FakeHeaders:
+            def get_content_charset(self):
+                return "utf-8"
+
+        class FakeResponse:
+            headers = FakeHeaders()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return "中文".encode("gb18030")
+
+        def fake_urlopen(request, timeout):
+            captured["request"] = request
+            captured["timeout"] = timeout
+            return FakeResponse()
+
+        provider = EastmoneyProvider(timeout=3.5, max_retries=1)
+        with patch("urllib.request.urlopen", fake_urlopen):
+            payload = provider._request(
+                "https://example.test",
+                headers={"Referer": "https://finance.sina.com.cn/"},
+                encoding="gb18030",
+            )
+
+        # encoding 参数优先于响应头字符集：gb18030 字节按 gb18030 解码不乱码
+        self.assertEqual(payload, "中文")
+        request = captured["request"]
+        self.assertEqual(request.get_header("Referer"), "https://finance.sina.com.cn/")
+        # 关键行为：UA 必须是干净的浏览器 UA（含 "Python" 的 UA 会被东财接口直接断开）
+        self.assertNotIn("Python", request.get_header("User-agent", ""))
+        self.assertAlmostEqual(captured["timeout"], 3.5)
+
+    def test_request_raises_market_data_error_after_retries_exhausted(self):
+        sleeps = []
+        calls = {"count": 0}
+
+        def fake_urlopen(_request, timeout):
+            calls["count"] += 1
+            raise urllib.error.URLError("down")
+
+        provider = EastmoneyProvider(timeout=0.1, max_retries=2)
+        with patch("urllib.request.urlopen", fake_urlopen), patch("time.sleep", sleeps.append):
+            with self.assertRaises(MarketDataError) as ctx:
+                provider._request("https://example.test")
+
+        self.assertEqual(calls["count"], 2)
+        self.assertEqual(sleeps, [0.35])  # 每次重试间隔 0.35*(attempt+1)，最后一次失败不再等待
+        self.assertIn("行情接口请求失败", str(ctx.exception))
+
+
+class PayloadEdgeCaseTests(unittest.TestCase):
+    def test_parse_quote_payload_requires_data_object(self):
+        with self.assertRaises(MarketDataError):
+            parse_quote_payload(normalize_symbol("600519"), json.dumps({"data": None}))
+
+    def test_parse_quote_payload_defaults_unparseable_percent_and_amount_to_zero(self):
+        payload = json.dumps(
+            {
+                "data": {
+                    "f58": "脏字段",
+                    "f43": 1000,
+                    "f46": 1000,
+                    "f44": 1010,
+                    "f45": 990,
+                    "f60": 1000,
+                    "f47": 100,
+                    "f48": "abc",
+                    "f168": 110,
+                    "f170": "abc",
+                }
+            },
+            ensure_ascii=False,
+        )
+
+        quote = parse_quote_payload(normalize_symbol("600519"), payload)
+
+        # 无法解析的涨跌幅/成交额按 0 兜底，不拖垮整个报价
+        self.assertEqual(quote.change_pct, 0.0)
+        self.assertEqual(quote.amount, 0.0)
+
+    def test_parse_sina_quote_payload_rejects_malformed_structure(self):
+        with self.assertRaises(MarketDataError):
+            parse_sina_quote_payload(normalize_symbol("600519"), "garbage without marker")
+
+    def test_parse_sina_quote_payload_rejects_empty_content(self):
+        with self.assertRaises(MarketDataError):
+            parse_sina_quote_payload(normalize_symbol("600519"), 'var hq_str_sh600519="";')
+
+    def test_parse_sina_quote_payload_without_timestamp_fields(self):
+        # 仅 10 个字段（无第 31/32 列日期时间）：timestamp 留空，其余字段照常解析
+        payload = 'var hq_str_sh600519="平安银行,10.10,10.00,10.20,10.30,9.90,0,0,1000,10000";'
+
+        quote = parse_sina_quote_payload(normalize_symbol("600519"), payload)
+
+        self.assertEqual(quote.timestamp, "")
+        self.assertEqual(quote.last, Decimal("10.20"))
+        self.assertAlmostEqual(quote.change_pct, 2.0)
+
+    def test_parse_sina_quote_payload_rejects_zero_price(self):
+        payload = 'var hq_str_sh600519="平安银行,0.000,10.00,10.20,10.30,9.90,0,0,1000,10000";'
+
+        with self.assertRaises(MarketDataError) as ctx:
+            parse_sina_quote_payload(normalize_symbol("600519"), payload)
+
+        self.assertIn("开盘价", str(ctx.exception))
+
+    def test_parse_history_payload_returns_empty_without_data(self):
+        self.assertEqual(parse_history_payload(json.dumps({"data": None})), [])
+
+    def test_parse_history_payload_skips_malformed_rows(self):
+        payload = json.dumps(
+            {
+                "data": {
+                    "klines": [
+                        "2026-06-17,10.00",  # 字段不足
+                        "2026-06-18,-10.00,10.50,10.70,9.90,100000,105000000,8.0,5.0,0.5,1.2",
+                        "2026-06-19,10.00,10.50,10.70,9.90,-100000,105000000,8.0,5.0,0.5,1.2",
+                        "2026-06-20,10.00,10.50,10.70,9.90,100000,105000000,8.0,5.0,0.5,1.2",
+                    ]
+                }
+            }
+        )
+
+        rows = parse_history_payload(payload)
+
+        # 字段不足 / 非正价格 / 负物理量的行整行丢弃，合法行保留
+        self.assertEqual([row.date for row in rows], ["2026-06-20"])
+
+    def test_parse_sina_history_payload_skips_non_dict_items(self):
+        payload = json.dumps(
+            [
+                ["not", "a", "dict"],
+                {
+                    "day": "2026-06-19",
+                    "open": "10.00",
+                    "high": "10.70",
+                    "low": "9.90",
+                    "close": "10.50",
+                    "volume": "100",
+                },
+            ]
+        )
+
+        rows = parse_sina_history_payload(payload)
+
+        self.assertEqual([row.date for row in rows], ["2026-06-19"])
+
+    def test_daily_bar_requires_date_and_fills_missing_high_low(self):
+        payload = json.dumps(
+            [
+                {"open": "10.00", "high": "10.70", "low": "9.90", "close": "10.50", "volume": "1"},
+                {
+                    "day": "2026-06-18",
+                    "open": "10.00",
+                    "close": "10.50",
+                    "low": "9.90",
+                    "volume": "100",
+                },
+                {
+                    "day": "2026-06-19",
+                    "open": "10.50",
+                    "close": "10.20",
+                    "high": "10.60",
+                    "volume": "100",
+                },
+            ]
+        )
+
+        rows = parse_sina_history_payload(payload)
+
+        # 缺日期的行丢弃；缺最高/最低价用开收盘补齐（维持 OHLC 包络），且价格为 2 位 Decimal
+        self.assertEqual([row.date for row in rows], ["2026-06-18", "2026-06-19"])
+        self.assertEqual(rows[0].high, Decimal("10.50"))
+        self.assertEqual(rows[1].low, Decimal("10.20"))
+
+    def test_parse_tencent_history_payload_handles_malformed_containers(self):
+        symbol = normalize_symbol("600519")
+
+        self.assertEqual(parse_tencent_history_payload(symbol, json.dumps({"data": None})), [])
+        self.assertEqual(
+            parse_tencent_history_payload(symbol, json.dumps({"data": {"sh600519": None}})), []
+        )
+        self.assertEqual(
+            parse_tencent_history_payload(
+                symbol, json.dumps({"data": {"sh600519": {"qfqday": "bad"}}})
+            ),
+            [],
+        )
+
+    def test_parse_tencent_history_payload_skips_malformed_rows(self):
+        payload = json.dumps(
+            {
+                "data": {
+                    "sh600519": {
+                        "qfqday": [
+                            ["2026-06-18", "10.00"],
+                            "not-a-row",
+                            ["2026-06-19", "10.50", "10.20", "10.60", "10.10", "1200"],
+                        ]
+                    }
+                }
+            }
+        )
+
+        rows = parse_tencent_history_payload(normalize_symbol("600519"), payload)
+
+        self.assertEqual([row.date for row in rows], ["2026-06-19"])
+
+    def test_parse_clist_payload_skips_non_dict_and_bad_market_items(self):
+        payload = json.dumps(
+            {
+                "data": {
+                    "diff": [
+                        42,
+                        clist_item(code="600001", market="abc"),
+                        clist_item(code="600002", market=1.5),
+                        clist_item(code="600003", change_pct="abc"),
+                        clist_item(code="600004"),
+                    ]
+                }
+            }
+        )
+
+        rows = parse_clist_payload(payload)
+
+        # 非字典行 / 市场号不可解析或非整数 / 涨跌幅不可解析 → 整行剔除
+        self.assertEqual([row.code for row in rows], ["600004"])
+
+    def test_parse_fund_flow_payload_invalid_limit_falls_back_to_default(self):
+        payload = json.dumps(
+            {"data": {"klines": [f"2026-06-{10 + i:02d},{float(i + 1)},0,0,0,0" for i in range(6)]}}
+        )
+
+        flow = parse_fund_flow_payload(payload, limit="abc")  # type: ignore[arg-type]
+
+        self.assertIsNotNone(flow)
+        assert flow is not None
+        # limit 非法时退回默认 5 条
+        self.assertEqual(len(flow.recent), 5)
+
+    def test_json_envelope_extraction_and_errors(self):
+        # JSONP 包装（callback(...)）能剥壳解析；无 JSON 结构 / 结构类型不符则报 MarketDataError
+        jsonp_object = (
+            'cb({"data": {"klines": ["2026-06-18,10.00,10.50,10.70,9.90,1,1,8.0,5.0,0.5,1.2"]}});'
+        )
+        self.assertEqual(len(parse_history_payload(jsonp_object)), 1)
+
+        jsonp_array = (
+            'cb([{"day": "2026-06-18", "open": "10.00", "close": "10.50",'
+            ' "high": "10.7", "low": "9.9", "volume": "1"}]);'
+        )
+        self.assertEqual(len(parse_sina_history_payload(jsonp_array)), 1)
+
+        with self.assertRaises(MarketDataError):
+            parse_history_payload("garbage")
+        with self.assertRaises(MarketDataError):
+            parse_history_payload("[1, 2]")
+        with self.assertRaises(MarketDataError):
+            parse_sina_history_payload("garbage")
+        with self.assertRaises(MarketDataError):
+            parse_sina_history_payload('{"a": 1}')
 
 
 if __name__ == "__main__":
