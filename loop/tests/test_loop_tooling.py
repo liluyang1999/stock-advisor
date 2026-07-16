@@ -260,6 +260,41 @@ class LoopToolingTests(unittest.TestCase):
             self.assertTrue(wi.get("definition_of_done"), wi["id"])
         self.assertEqual(validate_loop.validate(), [])
 
+    def test_catalog_owner_actually_references_the_test(self) -> None:
+        # 上面的目录校验只断言 owning_work_item 指向的 WI *存在*，不断言它真的引用这条测试，
+        # 于是测试可以一直挂在早已不再引用它的 WI 名下（TEST-SEC-001 就险些如此）。归属必须双向成立。
+        catalog = json.loads((LOOP_ROOT / "quality/test-catalog.json").read_text(encoding="utf-8"))
+        tests_by_work_item = {
+            w["id"]: set(w.get("tests") or [])
+            for w in json.loads(
+                (LOOP_ROOT / "planning/work-items.json").read_text(encoding="utf-8")
+            )["work_items"]
+        }
+        for entry in catalog["tests"]:
+            owner = entry["owning_work_item"]
+            self.assertIn(
+                entry["id"],
+                tests_by_work_item.get(owner, set()),
+                f"{entry['id']} 声称由 {owner} 主责，但 {owner} 并未引用它",
+            )
+
+    def test_metrics_tool_test_count_is_anchored_to_the_real_suite(self) -> None:
+        # metrics.json 的数字被 STATUS.md 原样投影。有锚点的字段（work_items_total）从不漂移，
+        # 无锚点的会悄悄烂掉：tool_tests 曾长期停在 13 而实际已 50。此处自锚定到真实发现数。
+        # 用全新的 loader 而非 defaultTestLoader：后者是共享全局，`-k` 会设置它的
+        # testNamePatterns，令此处的 discover 继承该过滤器而数错（会数成 1）。
+        suite = unittest.TestLoader().discover(
+            str(LOOP_ROOT / "tests"), top_level_dir=str(LOOP_ROOT / "tests")
+        )
+
+        def count(item: object) -> int:
+            if isinstance(item, unittest.TestSuite):
+                return sum(count(child) for child in item)
+            return 1
+
+        metrics = json.loads((LOOP_ROOT / "state/metrics.json").read_text(encoding="utf-8"))
+        self.assertEqual(metrics["control_plane"]["tool_tests_total"], count(suite))
+
     def test_every_gate_has_owning_work_item(self) -> None:
         gates = json.loads((LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8"))[
             "gates"
