@@ -254,7 +254,7 @@ class LoopToolingTests(unittest.TestCase):
         work_items = json.loads(
             (LOOP_ROOT / "planning/work-items.json").read_text(encoding="utf-8")
         )["work_items"]
-        self.assertEqual(len(work_items), 26)
+        self.assertEqual(len(work_items), 29)
         for wi in work_items:
             self.assertIn(wi.get("size"), {"S", "M", "L", "XL"}, wi["id"])
             self.assertTrue(wi.get("definition_of_done"), wi["id"])

@@ -23,7 +23,7 @@
   "risk_ids":["RISK-001","RISK-002","RISK-003","RISK-004","RISK-005","RISK-006","RISK-007","RISK-008","RISK-009","RISK-010"],
   "pending_decision_ids":["ADR-0004"],
   "latest_gate_run_id":"LOOP-20260711-003",
-  "quality_summary":{"tests_total":449,"tests_passed":449,"tests_failed":0,"tests_skipped":0,"coverage":"not_measured","qt_tests":0,"release_ready":false},
+  "quality_summary":{"tests_total":580,"tests_passed":580,"tests_failed":0,"tests_skipped":0,"coverage":0.9299,"qt_tests":0,"release_ready":false},
   "release_candidate":false,
   "terminal_state":null
 }
