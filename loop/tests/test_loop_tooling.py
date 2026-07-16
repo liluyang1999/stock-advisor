@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -12,6 +14,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import check_core_boundaries  # noqa: E402
+import check_coverage  # noqa: E402
 import check_traceability  # noqa: E402
 import render_backlog  # noqa: E402
 import render_status  # noqa: E402
@@ -300,7 +303,11 @@ class LoopToolingTests(unittest.TestCase):
         owned_but_disabled[0]["owning_work_item"] = "WI-000"
         self.assertEqual(validate_loop._gate_ownership_errors(owned_but_disabled), [])
 
-    def test_coverage_gate_is_present_and_disabled_with_placeholder_owner(self) -> None:
+    def test_coverage_gate_asserts_its_pass_condition_per_dimension(self) -> None:
+        # G-COVERAGE used to run `coverage report --fail-under=85`, which floors coverage.py's
+        # *combined* statement+branch total -- one blended number that asserts none of the four
+        # thresholds the gate's pass_condition promises. It is now wired to check_coverage.py,
+        # which asserts each dimension separately, so the gate certifies what it claims.
         gates = {
             g["id"]: g
             for g in json.loads(
@@ -308,21 +315,45 @@ class LoopToolingTests(unittest.TestCase):
             )["gates"]
         }
         coverage = gates["G-COVERAGE"]
-        self.assertFalse(coverage["enabled"])
         self.assertTrue(coverage["required_for_release"])
         self.assertEqual(coverage["owning_work_item"], "WI-000")
         self.assertTrue(coverage.get("note"))
-        commands = coverage["commands"]
         # coverage runs via the authoritative unittest runner, not pytest (Tk-GUI pytest flakiness,
         # see TOOLCHAIN_BASELINE.md); commands are `python -m ...` for PATH-independence (WS-8 wiring).
-        self.assertIn(
-            ["python", "-m", "coverage", "run", "-m", "unittest", "discover", "-s", "tests"],
-            commands,
+        self.assertEqual(
+            coverage["commands"],
+            [
+                ["python", "-m", "coverage", "run", "-m", "unittest", "discover", "-s", "tests"],
+                ["python", "-m", "coverage", "json", "-q", "-o", "build/coverage.json"],
+                ["python", "loop/scripts/check_coverage.py", "build/coverage.json"],
+            ],
         )
-        self.assertIn(["python", "-m", "coverage", "report", "--fail-under=85"], commands)
+        # The blended --fail-under floor must not come back as the gate's evidence.
+        self.assertNotIn("--fail-under", json.dumps(coverage["commands"]))
+        # An enabled gate must be one the checker can actually keep green; a disabled one must
+        # still be owned. Either way the gate may never claim a dimension it does not assert.
+        self.assertIsInstance(coverage["enabled"], bool)
         for gate_id in ("G-FORMAT", "G-LINT", "G-TYPE"):
             self.assertEqual(gates[gate_id]["owning_work_item"], "WI-000", gate_id)
             self.assertTrue(gates[gate_id].get("note"), gate_id)
+
+    def test_every_declared_coverage_threshold_is_asserted_or_explicitly_skipped(self) -> None:
+        # The hole this closes: convergence.json documents six coverage floors, the checker
+        # measures four, and the two qt_controller_* ones are unmeasurable until ADR-0001's
+        # PySide6 migration lands. Nothing structural stopped a declared threshold from being
+        # quietly ignored -- exactly how --fail-under came to certify four floors it never read.
+        # Any threshold added to (or renamed in) convergence.json must now be either asserted by
+        # check_coverage.py or listed as an explicit, reported SKIP.
+        section = json.loads((LOOP_ROOT / "quality/convergence.json").read_text(encoding="utf-8"))[
+            "coverage"
+        ]
+        declared = {key.removesuffix("_min") for key in section if key.endswith("_min")}
+        handled = set(check_coverage.THRESHOLD_KEYS) | set(check_coverage.UNMEASURABLE)
+        self.assertEqual(
+            declared,
+            handled,
+            "a coverage threshold in convergence.json is neither asserted nor explicitly skipped",
+        )
 
     def test_run_gates_default_excludes_release_phase_gates(self) -> None:
         gates = json.loads((LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8"))[
@@ -512,6 +543,239 @@ class LoopToolingTests(unittest.TestCase):
         # governance/ENGINEERING_RULES.md documents the flow so a real skip can be
         # recorded later without ambiguity. This pins the current, honest state.
         self.assertEqual(validate_loop.parse_jsonl(LOOP_ROOT / "registers" / "waivers.jsonl"), [])
+
+
+class CoverageCheckerTests(unittest.TestCase):
+    """check_coverage.py must fail loudly on the dimension that is actually below its floor.
+
+    Testing only the green path would reproduce the defect this checker exists to fix: a gate
+    that passes is worthless as evidence unless it is proven to fail when it should. Every
+    dimension therefore gets its own red case, driven through main() so the exit code and the
+    operator-visible message are what is pinned -- not just an internal helper's return value.
+
+    The fixtures are synthetic reports, never the real build/coverage.json: the tests must not
+    depend on the repository's current coverage, and must not touch build/ or the control plane.
+    """
+
+    # Baseline fixture: every dimension comfortably clear. Each red case perturbs exactly one
+    # counter, so a failure names the dimension under test and nothing else.
+    CORE = "src\\stock_advisor\\domain\\engine.py"  # backslashes as coverage.py emits on Windows
+    OTHER = "src\\stock_advisor\\ui\\app.py"
+
+    def _report(
+        self,
+        *,
+        core_missing_lines: int = 10,
+        core_missing_branches: int = 20,
+        other_missing_lines: int = 60,
+        other_missing_branches: int = 100,
+    ) -> dict:
+        def entry(missing_lines: int, missing_branches: int) -> dict:
+            return {
+                "summary": {
+                    "num_statements": 1000,
+                    "missing_lines": missing_lines,
+                    "num_branches": 1000,
+                    "missing_branches": missing_branches,
+                }
+            }
+
+        return {
+            "meta": {"branch_coverage": True},
+            "files": {
+                self.CORE: entry(core_missing_lines, core_missing_branches),
+                self.OTHER: entry(other_missing_lines, other_missing_branches),
+            },
+        }
+
+    @staticmethod
+    def _write(directory: str, payload: object, name: str = "coverage.json") -> Path:
+        path = Path(directory) / name
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return path
+
+    @staticmethod
+    def _run(path: Path) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = check_coverage.main([str(path)])
+        return code, out.getvalue(), err.getvalue()
+
+    def test_report_meeting_every_threshold_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write(directory, self._report())
+            code, out, err = self._run(path)
+        self.assertEqual(code, 0, err)
+        self.assertTrue(out.rstrip().splitlines()[-1].startswith("COVERAGE_OK"), out)
+        self.assertEqual(err, "")
+        # every measured dimension is reported, one line each, with its verdict
+        for name in check_coverage.THRESHOLD_KEYS:
+            self.assertIn(name, out)
+        self.assertEqual(out.count("PASS"), len(check_coverage.THRESHOLD_KEYS))
+
+    def _assert_only_dimension_fails(self, report: dict, dimension: str) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write(directory, report)
+            code, out, err = self._run(path)
+        self.assertEqual(code, 1, f"{dimension} should fail the gate\n{out}{err}")
+        self.assertIn("COVERAGE_ERROR", err)
+        # the error names the offending dimension...
+        self.assertIn(dimension, err)
+        # ...and only it: a red elsewhere would mean the fixture, not the checker, is doing the work
+        failed = [
+            other
+            for other in check_coverage.THRESHOLD_KEYS
+            if other != dimension and f"COVERAGE_ERROR {other} " in err
+        ]
+        self.assertEqual(failed, [], f"{dimension} fixture also tripped {failed}\n{err}")
+        self.assertNotIn("COVERAGE_OK", out)
+
+    def test_overall_statement_below_floor_fails(self) -> None:
+        # 79.5% overall statements; core stays at 99%, branches stay green.
+        self._assert_only_dimension_fails(
+            self._report(other_missing_lines=400), "overall_statement"
+        )
+
+    def test_overall_branch_below_floor_fails(self) -> None:
+        # 74% overall branches; core stays at 98%, statements stay green.
+        self._assert_only_dimension_fails(
+            self._report(other_missing_branches=500), "overall_branch"
+        )
+
+    def test_core_statement_below_floor_fails_even_though_overall_passes(self) -> None:
+        # The exact blend the old --fail-under wiring hid: core statements at 90.0% (floor 95%)
+        # while overall statements are 92.0% -- above their own 90% floor. A combined or
+        # overall-only check calls this green; the core floor must still fail it.
+        self._assert_only_dimension_fails(self._report(core_missing_lines=100), "core_statement")
+
+    def test_core_branch_below_floor_fails_even_though_overall_passes(self) -> None:
+        # Same masking, on branches: core at 85.0% (floor 90%) while overall is 87.5% (floor 85%).
+        self._assert_only_dimension_fails(self._report(core_missing_branches=150), "core_branch")
+
+    def test_thresholds_come_from_convergence_json_and_are_not_hardcoded(self) -> None:
+        # convergence.json is the single source of truth for the coverage policy. If the checker
+        # carried its own copy of the numbers, the two could drift and the gate would silently
+        # enforce something the documented policy never said.
+        document = json.loads((LOOP_ROOT / "quality/convergence.json").read_text(encoding="utf-8"))
+        section = document["coverage"]
+        live = check_coverage.load_thresholds()
+        self.assertEqual(
+            live,
+            {name: section[key] for name, key in check_coverage.THRESHOLD_KEYS.items()},
+            "check_coverage thresholds drifted from quality/convergence.json",
+        )
+
+        report = self._report()
+        files = report["files"]
+        self.assertTrue(all(d.passed for d in check_coverage.evaluate(files, live)))
+
+        # Tamper a *copy* only -- the real control-plane file is never written here. Raising the
+        # floors must flip the same report red; dropping them must flip a red report green.
+        with tempfile.TemporaryDirectory() as directory:
+            strict = Path(directory) / "convergence.json"
+            strict.write_text(
+                json.dumps(
+                    {"coverage": {key: 0.999 for key in check_coverage.THRESHOLD_KEYS.values()}}
+                ),
+                encoding="utf-8",
+            )
+            raised = check_coverage.load_thresholds(strict)
+            self.assertEqual(set(raised.values()), {0.999})
+            self.assertTrue(
+                all(not d.passed for d in check_coverage.evaluate(files, raised)),
+                "the checker ignored the thresholds it was given",
+            )
+
+            lax = Path(directory) / "lax.json"
+            lax.write_text(
+                json.dumps(
+                    {"coverage": {key: 0.0 for key in check_coverage.THRESHOLD_KEYS.values()}}
+                ),
+                encoding="utf-8",
+            )
+            bad = self._report(core_missing_lines=900, other_missing_branches=900)["files"]
+            self.assertTrue(
+                all(
+                    d.passed
+                    for d in check_coverage.evaluate(bad, check_coverage.load_thresholds(lax))
+                )
+            )
+
+    def test_unusable_thresholds_are_rejected_rather_than_defaulted(self) -> None:
+        # A malformed policy must stop the gate, never fall back to a built-in number.
+        with tempfile.TemporaryDirectory() as directory:
+            for payload in ({}, {"coverage": {}}, {"coverage": {"overall_statement_min": "90%"}}):
+                path = Path(directory) / "convergence.json"
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.assertRaises(check_coverage.CoverageError):
+                    check_coverage.load_thresholds(path)
+
+    def test_measured_ratio_is_compared_exactly_not_by_rounded_display(self) -> None:
+        # 89.96% renders as "90.0%" at coverage.py's precision=1. If the checker compared the
+        # displayed value it would certify a floor the code misses.
+        dimension = check_coverage.Dimension("overall_statement", 0.8996, 0.90, 8996, 10000)
+        self.assertFalse(dimension.passed)
+        self.assertTrue(check_coverage.Dimension("x", 0.90, 0.90, 9000, 10000).passed)
+
+    def test_core_is_matched_by_path_component_not_substring(self) -> None:
+        files = {
+            "src\\stock_advisor\\domain\\money.py": {},
+            "src\\stock_advisor\\services\\domain_rules.py": {},  # not core: name only
+            "src\\stock_advisor\\ui\\domain": {},  # not core: it is the file, not a directory
+        }
+        self.assertEqual(check_coverage.core_files(files), ["src\\stock_advisor\\domain\\money.py"])
+
+    def test_report_without_core_files_cannot_certify_the_policy(self) -> None:
+        # Silently measuring "core" as an empty set would divide by zero or, worse, report a
+        # vacuous pass. A report that cannot see the core is an error, not a green.
+        report = self._report()
+        report["files"].pop(self.CORE)
+        with tempfile.TemporaryDirectory() as directory:
+            code, out, err = self._run(self._write(directory, report))
+        self.assertEqual(code, 2)
+        self.assertIn("COVERAGE_ERROR", err)
+        self.assertIn("domain", err)
+        self.assertNotIn("COVERAGE_OK", out)
+
+    def test_report_without_branch_data_is_an_error_not_a_pass(self) -> None:
+        # `coverage json` without branch=true reports zero branches; the branch floors would be
+        # unmeasurable. That must not read as success.
+        report = self._report()
+        for entry in report["files"].values():
+            entry["summary"]["num_branches"] = 0
+            entry["summary"]["missing_branches"] = 0
+        with tempfile.TemporaryDirectory() as directory:
+            code, _, err = self._run(self._write(directory, report))
+        self.assertEqual(code, 2)
+        self.assertIn("branch", err)
+
+    def test_missing_or_corrupt_report_reports_cleanly(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            missing = Path(directory) / "absent.json"
+            code, _, err = self._run(missing)
+            self.assertEqual(code, 2)
+            self.assertIn("COVERAGE_ERROR", err)
+            self.assertIn("not found", err)
+
+            corrupt = Path(directory) / "corrupt.json"
+            corrupt.write_text("{not json", encoding="utf-8")
+            code, _, err = self._run(corrupt)
+            self.assertEqual(code, 2)
+            self.assertIn("not valid JSON", err)
+
+            # a well-formed JSON document that is not a coverage report
+            wrong = self._write(directory, {"totals": {"percent_covered": 99.0}}, "wrong.json")
+            code, _, err = self._run(wrong)
+            self.assertEqual(code, 2)
+            self.assertIn("files", err)
+
+    def test_malformed_file_entry_is_reported_with_its_name(self) -> None:
+        report = self._report()
+        report["files"][self.OTHER]["summary"]["missing_lines"] = -5
+        with tempfile.TemporaryDirectory() as directory:
+            code, _, err = self._run(self._write(directory, report))
+        self.assertEqual(code, 2)
+        self.assertIn("missing_lines", err)
 
 
 if __name__ == "__main__":
