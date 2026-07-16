@@ -24,26 +24,34 @@ a separate, deliberate product-code phase (product logic/code changes are explic
 gates + 33 loop tests + product 449 + self-test are green after). New control-plane code MUST stay
 clean.
 
-## Product `src/` — measured adoption debt (remediation deferred to the product-code phase)
+## Product `src/` — adoption debt CLEARED (all four gates enforced since 2026-07-16)
 
 Owner: the **dev-tooling work item** (see the `G-FORMAT`/`G-LINT`/`G-TYPE`/`G-COVERAGE` owner in
-`loop/quality/quality-gates.json`); those four gates stay `enabled:false` until this debt is cleared.
+`loop/quality/quality-gates.json`). Those four gates waited on the debt below; it is now paid and
+they are `enabled:true`, so this table is enforced by CI rather than aspirational.
 
-| Check | Command | Current | Target |
+| Check | Command | Baseline (2026-07-13) | Now (2026-07-16) |
 |---|---|---|---|
-| ruff lint | `python -m ruff check src main.py build_exe.py` | **68** findings (55 auto-fixable: F401 unused-import, I import-order, UP, B; incl. 7 E402 intentional `sys.path`/grouped imports needing per-site triage) | 0 (or approved per-file-ignore) |
-| ruff format | `python -m ruff format --check .` | **24** files would reformat | 0 diff |
-| pyright (basic) | `python -m pyright` | **51 errors**, 0 warnings (predominantly `src/ui` Tkinter dynamic-attribute assignments — `reportAttributeAccessIssue`; not runtime bugs) | 0 (annotate / typed holder / justified ignore) |
-| coverage (branch) | `coverage run -m unittest discover -s tests` + `coverage report` | **86.3%** total — **already ≥ the 85% branch floor** | overall stmt ≥90/branch ≥85; core stmt ≥95/branch ≥90 (`quality/convergence.json`) |
+| ruff lint | `python -m ruff check .` | **68** findings (F401, I, UP, B; incl. 7 E402) | **0** — enforced by `G-LINT` |
+| ruff format | `python -m ruff format --check .` | **24** files would reformat | **0 diff** (81 files) — enforced by `G-FORMAT` |
+| pyright (basic) | `python -m pyright` | **51 errors** (mostly `src/ui` Tk dynamic attributes) | **0 errors** — enforced by `G-TYPE` |
+| coverage | `coverage run -m unittest discover -s tests` + `check_coverage.py` | **86.3%** blended (the four real thresholds were *not* met) | overall stmt **92.99%**/branch **87.84%**, core stmt **99.75%**/branch **99.26%** — all four floors met, enforced per dimension by `G-COVERAGE` |
 
-### Remediation guidance (product-code phase)
+### How the debt was paid (for the record)
 
-- **ruff:** `ruff check --fix` clears the 55 auto-fixable; hand-triage the 7 E402 (`# noqa: E402`
-  where the `sys.path` bootstrap is intentional — e.g. `main.py:12`, `src/stock_advisor/ui/app.py`);
-  then `ruff format` the tree in one reviewable, behavior-preserving commit.
-- **pyright:** the `src/ui` dynamic-attribute errors come from attaching custom attributes to Tk
-  widgets; prefer typed containers or explicit holders (natural to revisit during the ADR-0001
-  PySide6 migration).
+- **ruff:** `--fix` cleared the auto-fixable; the intentional `sys.path` bootstraps got per-file
+  `# ruff: noqa: E402`; the tree was formatted in behavior-preserving commits.
+- **pyright:** the `src/ui` dynamic-attribute errors were the Tk god-class's symptom, resolved by the
+  ADR-0014 mixin decomposition + the `TYPE_CHECKING`-only `AppMembers` base (and `StatefulToplevel`
+  for dialog attributes). The last repo-wide error was the annotated function-attribute form
+  `check.stats: dict[str, int] = {}` — a statement Python does not support annotating; both
+  `check_traceability.check()` and `check_core_boundaries.check()` now return `(errors, stats)`.
+  `validate_loop.validate()` deliberately keeps its function attribute + `# type: ignore`: its
+  `== []` contract has a dozen callers, so changing the signature costs more than the debt.
+- **coverage:** the blended `--fail-under=85` never asserted the four documented thresholds; it was
+  replaced by `loop/scripts/check_coverage.py`, which reads them from `quality/convergence.json` and
+  asserts each dimension separately. Measurement omits `ui/_app_members.py` (ADR-0014 type-only base,
+  never imported at runtime — its 310 unexecutable declarations distorted the total to 82.7%).
 
 ## Test-runner note (refines ADR-0010)
 

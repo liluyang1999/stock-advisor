@@ -3,10 +3,12 @@ name: CI
 # Dev-toolchain CI for the loop control plane + product (ADR-0008 / WS-8). There is no git remote
 # yet; this workflow activates the moment the repository is pushed to GitHub. It runs on
 # windows-latest because the product GUI is Tkinter (runs headless on Windows without xvfb) and
-# Windows is the shipping target. The steps that would fail only on the *product-code adoption debt*
-# (whole-repo ruff + pyright — see loop/quality/TOOLCHAIN_BASELINE.md) are informational
-# (continue-on-error) until that debt is cleared in the product-code phase; everything else is
-# enforced.
+# Windows is the shipping target.
+#
+# Everything here is enforced. The whole-repo ruff + pyright steps were informational
+# (continue-on-error) while the product-code adoption debt was outstanding; that debt is cleared
+# (loop/quality/TOOLCHAIN_BASELINE.md), so G-FORMAT/G-LINT/G-TYPE/G-COVERAGE are now enabled gates
+# and `run_gates.py` runs them for real — no continue-on-error anywhere.
 
 on:
   push:
@@ -35,29 +37,18 @@ jobs:
       - name: Ruff lint (control plane)
         run: python -m ruff check loop/scripts loop/tests
 
-      # --- Enforced: tests (unittest is the authoritative runner), self-test, coverage floor ---
-      - name: Product tests (449)
+      # --- Enforced: tests (unittest is the authoritative runner) + self-test ---
+      - name: Product tests
         run: python -m unittest discover -s tests
       - name: Loop tests
         run: python -m unittest discover -s loop/tests
       - name: Self-test
         run: python main.py --self-test
-      - name: Coverage (>=85% branch floor)
-        run: |
-          python -m coverage run -m unittest discover -s tests
-          python -m coverage report --fail-under=85
 
-      # --- Enforced: the loop quality gates (dev phase: G-LOOP + G-CORE) ---
+      # --- Enforced: the loop quality gates. G-FORMAT/G-LINT/G-TYPE run whole-repo ruff+pyright and
+      # G-COVERAGE asserts each coverage dimension against quality/convergence.json, so the former
+      # informational steps and the blended `coverage report --fail-under=85` are covered here. That
+      # flag only floored coverage.py's combined statement+branch total and asserted none of the four
+      # documented thresholds; check_coverage.py replaces it.
       - name: Loop quality gates
         run: python loop/scripts/run_gates.py
-
-      # --- Informational: whole-repo ruff + pyright surface the product adoption debt ---
-      - name: Ruff format (whole repo, informational)
-        continue-on-error: true
-        run: python -m ruff format --check .
-      - name: Ruff lint (whole repo, informational)
-        continue-on-error: true
-        run: python -m ruff check .
-      - name: Pyright (informational)
-        continue-on-error: true
-        run: python -m pyright

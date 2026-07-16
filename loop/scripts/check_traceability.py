@@ -71,7 +71,10 @@ def check_tk_contract_mapping() -> list[str]:
     return _tk_contract_mapping_errors(fieldnames, rows)
 
 
-def check(release: bool = False) -> list[str]:
+def check(release: bool = False) -> tuple[list[str], dict[str, int]]:
+    """返回 (errors, stats)。stats 随返回值传出而非挂在函数对象上：函数属性是可变全局，
+    且需要 `# type: ignore[attr-defined]` 才能过类型检查（见 check_core_boundaries 的同构改动）。"""
+
     errors: list[str] = []
     requirements_text = (LOOP_ROOT / "product/REQUIREMENTS.md").read_text(encoding="utf-8")
     requirement_ids = set(re.findall(r"\bREQ-\d{3}\b", requirements_text))
@@ -86,7 +89,7 @@ def check(release: bool = False) -> list[str]:
         reader = csv.DictReader(handle)
         columns = set(reader.fieldnames or [])
         if missing := REQUIRED_COLUMNS - columns:
-            return [f"traceability.csv missing columns: {sorted(missing)}"]
+            return ([f"traceability.csv missing columns: {sorted(missing)}"], {})
         rows = list(reader)
 
     row_ids = [row["requirement_id"].strip() for row in rows]
@@ -153,11 +156,8 @@ def check(release: bool = False) -> list[str]:
             if ac not in acceptance_ids:
                 errors.append(f"{row['requirement_id'].strip()} references unknown acceptance {ac}")
 
-    check.stats = {"requirements": len(requirement_ids), "rows": len(rows)}
-    return errors
-
-
-check.stats = {}  # type: ignore[attr-defined]
+    stats = {"requirements": len(requirement_ids), "rows": len(rows)}
+    return errors, stats
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -166,12 +166,13 @@ def main(argv: list[str] | None = None) -> int:
         "--release", action="store_true", help="Require every row to be verified with evidence."
     )
     args = parser.parse_args(argv)
-    errors = check(release=args.release) + check_tk_contract_mapping()
+    errors, stats = check(release=args.release)
+    errors = errors + check_tk_contract_mapping()
     if errors:
         for error in errors:
             print(f"TRACEABILITY_ERROR {error}", file=sys.stderr)
         return 1
-    print(f"TRACEABILITY_OK {check.stats['rows']}/{check.stats['requirements']}")  # type: ignore[attr-defined]
+    print(f"TRACEABILITY_OK {stats['rows']}/{stats['requirements']}")
     return 0
 
 

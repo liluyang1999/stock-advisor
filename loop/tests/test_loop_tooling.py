@@ -45,26 +45,26 @@ class LoopToolingTests(unittest.TestCase):
         self.assertTrue(any("additional property" in issue for issue in issues))
 
     def test_traceability_covers_every_requirement(self) -> None:
-        self.assertEqual(check_traceability.check(release=False), [])
-        self.assertEqual(check_traceability.check.stats["requirements"], 34)
+        errors, stats = check_traceability.check(release=False)
+        self.assertEqual(errors, [])
+        self.assertEqual(stats["requirements"], 34)
 
     def test_traceability_edges_agree_with_work_items(self) -> None:
-        self.assertEqual(
-            check_traceability.check(release=False), [], check_traceability.check(release=False)
-        )
+        errors, _ = check_traceability.check(release=False)
+        self.assertEqual(errors, [], errors)
 
     def test_every_acceptance_criterion_is_traced(self) -> None:
-        self.assertEqual(
-            check_traceability.check(release=False), [], check_traceability.check(release=False)
-        )
+        errors, _ = check_traceability.check(release=False)
+        self.assertEqual(errors, [], errors)
         self.assertIn("acceptance_criteria", check_traceability.REQUIRED_COLUMNS)
 
     def test_backlog_is_exact_projection(self) -> None:
         self.assertEqual(render_backlog.check_backlog(), [])
 
     def test_protected_core_has_no_forbidden_imports(self) -> None:
-        self.assertEqual(check_core_boundaries.check(), [])
-        self.assertEqual(check_core_boundaries.check.stats["modules"], 12)
+        errors, stats = check_core_boundaries.check()
+        self.assertEqual(errors, [])
+        self.assertEqual(stats["modules"], 12)
 
     def test_core_boundary_parser_detects_relative_infrastructure_import(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -75,7 +75,7 @@ class LoopToolingTests(unittest.TestCase):
             self.assertIn("data_provider", internal)
 
     def test_release_traceability_is_intentionally_not_green_yet(self) -> None:
-        errors = check_traceability.check(release=True)
+        errors, _ = check_traceability.check(release=True)
         self.assertTrue(errors)
         self.assertTrue(any("not release-verified" in error for error in errors))
 

@@ -666,6 +666,10 @@ def validate() -> list[str]:
     return errors
 
 
+# 与 check_traceability/check_core_boundaries 的 (errors, stats) 返回值不同，这里保留函数属性：
+# validate() 的 `== []` 契约被十余处测试与脚本依赖，改签名的波及面远大于收益。函数属性需要
+# type: ignore，但那是诚实的类型债；真正必须修的是带标注的形式（`validate.stats: dict = {}`），
+# 那是 Python 不支持标注的语句，pyright 会直接报错。
 validate.stats = {}  # type: ignore[attr-defined]
 
 

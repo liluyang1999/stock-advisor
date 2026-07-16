@@ -35,7 +35,10 @@ def _import_targets(path: Path, package_name: str) -> tuple[set[str], set[str]]:
     return roots, internal
 
 
-def check() -> list[str]:
+def check() -> tuple[list[str], dict[str, int]]:
+    """返回 (errors, stats)。stats 随返回值传出而非挂在函数对象上：`check.stats: ... = {}`
+    是 Python 不支持标注的语句形式（运行期标注被忽略，pyright 会正确报错）。"""
+
     manifest = load_json("architecture/core-module-manifest.json")
     source_root = (LOOP_ROOT / manifest["source_root"]).resolve()
     forbidden = set(manifest["forbidden_import_roots"])
@@ -67,27 +70,24 @@ def check() -> list[str]:
             errors.append(f"{relative} imports forbidden roots: {blocked}")
         if blocked_internal:
             errors.append(f"{relative} imports forbidden internal modules: {blocked_internal}")
-    check.stats = {
+    stats = {
         "modules": len(seen),
         "forbidden_roots": len(forbidden),
         "forbidden_internal": len(forbidden_internal),
     }
-    return errors
-
-
-check.stats: dict[str, int] = {}
+    return errors, stats
 
 
 def main() -> int:
-    errors = check()
+    errors, stats = check()
     if errors:
         for error in errors:
             print(f"CORE_BOUNDARY_ERROR {error}", file=sys.stderr)
         return 1
     print(
         "CORE_BOUNDARY_OK "
-        f"modules={check.stats['modules']} forbidden_roots={check.stats['forbidden_roots']} "
-        f"forbidden_internal={check.stats['forbidden_internal']}"
+        f"modules={stats['modules']} forbidden_roots={stats['forbidden_roots']} "
+        f"forbidden_internal={stats['forbidden_internal']}"
     )
     return 0
 
