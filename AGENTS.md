@@ -4,10 +4,13 @@
 
 ## 硬性约束
 
-- **运行期只用 Python 标准库**：`tkinter`、`urllib`、`json`、`csv`、`threading` 等。任何运行期第三方依赖都不允许（会破坏单文件 EXE 的「放哪都能跑」目标）。
+- **GUI 栈：目标是 PySide6，出货的仍是 Tkinter。** ADR-0001 已接受从 Tkinter 迁移到 PySide6 Widgets（REQ-011/012/013），迁移**正在进行**（`src/stock_advisor/qt_app/`，MS-01 的骨架已落地）。**当前交付给用户的仍然是 Tkinter 版**（`src/stock_advisor/ui/`，`main.py` 的入口未变）；在 Qt 版通过发布门禁之前，任何"迁移已完成"的表述都不成立。两套 GUI 迁移期内并存，`ui/theme.py` 是两者共用的 token 单一真源。
+- **运行期依赖**：出货版今天**只用标准库**（`tkinter`、`urllib`、`json`、`csv`、`threading`）。唯一在途的例外是迁移目标 PySide6-Essentials，它在 `pyproject.toml` 的 `[dependency-groups].gui` 里、尚未进 `[project].dependencies`——即尚未出货。新增其它运行期第三方依赖仍然不允许。
+  - 这条约束原本的理由是"会破坏单文件 EXE 的「放哪都能跑」目标"。EXP-001 已实测该理由对 Qt 的实际份量：Qt onefile 39.3 MB（Tk 基线 12.4 MB），体积可交付；真正的代价是每次启动都要重新解包，热启动 2.691 s vs onedir 0.641 s。见 `loop/registers/experiments.jsonl`。
 - **构建期唯一依赖是 PyInstaller**，通过 `pip install pyinstaller` 安装；见 `requirements-build.txt`。
 - **不引入** Node、.NET、Electron、浏览器框架或其他非 Python 工具链。
 - **交付物只有一个单文件 EXE**：`股市锦囊.exe`（onefile、windowed），随构建附带一份 HTML 说明书。
+  - onefile 的去留是 **ADR-0004（仍是 `proposed`）**。它对 Qt 版有两个新约束：EXP-001 实测的启动代价（见上），以及 PySide6 的 **LGPL-3.0/GPL** 许可证——其重新链接义务 onedir 可轻易满足（用户能替换 `Qt6*.dll`），onefile 不能。**Qt 版在 ADR-0004 带着这两点定下来之前不得发布。**
 - **构建目录约定**：`build/` 只放构建中间产物（含 PyInstaller 原始产物）；`dist/` 只放最终交付物（EXE + HTML 报告）。不要使用 `outputs/`。
 - **写边界**：构建只写项目内 `build/` 与 `dist/`，绝不写到项目目录之外。
 

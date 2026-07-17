@@ -1,0 +1,14 @@
+=== A: Qt onefile ===
+  exe_mib        :     39.3 MB   (单个 EXE 文件)
+  dist_total_mib :     39.3 MB   (用户实际要拿到的全部)
+  cold_start_s   :    3.397 s   (清空 %TEMP%\_MEI* 后首次)
+  warm_start_s   :    2.903 s   (4 次中位数 [2.67, 3.25, 2.7, 3.1])
+  plugin_manifest: 0 类 (全部内嵌在 EXE 里)
+
+=== B: Qt onedir ===
+  exe_mib        :      1.8 MB   (单个 EXE 文件)
+  dist_total_mib :     99.9 MB   (用户实际要拿到的全部)
+  cold_start_s   :    0.798 s   (清空 %TEMP%\_MEI* 后首次)
+  warm_start_s   :    0.685 s   (4 次中位数 [0.67, 0.67, 0.7, 0.71])
+  plugin_manifest: 7 类 ['generic', 'iconengines', 'imageformats', 'networkinformation', 'platforms', 'styles', 'tls']
+

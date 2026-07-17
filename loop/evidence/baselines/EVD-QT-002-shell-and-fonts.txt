@@ -1,0 +1,21 @@
+test_applied_font_is_what_qfontinfo_reports (tests.test_qt_fonts.FontContractTests.test_applied_font_is_what_qfontinfo_reports)
+QFont('X') 永远"设置成功"，QFontInfo 才说出实际渲染字体——断言必须基于后者。 ... ok
+test_exact_match_flag_is_not_qt_exactmatch (tests.test_qt_fonts.FontContractTests.test_exact_match_flag_is_not_qt_exactmatch) ... ok
+test_missing_family_falls_back_and_says_so (tests.test_qt_fonts.FontContractTests.test_missing_family_falls_back_and_says_so) ... ok
+test_point_size_flows_through (tests.test_qt_fonts.FontContractTests.test_point_size_flows_through) ... ok
+test_requested_family_comes_from_the_theme_single_source (tests.test_qt_fonts.FontContractTests.test_requested_family_comes_from_the_theme_single_source) ... ok
+test_resolution_never_silently_substitutes (tests.test_qt_fonts.FontContractTests.test_resolution_never_silently_substitutes)
+核心契约：要么拿到请求的字体，要么如实报告替换——绝不静默。 ... ok
+test_brand_appears_only_in_the_native_title_bar (tests.test_qt_shell.QtShellTests.test_brand_appears_only_in_the_native_title_bar) ... ok
+test_disclaimer_is_resident_in_the_shell (tests.test_qt_shell.QtShellTests.test_disclaimer_is_resident_in_the_shell) ... ok
+test_every_visible_widget_inherits_the_resolved_ui_font (tests.test_qt_shell.QtShellTests.test_every_visible_widget_inherits_the_resolved_ui_font)
+DoD 的核心判据：每个可见控件都经 QFontInfo 解析到同一个实际字体族。 ... ok
+test_font_fallback_is_reported_visibly_not_swallowed (tests.test_qt_shell.QtShellTests.test_font_fallback_is_reported_visibly_not_swallowed) ... ok
+test_minimum_size_comes_from_the_token_source (tests.test_qt_shell.QtShellTests.test_minimum_size_comes_from_the_token_source) ... ok
+test_set_page_mounts_and_shows_the_page (tests.test_qt_shell.QtShellTests.test_set_page_mounts_and_shows_the_page) ... ok
+test_shell_is_a_qmainwindow_titled_from_the_token_source (tests.test_qt_shell.QtShellTests.test_shell_is_a_qmainwindow_titled_from_the_token_source) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.707s
+
+OK

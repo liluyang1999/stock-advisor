@@ -30,6 +30,16 @@ python main.py --self-test  # 离线自测：验证个股分析与选股管线�
 
 要求 Python 3.12+（开发使用 3.14）。运行期只依赖标准库（`tkinter`、`urllib`、`json` 等），无需安装任何第三方包。
 
+### GUI 栈：出货是 Tkinter，目标是 PySide6
+
+`python main.py` 跑的、以及 `股市锦囊.exe` 里的，**都是 Tkinter 版**——这是当前唯一交付给用户的界面。
+
+ADR-0001 已接受迁移到 PySide6 Widgets，工作正在进行中（`src/stock_advisor/qt_app/`）。Qt 版**尚未出货**，也还没通过发布门禁。参与迁移需要额外装 GUI 依赖：
+
+```bash
+python -m pip install --group gui   # PySide6-Essentials + pytest-qt（仅开发期）
+```
+
 ## 测试
 
 ```bash
@@ -85,9 +95,13 @@ src/stock_advisor/
   services/                 编排与持久化
     workflow.py               个股分析与全市场选股编排（回传测量供改档重判）
     store.py                  用户配置持久化（自选股/持仓、本金、档位、预设、预警）
-  ui/                       Tkinter 界面
+  ui/                       Tkinter 界面（出货中）
     app.py                    Tkinter 界面（决策强度分段按钮、光谱/K线/计算器/回测、自选股/持仓、横向对比、K线 hover）
+    theme.py                  UI token 单一真源（颜色/尺寸/字体/免责声明）——Tk 与 Qt 共用
     manual.py                 使用说明 HTML 生成
+  qt_app/                   PySide6 界面（ADR-0001 迁移目标，进行中，尚未出货）
+    main_window.py            QMainWindow 外壳（标题栏身份、免责声明常驻、页面挂载）
+    theme/fonts.py            字体契约：QFontInfo 如实报告实际字体，禁止静默回退（REQ-016/033）
 tests/                      单元测试
 docs/                       设计说明与实现计划
 ```
