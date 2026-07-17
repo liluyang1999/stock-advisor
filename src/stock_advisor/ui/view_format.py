@@ -194,6 +194,29 @@ def result_row_tags(result: AnalysisResult) -> tuple[str, ...]:
     return (risk_tag, f"action_{result.action.lower()}")
 
 
+# Excel/WPS 把以这些字符开头的单元格当公式求值，`=cmd|' /C calc'!A0` 这类 DDE 载荷可执行
+# 外部命令（REQ-032）。导出内容含股票名称等来自远端接口的字段，故视为不可信。
+# TAB/CR 未被 REQ-032 逐一点名，但属同一触发类，一并堵住。
+_FORMULA_LEADS = ("=", "+", "-", "@", "\t", "\r")
+
+
+def neutralize_export_cell(value: object) -> str:
+    """把单元格中和成表格软件不会求值的文本（REQ-032）。
+
+    加前缀而非删改：`'` 是 Excel 的"按文本处理"标记，单元格里不显示，原文完整保留。
+    注意这会把合法的 `+1.53%`/`-1.53%` 涨跌幅一并转为文本——REQ-032 按字面要求中和这四个
+    引导符，此处不做"看起来像数字就放行"的豁免：那要靠正则判别数字，多一个正则就多一个
+    可被绕过的洞，而本函数是安全控制，宁可让涨跌幅在 Excel 里变文本。
+    """
+
+    text = "" if value is None else str(value)
+    return f"'{text}" if text.startswith(_FORMULA_LEADS) else text
+
+
+def _safe_row(cells: object) -> list[str]:
+    return [neutralize_export_cell(cell) for cell in cells]  # type: ignore[union-attr]
+
+
 def format_results_for_clipboard(results: list[AnalysisResult]) -> str:
     output = io.StringIO()
     writer = csv.writer(output, delimiter="\t", lineterminator="\n")
@@ -215,12 +238,14 @@ def format_results_for_clipboard(results: list[AnalysisResult]) -> str:
     for result in results:
         row = list(format_result_row(result))
         writer.writerow(
-            [
-                *row,
-                _fmt_whole_percent(result.suggested_position),
-                result.forecast_label,
-                "；".join(result.reasons[:3]),
-            ]
+            _safe_row(
+                [
+                    *row,
+                    _fmt_whole_percent(result.suggested_position),
+                    result.forecast_label,
+                    "；".join(result.reasons[:3]),
+                ]
+            )
         )
     return output.getvalue().strip()
 
@@ -247,13 +272,15 @@ def format_results_as_csv(results: list[AnalysisResult]) -> str:
     for result in results:
         row = list(format_result_row(result))
         writer.writerow(
-            [
-                *row,
-                _fmt_whole_percent(result.suggested_position),
-                result.forecast_label,
-                "；".join(result.reasons[:3]),
-                "；".join(result.risks[:3]),
-            ]
+            _safe_row(
+                [
+                    *row,
+                    _fmt_whole_percent(result.suggested_position),
+                    result.forecast_label,
+                    "；".join(result.reasons[:3]),
+                    "；".join(result.risks[:3]),
+                ]
+            )
         )
     return "\ufeff" + output.getvalue()
 
@@ -262,7 +289,7 @@ def format_table_rows_for_clipboard(rows: list[tuple[str, ...]]) -> str:
     output = io.StringIO()
     writer = csv.writer(output, delimiter="\t", lineterminator="\n")
     writer.writerow(["代码", "名称", "建议", "分数", "把握", "最新价", "涨跌幅", "风险"])
-    writer.writerows(rows)
+    writer.writerows(_safe_row(row) for row in rows)
     return output.getvalue().strip()
 
 
@@ -270,7 +297,7 @@ def format_table_rows_as_csv(rows: list[tuple[str, ...]]) -> str:
     output = io.StringIO()
     writer = csv.writer(output, lineterminator="\n")
     writer.writerow(["代码", "名称", "建议", "分数", "把握", "最新价", "涨跌幅", "风险"])
-    writer.writerows(rows)
+    writer.writerows(_safe_row(row) for row in rows)
     return "\ufeff" + output.getvalue()
 
 
