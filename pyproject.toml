@@ -14,8 +14,9 @@ name = "stock-advisor"
 version = "1.0.0"                     # mirrors src/stock_advisor/__init__.py::__version__
 description = "股市锦囊 — an offline, rule-based A-share desktop decision-support tool."
 requires-python = ">=3.14"
-# No runtime dependencies: the domain core is pure stdlib and the current GUI is Tkinter (stdlib).
-# PySide6 moves here when ADR-0001's Tkinter→PySide6 migration lands.
+# No runtime dependencies yet: the domain core is pure stdlib and the shipping GUI is still Tkinter
+# (stdlib). The ADR-0001 migration is under way behind the [dependency-groups].gui group below;
+# PySide6-Essentials moves here when the Qt GUI becomes the shipping one.
 
 [dependency-groups]
 # Development-only tools (PEP 735). Install with:  python -m pip install --group dev
@@ -27,7 +28,31 @@ dev = [
     "coverage[toml]==7.15.1",
     "pre-commit==4.6.0",
 ]
-# gui = ["PySide6", "pytest-qt"]      # activate with the ADR-0001 Tkinter→PySide6 migration.
+
+# The ADR-0001 Tkinter→PySide6 migration (WI-003). Install with:  python -m pip install --group gui
+# Pinned to the versions validated on 2026-07-16 (Python 3.14.4, Windows 11); PySide6 ships
+# cp310-abi3 wheels, so the stable ABI covers 3.14.
+#
+# PySide6-Essentials, NOT PySide6 — measured, not assumed. The `PySide6` meta-package is
+# Essentials + Addons: 634.1 MB installed, of which Qt6WebEngineCore.dll alone is 195.3 MB.
+# Essentials (202.2 MB) carries everything this product needs — QtCore/QtGui/QtWidgets, and with
+# them QMainWindow, QTableView, QAbstractTableModel, QSortFilterProxyModel (REQ-012), QThread and
+# QTimer (REQ-013). Addons carries only things it does not: QtWebEngine, Qt3D, QtMultimedia, and
+# QtCharts — the K-line is drawn with QPainter over the pure geometry in domain/chart.py (WI-027),
+# so QtCharts buys nothing for +432.9 MB. Verified by installing Essentials alone and constructing
+# every widget/class above. Revisit only if a real need for an Addons module appears.
+#
+# LICENCE (WI-003 / AC-009): PySide6-Essentials and shiboken6 are
+# `LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only`. This is the first non-PSF licence in the
+# product — today it ships stdlib-only. Distributing the EXE under the LGPL option obliges us to
+# ship the licence text, state that Qt is used under LGPL, and let a user relink against their own
+# Qt build. That last obligation interacts directly with the still-`proposed` ADR-0004 (PyInstaller
+# onefile): onedir makes DLL replacement trivial, onefile does not. Do not ship a Qt build before
+# ADR-0004 is decided with this in view. pytest-qt is MIT.
+gui = [
+    "PySide6-Essentials==6.11.1",   # LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only; pulls shiboken6==6.11.1 (same)
+    "pytest-qt==4.5.0",             # MIT; dev-only, never shipped
+]
 
 # --------------------------------------------------------------------------- ruff (format + lint)
 [tool.ruff]
