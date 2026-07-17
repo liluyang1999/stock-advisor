@@ -1,0 +1,13 @@
+test_results_as_csv_neutralizes_hostile_name (tests.test_export_security.ExportPathsAreNeutralizedTests.test_results_as_csv_neutralizes_hostile_name) ... ok
+test_results_for_clipboard_neutralizes_hostile_name (tests.test_export_security.ExportPathsAreNeutralizedTests.test_results_for_clipboard_neutralizes_hostile_name) ... ok
+test_table_rows_as_csv_neutralizes (tests.test_export_security.ExportPathsAreNeutralizedTests.test_table_rows_as_csv_neutralizes) ... ok
+test_table_rows_for_clipboard_neutralizes (tests.test_export_security.ExportPathsAreNeutralizedTests.test_table_rows_for_clipboard_neutralizes) ... ok
+test_every_dangerous_lead_is_neutralized (tests.test_export_security.NeutralizeCellTests.test_every_dangerous_lead_is_neutralized) ... ok
+test_non_string_values_pass_through_as_text (tests.test_export_security.NeutralizeCellTests.test_non_string_values_pass_through_as_text) ... ok
+test_ordinary_text_is_left_untouched (tests.test_export_security.NeutralizeCellTests.test_ordinary_text_is_left_untouched) ... ok
+test_tab_and_carriage_return_leads_are_neutralized (tests.test_export_security.NeutralizeCellTests.test_tab_and_carriage_return_leads_are_neutralized) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.015s
+
+OK

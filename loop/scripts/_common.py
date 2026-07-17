@@ -15,13 +15,28 @@ def load_json(relative: str) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def dump_json(payload: Any) -> str:
+    """按控制面的排版约定序列化：顶层键每行一条，值用紧凑 JSON（冒号后无空格）。
+
+    这不是审美偏好：`state/*.json` 全部手写成这个形状，而 `--check` 是解析后语义比对，
+    格式差异它一律看不见。若生成器写 `indent=2`，任何一次 `--write` 都会把整个文件重排，
+    两行语义改动产生几十行 diff，且校验器永远不会报警——生成器必须与文件约定一致。
+    """
+
+    if not isinstance(payload, dict):
+        return json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n"
+    lines = [
+        f"  {json.dumps(key, ensure_ascii=False)}:"
+        f"{json.dumps(value, ensure_ascii=False, separators=(',', ':'))}"
+        for key, value in payload.items()
+    ]
+    return "{\n" + ",\n".join(lines) + "\n}\n"
+
+
 def atomic_write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_name(f".{path.name}.tmp")
-    temp.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    temp.write_text(dump_json(payload), encoding="utf-8")
     temp.replace(path)
 
 

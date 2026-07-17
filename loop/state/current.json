@@ -13,7 +13,7 @@
   "dirty_worktree":true,
   "last_updated":"2026-07-11T00:09:17+09:00",
   "completed_ids":["WI-000"],
-  "in_progress_ids":[],
+  "in_progress_ids":["WI-028"],
   "next_actions":[
     "execute WI-001 to align repository-level rules and metadata with the accepted PySide6 target",
     "run WI-003 in an isolated environment to pin dependencies and review licenses",
