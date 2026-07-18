@@ -3,9 +3,11 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
+from datetime import UTC, datetime
 from typing import Protocol
 
 from ..data.data_provider import MarketDataError
+from ..domain.data_quality import DataQuality
 from ..domain.engine import build_analysis_result, measure
 from ..domain.models import (
     STANDARD_LEVEL,
@@ -54,6 +56,9 @@ class AnalysisOutcome:
     history: list[DailyBar] = field(default_factory=list)
     error: str = ""
     degraded: bool = False
+    quality: DataQuality = field(default_factory=DataQuality)
+    """数据质量信封（REQ-023/WI-007）：来源/获取时间/完整度/新鲜度/降级状态。`degraded` 这个
+    裸 bool 保留作向后兼容；`quality` 是它的正名版——带等级、可见降级原因与获取时间。"""
 
     @property
     def ok(self) -> bool:
@@ -63,12 +68,15 @@ class AnalysisOutcome:
 def analyze_symbol(
     symbol: StockSymbol, provider: MarketDataProvider, level: int = STANDARD_LEVEL
 ) -> AnalysisOutcome:
+    fetched_at = datetime.now(UTC)
     try:
         quote = provider.fetch_quote(symbol)
     except (MarketDataError, ValueError) as exc:
-        return AnalysisOutcome(symbol=symbol, error=str(exc))
+        return AnalysisOutcome(symbol=symbol, error=str(exc), quality=DataQuality(level="invalid"))
     except Exception as exc:
-        return AnalysisOutcome(symbol=symbol, error=f"实时行情获取失败：{exc}")
+        return AnalysisOutcome(
+            symbol=symbol, error=f"实时行情获取失败：{exc}", quality=DataQuality(level="invalid")
+        )
 
     degraded = False
     try:
@@ -98,8 +106,18 @@ def analyze_symbol(
         return AnalysisOutcome(symbol=symbol, error=str(exc))
     except Exception as exc:  # noqa: BLE001 - provider 数据结构异常应返回可展示错误，避免后台线程裸异常
         return AnalysisOutcome(symbol=symbol, error=f"分析计算失败：{exc}")
+    quality = DataQuality(
+        level="degraded_history" if degraded else "complete",
+        fetched_at=fetched_at,
+        degradations=(history_error,) if history_error else (),
+    )
     return AnalysisOutcome(
-        symbol=symbol, result=result, measurement=m, history=history, degraded=degraded
+        symbol=symbol,
+        result=result,
+        measurement=m,
+        history=history,
+        degraded=degraded,
+        quality=quality,
     )
 
 
