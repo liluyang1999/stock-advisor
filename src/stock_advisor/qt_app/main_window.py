@@ -10,7 +10,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..domain.models import CORE_DISCLAIMER
 from ..ui import assets, theme
-from .theme import fonts
+from .theme import fonts, qss
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -72,6 +72,7 @@ def build_application(argv: list[str] | None = None) -> tuple[QtWidgets.QApplica
         else QtWidgets.QApplication(argv or [])
     )
     resolved = fonts.apply_app_font(app)
+    qss.apply_theme(app)  # tokens.json -> QSS，应用级样式（WI-005）
     window = MainWindow()
     if resolved.fallback_note is not None:
         window.report_font_fallback(resolved.fallback_note)
