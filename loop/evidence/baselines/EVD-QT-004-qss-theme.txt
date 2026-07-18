@@ -1,0 +1,14 @@
+test_applying_qss_to_a_real_widget_does_not_throw (tests.test_qt_theme.QssContractTests.test_applying_qss_to_a_real_widget_does_not_throw) ... ok
+test_control_heights_come_from_tokens (tests.test_qt_theme.QssContractTests.test_control_heights_come_from_tokens) ... ok
+test_every_hex_colour_in_the_qss_comes_from_tokens (tests.test_qt_theme.QssContractTests.test_every_hex_colour_in_the_qss_comes_from_tokens)
+核心单一真源断言：QSS 里的每个十六进制色都必须在 tokens.json 中。 ... ok
+test_font_family_is_the_token_family_not_a_qt_default (tests.test_qt_theme.QssContractTests.test_font_family_is_the_token_family_not_a_qt_default) ... ok
+test_interactive_and_state_colours_are_actually_used (tests.test_qt_theme.QssContractTests.test_interactive_and_state_colours_are_actually_used) ... ok
+test_qss_has_no_unresolved_placeholders (tests.test_qt_theme.QssContractTests.test_qss_has_no_unresolved_placeholders) ... ok
+test_qss_is_non_empty_and_styles_core_widgets (tests.test_qt_theme.QssContractTests.test_qss_is_non_empty_and_styles_core_widgets) ... ok
+test_tokens_load_from_the_machine_authoritative_file (tests.test_qt_theme.TokenLoaderTests.test_tokens_load_from_the_machine_authoritative_file) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.052s
+
+OK
