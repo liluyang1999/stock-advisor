@@ -1,0 +1,19 @@
+test_existing_result_dataclasses_are_unchanged (tests.test_data_quality.BackwardCompatibilityTests.test_existing_result_dataclasses_are_unchanged) ... ok
+test_age_seconds_computed_from_fetched_at (tests.test_data_quality.DataQualityValueObjectTests.test_age_seconds_computed_from_fetched_at) ... ok
+test_age_seconds_none_without_fetched_at (tests.test_data_quality.DataQualityValueObjectTests.test_age_seconds_none_without_fetched_at) ... ok
+test_carries_provenance_fetched_at_and_degradations (tests.test_data_quality.DataQualityValueObjectTests.test_carries_provenance_fetched_at_and_degradations) ... ok
+test_defaults_are_a_complete_no_metadata_envelope (tests.test_data_quality.DataQualityValueObjectTests.test_defaults_are_a_complete_no_metadata_envelope) ... ok
+test_invalid_level_is_not_actionable (tests.test_data_quality.DataQualityValueObjectTests.test_invalid_level_is_not_actionable) ... ok
+test_is_frozen (tests.test_data_quality.DataQualityValueObjectTests.test_is_frozen) ... ok
+test_is_stale_against_ttl (tests.test_data_quality.DataQualityValueObjectTests.test_is_stale_against_ttl) ... ok
+test_is_stale_is_false_when_age_unknown (tests.test_data_quality.DataQualityValueObjectTests.test_is_stale_is_false_when_age_unknown) ... ok
+test_provenance_is_frozen_and_records_the_fallback_chain (tests.test_data_quality.ProvenanceTests.test_provenance_is_frozen_and_records_the_fallback_chain) ... ok
+test_invalid_is_the_only_non_actionable_besides_partial (tests.test_data_quality.QualityLevelTests.test_invalid_is_the_only_non_actionable_besides_partial) ... ok
+test_levels_match_the_data_quality_contract (tests.test_data_quality.QualityLevelTests.test_levels_match_the_data_quality_contract) ... ok
+test_healthy_fetch_yields_complete_quality (tests.test_data_quality.WorkflowIntegrationTests.test_healthy_fetch_yields_complete_quality) ... ok
+test_history_failure_is_degraded_history_with_a_visible_reason (tests.test_data_quality.WorkflowIntegrationTests.test_history_failure_is_degraded_history_with_a_visible_reason) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.105s
+
+OK

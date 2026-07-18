@@ -4,7 +4,7 @@
 - Phase: `foundation_ready`
 - Status: `active`
 - Milestone: `MS-00`
-- Selected work item: `WI-007` — 统一数据 provenance/complete/stale envelope (`ready`)
+- Selected work item: `WI-008` — 黄金向量与数值性质测试 (`ready`)
 - Baseline: `881099806deca77a7bf7e784d6786f9bccdf0ce6`
 - Dirty worktree: `true`
 - Current GUI / target GUI: `Tkinter / PySide6`
