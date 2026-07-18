@@ -1,0 +1,18 @@
+test_cancel_before_attempt_returns_cancelled_without_data (tests.test_transport_contract.CancellationTests.test_cancel_before_attempt_returns_cancelled_without_data) ... ok
+test_cancel_between_sources_stops_the_chain (tests.test_transport_contract.CancellationTests.test_cancel_between_sources_stops_the_chain) ... ok
+test_full_pages_is_complete (tests.test_transport_contract.CompletenessTests.test_full_pages_is_complete) ... ok
+test_missing_pages_or_short_count_is_incomplete (tests.test_transport_contract.CompletenessTests.test_missing_pages_or_short_count_is_incomplete) ... ok
+test_success_carries_completeness_through (tests.test_transport_contract.CompletenessTests.test_success_carries_completeness_through) ... ok
+test_expired_deadline_before_any_attempt_fails_network (tests.test_transport_contract.DeadlineTests.test_expired_deadline_before_any_attempt_fails_network) ... ok
+test_one_deadline_covers_all_sources_not_per_source (tests.test_transport_contract.DeadlineTests.test_one_deadline_covers_all_sources_not_per_source) ... ok
+test_all_sources_network_fail_returns_classified_failure_without_data (tests.test_transport_contract.FaultMatrixTests.test_all_sources_network_fail_returns_classified_failure_without_data) ... ok
+test_each_fault_classifies_correctly_and_carries_no_data (tests.test_transport_contract.FaultMatrixTests.test_each_fault_classifies_correctly_and_carries_no_data) ... ok
+test_network_fault_falls_through_to_the_next_source (tests.test_transport_contract.FaultMatrixTests.test_network_fault_falls_through_to_the_next_source) ... ok
+test_parse_faults_do_not_retry_other_sources (tests.test_transport_contract.FaultMatrixTests.test_parse_faults_do_not_retry_other_sources) ... ok
+test_all_http_statuses_are_network_class (tests.test_transport_contract.HttpStatusClassificationTests.test_all_http_statuses_are_network_class) ... ok
+test_failed_constructor_has_no_way_to_carry_data (tests.test_transport_contract.ZeroFabricationStructuralTests.test_failed_constructor_has_no_way_to_carry_data) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.012s
+
+OK
