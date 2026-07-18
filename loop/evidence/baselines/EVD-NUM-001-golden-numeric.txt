@@ -1,0 +1,20 @@
+test_atr_percent_matches_hand_calculation (tests.test_numeric_golden.GoldenIndicatorTests.test_atr_percent_matches_hand_calculation) ... ok
+test_bollinger_position_matches_hand_calculation (tests.test_numeric_golden.GoldenIndicatorTests.test_bollinger_position_matches_hand_calculation) ... ok
+test_moving_average_matches_hand_calculation (tests.test_numeric_golden.GoldenIndicatorTests.test_moving_average_matches_hand_calculation) ... ok
+test_rsi_matches_hand_calculation (tests.test_numeric_golden.GoldenIndicatorTests.test_rsi_matches_hand_calculation) ... ok
+test_bollinger_position_rises_monotonically_with_last_price (tests.test_numeric_golden.IndicatorPropertyTests.test_bollinger_position_rises_monotonically_with_last_price) ... ok
+test_flat_series_gives_neutral_rsi_regardless_of_level (tests.test_numeric_golden.IndicatorPropertyTests.test_flat_series_gives_neutral_rsi_regardless_of_level) ... ok
+test_moving_average_is_within_the_min_max_of_its_window (tests.test_numeric_golden.IndicatorPropertyTests.test_moving_average_is_within_the_min_max_of_its_window) ... ok
+test_rsi_is_always_within_0_and_100 (tests.test_numeric_golden.IndicatorPropertyTests.test_rsi_is_always_within_0_and_100) ... ok
+test_moving_average_ignores_future_appended_data (tests.test_numeric_golden.LookAheadGuardTests.test_moving_average_ignores_future_appended_data) ... ok
+test_rsi_prefix_is_stable_under_future_appends (tests.test_numeric_golden.LookAheadGuardTests.test_rsi_prefix_is_stable_under_future_appends) ... ok
+test_atr_rejects_non_positive_last_and_short_history (tests.test_numeric_golden.NanInfDefenceTests.test_atr_rejects_non_positive_last_and_short_history) ... ok
+test_bollinger_rejects_non_finite_last_and_short_window (tests.test_numeric_golden.NanInfDefenceTests.test_bollinger_rejects_non_finite_last_and_short_window) ... ok
+test_moving_average_rejects_non_finite (tests.test_numeric_golden.NanInfDefenceTests.test_moving_average_rejects_non_finite) ... ok
+test_no_indicator_raises_on_empty_input (tests.test_numeric_golden.NanInfDefenceTests.test_no_indicator_raises_on_empty_input) ... ok
+test_rsi_rejects_non_finite_and_short (tests.test_numeric_golden.NanInfDefenceTests.test_rsi_rejects_non_finite_and_short) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.003s
+
+OK
