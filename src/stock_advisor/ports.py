@@ -54,7 +54,12 @@ class CancelToken(Protocol):
 
 
 class ManualCancel:
-    """最简 CancelToken 实现，供 controller/测试驱动。"""
+    """最简协作取消原语，供 controller/测试驱动。
+
+    同时满足两个既有取消协议：传输/批量编排查询 `is_cancelled()`，而全市场筛选编排
+    （`services.workflow.screen_and_recommend`）沿用 `threading.Event` 风格的 `is_set()`。
+    两者同义，故一个原语可横跨传输/批量/筛选，Qt 控制器无须为不同编排各带一种取消对象。
+    """
 
     def __init__(self) -> None:
         self._cancelled = False
@@ -63,6 +68,10 @@ class ManualCancel:
         self._cancelled = True
 
     def is_cancelled(self) -> bool:
+        return self._cancelled
+
+    def is_set(self) -> bool:
+        """`is_cancelled()` 的别名，匹配 screener 编排的 `threading.Event` 风格取消协议。"""
         return self._cancelled
 
 

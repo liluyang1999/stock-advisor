@@ -16,6 +16,7 @@ from PySide6 import QtCore
 from ...ports import ManualCancel
 from ...services.batch import BatchProgress, BatchReport, run_batch_analysis
 from ...services.workflow import AnalysisOutcome, MarketDataProvider
+from .base import WorkerControllerBase
 
 
 class _BatchSignals(QtCore.QObject):
@@ -57,8 +58,11 @@ class _BatchWorker(QtCore.QRunnable):
         self._signals.finished.emit(report)
 
 
-class AnalysisController(QtCore.QObject):
+class AnalysisController(WorkerControllerBase):
     """GUI 侧的入口。connect 这些信号来更新视图；调用 start/cancel 驱动。
+
+    生命周期骨架（线程池/取消/运行标志/is_running/cancel/shutdown）继承自 WorkerControllerBase；
+    本类只保留批量分析专有的信号集合、start 签名与 worker 编排。
 
     信号（均经 queued connection 回到本对象所在的 GUI 线程）：
     - `progress(BatchProgress)`：每完成一只
@@ -73,37 +77,17 @@ class AnalysisController(QtCore.QObject):
     def __init__(self, provider: MarketDataProvider, parent: QtCore.QObject | None = None) -> None:
         super().__init__(parent)
         self._provider = provider
-        self._pool = QtCore.QThreadPool()
-        self._pool.setMaxThreadCount(4)  # 有界并发（REQ-025 的限并发面，避免一次性打满远端）
-        self._cancel: ManualCancel | None = None
-        self._running = False
-
-    def is_running(self) -> bool:
-        return self._running
 
     def start(self, text: str, level: int = 3) -> None:
         """提交一次批量分析并**立即返回**；结果稍后经信号到达（REQ-013 不阻塞 GUI）。"""
 
-        self._cancel = ManualCancel()
-        self._running = True
+        cancel = self._begin()
         signals = _BatchSignals()
         signals.progress.connect(self._on_progress)
         signals.symbol_analyzed.connect(self._on_symbol)
         signals.finished.connect(self._on_finished)
-        worker = _BatchWorker(text, self._provider, level, self._cancel, signals)
+        worker = _BatchWorker(text, self._provider, level, cancel, signals)
         self._pool.start(worker)
-
-    def cancel(self) -> None:
-        """请求协作取消；已完成的结果会保留在最终 BatchReport 里（REQ-010 安全停止）。"""
-
-        if self._cancel is not None:
-            self._cancel.cancel()
-
-    def shutdown(self) -> None:
-        """停止接收新工作并在有限时间内等待在跑的 worker 退出（ADR-0003 生命周期）。"""
-
-        self.cancel()
-        self._pool.waitForDone(5000)
 
     # --- 以下槽在 GUI 线程执行（queued connection），负责把 worker 信号转发为对外信号 ---
 
@@ -114,5 +98,5 @@ class AnalysisController(QtCore.QObject):
         self.symbol_analyzed.emit(outcome)
 
     def _on_finished(self, report: BatchReport) -> None:
-        self._running = False
+        self._end()
         self.batch_finished.emit(report)
