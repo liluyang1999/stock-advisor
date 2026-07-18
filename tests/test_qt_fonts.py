@@ -19,8 +19,6 @@ try:
 except ImportError:  # pragma: no cover - Qt 是可选的迁移期依赖（pyproject 的 gui 组）
     QtGui = QtWidgets = None
 
-from stock_advisor.ui import theme
-
 if QtWidgets is not None:
     from stock_advisor.qt_app.theme import fonts
 
@@ -45,9 +43,14 @@ class FontContractTests(unittest.TestCase):
             self.assertTrue(resolved.fallback_note)
             self.assertIn(resolved.actual_family, resolved.fallback_note)
 
-    def test_requested_family_comes_from_the_theme_single_source(self):
-        # 不得在 Qt 侧另写一份字体名，否则 token 真源立刻分叉。
-        self.assertEqual(fonts.resolve_ui_font().requested_family, theme.UI_FONT)
+    def test_requested_family_comes_from_the_tokens_single_source(self):
+        # 字体名与 QSS 同源自 tokens.json，不得在 Qt 侧另写一份，否则真源分叉
+        # （曾出现 QSS 的"Microsoft YaHei"覆盖字体契约的"Microsoft YaHei UI"）。
+        from stock_advisor.qt_app.theme import tokens as tokens_mod
+
+        self.assertEqual(
+            fonts.resolve_ui_font().requested_family, tokens_mod.load_tokens().font_families[0]
+        )
 
     def test_applied_font_is_what_qfontinfo_reports(self):
         """QFont('X') 永远"设置成功"，QFontInfo 才说出实际渲染字体——断言必须基于后者。"""

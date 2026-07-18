@@ -15,11 +15,17 @@ from dataclasses import dataclass
 
 from PySide6 import QtGui
 
-from ...ui import theme
+from .tokens import load_tokens
 
-# 文档化回退链（REQ-033）：雅黑家族内部先退，再退到 Qt 的通用无衬线。
-# 顺序即优先级；`Microsoft YaHei UI` 是 token 真源 `theme.UI_FONT` 的当前取值。
-FALLBACK_CHAIN: tuple[str, ...] = ("Microsoft YaHei UI", "Microsoft YaHei", "SimHei", "sans-serif")
+
+# 文档化回退链（REQ-033）：主字体后依次退到雅黑家族其它成员，再退到 Qt 的通用无衬线。
+# 首项即 tokens.json 的 font_families[0]，与 QSS 的 font-family 同源；用惰性函数取，避免
+# 在模块导入期就读文件。
+def _default_family() -> str:
+    return load_tokens().font_families[0]
+
+
+FALLBACK_CHAIN: tuple[str, ...] = ("Microsoft YaHei", "Microsoft YaHei UI", "SimHei", "sans-serif")
 
 DEFAULT_POINT_SIZE = 10
 
@@ -41,10 +47,12 @@ def resolve_ui_font(
 ) -> ResolvedFont:
     """解析界面字体，并把实际结果如实带出。
 
-    `requested` 缺省取 `ui/theme.py::UI_FONT`——Qt 侧不另存一份字体名，否则 token 真源分叉。
+    `requested` 缺省取 `tokens.json` 的 `font_families[0]`——与 QSS 同一个真源，Qt 侧不另存
+    一份字体名，否则字体契约与 QSS 会各用各的字体名而分叉（曾把 QSS 的雅黑覆盖掉字体契约的
+    "雅黑 UI"）。
     """
 
-    family = requested if requested is not None else theme.UI_FONT
+    family = requested if requested is not None else _default_family()
     font = QtGui.QFont(family, point_size)
     actual = QtGui.QFontInfo(font).family()
     if actual == family:
