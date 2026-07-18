@@ -89,6 +89,22 @@ class ScreenerPageTests(unittest.TestCase):
         wait_for(controller.screen_finished)
         self.assertIn(CORE_DISCLAIMER, page.status.text())
 
+    def test_partial_market_is_surfaced_in_status(self):
+        # WI-014：分页不完整时页面必须明确提示"非全市场结果"，不静默伪装成全市场。
+        from stock_advisor.ports import Completeness
+
+        class _PartialProvider(_FakeScreeningProvider):
+            def market_completeness(self):
+                return Completeness(expected=100, received=30)
+
+        controller = ScreenerController(_PartialProvider())
+        self.addCleanup(controller.shutdown)
+        page = ScreenerPage(controller)
+        self.addCleanup(page.deleteLater)
+        page._on_screen()
+        wait_for(controller.screen_finished)
+        self.assertIn("不完整", page.status.text())
+
 
 class DisclaimerStaticDetectionTests(unittest.TestCase):
     def test_module_references_the_core_disclaimer(self):

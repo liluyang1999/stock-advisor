@@ -23,6 +23,7 @@ from ..domain.models import (
 from ..domain.policy import decide
 from ..domain.screener import apply_filters, board_of, rank
 from ..domain.symbols import symbol_from_market
+from ..ports import Completeness
 
 
 class MarketDataProvider(Protocol):
@@ -38,6 +39,9 @@ class ScreeningProvider(MarketDataProvider, Protocol):
         self, page_size: int = 1000, max_pages: int = 12
     ) -> list[MarketSnapshot]:
         raise NotImplementedError
+
+    # 可选：暴露最近一次全市场抓取的分页完整度（REQ-026）。不实现即视为完整（向后兼容），
+    # 由 `_provider_completeness` 兜底，故旧 provider 与 FakeProvider 无需改动。
 
 
 class CancelToken(Protocol):
@@ -128,6 +132,9 @@ class ScreenReport:
     recommendations: list[Recommendation] = field(default_factory=list)
     error: str = ""
     cancelled: bool = False
+    completeness: Completeness = field(default_factory=Completeness)
+    """市场分页完整度（REQ-026/WI-014）。默认"完整"；provider 报告分页不完整时为
+    partial（`is_complete` 为 False），UI 据此提示"非全市场结果"（DATA_QUALITY 的 partial_market）。"""
 
     @property
     def ok(self) -> bool:
@@ -187,8 +194,23 @@ def screen_and_recommend(
             progress_cb(index, len(top), recommendation)
 
     return ScreenReport(
-        total=len(snapshots), matched=len(filtered), recommendations=recommendations
+        total=len(snapshots),
+        matched=len(filtered),
+        recommendations=recommendations,
+        completeness=_provider_completeness(provider),
     )
+
+
+def _provider_completeness(provider: ScreeningProvider) -> Completeness:
+    """取 provider 的市场分页完整度；旧 provider 未实现则视为完整（向后兼容）。"""
+    getter = getattr(provider, "market_completeness", None)
+    if getter is None:
+        return Completeness()
+    try:
+        result = getter()
+    except Exception:  # noqa: BLE001 - 完整度是附加信息，取不到不应影响筛选结果
+        return Completeness()
+    return result if isinstance(result, Completeness) else Completeness()
 
 
 def _top_limit(value: object) -> int | None:

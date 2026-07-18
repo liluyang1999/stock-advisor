@@ -13,8 +13,9 @@ from ...domain.models import CORE_DISCLAIMER
 from ...services.batch import BatchProgress, BatchReport
 from ...services.workflow import AnalysisOutcome
 from ..controllers.analysis_controller import AnalysisController
+from ..widgets.table_utils import make_readonly_table
 
-_HEADERS = ("代码", "名称", "建议", "分数", "最新价", "数据质量")
+_HEADERS = ["代码", "名称", "建议", "分数", "最新价", "数据质量"]
 
 
 class IndividualPage(QtWidgets.QWidget):
@@ -40,11 +41,7 @@ class IndividualPage(QtWidgets.QWidget):
         row.addWidget(self.stop_button)
         layout.addLayout(row)
 
-        self.model = QtGui.QStandardItemModel(0, len(_HEADERS))
-        self.model.setHorizontalHeaderLabels(list(_HEADERS))
-        self.table = QtWidgets.QTableView()
-        self.table.setModel(self.model)
-        self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.model, self.table = make_readonly_table(_HEADERS)
         layout.addWidget(self.table)
 
         # REQ-031：结果视图常驻免责声明。

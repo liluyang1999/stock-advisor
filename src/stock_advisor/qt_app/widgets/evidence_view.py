@@ -10,6 +10,7 @@ from __future__ import annotations
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ...domain.models import CORE_DISCLAIMER, AnalysisResult
+from .table_utils import make_readonly_table
 
 _FACTOR_HEADERS = ("因子", "得分", "判定", "说明")
 
@@ -23,11 +24,7 @@ class EvidenceView(QtWidgets.QWidget):
         self.strength_label = QtWidgets.QLabel("证据强度：—")
         layout.addWidget(self.strength_label)
 
-        self.factor_model = QtGui.QStandardItemModel(0, len(_FACTOR_HEADERS))
-        self.factor_model.setHorizontalHeaderLabels(list(_FACTOR_HEADERS))
-        self.factor_table = QtWidgets.QTableView()
-        self.factor_table.setModel(self.factor_model)
-        self.factor_table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.factor_model, self.factor_table = make_readonly_table(list(_FACTOR_HEADERS))
         layout.addWidget(self.factor_table)
 
         self.narrative = QtWidgets.QPlainTextEdit()

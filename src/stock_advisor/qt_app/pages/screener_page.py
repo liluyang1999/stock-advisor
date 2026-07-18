@@ -91,7 +91,13 @@ class ScreenerPage(QtWidgets.QWidget):
         elif report.cancelled:
             self.status.setText(f"已停止　|　{CORE_DISCLAIMER}")
         else:
+            # REQ-026/WI-014：分页不完整时明确提示"非全市场结果"，不把部分结果伪装成全市场。
+            partial = (
+                "（⚠ 全市场分页不完整，以下为部分结果）"
+                if not report.completeness.is_complete
+                else ""
+            )
             self.status.setText(
                 f"扫描 {report.total} 只，匹配 {report.matched} 只，"
-                f"推荐 {len(report.recommendations)} 只　|　{CORE_DISCLAIMER}"
+                f"推荐 {len(report.recommendations)} 只{partial}　|　{CORE_DISCLAIMER}"
             )
