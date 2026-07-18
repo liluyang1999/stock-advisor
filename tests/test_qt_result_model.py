@@ -17,9 +17,9 @@ try:
 except ImportError:  # pragma: no cover
     QtCore = None
 
-from test_engine import make_history, make_quote
+from qt_test_helpers import requires_qt
+from test_engine import make_measurement
 
-from stock_advisor.domain.engine import measure
 from stock_advisor.domain.models import CORE_DISCLAIMER
 from stock_advisor.services.tier_switch import redecide_at_level
 
@@ -28,18 +28,10 @@ if QtCore is not None:
 
 
 def _results(n=3):
-    out = []
-    for i in range(n):
-        code = f"60000{i}"
-        m = measure(
-            make_quote(code, 41.0 + i, 40.2, 41.2, 39.9, 40.0, volume=260000),
-            make_history(start=20.0, step=0.25, days=80),
-        )
-        out.append(redecide_at_level(m, 3))
-    return out
+    return [redecide_at_level(make_measurement(f"60000{i}", 41.0 + i), 3) for i in range(n)]
 
 
-@unittest.skipIf(QtCore is None, "PySide6 未安装（pip install --group gui）")
+@requires_qt
 class ResultTableModelTests(unittest.TestCase):
     def test_row_and_column_counts_track_the_results(self):
         model = ResultTableModel()
@@ -84,10 +76,7 @@ class ResultTableModelTests(unittest.TestCase):
 
     def test_setting_a_new_tier_reuses_cached_results_without_remeasuring(self):
         # 切档：模型接收重判后的结果，报价列不变（同一测量），只有决策相关列可能变。
-        m = measure(
-            make_quote("600519", 41.0, 40.2, 41.2, 39.9, 40.0, volume=260000),
-            make_history(start=20.0, step=0.25, days=80),
-        )
+        m = make_measurement()
         model = ResultTableModel()
         model.set_results([redecide_at_level(m, 3)])
         last_col = None

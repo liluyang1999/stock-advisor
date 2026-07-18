@@ -11,6 +11,9 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from qt_test_helpers import requires_qt  # noqa: E402
 
 try:
     from PySide6 import QtWidgets
@@ -38,7 +41,7 @@ class TokenLoaderTests(unittest.TestCase):
         self.assertEqual(loaded.state_colors["focus_ring"], raw["state_colors"]["focus_ring"])
 
 
-@unittest.skipIf(QtWidgets is None, "PySide6 未安装（pip install --group gui）")
+@requires_qt
 class QssContractTests(unittest.TestCase):
     def setUp(self):
         self.tokens = tokens_mod.load_tokens()

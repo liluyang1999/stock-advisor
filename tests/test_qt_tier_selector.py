@@ -16,33 +16,19 @@ try:
 except ImportError:  # pragma: no cover
     QtWidgets = None
 
-from test_engine import make_history, make_quote
+from qt_test_helpers import qt_app, requires_qt
+from test_engine import make_measurements
 
-from stock_advisor.domain.engine import measure
 from stock_advisor.domain.models import LEVEL_NAMES
 
 if QtWidgets is not None:
     from stock_advisor.qt_app.widgets.tier_selector import TierSelector
 
 
-def _measurements(n=2):
-    return [
-        measure(
-            make_quote(f"60000{i}", 41.0 + i, 40.2, 41.2, 39.9, 40.0, volume=260000),
-            make_history(start=20.0, step=0.25, days=80),
-        )
-        for i in range(n)
-    ]
-
-
-def _app():
-    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-
-
-@unittest.skipIf(QtWidgets is None, "PySide6 未安装（pip install --group gui）")
+@requires_qt
 class TierSelectorTests(unittest.TestCase):
     def setUp(self):
-        self.app = _app()
+        self.app = qt_app()
 
     def test_offers_all_five_levels(self):
         selector = TierSelector()
@@ -54,7 +40,7 @@ class TierSelectorTests(unittest.TestCase):
 
     def test_changing_level_emits_redecided_results_without_a_provider(self):
         selector = TierSelector()
-        selector.set_measurements(_measurements(2))
+        selector.set_measurements(make_measurements(2))
         received: list = []
         selector.results_changed.connect(lambda results: received.append(results))
         selector.set_level(5)  # 切到激进档
@@ -67,7 +53,7 @@ class TierSelectorTests(unittest.TestCase):
     def test_switching_level_keeps_prices_constant(self):
         # REQ-003：切档只重判、不重新测量，故报价恒等。
         selector = TierSelector()
-        selector.set_measurements(_measurements(1))
+        selector.set_measurements(make_measurements(1))
         got: list = []
         selector.results_changed.connect(lambda results: got.append(results[0].last))
         selector.set_level(1)
@@ -78,7 +64,7 @@ class TierSelectorTests(unittest.TestCase):
         selector = TierSelector()
         emitted: list = []
         selector.results_changed.connect(lambda results: emitted.append(results))
-        selector.set_measurements(_measurements(3))
+        selector.set_measurements(make_measurements(3))
         self.assertTrue(emitted)
         self.assertEqual(len(emitted[-1]), 3)
 

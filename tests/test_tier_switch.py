@@ -12,9 +12,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from test_engine import make_history, make_quote
+from test_engine import make_measurement
 
-from stock_advisor.domain.engine import measure
 from stock_advisor.domain.models import LEVEL_NAMES
 from stock_advisor.services.tier_switch import redecide_all_levels, redecide_at_level
 
@@ -22,9 +21,7 @@ from stock_advisor.services.tier_switch import redecide_all_levels, redecide_at_
 class RedecideTests(unittest.TestCase):
     def setUp(self):
         # 一次测量，缓存下来供各档重判——模拟"分析已完成、用户来回切档"。
-        history = make_history(start=20.0, step=0.25, days=80)
-        quote = make_quote("600519", 41.0, 40.2, 41.2, 39.9, 40.0, volume=260000)
-        self.measurement = measure(quote, history)
+        self.measurement = make_measurement()
 
     def test_redecide_at_level_needs_no_provider_and_no_network(self):
         # 关键契约：只吃 Measurement 与 level，签名里根本没有 provider —— 结构上不可能联网。

@@ -59,6 +59,58 @@ def make_history(start=10.0, step=0.1, days=80, volume=100000):
     return rows
 
 
+# --- 跨测试共享的框架无关夹具（原先在 test_qt_*/test_batch_controller 里各写一份）---
+
+
+def fake_quote(symbol):
+    """给定一个 StockSymbol，构造一份最小可用的 Decimal 报价（供 FakeProvider 用）。"""
+    from decimal import Decimal
+
+    return Quote(
+        symbol=symbol.normalized,
+        name="测试",
+        last=Decimal("10.00"),
+        open=Decimal("10.00"),
+        high=Decimal("10.50"),
+        low=Decimal("9.50"),
+        previous_close=Decimal("9.90"),
+        volume=1000,
+        amount=1.0,
+        turnover_rate=0.5,
+        change_pct=0.3,
+    )
+
+
+class FakeProvider:
+    """按 symbol 决定成功/抛错的假 provider（现有两版的超集：带 .calls 记录 + 含代码的错误消息）。"""
+
+    def __init__(self, fail_codes=None):
+        self.fail_codes = set(fail_codes or ())
+        self.calls: list[str] = []
+
+    def fetch_quote(self, symbol):
+        self.calls.append(symbol.normalized)
+        if any(code in symbol.normalized for code in self.fail_codes):
+            raise ValueError(f"{symbol.normalized} 行情不可用")
+        return fake_quote(symbol)
+
+    def fetch_history(self, symbol):
+        return []
+
+
+def make_measurement(code="600519", last=41.0):
+    """一次已完成的客观测量，供切档/结果视图等"分析已完成"场景复用。"""
+    from stock_advisor.domain.engine import measure
+
+    history = make_history(start=20.0, step=0.25, days=80)
+    quote = make_quote(code, last, 40.2, 41.2, 39.9, 40.0, volume=260000)
+    return measure(quote, history)
+
+
+def make_measurements(n=2):
+    return [make_measurement(f"60000{i}", 41.0 + i) for i in range(n)]
+
+
 class IndicatorTests(unittest.TestCase):
     def test_moving_average_uses_latest_window(self):
         self.assertAlmostEqual(moving_average([1, 2, 3, 4, 5], 3), 4.0)

@@ -16,9 +16,9 @@ try:
 except ImportError:  # pragma: no cover
     QtWidgets = None
 
-from test_engine import make_history, make_quote
+from qt_test_helpers import qt_app, requires_qt
+from test_engine import make_measurement
 
-from stock_advisor.domain.engine import measure
 from stock_advisor.domain.models import CORE_DISCLAIMER
 from stock_advisor.services.tier_switch import redecide_at_level
 
@@ -27,21 +27,13 @@ if QtWidgets is not None:
 
 
 def _result():
-    m = measure(
-        make_quote("600519", 41.0, 40.2, 41.2, 39.9, 40.0, volume=260000),
-        make_history(start=20.0, step=0.25, days=80),
-    )
-    return redecide_at_level(m, 3)
+    return redecide_at_level(make_measurement(), 3)
 
 
-def _app():
-    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-
-
-@unittest.skipIf(QtWidgets is None, "PySide6 未安装（pip install --group gui）")
+@requires_qt
 class EvidenceViewTests(unittest.TestCase):
     def setUp(self):
-        self.app = _app()
+        self.app = qt_app()
 
     def test_disclaimer_is_resident_before_and_after_data(self):
         view = EvidenceView()

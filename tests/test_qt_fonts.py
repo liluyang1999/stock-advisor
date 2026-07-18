@@ -13,6 +13,9 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from qt_test_helpers import qt_app, requires_qt  # noqa: E402
 
 try:
     from PySide6 import QtGui, QtWidgets
@@ -23,14 +26,10 @@ if QtWidgets is not None:
     from stock_advisor.qt_app.theme import fonts
 
 
-def _app() -> object:
-    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-
-
-@unittest.skipIf(QtWidgets is None, "PySide6 未安装（pip install --group gui）")
+@requires_qt
 class FontContractTests(unittest.TestCase):
     def setUp(self):
-        self.app = _app()
+        self.app = qt_app()
 
     def test_resolution_never_silently_substitutes(self):
         """核心契约：要么拿到请求的字体，要么如实报告替换——绝不静默。"""

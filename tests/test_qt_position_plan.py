@@ -18,10 +18,10 @@ try:
 except ImportError:  # pragma: no cover
     QtWidgets = None
 
-from test_engine import make_history, make_quote
+from qt_test_helpers import qt_app, requires_qt
+from test_engine import make_history, make_measurement
 
 from stock_advisor.domain.backtest import backtest_signals
-from stock_advisor.domain.engine import measure
 from stock_advisor.domain.models import CORE_DISCLAIMER
 from stock_advisor.domain.policy import position_plan
 
@@ -29,28 +29,17 @@ if QtWidgets is not None:
     from stock_advisor.qt_app.widgets.position_plan import PositionPlanView
 
 
-def _measurement():
-    return measure(
-        make_quote("600519", 41.0, 40.2, 41.2, 39.9, 40.0, volume=260000),
-        make_history(start=20.0, step=0.25, days=80),
-    )
-
-
-def _app():
-    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-
-
-@unittest.skipIf(QtWidgets is None, "PySide6 未安装（pip install --group gui）")
+@requires_qt
 class PositionPlanViewTests(unittest.TestCase):
     def setUp(self):
-        self.app = _app()
+        self.app = qt_app()
 
     def test_disclaimer_is_resident(self):
         view = PositionPlanView()
         self.assertIn(CORE_DISCLAIMER, view.disclaimer.text())  # REQ-031
 
     def test_shows_the_position_plan_numbers_verbatim(self):
-        plan = position_plan(_measurement(), 3, Decimal("100000.00"))
+        plan = position_plan(make_measurement(), 3, Decimal("100000.00"))
         view = PositionPlanView()
         view.show_plan(plan)
         body = view.plan_label.text()
@@ -87,7 +76,7 @@ class PositionPlanViewTests(unittest.TestCase):
 
     def test_clear_resets_but_keeps_disclaimer(self):
         view = PositionPlanView()
-        view.show_plan(position_plan(_measurement(), 3, Decimal("100000.00")))
+        view.show_plan(position_plan(make_measurement(), 3, Decimal("100000.00")))
         view.clear()
         self.assertEqual(view.plan_label.text(), "—")
         self.assertIn(CORE_DISCLAIMER, view.disclaimer.text())
