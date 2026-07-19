@@ -4,7 +4,7 @@
 - Phase: `foundation_ready`
 - Status: `active`
 - Milestone: `MS-00`
-- Selected work item: `WI-022` — 性能与资源收敛 (`ready`)
+- Selected work item: `WI-002` — 映射 187 个 Tk 行为合同 (`ready`)
 - Baseline: `881099806deca77a7bf7e784d6786f9bccdf0ce6`
 - Dirty worktree: `true`
 - Current GUI / target GUI: `Tkinter / PySide6`

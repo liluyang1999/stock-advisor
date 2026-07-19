@@ -1,8 +1,9 @@
 {
   "$schema":"../schemas/performance-budgets.schema.json",
   "schema_version":"1.0.0",
-  "status":"provisional_until_first_qt_spike",
+  "status":"measured_offscreen_qt_20260720",
   "sample_policy":{"minimum_runs":20,"record_machine":true,"record_versions":true,"report_percentiles":[50,95,99]},
+  "measured":{"captured_at":"2026-07-20","machine":"Windows 11 AMD64 / Python 3.14.4 / PySide6-Essentials 6.11.1","platform_note":"offscreen (QT_QPA_PLATFORM=offscreen); a real compositor/vsync adds rendering overhead, so these are lower bounds captured by the automatable harness, not the final release-gate figures","owning_test":"TEST-PERF-001 (tests/performance/)","values":{"idle_rss_mib":47.9,"table_5000_sort_filter_ms_p95":7.8,"dialog_100_cycles_rss_growth_mib":1.8,"cold_start_seconds":0.37,"warm_start_seconds_p95":0.36,"gui_event_handler_ms_p95":"<1"},"all_measured_within_budget":true,"pending":{"table_scroll_fps":"needs a real compositor/vsync; CI/human","single_file_exe_mib":"TEST-PKG-002 after the WI-024 clean build","idle_monitor_cpu_percent":"needs timed CPU sampling; CI"}},
   "budgets":[
     {"metric":"gui_event_handler_ms","p95_max":50,"p99_max":100,"method":"QElapsedTimer wraps each Qt slot/event-handler invocation during the benchmark run; p95/p99 computed over all captured samples","scenario":"20-run benchmark exercising typical UI interactions (click, keypress, tab switch) per sample_policy","owning_test":"TEST-PERF-001"},
     {"metric":"busy_feedback_ms","max":100,"method":"QElapsedTimer measures wall-clock time from the user-triggered action to the busy/loading indicator becoming visible","scenario":"triggering an individual-stock or screener analysis run while idle","owning_test":"TEST-PERF-001"},

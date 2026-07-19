@@ -1,0 +1,4 @@
+Ran 5 tests in 2.599s
+
+OK
+measured (offscreen, Win11/Py3.14.4/PySide6 6.11.1): idle_rss=47.9MiB(<=250) sort5000_p95=7.8ms(<=150) dialog100_growth=1.8MiB(<=10) cold=0.37s(<=4.0) warm_p95=0.36s(<=2.5) gui_handler_p95<1ms(<=50). All automatable budgets within limit. Pending CI/build: table_scroll_fps (real compositor), single_file_exe_mib (TEST-PKG-002/WI-024), idle_monitor_cpu_percent.
