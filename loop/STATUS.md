@@ -4,7 +4,7 @@
 - Phase: `foundation_ready`
 - Status: `active`
 - Milestone: `MS-00`
-- Selected work item: `WI-018` — 帮助/策略/导出与快捷键 (`ready`)
+- Selected work item: `WI-028` — 导出安全：公式注入中和与路径穿越防御 (`in_progress`)
 - Baseline: `881099806deca77a7bf7e784d6786f9bccdf0ce6`
 - Dirty worktree: `true`
 - Current GUI / target GUI: `Tkinter / PySide6`
