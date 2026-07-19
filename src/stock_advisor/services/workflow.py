@@ -23,7 +23,11 @@ from ..domain.models import (
 from ..domain.policy import decide
 from ..domain.screener import apply_filters, board_of, rank
 from ..domain.symbols import symbol_from_market
+from ..observability import get_logger, task_extra
 from ..ports import Completeness
+
+# 结构化日志（OBSERVABILITY.md）：编排层记任务/降级/失败，不记具体代码或原始 payload。
+_log = get_logger("workflow")
 
 
 class MarketDataProvider(Protocol):
@@ -75,30 +79,80 @@ def analyze_symbol(
     fetched_at = datetime.now(UTC)
     try:
         quote = provider.fetch_quote(symbol)
-    except (MarketDataError, ValueError) as exc:
+    except MarketDataError as exc:
+        # 实时行情取不到：返回不可分析（error，非伪造零价）——REQ-024 零伪造。
+        _log.warning(
+            "个股实时行情获取失败",
+            extra=task_extra(
+                operation="analyze_symbol.quote",
+                error_class="network",
+                degraded=True,
+                outcome="unavailable",
+            ),
+        )
+        return AnalysisOutcome(symbol=symbol, error=str(exc), quality=DataQuality(level="invalid"))
+    except ValueError as exc:
+        _log.warning(
+            "个股实时行情不满足契约",
+            extra=task_extra(
+                operation="analyze_symbol.quote",
+                error_class="parse",
+                degraded=True,
+                outcome="malformed",
+            ),
+        )
         return AnalysisOutcome(symbol=symbol, error=str(exc), quality=DataQuality(level="invalid"))
     except Exception as exc:
+        _log.error(
+            "个股实时行情意外失败",
+            extra=task_extra(
+                operation="analyze_symbol.quote",
+                error_class="unknown",
+                degraded=True,
+                outcome="error",
+            ),
+            exc_info=True,
+        )
         return AnalysisOutcome(
             symbol=symbol, error=f"实时行情获取失败：{exc}", quality=DataQuality(level="invalid")
         )
 
     degraded = False
+    history_error = ""
     try:
         history = provider.fetch_history(symbol)
-    except MarketDataError, ValueError:
+    except (MarketDataError, ValueError) as exc:
+        # 历史取不到不致命：降级为实时价格做保守判断（真实降级，非伪造历史）——degraded=True。
+        _log.warning(
+            "历史日线取不到，降级为实时价格保守判断",
+            extra=task_extra(
+                operation="analyze_symbol.history",
+                error_class="network" if isinstance(exc, MarketDataError) else "parse",
+                degraded=True,
+                outcome="degraded_history",
+            ),
+        )
         degraded = True
         history = []
         history_error = (
             "历史数据暂时取不到，系统已改用实时价格做保守判断。建议稍后重试或降低投入比例。"
         )
     except Exception:
+        _log.error(
+            "历史日线意外失败，降级为实时价格保守判断",
+            extra=task_extra(
+                operation="analyze_symbol.history",
+                error_class="unknown",
+                degraded=True,
+                outcome="degraded_history",
+            ),
+            exc_info=True,
+        )
         degraded = True
         history = []
         history_error = (
             "历史数据暂时取不到，系统已改用实时价格做保守判断。建议稍后重试或降低投入比例。"
         )
-    else:
-        history_error = ""
 
     try:
         m = measure(quote, history)
@@ -162,8 +216,25 @@ def screen_and_recommend(
     try:
         snapshots = provider.fetch_market_snapshot()
     except (MarketDataError, ValueError) as exc:
+        # 全市场拉取失败：明确报错，不伪造结果（REQ-024）。首段失败即整轮失败（无部分可用数据）。
+        _log.warning(
+            "全市场快照获取失败",
+            extra=task_extra(
+                operation="screen.snapshot",
+                error_class="network" if isinstance(exc, MarketDataError) else "parse",
+                degraded=True,
+                outcome="unavailable",
+            ),
+        )
         return ScreenReport(total=0, matched=0, recommendations=[], error=str(exc))
     except Exception as exc:  # noqa: BLE001 - 兜底为可读错误，避免线程里裸异常
+        _log.error(
+            "全市场快照意外失败",
+            extra=task_extra(
+                operation="screen.snapshot", error_class="unknown", degraded=True, outcome="error"
+            ),
+            exc_info=True,
+        )
         return ScreenReport(
             total=0, matched=0, recommendations=[], error=f"全市场行情获取失败：{exc}"
         )

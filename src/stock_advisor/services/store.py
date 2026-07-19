@@ -27,6 +27,14 @@ def config_path() -> Path:
     return Path(base) / _APP_DIR_NAME / _CONFIG_FILENAME
 
 
+def log_dir() -> Path:
+    """日志目录 `%APPDATA%\\股市锦囊\\logs\\`（与 config.json 同根、不混放；OBSERVABILITY.md）。
+
+    测试沿用 `STOCK_ADVISOR_CONFIG` 覆盖同一基目录的约定，故不会写真实 APPDATA。
+    """
+    return config_path().parent / "logs"
+
+
 def _valid_preset(preset: str) -> str:
     from ..domain.presets import PRESETS
 

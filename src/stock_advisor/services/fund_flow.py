@@ -14,6 +14,11 @@ from dataclasses import dataclass
 from ..data.data_provider import MarketDataError
 from ..domain.models import FundFlow
 from ..domain.symbols import normalize_symbol
+from ..observability import get_logger, task_extra
+
+# 结构化日志：只记 operation/error_class/degraded/outcome，不记具体代码（避免泄漏用户在看哪只）。
+_log = get_logger("fund_flow")
+_OP = "fetch_fund_flow"
 
 
 @dataclass(frozen=True)
@@ -32,12 +37,38 @@ def fetch_fund_flow_result(code: str, provider, limit: int = 6) -> FundFlowResul
     try:
         symbol = normalize_symbol(code)
     except ValueError as exc:
+        _log.warning(
+            "资金流：代码无效",
+            extra=task_extra(
+                operation=_OP, error_class="validation", degraded=True, outcome="invalid_symbol"
+            ),
+        )
         return FundFlowResult(error=f"股票代码无效：{exc}")
 
     try:
         flow = provider.fetch_fund_flow(symbol, limit)
-    except (MarketDataError, ValueError) as exc:
+    except MarketDataError as exc:
+        _log.warning(
+            "资金流暂不可用（获取失败）",
+            extra=task_extra(
+                operation=_OP, error_class="network", degraded=True, outcome="unavailable"
+            ),
+        )
+        return FundFlowResult(error=f"资金流暂不可用：{exc}")
+    except ValueError as exc:
+        _log.warning(
+            "资金流暂不可用（响应不满足契约）",
+            extra=task_extra(
+                operation=_OP, error_class="parse", degraded=True, outcome="malformed"
+            ),
+        )
         return FundFlowResult(error=f"资金流暂不可用：{exc}")
     except Exception as exc:  # noqa: BLE001 - 资金流是可失败辅助通道，任何异常都不得逃逸污染核心
+        _log.error(
+            "资金流获取意外失败",
+            extra=task_extra(operation=_OP, error_class="unknown", degraded=True, outcome="error"),
+            exc_info=True,
+        )
         return FundFlowResult(error=f"资金流获取失败：{exc}")
+    _log.info("资金流完成", extra=task_extra(operation=_OP, outcome="ok"))
     return FundFlowResult(flow=flow)

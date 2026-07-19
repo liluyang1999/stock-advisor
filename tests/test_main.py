@@ -28,17 +28,21 @@ class SelfTestModeTests(unittest.TestCase):
         calls = []
         original_enable = app_main.enable_dpi_awareness
         original_run_gui = app_main.run_gui
+        original_configure = app_main.configure_logging
         try:
             app_main.enable_dpi_awareness = lambda: calls.append("dpi")
+            # 打桩 configure_logging：避免测试往真实 %APPDATA% 写日志目录；顺带断言它被调用。
+            app_main.configure_logging = lambda *a, **k: calls.append("log")
             app_main.run_gui = lambda: calls.append("gui")
 
             code = app_main.main([])
         finally:
             app_main.enable_dpi_awareness = original_enable
             app_main.run_gui = original_run_gui
+            app_main.configure_logging = original_configure
 
         self.assertEqual(code, 0)
-        self.assertEqual(calls, ["dpi", "gui"])
+        self.assertEqual(calls, ["dpi", "log", "gui"])  # DPI → 配置日志 → 启动 GUI，顺序不乱
 
 
 if __name__ == "__main__":

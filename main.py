@@ -9,6 +9,8 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 # Import must follow the sys.path bootstrap above.
+from stock_advisor.observability import configure_logging  # noqa: E402
+from stock_advisor.services.store import log_dir  # noqa: E402
 from stock_advisor.ui.app import run_gui  # noqa: E402
 
 
@@ -50,6 +52,12 @@ def main(argv: list[str] | None = None) -> int:
     if "--self-test" in args:
         return _self_test()
     enable_dpi_awareness()
+    # GUI 启动即配置结构化日志：无控制台 EXE 下 rotating file 是用户唯一可诊断的持久 sink
+    # （OBSERVABILITY.md）。日志目录不可写不得挡住启动，退回 last-resort/stderr。
+    try:
+        configure_logging(log_dir())
+    except OSError:
+        pass
     run_gui()
     return 0
 
