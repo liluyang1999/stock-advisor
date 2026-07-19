@@ -11,7 +11,7 @@
 
 [project]
 name = "stock-advisor"
-version = "1.0.0"                     # mirrors src/stock_advisor/__init__.py::__version__
+version = "1.0"                       # 两段式 大版本.小版本; mirrors src/stock_advisor/__init__.py::__version__
 description = "股市锦囊 — an offline, rule-based A-share desktop decision-support tool."
 requires-python = ">=3.14"
 # No runtime dependencies yet: the domain core is pure stdlib and the shipping GUI is still Tkinter

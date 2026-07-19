@@ -1,6 +1,6 @@
 # 版本与变更控制
 
-本文件是分支模型、提交规范、应用语义化版本（SemVer）和变更日志义务的唯一权威定义。`ENGINEERING_RULES.md`、`DEFINITION_OF_DONE.md`、`LOOP_PROTOCOL.md` 中涉及"如何提交/如何发版"的表述都以本文件为准，不得各自定义冲突规则。
+本文件是分支模型、提交规范、应用版本号（两段式 大版本.小版本）和变更日志义务的唯一权威定义。`ENGINEERING_RULES.md`、`DEFINITION_OF_DONE.md`、`LOOP_PROTOCOL.md` 中涉及"如何提交/如何发版"的表述都以本文件为准，不得各自定义冲突规则。
 
 ## 分支模型
 
@@ -21,13 +21,13 @@
 - 摘要行不省略受影响的关键对象（"loop: fix X"优于"loop: update"）；正文（如需要）引用相关 `REQ-*`/`WI-*`/`ADR-*`/`EVD-*` id，便于 `git log` 反查追溯链路。
 - 本文件与 `ENGINEERING_RULES.md`"每项实现必须关联 REQ/AC/WI"呼应：提交信息是这条关联规则在版本控制历史里的落地形式。
 
-## 应用语义化版本（SemVer）
+## 应用版本号（大版本.小版本）
 
-- `src/stock_advisor/__init__.py::__version__` 是应用对外版本号的唯一权威字段，遵循 `MAJOR.MINOR.PATCH`（当前 `1.0.0`，见 `CHANGELOG.md` 的追溯记录）。
-- **MAJOR**：破坏用户可观察的行为合同或持久化兼容性——例如移除/重命名一个现有功能页面、`AppConfig.schema_version`（`ADR-0009`）发生不兼容跃迁且旧配置文件无法被 `parse_config()` 隐式兼容解析、或 EXE 命令行/`--self-test`合同发生不兼容变化。
-- **MINOR**：新增向后兼容的用户可见能力（新增一个 `REQ-*`、新增一个筛选预设、新增一个工作台模块），不破坏任何既有行为。
-- **PATCH**：缺陷修复、内部重构、性能或可观测性改进，且不改变任何用户可观察的合同。
-- 应用 SemVer 与项目内多个独立的 `schema_version`（`config.schema.json`、`product/app-config.schema.json`、`ADR-0009` 的 `ui_state.json`、`loop/` 各机器文件自带的 `schema_version`）是不同的版本轴，互相独立演进：一次 `AppConfig.schema_version` 的兼容性新增字段不必然触发应用 MINOR 版本变化，但一次不兼容的 `schema_version` 跃迁必然要求应用 MAJOR 版本变化（因为它破坏了持久化兼容性，定义见上）。
+- `src/stock_advisor/__init__.py::__version__` 是应用对外版本号的唯一权威字段，采用**两段式 `MAJOR.MINOR`（大版本.小版本）**，不使用三段式 PATCH 位（当前 `1.0`，见 `CHANGELOG.md` 的追溯记录）。这是从 SemVer 裁剪出的两段方案：保留"破坏性=大版本、兼容变更=小版本"的判据，把原 PATCH 级改动并入小版本。
+- **MAJOR（大版本）**：破坏用户可观察的行为合同或持久化兼容性——例如移除/重命名一个现有功能页面、`AppConfig.schema_version`（`ADR-0009`）发生不兼容跃迁且旧配置文件无法被 `parse_config()` 隐式兼容解析、或 EXE 命令行/`--self-test` 合同发生不兼容变化。
+- **MINOR（小版本）**：其余所有面向用户的发布——新增向后兼容的用户可见能力（新增一个 `REQ-*`、新增一个筛选预设、新增一个工作台模块），以及缺陷修复、用户可感知的性能/可观测性改进，均不破坏任何既有行为。三段式里原属 PATCH 的修复类改动，在两段式下并入小版本。
+- 纯内部、用户不可观察的改动（行为保持的重构、不改变任何用户合同的内部优化）**不单独触发**应用版本变化，随下一个小版本一并发布，仅记录在 `registers/changes.jsonl`。
+- 应用版本号与项目内多个独立的 `schema_version`（`config.schema.json`、`product/app-config.schema.json`、`ADR-0009` 的 `ui_state.json`、`loop/` 各机器文件自带的 `schema_version`）是不同的版本轴，互相独立演进；那些**数据格式版本仍沿用其自身既定格式（如三段式 `1.0.0`），不受本两段式约束**。一次 `AppConfig.schema_version` 的兼容性新增字段不必然触发应用小版本变化，但一次不兼容的 `schema_version` 跃迁必然要求应用大版本变化（因为它破坏了持久化兼容性，定义见上）。
 - `loop/` 控制面自身的加固（本任务这类文档/机器文件变更）不改变 `src/stock_advisor/`，因此不触发应用版本号变化；它们只记录在 `registers/changes.jsonl`（机器可读变更账本），不进入面向用户的 `CHANGELOG.md`。
 
 ## 变更日志义务
