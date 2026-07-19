@@ -2,8 +2,8 @@
   "$schema":"../schemas/backlog.schema.json",
   "schema_version":"1.0.0",
   "source":"../planning/work-items.json",
-  "summary":{"in_progress":1,"verifying":0,"ready":0,"proposed":10,"accepted":18,"blocked":0},
+  "summary":{"verifying":0,"ready":1,"proposed":9,"accepted":19,"blocked":0},
   "ordered_ids":["WI-000","WI-001","WI-002","WI-003","WI-004","WI-005","WI-006","WI-007","WI-008","WI-009","WI-010","WI-011","WI-012","WI-013","WI-014","WI-015","WI-016","WI-017","WI-018","WI-019","WI-020","WI-021","WI-022","WI-023","WI-024","WI-025","WI-026","WI-027","WI-028"],
-  "next_ready":null,
+  "next_ready":"WI-019",
   "note":"planning/work-items.json is authoritative; this file is a queue projection"
 }
