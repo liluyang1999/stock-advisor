@@ -13,9 +13,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 try:
-    from PySide6 import QtCore, QtWidgets
+    from PySide6 import QtCore, QtGui, QtWidgets
 except ImportError:  # pragma: no cover - Qt 是可选的迁移期依赖
-    QtCore = QtWidgets = None
+    QtCore = QtGui = QtWidgets = None
 
 # 单源的 skip 装饰器：PySide6 不可用则整类跳过（原先 9 个文件各硬编码一份同样的中文原因）。
 requires_qt = unittest.skipIf(QtWidgets is None, "PySide6 未安装（pip install --group gui）")
