@@ -30,6 +30,7 @@ class AlertsPage(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout(self)
 
         self.rule_model, self.rule_table = make_readonly_table(_RULE_HEADERS)
+        self.rule_table.setAccessibleName("预警规则表")  # REQ-017 可访问名
         layout.addWidget(self.rule_table)
 
         row = QtWidgets.QHBoxLayout()

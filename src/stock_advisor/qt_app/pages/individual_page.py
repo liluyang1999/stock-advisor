@@ -37,6 +37,8 @@ class IndividualPage(QtWidgets.QWidget):
         row = QtWidgets.QHBoxLayout()
         self.input = QtWidgets.QLineEdit()
         self.input.setPlaceholderText("输入股票代码，空格或逗号分隔，最多 30 只")
+        # REQ-017 可访问名：QLineEdit/表格无文本，屏幕阅读器需显式名（按钮由文本自动取名）。
+        self.input.setAccessibleName("股票代码输入")
         self.analyze_button = QtWidgets.QPushButton("分析")
         self.stop_button = QtWidgets.QPushButton("停止")
         self.stop_button.setEnabled(False)
@@ -46,6 +48,7 @@ class IndividualPage(QtWidgets.QWidget):
         layout.addLayout(row)
 
         self.model, self.table = make_readonly_table(_HEADERS)
+        self.table.setAccessibleName("个股分析结果表")
         layout.addWidget(self.table)
 
         # 导出行：复制/CSV 仅在有结果时可用。导出件自带免责声明页脚（见 view_format）。

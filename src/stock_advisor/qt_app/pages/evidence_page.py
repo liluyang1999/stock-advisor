@@ -28,6 +28,7 @@ class EvidencePage(QtWidgets.QWidget):
         row = QtWidgets.QHBoxLayout()
         self.input = QtWidgets.QLineEdit()
         self.input.setPlaceholderText("输入股票代码查询主力资金流")
+        self.input.setAccessibleName("资金流股票代码输入")  # REQ-017 可访问名
         self.query_button = QtWidgets.QPushButton("查询资金流")
         row.addWidget(self.input)
         row.addWidget(self.query_button)

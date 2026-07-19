@@ -33,11 +33,13 @@ class ScreenerPage(QtWidgets.QWidget):
         row = QtWidgets.QHBoxLayout()
         row.addWidget(QtWidgets.QLabel("筛选预设"))
         self.preset_combo = QtWidgets.QComboBox()
+        self.preset_combo.setAccessibleName("筛选预设选择")  # REQ-017 可访问名
         for preset in PRESETS:
             self.preset_combo.addItem(preset.name, preset.key)
         row.addWidget(self.preset_combo)
         row.addWidget(QtWidgets.QLabel("数量"))
         self.top_n = QtWidgets.QSpinBox()
+        self.top_n.setAccessibleName("推荐数量")
         self.top_n.setRange(5, 30)
         self.top_n.setValue(20)
         row.addWidget(self.top_n)
@@ -50,6 +52,7 @@ class ScreenerPage(QtWidgets.QWidget):
         layout.addLayout(row)
 
         self.model, self.table = make_readonly_table(_HEADERS)
+        self.table.setAccessibleName("全市场选股结果表")
         layout.addWidget(self.table)
 
         # REQ-031：结果视图常驻免责声明。
