@@ -1,11 +1,26 @@
 from __future__ import annotations
 
+import json
 from html import escape
 
 from ..domain.presets import PRESETS
 from ..domain.screener import OBJECTIVE_LABELS
+from .assets import tokens_path
 from .theme import DISCLAIMER
 from .view_text import build_help_sections, build_strategy_sections
+
+
+def _manual_font_stack() -> str:
+    """说明书正文的 CSS 字体栈，取自 `tokens.json` 的 `font_families`（与 Qt QSS/字体契约同一真源）。
+
+    HTML 说明书不另抄一份字体名，否则会像 WI-005 那样与应用分叉。TEST-FONT-002 要求说明书正文
+    字体为微软雅黑、且无 UI 体或等宽体例外——只要 tokens 的 `font_families` 保持「Microsoft
+    YaHei」，此处生成的字体栈就自动满足；追加一个通用 `sans-serif` 作最终兜底。
+    """
+
+    families = json.loads(tokens_path().read_text(encoding="utf-8"))["font_families"]
+    return ",".join(f"'{name}'" for name in families) + ",sans-serif"
+
 
 CHARACTERISTICS: tuple[tuple[str, str], ...] = (
     ("板块", "沪市主板 / 深市主板 / 创业板 / 科创板 / 北交所，可多选限定选股范围。"),
@@ -126,7 +141,7 @@ def build_manual_html() -> str:
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         "<title>股市锦囊 使用说明</title>\n"
         "<style>\n"
-        "body{font-family:'Microsoft YaHei UI','Microsoft YaHei',sans-serif;line-height:1.7;"
+        f"body{{font-family:{_manual_font_stack()};line-height:1.7;"
         "color:#1f2937;max-width:880px;margin:0 auto;padding:32px 24px;background:#f7faff;}\n"
         "h1{color:#0b1f3a;font-size:28px;margin-bottom:4px;}\n"
         "h2{color:#123b6d;font-size:19px;margin-top:28px;border-left:4px solid #1f6feb;padding-left:10px;}\n"

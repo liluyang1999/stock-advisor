@@ -63,11 +63,16 @@ def make_history(start=10.0, step=0.1, days=80, volume=100000):
 
 
 def fake_quote(symbol):
-    """给定一个 StockSymbol，构造一份最小可用的 Decimal 报价（供 FakeProvider 用）。"""
+    """给定一个 StockSymbol，构造一份最小可用的 Decimal 报价（供 FakeProvider 用）。
+
+    `Quote.symbol` 契约类型是 StockSymbol（真实 provider 亦然）；此处如实传 StockSymbol 本身，
+    而非它的 normalized 字符串，否则下游 `result.symbol.display`（如 CSV/剪贴板导出）会拿到 str
+    而炸。曾用 `.normalized` 只是碰巧没有测试走到需要 `.display` 的导出路径。
+    """
     from decimal import Decimal
 
     return Quote(
-        symbol=symbol.normalized,
+        symbol=symbol,
         name="测试",
         last=Decimal("10.00"),
         open=Decimal("10.00"),

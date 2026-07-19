@@ -10,6 +10,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..domain.models import CORE_DISCLAIMER
 from ..ui import assets, theme
+from .dialogs import HelpDialog, SelfCheckDialog, StrategyDialog
 from .theme import fonts, qss
 
 
@@ -29,11 +30,52 @@ class MainWindow(QtWidgets.QMainWindow):
         self._content = QtWidgets.QStackedWidget()
         self.setCentralWidget(self._build_central(self._content))
         self.statusBar().showMessage(CORE_DISCLAIMER)
+        self._open_dialogs: list[QtWidgets.QDialog] = []
+        self._build_menu()
 
     def _apply_window_icon(self) -> None:
         path = assets.app_asset_path(theme.APP_ICON_FILENAME)
         if path is not None and path.exists():
             self.setWindowIcon(QtGui.QIcon(str(path)))
+
+    def _build_menu(self) -> None:
+        """帮助菜单：使用说明（F1）/ 策略说明 / 离线自检（WI-018）。
+
+        菜单项只开对话框，不含业务逻辑（ADR-0002）；对话框各自从 view_text/self_check 取内容，
+        壳层不复制文案。三项都给键盘快捷键，满足 TEST-QT-HELP-001 的「快捷键可用」。
+        """
+
+        menu = self.menuBar().addMenu("帮助(&H)")
+
+        self.help_action = menu.addAction("使用说明")
+        self.help_action.setShortcut(QtGui.QKeySequence.StandardKey.HelpContents)  # F1
+        self.help_action.triggered.connect(self.open_help)
+
+        self.strategy_action = menu.addAction("策略说明")
+        self.strategy_action.setShortcut(QtGui.QKeySequence("Ctrl+Shift+S"))
+        self.strategy_action.triggered.connect(self.open_strategy)
+
+        menu.addSeparator()
+        self.self_check_action = menu.addAction("离线自检")
+        self.self_check_action.setShortcut(QtGui.QKeySequence("Ctrl+Shift+T"))
+        self.self_check_action.triggered.connect(self.open_self_check)
+
+    def open_help(self) -> QtWidgets.QDialog:
+        return self._present(HelpDialog(self))
+
+    def open_strategy(self) -> QtWidgets.QDialog:
+        return self._present(StrategyDialog(self))
+
+    def open_self_check(self) -> QtWidgets.QDialog:
+        return self._present(SelfCheckDialog(self))
+
+    def _present(self, dialog: QtWidgets.QDialog) -> QtWidgets.QDialog:
+        """非阻塞地弹出信息窗：`show()` 而非 `exec()`，用户可边看说明边操作，测试也不被事件循环挡住。"""
+
+        self._open_dialogs.append(dialog)
+        dialog.finished.connect(lambda _=0, d=dialog: self._open_dialogs.remove(d))
+        dialog.show()
+        return dialog
 
     def _build_central(self, content: QtWidgets.QWidget) -> QtWidgets.QWidget:
         holder = QtWidgets.QWidget()

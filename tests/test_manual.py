@@ -1,3 +1,4 @@
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -44,6 +45,46 @@ class ManualHtmlTests(unittest.TestCase):
         self.assertNotIn("拖动", self.html)
         self.assertIn("分段按钮", self.html)
         self.assertIn("点选", self.html)
+
+
+class ManualFontAuditTests(unittest.TestCase):
+    """TEST-FONT-002：生成的 HTML 说明书 CSS 字体静态审计（REQ-016）。
+
+    说明书正文字体须为微软雅黑，且**零** UI 体（Microsoft YaHei UI）或等宽体例外——正文是长
+    段中文阅读，用非 UI 的雅黑；曾经硬编码的 'Microsoft YaHei UI' 与 tokens.json 的真源分叉，
+    此审计把它钉死为回归。
+    """
+
+    def setUp(self):
+        self.html = build_manual_html()
+        self.decls = re.findall(r"font-family:[^;}]*", self.html)
+
+    def test_manual_declares_a_font_family(self):
+        # 至少要有一处字体声明，否则“审计通过”只是因为压根没声明字体。
+        self.assertTrue(self.decls, "说明书 CSS 未声明任何 font-family")
+
+    def test_every_font_family_is_microsoft_yahei(self):
+        for decl in self.decls:
+            self.assertIn("Microsoft YaHei", decl, f"字体声明未使用微软雅黑：{decl}")
+
+    def test_no_ui_font_exception(self):
+        for decl in self.decls:
+            self.assertNotIn("Microsoft YaHei UI", decl, f"出现 UI 体例外：{decl}")
+
+    def test_no_monospace_exception(self):
+        low = self.html.lower()
+        self.assertNotIn("monospace", low)
+        self.assertNotIn("consolas", low)
+
+    def test_font_family_is_sourced_from_tokens_not_hardcoded(self):
+        # 字体应来自 tokens.json 的 font_families，与 Qt QSS/字体契约同一真源（WI-005 教训）。
+        import json
+
+        from stock_advisor.ui.assets import tokens_path
+
+        families = json.loads(tokens_path().read_text(encoding="utf-8"))["font_families"]
+        for family in families:
+            self.assertIn(family, self.html, f"tokens 声明的字体未出现在说明书：{family}")
 
 
 if __name__ == "__main__":

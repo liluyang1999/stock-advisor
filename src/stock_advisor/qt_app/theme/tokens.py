@@ -11,10 +11,6 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-# src/stock_advisor/qt_app/theme/tokens.py -> 上溯 5 层到仓库根，再进 loop/product。
-# 打包场景下 tokens.json 作为数据文件随附，见 build_exe 的 --add-data（WI-006 收尾时接入）。
-_REPO_TOKENS = Path(__file__).resolve().parents[4] / "loop" / "product" / "tokens.json"
-
 
 @dataclass(frozen=True)
 class DesignTokens:
@@ -31,17 +27,10 @@ class DesignTokens:
     state_colors: dict[str, str]
 
 
-def _tokens_path() -> Path:
+def load_tokens(path: Path | None = None) -> DesignTokens:
     from ...ui import assets
 
-    bundled = assets.app_asset_path("tokens.json")
-    if bundled is not None and bundled.exists():
-        return bundled
-    return _REPO_TOKENS
-
-
-def load_tokens(path: Path | None = None) -> DesignTokens:
-    raw = json.loads((path or _tokens_path()).read_text(encoding="utf-8"))
+    raw = json.loads((path or assets.tokens_path()).read_text(encoding="utf-8"))
     return DesignTokens(
         font_families=list(raw["font_families"]),
         font_points=dict(raw["font_points"]),

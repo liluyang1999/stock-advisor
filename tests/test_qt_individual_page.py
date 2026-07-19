@@ -80,6 +80,52 @@ class IndividualPageTests(unittest.TestCase):
         self.assertIn("失败 1", page.status.text())
         self.assertIn(CORE_DISCLAIMER, page.status.text())  # 结果态仍常驻免责声明
 
+    # --- 复制 / CSV 导出（WI-018 / TEST-QT-HELP-001）---
+
+    def test_export_buttons_enable_only_after_results(self):
+        page, controller = self._page(FakeProvider())
+        self.assertFalse(page.copy_button.isEnabled())  # 初始无结果 → 禁用
+        self.assertFalse(page.export_button.isEnabled())
+        page.input.setText("600519 000001")
+        page._on_analyze()
+        wait_for(controller.batch_finished)
+        self.assertTrue(page.copy_button.isEnabled())  # 有结果 → 放开
+        self.assertTrue(page.export_button.isEnabled())
+
+    def test_export_buttons_redisable_when_a_new_batch_starts(self):
+        page, controller = self._page(FakeProvider())
+        page.input.setText("600519")
+        page._on_analyze()
+        wait_for(controller.batch_finished)
+        self.assertTrue(page.copy_button.isEnabled())
+        page._on_analyze()  # 新一轮开始 → 立即禁用，避免复制上一轮的陈旧结果
+        self.assertFalse(page.copy_button.isEnabled())
+        self.assertFalse(page.export_button.isEnabled())
+
+    def test_copy_results_puts_disclaimer_bearing_text_on_clipboard(self):
+        page, controller = self._page(FakeProvider())
+        page.input.setText("600519 000001")
+        page._on_analyze()
+        wait_for(controller.batch_finished)
+        text = page.copy_results()
+        self.assertIn(CORE_DISCLAIMER, text)  # 导出件自带免责声明
+        self.assertEqual(QtWidgets.QApplication.clipboard().text(), text)
+
+    def test_export_csv_writes_file_with_header_and_disclaimer(self):
+        import tempfile
+
+        page, controller = self._page(FakeProvider())
+        page.input.setText("600519 000001")
+        page._on_analyze()
+        wait_for(controller.batch_finished)
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "结果.csv"
+            page.export_csv_to(out)
+            content = out.read_text(encoding="utf-8")
+        self.assertIn("代码", content)  # 表头
+        self.assertIn(CORE_DISCLAIMER, content)  # 免责声明页脚
+        self.assertIn("模型", content.strip().splitlines()[-1])  # 声明在末行
+
 
 if __name__ == "__main__":
     unittest.main()

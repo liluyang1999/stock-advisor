@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import re
+from typing import Any
 
 from ..domain.formatting import (
     _finite_float,
@@ -23,7 +24,13 @@ from ..domain.formatting import (
     _positive_finite_float,
     risk_level,
 )
-from ..domain.models import AnalysisResult, ComparisonRow, MarketSnapshot, Recommendation
+from ..domain.models import (
+    CORE_DISCLAIMER,
+    AnalysisResult,
+    ComparisonRow,
+    MarketSnapshot,
+    Recommendation,
+)
 from ..domain.numeric import positive_finite_int as _positive_finite_int
 from ..domain.symbols import normalize_symbol
 from .theme import (
@@ -217,6 +224,17 @@ def _safe_row(cells: object) -> list[str]:
     return [neutralize_export_cell(cell) for cell in cells]  # type: ignore[union-attr]
 
 
+def _write_disclaimer_footer(writer: Any) -> None:
+    """每份导出末尾追加一行免责声明（REQ-031 / TEST-DISC-001）。
+
+    导出件（CSV / 剪贴板）常被单独保存或转发，脱离结果视图里常驻的那句声明；因此让**每一种
+    导出**都自带一行「不构成投资建议」，声明随数据一起走。集中在此单点写入，任何新增的导出格式
+    只要复用它，就不可能漏掉这句合规声明。声明以 `模` 起头，不触发 REQ-032 的公式引导符中和。
+    """
+
+    writer.writerow([CORE_DISCLAIMER])
+
+
 def format_results_for_clipboard(results: list[AnalysisResult]) -> str:
     output = io.StringIO()
     writer = csv.writer(output, delimiter="\t", lineterminator="\n")
@@ -247,6 +265,7 @@ def format_results_for_clipboard(results: list[AnalysisResult]) -> str:
                 ]
             )
         )
+    _write_disclaimer_footer(writer)
     return output.getvalue().strip()
 
 
@@ -282,6 +301,7 @@ def format_results_as_csv(results: list[AnalysisResult]) -> str:
                 ]
             )
         )
+    _write_disclaimer_footer(writer)
     return "\ufeff" + output.getvalue()
 
 
@@ -290,6 +310,7 @@ def format_table_rows_for_clipboard(rows: list[tuple[str, ...]]) -> str:
     writer = csv.writer(output, delimiter="\t", lineterminator="\n")
     writer.writerow(["代码", "名称", "建议", "分数", "把握", "最新价", "涨跌幅", "风险"])
     writer.writerows(_safe_row(row) for row in rows)
+    _write_disclaimer_footer(writer)
     return output.getvalue().strip()
 
 
@@ -298,6 +319,7 @@ def format_table_rows_as_csv(rows: list[tuple[str, ...]]) -> str:
     writer = csv.writer(output, lineterminator="\n")
     writer.writerow(["代码", "名称", "建议", "分数", "把握", "最新价", "涨跌幅", "风险"])
     writer.writerows(_safe_row(row) for row in rows)
+    _write_disclaimer_footer(writer)
     return "\ufeff" + output.getvalue()
 
 
