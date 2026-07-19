@@ -19,8 +19,9 @@ from .base import WorkerControllerBase
 
 
 class _ScreenSignals(QtCore.QObject):
-    progress = QtCore.Signal(object)  # Recommendation（每完成一只 TopN 深度分析）
-    finished = QtCore.Signal(object)  # ScreenReport
+    # 第一个参数是开轮世代号，供控制器丢弃被后续 start supersede 的上一轮迟到结果（RISK-005）。
+    progress = QtCore.Signal(int, object)  # generation, Recommendation
+    finished = QtCore.Signal(int, object)  # generation, ScreenReport
 
 
 class _ScreenWorker(QtCore.QRunnable):
@@ -31,6 +32,7 @@ class _ScreenWorker(QtCore.QRunnable):
         tunables: dict[str, float],
         deep: bool,
         level: int,
+        generation: int,
         cancel: ManualCancel,
         signals: _ScreenSignals,
     ) -> None:
@@ -40,12 +42,13 @@ class _ScreenWorker(QtCore.QRunnable):
         self._tunables = tunables
         self._deep = deep
         self._level = level
+        self._generation = generation
         self._cancel = cancel
         self._signals = signals
 
     def run(self) -> None:  # 在工作线程执行，绝不碰 QWidget
         def _progress(_rank: int, _total: int, rec: Recommendation) -> None:
-            self._signals.progress.emit(rec)
+            self._signals.progress.emit(self._generation, rec)
 
         report = run_screen(
             self._provider,
@@ -56,7 +59,7 @@ class _ScreenWorker(QtCore.QRunnable):
             level=self._level,
             progress_cb=_progress,
         )
-        self._signals.finished.emit(report)
+        self._signals.finished.emit(self._generation, report)
 
 
 class ScreenerController(WorkerControllerBase):
@@ -81,18 +84,24 @@ class ScreenerController(WorkerControllerBase):
     ) -> None:
         """提交一次筛选并立即返回；结果稍后经信号到达（REQ-013 不阻塞 GUI）。"""
 
-        cancel = self._begin()
+        cancel, gen = self._begin()
         signals = _ScreenSignals()
         signals.progress.connect(self._on_progress)
         signals.finished.connect(self._on_finished)
         worker = _ScreenWorker(
-            self._provider, preset_key, dict(tunables), deep, level, cancel, signals
+            self._provider, preset_key, dict(tunables), deep, level, gen, cancel, signals
         )
         self._pool.start(worker)
 
-    def _on_progress(self, rec: Recommendation) -> None:
+    # 每个槽先按世代号丢弃被后续 start supersede 的上一轮迟到结果（RISK-005 / 零迟到泄漏）。
+
+    def _on_progress(self, generation: int, rec: Recommendation) -> None:
+        if not self._is_current(generation):
+            return
         self.recommendation.emit(rec)
 
-    def _on_finished(self, report: ScreenReport) -> None:
+    def _on_finished(self, generation: int, report: ScreenReport) -> None:
+        if not self._is_current(generation):
+            return  # 迟到：上一轮已被 supersede，丢弃其完成信号
         self._end()
         self.screen_finished.emit(report)

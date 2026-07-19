@@ -14,18 +14,21 @@ from .base import WorkerControllerBase
 
 
 class _FlowSignals(QtCore.QObject):
-    done = QtCore.Signal(object)  # FundFlowResult
+    done = QtCore.Signal(int, object)  # generation, FundFlowResult
 
 
 class _FlowWorker(QtCore.QRunnable):
-    def __init__(self, code, provider, signals) -> None:
+    def __init__(self, code, provider, generation, signals) -> None:
         super().__init__()
         self._code = code
         self._provider = provider
+        self._generation = generation
         self._signals = signals
 
     def run(self) -> None:
-        self._signals.done.emit(fetch_fund_flow_result(self._code, self._provider))
+        self._signals.done.emit(
+            self._generation, fetch_fund_flow_result(self._code, self._provider)
+        )
 
 
 class FundFlowController(WorkerControllerBase):
@@ -39,11 +42,14 @@ class FundFlowController(WorkerControllerBase):
 
     def start(self, code: str) -> None:
         """按需拉取一只的资金流并立即返回；结果经信号到达（成功或可见降级）。"""
-        self._begin()
+        _, gen = self._begin()
         signals = _FlowSignals()
         signals.done.connect(self._on_done)
-        self._pool.start(_FlowWorker(code, self._provider, signals))
+        self._pool.start(_FlowWorker(code, self._provider, gen, signals))
 
-    def _on_done(self, result: FundFlowResult) -> None:
+    def _on_done(self, generation: int, result: FundFlowResult) -> None:
+        # 连点两次查询时，上一只的迟到资金流结果世代已过期，丢弃、不覆盖当前查询（RISK-005）。
+        if not self._is_current(generation):
+            return
         self._end()
         self.fund_flow_ready.emit(result)

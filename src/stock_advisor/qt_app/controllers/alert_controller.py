@@ -16,6 +16,7 @@ from PySide6 import QtCore
 from ...domain.models import AlertRule
 from ...services.alert_monitor import run_alert_cycle
 from ...services.workflow import MarketDataProvider
+from ..workers import GenerationGuard
 
 
 class _CycleSignals(QtCore.QObject):
@@ -50,21 +51,21 @@ class AlertController(QtCore.QObject):
         self._timer.timeout.connect(self._tick)
         self._rules: list[AlertRule] = []
         self._fired: set = set()
-        self._generation = 0
+        self._guard = GenerationGuard()  # RISK-005：与 WorkerControllerBase 共用同一世代守卫原语
         self._running = False
 
     def is_running(self) -> bool:
         return self._running
 
     def generation(self) -> int:
-        return self._generation
+        return self._guard.current
 
     def set_rules(self, rules: list[AlertRule]) -> None:
         self._rules = list(rules)
 
     def start(self, interval_ms: int = 60000) -> None:
         """开始周期监控。递增 generation 使任何在途的上一代结果失效（RISK-005）。"""
-        self._generation += 1
+        self._guard.bump()
         self._fired = set()
         self._running = True
         self._timer.start(interval_ms)
@@ -72,7 +73,7 @@ class AlertController(QtCore.QObject):
 
     def stop(self) -> None:
         """停止监控。递增 generation，使已提交但未完成的 worker 结果被丢弃（RISK-005）。"""
-        self._generation += 1
+        self._guard.bump()
         self._running = False
         self._timer.stop()
 
@@ -84,13 +85,13 @@ class AlertController(QtCore.QObject):
         signals = _CycleSignals()
         signals.done.connect(self._on_cycle_done)
         worker = _CycleWorker(
-            self._generation, list(self._rules), self._provider, set(self._fired), signals
+            self._guard.current, list(self._rules), self._provider, set(self._fired), signals
         )
         self._pool.start(worker)
 
     def _on_cycle_done(self, generation: int, newly: list, fired: set) -> None:
         # 迟到结果丢弃：generation 不匹配说明这轮属于已停止/已重启的上一代（RISK-005）。
-        if generation != self._generation or not self._running:
+        if not self._guard.is_current(generation) or not self._running:
             return
         self._fired = fired
         if newly:

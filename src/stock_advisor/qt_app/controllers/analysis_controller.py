@@ -20,11 +20,15 @@ from .base import WorkerControllerBase
 
 
 class _BatchSignals(QtCore.QObject):
-    """QRunnable 不能带信号，故信号集中在这个 QObject 上，由 worker 持有并发射。"""
+    """QRunnable 不能带信号，故信号集中在这个 QObject 上，由 worker 持有并发射。
 
-    progress = QtCore.Signal(object)  # BatchProgress
-    symbol_analyzed = QtCore.Signal(object)  # AnalysisOutcome
-    finished = QtCore.Signal(object)  # BatchReport
+    每个信号的**第一个参数是开轮时的世代号**：控制器的绑定方法槽据此丢弃被后续 start supersede 的
+    上一轮迟到结果（RISK-005）。用绑定方法槽（而非临时闭包）才能保住跨线程 queued 交付。
+    """
+
+    progress = QtCore.Signal(int, object)  # generation, BatchProgress
+    symbol_analyzed = QtCore.Signal(int, object)  # generation, AnalysisOutcome
+    finished = QtCore.Signal(int, object)  # generation, BatchReport
 
 
 class _BatchWorker(QtCore.QRunnable):
@@ -33,6 +37,7 @@ class _BatchWorker(QtCore.QRunnable):
         text: str,
         provider: MarketDataProvider,
         level: int,
+        generation: int,
         cancel: ManualCancel,
         signals: _BatchSignals,
     ) -> None:
@@ -40,13 +45,14 @@ class _BatchWorker(QtCore.QRunnable):
         self._text = text
         self._provider = provider
         self._level = level
+        self._generation = generation
         self._cancel = cancel
         self._signals = signals
 
     def run(self) -> None:  # 在 QThreadPool 的工作线程上执行，绝不碰 QWidget
         def _emit_progress(progress: BatchProgress) -> None:
-            self._signals.progress.emit(progress)
-            self._signals.symbol_analyzed.emit(progress.outcome)
+            self._signals.progress.emit(self._generation, progress)
+            self._signals.symbol_analyzed.emit(self._generation, progress.outcome)
 
         report = run_batch_analysis(
             self._text,
@@ -55,7 +61,7 @@ class _BatchWorker(QtCore.QRunnable):
             cancel_token=self._cancel,
             on_progress=_emit_progress,
         )
-        self._signals.finished.emit(report)
+        self._signals.finished.emit(self._generation, report)
 
 
 class AnalysisController(WorkerControllerBase):
@@ -81,22 +87,29 @@ class AnalysisController(WorkerControllerBase):
     def start(self, text: str, level: int = 3) -> None:
         """提交一次批量分析并**立即返回**；结果稍后经信号到达（REQ-013 不阻塞 GUI）。"""
 
-        cancel = self._begin()
+        cancel, gen = self._begin()
         signals = _BatchSignals()
         signals.progress.connect(self._on_progress)
         signals.symbol_analyzed.connect(self._on_symbol)
         signals.finished.connect(self._on_finished)
-        worker = _BatchWorker(text, self._provider, level, cancel, signals)
+        worker = _BatchWorker(text, self._provider, level, gen, cancel, signals)
         self._pool.start(worker)
 
     # --- 以下槽在 GUI 线程执行（queued connection），负责把 worker 信号转发为对外信号 ---
+    # 每个槽先按世代号丢弃被后续 start supersede 的上一轮迟到结果（RISK-005 / 零迟到泄漏）。
 
-    def _on_progress(self, progress: BatchProgress) -> None:
+    def _on_progress(self, generation: int, progress: BatchProgress) -> None:
+        if not self._is_current(generation):
+            return
         self.progress.emit(progress)
 
-    def _on_symbol(self, outcome: AnalysisOutcome) -> None:
+    def _on_symbol(self, generation: int, outcome: AnalysisOutcome) -> None:
+        if not self._is_current(generation):
+            return
         self.symbol_analyzed.emit(outcome)
 
-    def _on_finished(self, report: BatchReport) -> None:
+    def _on_finished(self, generation: int, report: BatchReport) -> None:
+        if not self._is_current(generation):
+            return  # 迟到：上一轮已被 supersede，丢弃其完成信号，不发陈旧的 batch_finished
         self._end()
         self.batch_finished.emit(report)
