@@ -1,0 +1,2 @@
+TRACEABILITY_OK 34/34
+tk-contract-mapping.csv: 187 rows classified (116 test_gui_layout + 71 test_ui_polish); qt_replaced=156 pure_preserved=24 approved_retired=7; zero unclassified
