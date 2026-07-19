@@ -4,7 +4,7 @@
 - Phase: `foundation_ready`
 - Status: `active`
 - Milestone: `MS-00`
-- Selected work item: `WI-021` — DPI/字体/可访问性/视觉收敛 (`ready`)
+- Selected work item: `WI-022` — 性能与资源收敛 (`ready`)
 - Baseline: `881099806deca77a7bf7e784d6786f9bccdf0ce6`
 - Dirty worktree: `true`
 - Current GUI / target GUI: `Tkinter / PySide6`

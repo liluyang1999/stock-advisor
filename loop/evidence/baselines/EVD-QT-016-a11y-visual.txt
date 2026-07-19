@@ -1,0 +1,4 @@
+Ran 8 tests in 0.973s
+
+OK
+截图矩阵: 12 PNGs at build/screenshots/ (4 pages x 3 sizes: 1000x680/1280x800/1536x960)
