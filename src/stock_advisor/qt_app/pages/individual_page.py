@@ -9,13 +9,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6 import QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
-from ...domain.models import CORE_DISCLAIMER, AnalysisResult
+from ...domain.models import CORE_DISCLAIMER, AnalysisResult, DailyBar
 from ...services.batch import BatchProgress, BatchReport
 from ...services.workflow import AnalysisOutcome
 from ...ui.view_format import format_results_as_csv, format_results_for_clipboard
 from ..controllers.analysis_controller import AnalysisController
+from ..widgets.candlestick_chart import CandlestickChart
 from ..widgets.table_utils import make_readonly_table
 
 _HEADERS = ["代码", "名称", "建议", "分数", "最新价", "数据质量"]
@@ -28,6 +29,8 @@ class IndividualPage(QtWidgets.QWidget):
         super().__init__(parent)
         self._controller = controller
         self._results: list[AnalysisResult] = []
+        # 每只票的日线留在页面里：K 线图按选中行切换，重选不必重新联网（REQ-004 / WI-027）。
+        self._history: dict[str, list[DailyBar]] = {}
         self._build_ui()
         self._connect()
 
@@ -50,6 +53,9 @@ class IndividualPage(QtWidgets.QWidget):
         self.model, self.table = make_readonly_table(_HEADERS)
         self.table.setAccessibleName("个股分析结果表")
         layout.addWidget(self.table)
+
+        self.chart = CandlestickChart()
+        layout.addWidget(self.chart)
 
         # 导出行：复制/CSV 仅在有结果时可用。导出件自带免责声明页脚（见 view_format）。
         export_row = QtWidgets.QHBoxLayout()
@@ -75,10 +81,28 @@ class IndividualPage(QtWidgets.QWidget):
         self._controller.symbol_analyzed.connect(self._append_row)
         self._controller.progress.connect(self._on_progress)
         self._controller.batch_finished.connect(self._on_finished)
+        selection = self.table.selectionModel()
+        if selection is not None:
+            selection.currentRowChanged.connect(self._on_row_changed)
+
+    def _on_row_changed(self, current: QtCore.QModelIndex, previous: QtCore.QModelIndex) -> None:
+        """选中行切换时换 K 线。失败行没有日线，图上如实显示"暂无历史数据"，不沿用上一只的图。"""
+
+        del previous
+        if not current.isValid():
+            self.chart.clear()
+            return
+        item = self.model.item(current.row(), 0)
+        code = item.text() if item is not None else ""
+        name_item = self.model.item(current.row(), 1)
+        name = name_item.text() if name_item is not None else ""
+        self.chart.set_bars(self._history.get(code, []), f"{code} {name}".strip())
 
     def _on_analyze(self) -> None:
         self.model.removeRows(0, self.model.rowCount())
         self._results = []
+        self._history.clear()
+        self.chart.clear()
         self._set_export_enabled(False)
         self.analyze_button.setEnabled(False)
         self.stop_button.setEnabled(True)
@@ -89,6 +113,8 @@ class IndividualPage(QtWidgets.QWidget):
         self.status.setText(f"分析中… {progress.done}/{progress.total}")
 
     def _append_row(self, outcome: AnalysisOutcome) -> None:
+        if outcome.history:
+            self._history[outcome.symbol.normalized] = list(outcome.history)
         if outcome.ok and outcome.result is not None:
             r = outcome.result
             cells = [
@@ -109,6 +135,9 @@ class IndividualPage(QtWidgets.QWidget):
         # 收集成功结果供导出；有结果才放开复制/CSV（失败/取消/空输入则保持禁用）。
         self._results = [o.result for o in report.outcomes if o.ok and o.result is not None]
         self._set_export_enabled(bool(self._results))
+        # 批次结束后自动选中首行，K 线随之出现——不必让用户先自己点一下才知道有图。
+        if self.model.rowCount() and not self.table.currentIndex().isValid():
+            self.table.setCurrentIndex(self.model.index(0, 0))
         if report.input_error:
             self.status.setText(f"输入有误：{report.input_error}　|　{CORE_DISCLAIMER}")
         elif report.cancelled:
