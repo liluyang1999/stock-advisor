@@ -144,7 +144,7 @@
       "exit_code": 0,
       "artifact_path": "evidence/baselines/EVD-LOOP-004-hardening.txt",
       "sha256": "b3e2dcc0573170ee051dbe6a62f623d09b3e36e9bb37d0fdebd6b8a4e931030f",
-      "control_plane_sha256": "7de35dcdc2a54d3eddfc92ab2a218ec8db0e3ff0861ffe45da43214d3f968ad7",
+      "control_plane_sha256": "7f615e7c00604a340049e331e8c644fa5c0a4df18d5b9ab78d47d55322400edc",
       "commit": "6a75499",
       "dirty_worktree": true,
       "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",
@@ -779,6 +779,30 @@
       "started_at": null,
       "finished_at": "2026-07-20T10:00:00+09:00",
       "summary": "WI-029: four delivered widgets (TierSelector, EvidenceView, PositionPlanView, ComparisonView) were mounted in nothing and backtest_signals was called from nowhere, so tier switching, evidence, the position calculator, watchlist comparison and the credibility backtest did not exist for a user — while REQ-003/004/005/021 were marked verifying and README/CHANGELOG claimed them. Unit tests structurally cannot catch this: they construct the widget directly, which is the step the app skipped. All five are now reachable from the assembled window (5 tabs, 5 controllers) and a test walks down from the window to assert it. Behaviour pinned: tier switch re-decides with a provider that raises on any fetch (proving zero network, REQ-003) and keeps the selected row; row selection drives chart/evidence/position/backtest through one render path; watchlist edits persist through store; a holding without cost shows an em dash rather than 0; failed symbols are excluded from the comparison and counted; the backtest displays the engine's insufficient-sample message rather than a blank pane, carrying the no-look-ahead caveat (REQ-021). 799 tests, run_gates ran=7 failed=0.",
+      "verified_by": "root"
+    },
+    {
+      "id": "EVD-QT-019",
+      "requirement_ids": [
+        "REQ-003",
+        "REQ-006",
+        "REQ-009"
+      ],
+      "acceptance_ids": [
+        "AC-002",
+        "AC-004"
+      ],
+      "work_item_id": "WI-030",
+      "type": "gui",
+      "command": "python -m unittest tests.test_qt_feature_wiring && python loop/scripts/run_gates.py",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-QT-019-settings-and-alerts.txt",
+      "sha256": "f945223cee0f681f16aaf3ed66640bfd48450d223ff7c2e98daec44e730bfc42",
+      "commit": "24833f6",
+      "environment": "Windows 11 AMD64 / Python 3.14.4 / PySide6-Essentials 6.11.1 / QT_QPA_PLATFORM=offscreen",
+      "started_at": null,
+      "finished_at": "2026-07-20T11:30:00+09:00",
+      "summary": "WI-030: config.capital and config.preset had zero references in qt_app, config.alerts was never read or written, AlertsPage had no way to create a rule and nothing called set_rules, and policy.spectrum was displayed nowhere — so persistence of 本金/档位/预设/预警 and the tier spectrum, all claimed by README, did not exist. The position calculator sized every plan against a hardcoded 100000. All five AppConfig fields now flow through one Settings owner doing read-modify-write per field; a test edits watchlist and capital in turn and asserts neither is lost, which is the clobbering bug that per-page config copies would have caused. Settings.path is required with an explicit for_user() for production, after the first version's default reached the real %APPDATA% config and a test wrote level=5 into it (restored); pages refuse construction without settings and a test asserts for_user() appears in exactly one production file. Alert rules are creatable, removable, restored next session, and handed to the controller — storing without handing over would leave monitoring inert. 812 tests, run_gates ran=7 failed=0.",
       "verified_by": "root"
     }
   ]

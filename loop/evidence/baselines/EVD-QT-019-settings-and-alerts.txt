@@ -1,0 +1,35 @@
+EVD-QT-019 — 配置持久化贯通与预警规则编辑（WI-030 / REQ-003/006/009 / AC-002/AC-004）
+记录时间 2026-07-20 / 提交 24833f6 / Windows 11 AMD64 / Python 3.14.4 / QT_QPA_PLATFORM=offscreen
+
+== 1. 缺陷 ==
+  config.capital / config.preset 在整个 qt_app 中零引用；config.alerts 只被控制器接口提及，
+  AlertsPage 没有任何新建规则的入口且 set_rules 无人调用；policy.spectrum 算得出五档对照却无处显示。
+  即：README 宣称的「本金/档位/预设/预警跨会话持久化」与「决策强度光谱」在交付物里都不成立；
+  仓位计算器按写死的 100000 计算，用户改不了。
+  另有一个尚未发作的缺陷：各页若各持一份 AppConfig 存盘，整份覆写会互相顶掉对方刚存的字段。
+
+== 2. 修复后的配置字段接线 ==
+  config.watchlist: qt_app 中 9 处
+  config.capital: qt_app 中 5 处
+  config.level: qt_app 中 26 处
+  config.preset: qt_app 中 4 处
+  config.alerts: qt_app 中 10 处
+
+== 3. 真实用户配置的唯一入口 ==
+src/stock_advisor/qt_app/app.py:41:        self.settings = settings if settings is not None else Settings.for_user()
+
+== 4. 行为测试 ==
+$ python -m unittest tests.test_qt_feature_wiring
+Ran 28 tests in 0.305s
+
+OK
+  覆盖：档位/本金/预设/预警落盘并在下次会话恢复；非法本金不破坏现值；
+        跨页编辑互不覆盖；光谱显示五档并标出当前档；规则不完整时明确拒绝；
+        规则必须交到控制器手上（只存不给 = 监控静默失效）；
+        页面拒绝在不传 Settings 时构造，for_user() 全生产代码仅一处。
+
+== 5. 全量与门禁 ==
+Ran 812 tests in 14.899s
+
+OK
+RUN_GATES_OK ran=7 failed=0 skipped=0

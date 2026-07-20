@@ -984,6 +984,43 @@
       "scope_out": [
         "新增功能——本工作项只把已实现但接不通的东西接通，并清理迁移遗留"
       ]
+    },
+    {
+      "id": "WI-030",
+      "title": "配置持久化贯通、预警规则编辑与决策强度光谱",
+      "milestone": "MS-08",
+      "status": "accepted",
+      "priority": "P0",
+      "depends_on": [
+        "WI-029"
+      ],
+      "requirements": [
+        "REQ-003",
+        "REQ-006",
+        "REQ-009"
+      ],
+      "acceptance": [
+        "AC-002",
+        "AC-004"
+      ],
+      "implementation_paths": [
+        "src/stock_advisor/qt_app/settings.py",
+        "src/stock_advisor/qt_app/pages/"
+      ],
+      "tests": [
+        "TEST-QT-PORT-001",
+        "TEST-QT-ALERT-001",
+        "TEST-QT-AN-002"
+      ],
+      "evidence_ids": [
+        "EVD-QT-019"
+      ],
+      "next_action": "done",
+      "size": "M",
+      "definition_of_done": "every AppConfig field the product claims to persist is read and written by the Qt app through one shared owner, alert rules are creatable and restored, the tier spectrum is visible, and no page can reach the real user config implicitly.",
+      "scope_out": [
+        "把应用切到 BoundedUrllibProvider —— 那是 envelope 化的传输改造，属另一个工作项"
+      ]
     }
   ]
 }
