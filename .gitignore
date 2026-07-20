@@ -24,6 +24,7 @@ config.local.json
 /dist/
 
 # 本地代理与工作流状态
+/.claude/
 /.agents/
 /.codex/
 /.superpowers/
