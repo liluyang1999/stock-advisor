@@ -1,0 +1,36 @@
+EVD-QT-018 — 已交付功能可达性修复（WI-029 / REQ-003/004/005/021 / AC-003/AC-004）
+记录时间 2026-07-20 / 提交 f494651 / Windows 11 AMD64 / Python 3.14.4 / QT_QPA_PLATFORM=offscreen
+
+== 1. 缺陷 ==
+  TierSelector / EvidenceView / PositionPlanView / ComparisonView 四个部件写好且单测齐全，
+  但从未被挂进任何页面；backtest_signals 在生产代码里零调用。
+  后果：五档决策强度、证据、仓位计算器、横向对比、可信度回测在交付物里用户点不到，
+  而 REQ-003/004/005/021 已标 verifying、README 与 CHANGELOG 均宣称已交付。
+  单元测试无法发现此类缺陷——它们直接构造部件，恰好跳过了应用没做的那一步。
+
+== 2. 修复后的导航（五页）==
+  标签页: ['个股分析', '全市场选股', '自选 / 持仓', '条件预警', '个股资金流']
+  TierSelector         可达: True
+  EvidenceView         可达: True
+  PositionPlanView     可达: True
+  ComparisonView       可达: True
+  CandlestickChart     可达: True
+  控制器数: 5
+
+== 3. 行为测试 ==
+$ python -m unittest tests.test_qt_feature_wiring tests.test_qt_app_assembly
+Ran 24 tests in 2.713s
+
+OK
+
+  覆盖的行为：
+   REQ-003 切档只重判不联网（换成会抛异常的 provider 证明零取数）；切档保留选中行
+   REQ-004 选中行联动证据/仓位/K线；重新分析清空详情
+   REQ-005 自选增删即存盘、同码更新不重复、无成本显示破折号而非 0、失败票不混入且计数告知
+   REQ-021 回测随行/档重算，样本不足时如实显示引擎说明并带无未来泄漏 caveat
+
+== 4. 全量与门禁 ==
+Ran 799 tests in 14.283s
+
+OK
+RUN_GATES_OK ran=7 failed=0 skipped=0

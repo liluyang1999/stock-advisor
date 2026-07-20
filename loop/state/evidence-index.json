@@ -144,7 +144,7 @@
       "exit_code": 0,
       "artifact_path": "evidence/baselines/EVD-LOOP-004-hardening.txt",
       "sha256": "b3e2dcc0573170ee051dbe6a62f623d09b3e36e9bb37d0fdebd6b8a4e931030f",
-      "control_plane_sha256": "a017bb34d0d347e4b7009c939d92d1fd4376aeaf41f2ae9867de128f2ade7810",
+      "control_plane_sha256": "81b0c42b03ff0b90f4408d4445152db2ad67b579358fd0ca1911751ac69b1a40",
       "commit": "6a75499",
       "dirty_worktree": true,
       "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",
@@ -754,6 +754,31 @@
       "started_at": null,
       "finished_at": "2026-07-20T09:10:00+09:00",
       "summary": "CHG-004 / AC-011: the version now has exactly one source. pyproject.toml had copied the literal with a comment saying it mirrored the package, which is a convention that fails silently. Evidence for why the package is canonical rather than pyproject: there is no [build-system], so nothing installs the project, so importlib.metadata.version('stock-advisor') raises PackageNotFoundError (captured) both in development and once frozen — a running process can only read a version it imported. pyproject uses PEP 621 dynamic = ['version'] instead. Seven tests enforce it: two-part MAJOR.MINOR format, no static version in pyproject, __version__ assigned exactly once under src/, the release manifest reporting the running value, and CHANGELOG.md existing with two-part headings. Mutation-checked — restoring the duplicate literal fails the suite (assertion captured). ruff 0, pyright 0, 782 tests, run_gates ran=7 failed=0 after re-baselining.",
+      "verified_by": "root"
+    },
+    {
+      "id": "EVD-QT-018",
+      "requirement_ids": [
+        "REQ-003",
+        "REQ-004",
+        "REQ-005",
+        "REQ-021"
+      ],
+      "acceptance_ids": [
+        "AC-003",
+        "AC-004"
+      ],
+      "work_item_id": "WI-029",
+      "type": "gui",
+      "command": "python -m unittest tests.test_qt_feature_wiring tests.test_qt_app_assembly && python loop/scripts/run_gates.py",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-QT-018-feature-reachability.txt",
+      "sha256": "2efda78bb58b76e4dc3f85c46119510db8f3d64ecb60092324dbb1479cfde0ca",
+      "commit": "f494651",
+      "environment": "Windows 11 AMD64 / Python 3.14.4 / PySide6-Essentials 6.11.1 / QT_QPA_PLATFORM=offscreen",
+      "started_at": null,
+      "finished_at": "2026-07-20T10:00:00+09:00",
+      "summary": "WI-029: four delivered widgets (TierSelector, EvidenceView, PositionPlanView, ComparisonView) were mounted in nothing and backtest_signals was called from nowhere, so tier switching, evidence, the position calculator, watchlist comparison and the credibility backtest did not exist for a user — while REQ-003/004/005/021 were marked verifying and README/CHANGELOG claimed them. Unit tests structurally cannot catch this: they construct the widget directly, which is the step the app skipped. All five are now reachable from the assembled window (5 tabs, 5 controllers) and a test walks down from the window to assert it. Behaviour pinned: tier switch re-decides with a provider that raises on any fetch (proving zero network, REQ-003) and keeps the selected row; row selection drives chart/evidence/position/backtest through one render path; watchlist edits persist through store; a holding without cost shows an em dash rather than 0; failed symbols are excluded from the comparison and counted; the backtest displays the engine's insufficient-sample message rather than a blank pane, carrying the no-look-ahead caveat (REQ-021). 799 tests, run_gates ran=7 failed=0.",
       "verified_by": "root"
     }
   ]

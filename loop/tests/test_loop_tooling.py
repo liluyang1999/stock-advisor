@@ -254,7 +254,10 @@ class LoopToolingTests(unittest.TestCase):
         work_items = json.loads(
             (LOOP_ROOT / "planning/work-items.json").read_text(encoding="utf-8")
         )["work_items"]
-        self.assertEqual(len(work_items), 29)
+        # 对账 metrics 而不是硬编码一个数字：硬编码的话，每加一个工作项都要来改这里，而它并不
+        # 保护任何东西——真正的不变量是"计划里的条数与 metrics 记的总数一致"，那才是会出错的地方。
+        recorded = json.loads((LOOP_ROOT / "state/metrics.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(work_items), recorded["engineering"]["work_items_total"])
         for wi in work_items:
             self.assertIn(wi.get("size"), {"S", "M", "L", "XL"}, wi["id"])
             self.assertTrue(wi.get("definition_of_done"), wi["id"])
