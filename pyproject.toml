@@ -11,7 +11,14 @@
 
 [project]
 name = "stock-advisor"
-version = "1.0"                       # 两段式 大版本.小版本; mirrors src/stock_advisor/__init__.py::__version__
+# 版本号的唯一权威字段是 src/stock_advisor/__init__.py::__version__，两段式 MAJOR.MINOR
+# （loop/governance/VERSION_AND_CHANGE_CONTROL.md）。这里用 PEP 621 的 dynamic 声明"版本不静态写在
+# 本文件里"，而不是再抄一份字面量——抄一份就必然有一天对不上。
+#
+# 为什么真源在包里而不是这里：本项目没有 [build-system]，从不被 pip 安装，也就没有 dist-info，
+# `importlib.metadata.version("stock-advisor")` 在开发期和冻结后的 EXE 里都取不到值。运行期唯一
+# 取得到的版本号只能来自被 import 的模块，所以真源必须是模块，pyproject 只能引用它。
+dynamic = ["version"]
 description = "股市锦囊 — an offline, rule-based A-share desktop decision-support tool."
 requires-python = ">=3.14"
 # WI-023 completed the ADR-0001 migration: PySide6 is the shipping GUI, so it is a real runtime

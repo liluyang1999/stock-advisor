@@ -342,16 +342,18 @@ def _build_notices(components: list[dict[str, Any]], present: list[str], missing
 
 
 def _app_version() -> str:
-    """从 `__init__.py` 取版本号。
+    """读唯一权威字段 `stock_advisor.__version__`（pyproject 以 PEP 621 dynamic 引用它）。
 
-    只认引号里的内容：`__version__` 那行带着行尾注释，按 `=` 切完再 strip 引号会把注释一起带进
-    清单和 SBOM（实测拿到的是 `1.0"  # 两段式…`）。
+    直接 import 而不是正则抠文本：包的 `__init__` 不 import 任何东西，代价只有一次模块加载，换来
+    的是"清单里写的就是运行期真正在用的那个值"。正则版本还漏过一次——把行尾注释一起抠进了 SBOM
+    （拿到的是 `1.0"  # 两段式…`）。
     """
-    src = PROJECT_ROOT / "src" / "stock_advisor" / "__init__.py"
-    match = re.search(
-        r"""^__version__\s*=\s*["']([^"']+)["']""", src.read_text(encoding="utf-8"), re.MULTILINE
-    )
-    return match.group(1) if match else "unknown"
+    src = PROJECT_ROOT / "src"
+    if str(src) not in sys.path:
+        sys.path.insert(0, str(src))
+    import stock_advisor
+
+    return stock_advisor.__version__
 
 
 def _build_metadata() -> dict[str, Any]:

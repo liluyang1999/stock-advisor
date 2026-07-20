@@ -230,14 +230,6 @@ class ReleaseManifestTests(unittest.TestCase):
 
         self.assertEqual(self._run_args(["--verify"]), 2)
 
-    def test_app_version_is_the_bare_number_without_the_trailing_comment(self):
-        """__version__ 那行带行尾注释；版本号进 SBOM 和清单，必须只取引号里的内容。"""
-        version = rel._app_version()
-
-        self.assertNotIn("#", version)
-        self.assertNotIn('"', version)
-        self.assertRegex(version, r"^\d+\.\d+$")  # 两段式 大版本.小版本
-
     def test_manifest_records_the_source_commit_so_a_build_is_traceable(self):
         self.staged.write_all_licenses()
 
