@@ -23,18 +23,18 @@
   },
   "tests": {
     "modules": 70,
-    "methods": 812,
-    "passed": 812,
+    "methods": 814,
+    "passed": 814,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
-    "duration_seconds": 14.899,
+    "duration_seconds": 18.018,
     "tk_specific": 0,
-    "qt_specific": 209
+    "qt_specific": 211
   },
   "coverage": {
     "statement": 0.9648,
-    "branch": 0.9237
+    "branch": 0.9239
   },
   "tooling": {
     "ci": false,

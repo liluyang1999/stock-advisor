@@ -9,7 +9,7 @@
 - Dirty worktree: `true`
 - Current GUI / target GUI: `Tkinter / PySide6`
 - Runtime font target: `Microsoft YaHei`
-- Tests: `812/812`
+- Tests: `814/814`
 - Loop tooling tests: `52/54`
 - Loop schemas: `23`
 - Traceability: `34/34`

@@ -1,0 +1,35 @@
+EVD-QT-020 — 校验对象修正：性能测真应用、无障碍遍历装配窗、表格必须具名（WI-031 续）
+记录时间 2026-07-20 / 提交 e7d3f82 / Windows 11 AMD64 / Python 3.14.4 / QT_QPA_PLATFORM=offscreen
+
+== 1. 三处「检查存在但没连到真东西」 ==
+  a) 性能用例量的是 main_window.build_application([]) 空壳——没有页面/表格/图，
+     而 performance-budgets 声称描述「应用」。
+  b) 无障碍审计走手写页面清单，自选/持仓页从未被加进去。
+  c) 视觉矩阵同样漏了自选/持仓页，最小窗 1000x680 的裁切从未验过。
+  与「部件写好却没挂上」同类：产物存在、检查通过，但两者没连上。
+
+== 2. 改测真应用后的实测值（预算未破，但此前系统性偏低）==
+  idle_rss_mib        47.9 -> 67.6   （预算 250）
+  cold_start_seconds  0.37 -> 0.64   （预算 4.0）
+  warm_start p95      0.36 -> 0.56   （预算 2.5）
+
+== 3. 无障碍审计改遍历装配窗后当场抓到的真缺陷 ==
+  ComparisonView 的表格没有可访问名——读屏认不出。
+  修法不是补这一个名字，而是让 make_readonly_table 的 accessible_name 变成必填参数：
+  漏不掉，且空名直接抛错。六个调用点全部具名。
+
+== 4. 验证 ==
+$ python -m unittest tests.test_qt_accessibility
+Ran 7 tests in 0.732s
+
+OK
+$ python -m unittest tests.test_qt_visual_matrix
+Ran 3 tests in 1.231s
+
+OK
+$ python -m unittest discover -s tests/performance -t .
+Ran 5 tests in 3.810s
+
+OK
+$ python loop/scripts/run_gates.py
+RUN_GATES_OK ran=8 failed=0 skipped=0

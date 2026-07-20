@@ -1033,10 +1033,15 @@
         "WI-030"
       ],
       "requirements": [
-        "REQ-027"
+        "REQ-027",
+        "REQ-017",
+        "REQ-018",
+        "REQ-034"
       ],
       "acceptance": [
-        "AC-008"
+        "AC-008",
+        "AC-004",
+        "AC-034"
       ],
       "implementation_paths": [
         "loop/product/capability-surface.json",
@@ -1044,14 +1049,18 @@
         "loop/quality/quality-gates.json"
       ],
       "tests": [
-        "TEST-TRACE-001"
+        "TEST-TRACE-001",
+        "TEST-A11Y-001",
+        "TEST-VIS-002",
+        "TEST-PERF-001"
       ],
       "evidence_ids": [
-        "EVD-SURFACE-001"
+        "EVD-SURFACE-001",
+        "EVD-QT-020"
       ],
       "next_action": "done",
       "size": "M",
-      "definition_of_done": "every requirement is classified exactly once as user-facing or explicitly internal, every user-facing capability's widget and named controls are found on the assembled window, and the check is a required release gate proven to fail on both an unmounted page and an unclassified requirement.",
+      "definition_of_done": "every requirement is classified exactly once as user-facing or explicitly internal, every user-facing capability's widget and named controls are found on the assembled window, and the check is a required release gate proven to fail on both an unmounted page and an unclassified requirement. 此外：性能与无障碍/视觉检查必须作用于装配好的应用而非空壳或手写页面清单，且只读表格无法在缺可访问名的情况下被创建。",
       "scope_out": [
         "像素级视觉审查——本门禁只回答「用户点得到吗」，不回答「好不好看」"
       ]

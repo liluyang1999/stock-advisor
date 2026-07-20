@@ -144,7 +144,7 @@
       "exit_code": 0,
       "artifact_path": "evidence/baselines/EVD-LOOP-004-hardening.txt",
       "sha256": "b3e2dcc0573170ee051dbe6a62f623d09b3e36e9bb37d0fdebd6b8a4e931030f",
-      "control_plane_sha256": "365a931ff7ab4e5ca1faacd6b0a231dbfb8bc0fc264f1362c2bc0276a60367b8",
+      "control_plane_sha256": "ad02bddf71ed62db7d1d05c460cd9ad76b862c14608c0cccf734352442dfac36",
       "commit": "6a75499",
       "dirty_worktree": true,
       "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",
@@ -824,6 +824,30 @@
       "started_at": null,
       "finished_at": "2026-07-20T12:30:00+09:00",
       "summary": "WI-031 / G-SURFACE: the same class of defect — implemented but not reachable — got through two full-green gate rounds (WI-029's four unmounted widgets and uncalled backtest; WI-030's unread capital/preset and the alert page with no way to create a rule). Both were found by a human asking whether a user could reach it, which is not a repeatable engineering control, and unit tests cannot catch it by construction because they instantiate the widget directly. The gate binds every requirement to a surface: each REQ must be classified exactly once as user-facing (naming a widget and its accessible-named controls) or explicitly internal with a reason, and every user-facing surface must be findable on the assembled window. SURFACE_OK requirements=34 user_facing=12 internal=22. Mutation-proven in both halves: removing the portfolio tab exits 1 naming REQ-005 and REQ-009 with the missing widget and controls, and adding an unclassified requirement exits 1 naming it. The completeness half is what makes it systematic — checking only that listed surfaces exist would let the next feature skip the list entirely.",
+      "verified_by": "root"
+    },
+    {
+      "id": "EVD-QT-020",
+      "requirement_ids": [
+        "REQ-017",
+        "REQ-018",
+        "REQ-034"
+      ],
+      "acceptance_ids": [
+        "AC-004",
+        "AC-034"
+      ],
+      "work_item_id": "WI-031",
+      "type": "gui",
+      "command": "python -m unittest tests.test_qt_accessibility tests.test_qt_visual_matrix && python -m unittest discover -s tests/performance -t .",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-QT-020-measure-the-real-app.txt",
+      "sha256": "112041b09cb2e57f6aed2f963d0fbd4a25818234a4367dfa48cf66e30c87f263",
+      "commit": "e7d3f82",
+      "environment": "Windows 11 AMD64 / Python 3.14.4 / PySide6-Essentials 6.11.1 / QT_QPA_PLATFORM=offscreen",
+      "started_at": null,
+      "finished_at": "2026-07-20T13:30:00+09:00",
+      "summary": "Applying the reachability lens to the checks themselves found three cases of a check that existed but was not connected to the thing it claimed to measure. The performance suite measured main_window.build_application([]) — an empty shell with no pages, tables or chart — while performance-budgets.json presented those figures as the application's; measuring the assembled window moves idle RSS 47.9->67.6 MiB, cold start 0.37->0.64 s, warm p95 0.36->0.56 s, all still several times inside budget but previously understated by 40-75%. The accessibility audit walked a hand-written page list that never gained the portfolio page, and the visual matrix omitted it too, so the newest page had never been checked for names, keyboard reach or clipping at the 1000x680 design minimum. Both now derive from the assembled window or include the page explicitly. Switching the audit immediately exposed a real defect: ComparisonView's table had no accessible name. Fixed at the source rather than per-instance — make_readonly_table now requires accessible_name, rejects an empty one, and a test asserts no unnamed QTableView survives in the assembled window. 814 tests, run_gates ran=8 failed=0.",
       "verified_by": "root"
     }
   ]
