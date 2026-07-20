@@ -8,14 +8,17 @@ from pathlib import Path
 
 APP_NAME = "AStockIntradayAdvisor"
 OUTPUT_NAME = "股市锦囊.exe"
+APP_DIR_NAME = "股市锦囊"  # onedir 交付目录名（ADR-0004）
 MANUAL_NAME = "使用说明.html"
 PROJECT_ROOT = Path(__file__).resolve().parent
-# build/ 只放构建中间产物；dist/ 只放最终交付物（EXE + HTML 报告）。不再使用 outputs/。
+# build/ 只放构建中间产物；dist/ 只放最终交付物（应用目录 + HTML 说明）。不再使用 outputs/。
 BUILD_DIR = PROJECT_ROOT / "build"
 DIST_DIR = PROJECT_ROOT / "dist"
 PYI_DIST_DIR = BUILD_DIR / "pyinstaller"  # PyInstaller 原始产物，留在 build/ 内
 ENTRY = PROJECT_ROOT / "main.py"
 ICON_PATH = PROJECT_ROOT / "assets" / "a_stock_strategy.ico"
+# 设计 token 真源随包分发：打包后仓库路径不存在，Qt 主题只能从 assets/ 取（ui.assets.tokens_path）。
+TOKENS_PATH = PROJECT_ROOT / "loop" / "product" / "tokens.json"
 
 
 def main() -> int:
@@ -36,13 +39,17 @@ def main() -> int:
         "PyInstaller",
         "--noconfirm",
         "--clean",
-        "--onefile",
+        # ADR-0004：onedir 而非 onefile —— onefile 每次启动重解压约 100MB（热启动 2.9s，超
+        # warm_start 2.5s 预算），且把 Qt DLL 压进单文件会架空 LGPL-3.0 §4(d) 的重链接义务。
+        "--onedir",
         "--windowed",
         "--disable-windowed-traceback",
         "--icon",
         str(ICON_PATH),
         "--add-data",
         f"{ICON_PATH}{os.pathsep}assets",
+        "--add-data",
+        f"{TOKENS_PATH}{os.pathsep}assets",
         "--optimize",
         "2",
         "--exclude-module",
@@ -69,13 +76,20 @@ def main() -> int:
     ]
     subprocess.run(command, cwd=PROJECT_ROOT, check=True)
 
-    built = PYI_DIST_DIR / f"{APP_NAME}.exe"
-    if not built.exists():
-        raise FileNotFoundError(f"Expected PyInstaller output not found: {built}")
+    built_dir = PYI_DIST_DIR / APP_NAME
+    built_exe = built_dir / f"{APP_NAME}.exe"
+    if not built_exe.exists():
+        raise FileNotFoundError(f"Expected PyInstaller output not found: {built_exe}")
 
-    target = DIST_DIR / OUTPUT_NAME
-    shutil.copy2(built, target)
-    print(f"EXE written to: {target}")
+    # onedir 交付：整个应用目录搬到 dist/股市锦囊/，可执行文件改成中文交付名。
+    target_dir = DIST_DIR / APP_DIR_NAME
+    shutil.copytree(built_dir, target_dir)
+    (target_dir / f"{APP_NAME}.exe").rename(target_dir / OUTPUT_NAME)
+    target = target_dir / OUTPUT_NAME
+    size_mib = target.stat().st_size / 1048576
+    folder_mib = sum(p.stat().st_size for p in target_dir.rglob("*") if p.is_file()) / 1048576
+    print(f"App written to: {target_dir}")
+    print(f"  EXE: {target.name} ({size_mib:.1f} MiB); folder total {folder_mib:.1f} MiB")
 
     manual_path = _write_manual()
     print(f"Manual written to: {manual_path}")
