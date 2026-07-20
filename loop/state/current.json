@@ -38,6 +38,7 @@
     "WI-022",
     "WI-023",
     "WI-024",
+    "WI-026",
     "WI-027",
     "WI-028"
   ],
@@ -65,11 +66,11 @@
   "pending_decision_ids": [],
   "latest_gate_run_id": "LOOP-20260711-003",
   "quality_summary": {
-    "tests_total": 747,
-    "tests_passed": 747,
+    "tests_total": 775,
+    "tests_passed": 775,
     "tests_failed": 0,
     "tests_skipped": 0,
-    "coverage": 0.972,
+    "coverage": 0.9682,
     "qt_tests": 167,
     "release_ready": false
   },

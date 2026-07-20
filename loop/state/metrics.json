@@ -8,7 +8,7 @@
     "acceptance_total": 16,
     "acceptance_verified": 1,
     "work_items_total": 29,
-    "work_items_accepted": 27,
+    "work_items_accepted": 28,
     "risks_open": 10,
     "defects_open": 0
   },
@@ -22,19 +22,19 @@
     "independent_verification": true
   },
   "tests": {
-    "modules": 66,
-    "methods": 747,
-    "passed": 747,
+    "modules": 67,
+    "methods": 775,
+    "passed": 775,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
-    "duration_seconds": 11.297,
+    "duration_seconds": 12.194,
     "tk_specific": 0,
     "qt_specific": 167
   },
   "coverage": {
-    "statement": 0.972,
-    "branch": 0.9395
+    "statement": 0.9682,
+    "branch": 0.9322
   },
   "tooling": {
     "ci": false,

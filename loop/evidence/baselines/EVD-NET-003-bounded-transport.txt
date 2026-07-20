@@ -1,0 +1,32 @@
+EVD-NET-003 — 有界 urllib 迁移适配器合同矩阵（WI-026 / REQ-025 / REQ-026 / AC-006 / TEST-NET-001）
+记录时间 2026-07-20 / 提交 e23f7da / Windows 11 AMD64 / Python 3.14.4
+
+== 1. 合同矩阵测试 ==
+$ python -m unittest tests.test_bounded_transport
+Ran 28 tests in 0.005s
+
+OK
+
+== 2. DoD 点名的八种情形逐条覆盖 ==
+  分页      complete/partial 两态 + 缺页编号 + 跨页去重 + 取消中途记缺页
+  429       主源限流 -> 换备用源成功
+  5xx       全部源 503 -> network 失败，envelope 不带 data
+  DNS       URLError(gaierror) -> network -> 换源
+  TLS       ssl.SSLError / CertificateError -> network -> 换源
+  超时      TimeoutError -> network；单次超时按剩余预算收紧
+  截断      JSONDecodeError -> parse -> 立即停链（不烧备用源预算）
+  字段漂移  KeyError/ValueError -> parse
+
+== 3. 合同性质 ==
+  总 deadline 覆盖所有源：预算耗尽后不再开新源（不是每源一份预算）
+  协作取消：取消先于一切，取消前零请求；取消是结果状态不是错误分类
+  零伪造：所有失败路径 outcome.data is None（envelope 结构上不带 data）
+  完整度：残缺的全市场自报 missing_pages/expected/received，不再静默截断
+
+== 4. 全量测试与门禁 ==
+$ python -m unittest discover -s tests
+Ran 775 tests in 12.194s
+
+OK
+$ python loop/scripts/run_gates.py
+RUN_GATES_OK ran=7 failed=0 skipped=0

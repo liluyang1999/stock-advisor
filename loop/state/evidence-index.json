@@ -144,7 +144,7 @@
       "exit_code": 0,
       "artifact_path": "evidence/baselines/EVD-LOOP-004-hardening.txt",
       "sha256": "b3e2dcc0573170ee051dbe6a62f623d09b3e36e9bb37d0fdebd6b8a4e931030f",
-      "control_plane_sha256": "c15ad4c888116026df555bc1e6d5d6f2686798d5c2e4a7ee111582437b8f2983",
+      "control_plane_sha256": "4db4bba6e779a1ab8ae3b29d7144b92d6264e770a700e962093b436bbcae11f2",
       "commit": "6a75499",
       "dirty_worktree": true,
       "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",
@@ -711,6 +711,28 @@
       "started_at": null,
       "finished_at": "2026-07-20T07:10:00+09:00",
       "summary": "TEST-QT-AN-002 / AC-003+AC-004: the candlestick widget renders domain/chart.py geometry and computes none of it — the test asserts the widget's layout equals candle_layout field for field rather than eyeballing a picture. Hover hit-tests through nearest_index and reads out that bar's own date/OHLC, formatted straight off Decimal (10.10/10.30/10.35/10.05 appear verbatim, no float round trip). Painting runs through a real QPainter into a QPixmap so paintEvent branches execute: normal series, single bar (index_to_x centring), open==close (zero-height body kept visible), zero volume (no division by zero). The individual page swaps the chart with the selected row and clears it for a row with no history instead of showing the previous stock's candles. 20 tests, 747 total, G-CORE still 12 clean modules, run_gates ran=7 failed=0.",
+      "verified_by": "root"
+    },
+    {
+      "id": "EVD-NET-003",
+      "requirement_ids": [
+        "REQ-025",
+        "REQ-026"
+      ],
+      "acceptance_ids": [
+        "AC-006"
+      ],
+      "work_item_id": "WI-026",
+      "type": "network",
+      "command": "python -m unittest tests.test_bounded_transport && python loop/scripts/run_gates.py",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-NET-003-bounded-transport.txt",
+      "sha256": "3026ead0bd9b8986eaa90308f09a8e5d95366bca9d86243f6ff92022993f037f",
+      "commit": "e23f7da",
+      "environment": "Windows 11 AMD64 / Python 3.14.4",
+      "started_at": null,
+      "finished_at": "2026-07-20T08:00:00+09:00",
+      "summary": "TEST-NET-001 / AC-006 legacy-transport half: BoundedUrllibProvider runs the existing urllib sources and parsers through run_with_contract, so the urllib path finally satisfies the WI-009 port contract. The full matrix is covered offline through an injected opener and a manual clock (28 tests, no network, no sleeps): paging complete/partial with missing-page numbers and cross-page dedup, 429, 5xx, DNS, TLS, timeout, truncated JSON, field drift. Contract properties proven: one deadline spans all sources and the per-request socket timeout is clamped to the remaining budget; cancellation precedes everything and is reported as a result state rather than an error class; every failure path yields outcome.data is None. Paging now returns Completeness (expected/received/missing_pages) instead of silently truncating the market. Two defects the tests caught during development: parse exceptions escaped run_with_contract entirely (only _get was wrapped), and empty-source was classified parse, which ended the fallback chain the original provider correctly continued.",
       "verified_by": "root"
     }
   ]
