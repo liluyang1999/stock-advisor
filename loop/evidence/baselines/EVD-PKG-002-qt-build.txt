@@ -1,0 +1,7 @@
+WI-024 clean Qt build + packaged self-test + real-machine smoke (AC-009)
+build: python build_exe.py -> exit 0 (PyInstaller 6.21.0, --onedir --windowed per ADR-0004)
+artifacts: dist/股市锦囊/股市锦囊.exe 2.3 MiB; folder total 100.6 MiB; dist/使用说明.html
+qt plugins bundled: platforms styles imageformats iconengines networkinformation generic (RISK-003 falsified)
+packaged EXE --self-test: exit 0 in 0.49s, stdout SELF_TEST_OK symbol=SH.600519 action=BUY
+real-machine GUI smoke: process alive 6s, zero stderr, no unhandled exception
+tokens.json bundled into assets/ so the Qt theme resolves without the repo tree

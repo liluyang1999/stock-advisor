@@ -2,10 +2,10 @@
   "$schema":"../schemas/metrics.schema.json",
   "schema_version":"1.0.0",
   "updated_at":"2026-07-16T09:30:00+09:00",
-  "engineering":{"requirements_total":34,"requirements_verified":0,"acceptance_total":16,"acceptance_verified":1,"work_items_total":29,"work_items_accepted":25,"risks_open":10,"defects_open":0},
+  "engineering":{"requirements_total":34,"requirements_verified":0,"acceptance_total":16,"acceptance_verified":1,"work_items_total":29,"work_items_accepted":26,"risks_open":10,"defects_open":0},
   "control_plane":{"tool_tests_total":52,"tool_tests_passed":52,"schema_documents_validated":22,"requirements_traced":34,"operational_json_schema_coverage":1.0,"canonical_sources_reconciled":true,"independent_verification":true},
   "tests":{"modules":64,"methods":706,"passed":706,"failed":0,"errors":0,"skipped":0,"duration_seconds":8.174,"tk_specific":0,"qt_specific":143},
   "coverage":{"statement":0.9712,"branch":0.9354},
   "tooling":{"ci":false,"pyproject":true,"lockfile":false,"ruff":true,"pyright":true,"coverage":true,"pytest":true,"pre_commit":true,"pyside6_installed":false},
-  "release":{"ready":false,"full_green_streak":0,"packaged_self_test_current_commit":false,"license_gate":false,"packaging_gate":false,"release_gate":false}
+  "release":{"ready":false,"full_green_streak":0,"packaged_self_test_current_commit":true,"license_gate":false,"packaging_gate":true,"release_gate":false}
 }

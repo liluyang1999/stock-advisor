@@ -4,7 +4,7 @@
 - Phase: `foundation_ready`
 - Status: `active`
 - Milestone: `MS-00`
-- Selected work item: `WI-024` — clean Qt 构建/EXE self-test/真机冒烟 (`ready`)
+- Selected work item: `WI-025` — 许可证/SBOM/连续全绿/发布门禁 (`ready`)
 - Baseline: `881099806deca77a7bf7e784d6786f9bccdf0ce6`
 - Dirty worktree: `true`
 - Current GUI / target GUI: `Tkinter / PySide6`
