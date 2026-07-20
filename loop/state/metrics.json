@@ -23,12 +23,12 @@
   },
   "tests": {
     "modules": 65,
-    "methods": 724,
-    "passed": 724,
+    "methods": 727,
+    "passed": 727,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
-    "duration_seconds": 10.407,
+    "duration_seconds": 11.488,
     "tk_specific": 0,
     "qt_specific": 147
   },

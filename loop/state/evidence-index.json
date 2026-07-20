@@ -144,7 +144,7 @@
       "exit_code": 0,
       "artifact_path": "evidence/baselines/EVD-LOOP-004-hardening.txt",
       "sha256": "b3e2dcc0573170ee051dbe6a62f623d09b3e36e9bb37d0fdebd6b8a4e931030f",
-      "control_plane_sha256": "8a1fe7663ff2ae7c395dde5a66f5a43f0a1c39c73bf5cd153aa756dbbefc3332",
+      "control_plane_sha256": "bd7547c84f205ad44f6b246bc08f90884772b756fcd03c86540bbce31a918fc6",
       "commit": "6a75499",
       "dirty_worktree": true,
       "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",

@@ -64,8 +64,8 @@
   "pending_decision_ids": [],
   "latest_gate_run_id": "LOOP-20260711-003",
   "quality_summary": {
-    "tests_total": 724,
-    "tests_passed": 724,
+    "tests_total": 727,
+    "tests_passed": 727,
     "tests_failed": 0,
     "tests_skipped": 0,
     "coverage": 0.9807,
