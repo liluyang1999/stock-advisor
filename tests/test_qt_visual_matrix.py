@@ -34,6 +34,7 @@ if QtWidgets is not None:
     from stock_advisor.qt_app.pages.alerts_page import AlertsPage
     from stock_advisor.qt_app.pages.evidence_page import EvidencePage
     from stock_advisor.qt_app.pages.individual_page import IndividualPage
+    from stock_advisor.qt_app.pages.portfolio_page import PortfolioPage
     from stock_advisor.qt_app.pages.screener_page import ScreenerPage
 
 # 设计最小窗（tokens.window_minimum_dip）+ 两档更大分辨率，模拟 DPI/分辨率放大后的布局分配。
@@ -48,6 +49,7 @@ def _page_factories(case):
         "evidence": lambda: EvidencePage(FundFlowController(FakeProvider())),
         "screener": lambda: ScreenerPage(ScreenerController(FakeProvider()), settings),
         "alerts": lambda: AlertsPage(AlertController(FakeProvider()), settings),
+        "portfolio": lambda: PortfolioPage(AnalysisController(FakeProvider()), settings),
     }
 
 
@@ -102,9 +104,7 @@ class VisualMatrixTests(unittest.TestCase):
                 self.assertTrue(page.grab().save(str(path)), f"截图保存失败：{path}")
                 self.assertGreater(path.stat().st_size, 0)
                 captured += 1
-        self.assertEqual(
-            captured, len(_page_factories(self)) * len(_SIZES)
-        )  # 4 页 × 3 尺寸 = 12 张
+        self.assertEqual(captured, len(_page_factories(self)) * len(_SIZES))  # 每页 × 每尺寸各一张
 
 
 if __name__ == "__main__":

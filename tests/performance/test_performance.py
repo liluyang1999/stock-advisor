@@ -6,6 +6,7 @@
 """
 
 import os
+import pathlib
 import subprocess
 import sys
 import unittest
@@ -24,7 +25,6 @@ _WINDOWS_ONLY = unittest.skipUnless(sys.platform == "win32", "RSS 测量为 Wind
 
 if QtWidgets is not None:
     from stock_advisor.qt_app.dialogs import HelpDialog
-    from stock_advisor.qt_app.main_window import build_application
 
 
 def _model_5000():
@@ -60,7 +60,7 @@ class ComputeAndMemoryBudgetTests(unittest.TestCase):
 
     @_WINDOWS_ONLY
     def test_idle_rss_within_budget(self):
-        _app, window = build_application([])
+        _app, window = _assembled_window(self)
         self.addCleanup(window.deleteLater)
         window.show()
         self.app.processEvents()
@@ -70,7 +70,7 @@ class ComputeAndMemoryBudgetTests(unittest.TestCase):
 
     @_WINDOWS_ONLY
     def test_dialog_100_cycles_rss_growth_within_budget(self):
-        _app, window = build_application([])
+        _app, window = _assembled_window(self)
         self.addCleanup(window.deleteLater)
         window.show()
         self.app.processEvents()
@@ -91,6 +91,25 @@ class ComputeAndMemoryBudgetTests(unittest.TestCase):
         )
 
 
+def _assembled_window(case):
+    """装好五页的真主窗。
+
+    此前性能用例量的是 `build_application([])`——main_window 的空壳。数字没有造假，但量错了对象：
+    预算文档声称描述"应用"，而空壳里没有页面、没有表格、没有图。RSS 与启动时间都会因此系统性偏低。
+    """
+    import tempfile
+
+    from test_engine import FakeProvider
+
+    from stock_advisor.qt_app.app import build_app
+    from stock_advisor.qt_app.settings import Settings
+
+    tmp = tempfile.TemporaryDirectory()
+    case.addCleanup(tmp.cleanup)
+    settings = Settings(pathlib.Path(tmp.name) / "config.json")
+    return build_app([], provider=FakeProvider(), settings=settings)
+
+
 @requires_qt
 class StartupBudgetTests(unittest.TestCase):
     """冷/热启动：子进程从启动到主窗首次 show 的墙钟时间（离屏；真实渲染冷启动的下界代理）。"""
@@ -99,10 +118,16 @@ class StartupBudgetTests(unittest.TestCase):
     def _launch_seconds() -> float:
         import time
 
+        # 起的必须是装好五页的真应用。此前这里 build_application([]) 起的是空壳——数字是真的，
+        # 量的却不是产品：用户等待的是页面、表格与图都构建完成，不是一个空窗口显示出来。
         code = (
-            "import sys; sys.path.insert(0, r'" + str(PROJECT_ROOT / "src") + "'); "
-            "from stock_advisor.qt_app.main_window import build_application; "
-            "a, w = build_application([]); w.show()"
+            "import sys, tempfile, pathlib; sys.path.insert(0, r'"
+            + str(PROJECT_ROOT / "src")
+            + "'); "
+            "from stock_advisor.qt_app.app import build_app; "
+            "from stock_advisor.qt_app.settings import Settings; "
+            "tmp = tempfile.mkdtemp(); "
+            "a, w = build_app([], settings=Settings(pathlib.Path(tmp) / 'config.json')); w.show()"
         )
         env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
         start = time.perf_counter()

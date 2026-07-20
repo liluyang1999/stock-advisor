@@ -1,20 +1,119 @@
 {
-  "$schema":"../schemas/performance-budgets.schema.json",
-  "schema_version":"1.0.0",
-  "status":"measured_offscreen_qt_20260720",
-  "sample_policy":{"minimum_runs":20,"record_machine":true,"record_versions":true,"report_percentiles":[50,95,99]},
-  "measured":{"captured_at":"2026-07-20","machine":"Windows 11 AMD64 / Python 3.14.4 / PySide6-Essentials 6.11.1","platform_note":"offscreen (QT_QPA_PLATFORM=offscreen); a real compositor/vsync adds rendering overhead, so these are lower bounds captured by the automatable harness, not the final release-gate figures","owning_test":"TEST-PERF-001 (tests/performance/)","values":{"idle_rss_mib":47.9,"table_5000_sort_filter_ms_p95":7.8,"dialog_100_cycles_rss_growth_mib":1.8,"cold_start_seconds":0.37,"packaged_onedir_exe_mib":2.3,"packaged_onedir_folder_mib":100.6,"packaged_self_test_seconds":0.49,"warm_start_seconds_p95":0.36,"gui_event_handler_ms_p95":"<1"},"all_measured_within_budget":true,"pending":{"table_scroll_fps":"needs a real compositor/vsync; CI/human","idle_monitor_cpu_percent":"needs timed CPU sampling; CI"}},
-  "budgets":[
-    {"metric":"gui_event_handler_ms","p95_max":50,"p99_max":100,"method":"QElapsedTimer wraps each Qt slot/event-handler invocation during the benchmark run; p95/p99 computed over all captured samples","scenario":"20-run benchmark exercising typical UI interactions (click, keypress, tab switch) per sample_policy","owning_test":"TEST-PERF-001"},
-    {"metric":"busy_feedback_ms","max":100,"method":"QElapsedTimer measures wall-clock time from the user-triggered action to the busy/loading indicator becoming visible","scenario":"triggering an individual-stock or screener analysis run while idle","owning_test":"TEST-PERF-001"},
-    {"metric":"cancel_feedback_ms","max":100,"method":"QElapsedTimer measures wall-clock time from the cancel/stop request to the UI showing the stopping state","scenario":"cancelling an in-flight individual-stock or screener analysis run","owning_test":"TEST-PERF-001"},
-    {"metric":"table_5000_sort_filter_ms","p95_max":150,"method":"QElapsedTimer measures wall-clock time for a sort or filter operation to complete and repaint","scenario":"5000-row result table, single-column sort then a filter change","owning_test":"TEST-PERF-001"},
-    {"metric":"table_scroll_fps","min":30,"target":55,"method":"frame timestamps captured during a scripted scroll are converted to instantaneous fps","scenario":"continuous scroll through the 5000-row result table","owning_test":"TEST-PERF-001"},
-    {"metric":"cold_start_seconds","p95_max":4.0,"method":"wall-clock time from process launch to the main window's first paint event","scenario":"cold application launch, 20 repeated runs per sample_policy with no prior warm process","owning_test":"TEST-PERF-001"},
-    {"metric":"warm_start_seconds","p95_max":2.5,"method":"wall-clock time from process launch to the main window's first paint event","scenario":"relaunch immediately after a prior run in the same session (OS file cache warm)","owning_test":"TEST-PERF-001"},
-    {"metric":"idle_rss_mib","max":250,"method":"process RSS read via the OS process-info API after the main window is shown and idle","scenario":"application idle at the main window with no analysis in flight, sampled once startup settles","owning_test":"TEST-PERF-001"},
-    {"metric":"idle_monitor_cpu_percent","average_max":1.0,"method":"process CPU percent sampled at 1s intervals over a fixed idle window and averaged","scenario":"application idle at the main window with any monitor/alert timers running, no user interaction","owning_test":"TEST-PERF-001"},
-    {"metric":"single_file_exe_mib","max":150,"rebaseline_rule":"after first approved clean Qt build, regression <=10%","method":"file size of the built onefile executable measured on disk after a clean PyInstaller build","scenario":"clean release build per build_exe.py (see G-BUILD)","owning_test":"TEST-PKG-002"},
-    {"metric":"dialog_100_cycles_rss_growth_mib","max":10,"method":"process RSS sampled before opening and after closing a dialog, repeated 100 times; growth = final RSS minus initial RSS","scenario":"open/close a modal dialog (e.g. help) 100 times in a row with no other user action","owning_test":"TEST-PERF-001"}
+  "$schema": "../schemas/performance-budgets.schema.json",
+  "schema_version": "1.0.0",
+  "status": "measured_offscreen_qt_20260720",
+  "sample_policy": {
+    "minimum_runs": 20,
+    "record_machine": true,
+    "record_versions": true,
+    "report_percentiles": [
+      50,
+      95,
+      99
+    ]
+  },
+  "measured": {
+    "captured_at": "2026-07-20",
+    "machine": "Windows 11 AMD64 / Python 3.14.4 / PySide6-Essentials 6.11.1",
+    "platform_note": "offscreen（QT_QPA_PLATFORM=offscreen）；真实合成器/vsync 还会加渲染开销，故这些是自动化能拿到的下界，不是最终发布门禁数字。【2026-07-20 修正】此前 idle_rss 47.9 / cold 0.37 / warm 0.36 量的是 main_window.build_application([]) 的空壳——没有页面、没有表格、没有图。数字本身没造假，量错了对象：预算文档声称描述「应用」，而用户等待与占用的是装好五页的窗口。改为测量 qt_app.app.build_app 装配后的真主窗，RSS 由 47.9 升到 67.6 MiB（预算 250），冷启动 0.37→0.64 s（预算 4.0），热启动 p95 0.36→0.56 s（预算 2.5）。三项仍有数倍余量，但记录的值此前系统性偏低 40–75%。",
+    "owning_test": "TEST-PERF-001 (tests/performance/)",
+    "values": {
+      "idle_rss_mib": 67.6,
+      "table_5000_sort_filter_ms_p95": 7.8,
+      "dialog_100_cycles_rss_growth_mib": 1.8,
+      "cold_start_seconds": 0.64,
+      "packaged_onedir_exe_mib": 2.3,
+      "packaged_onedir_folder_mib": 100.6,
+      "packaged_self_test_seconds": 0.49,
+      "warm_start_seconds_p95": 0.56,
+      "gui_event_handler_ms_p95": "<1"
+    },
+    "all_measured_within_budget": true,
+    "pending": {
+      "table_scroll_fps": "needs a real compositor/vsync; CI/human",
+      "idle_monitor_cpu_percent": "needs timed CPU sampling; CI"
+    }
+  },
+  "budgets": [
+    {
+      "metric": "gui_event_handler_ms",
+      "p95_max": 50,
+      "p99_max": 100,
+      "method": "QElapsedTimer wraps each Qt slot/event-handler invocation during the benchmark run; p95/p99 computed over all captured samples",
+      "scenario": "20-run benchmark exercising typical UI interactions (click, keypress, tab switch) per sample_policy",
+      "owning_test": "TEST-PERF-001"
+    },
+    {
+      "metric": "busy_feedback_ms",
+      "max": 100,
+      "method": "QElapsedTimer measures wall-clock time from the user-triggered action to the busy/loading indicator becoming visible",
+      "scenario": "triggering an individual-stock or screener analysis run while idle",
+      "owning_test": "TEST-PERF-001"
+    },
+    {
+      "metric": "cancel_feedback_ms",
+      "max": 100,
+      "method": "QElapsedTimer measures wall-clock time from the cancel/stop request to the UI showing the stopping state",
+      "scenario": "cancelling an in-flight individual-stock or screener analysis run",
+      "owning_test": "TEST-PERF-001"
+    },
+    {
+      "metric": "table_5000_sort_filter_ms",
+      "p95_max": 150,
+      "method": "QElapsedTimer measures wall-clock time for a sort or filter operation to complete and repaint",
+      "scenario": "5000-row result table, single-column sort then a filter change",
+      "owning_test": "TEST-PERF-001"
+    },
+    {
+      "metric": "table_scroll_fps",
+      "min": 30,
+      "target": 55,
+      "method": "frame timestamps captured during a scripted scroll are converted to instantaneous fps",
+      "scenario": "continuous scroll through the 5000-row result table",
+      "owning_test": "TEST-PERF-001"
+    },
+    {
+      "metric": "cold_start_seconds",
+      "p95_max": 4.0,
+      "method": "wall-clock time from process launch to the main window's first paint event",
+      "scenario": "cold application launch, 20 repeated runs per sample_policy with no prior warm process",
+      "owning_test": "TEST-PERF-001"
+    },
+    {
+      "metric": "warm_start_seconds",
+      "p95_max": 2.5,
+      "method": "wall-clock time from process launch to the main window's first paint event",
+      "scenario": "relaunch immediately after a prior run in the same session (OS file cache warm)",
+      "owning_test": "TEST-PERF-001"
+    },
+    {
+      "metric": "idle_rss_mib",
+      "max": 250,
+      "method": "process RSS read via the OS process-info API after the main window is shown and idle",
+      "scenario": "application idle at the main window with no analysis in flight, sampled once startup settles",
+      "owning_test": "TEST-PERF-001"
+    },
+    {
+      "metric": "idle_monitor_cpu_percent",
+      "average_max": 1.0,
+      "method": "process CPU percent sampled at 1s intervals over a fixed idle window and averaged",
+      "scenario": "application idle at the main window with any monitor/alert timers running, no user interaction",
+      "owning_test": "TEST-PERF-001"
+    },
+    {
+      "metric": "single_file_exe_mib",
+      "max": 150,
+      "rebaseline_rule": "after first approved clean Qt build, regression <=10%",
+      "method": "file size of the built onefile executable measured on disk after a clean PyInstaller build",
+      "scenario": "clean release build per build_exe.py (see G-BUILD)",
+      "owning_test": "TEST-PKG-002"
+    },
+    {
+      "metric": "dialog_100_cycles_rss_growth_mib",
+      "max": 10,
+      "method": "process RSS sampled before opening and after closing a dialog, repeated 100 times; growth = final RSS minus initial RSS",
+      "scenario": "open/close a modal dialog (e.g. help) 100 times in a row with no other user action",
+      "owning_test": "TEST-PERF-001"
+    }
   ]
 }
