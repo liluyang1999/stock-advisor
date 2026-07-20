@@ -1,6 +1,6 @@
 # 发布就绪检查
 
-状态记于 2026-07-20，对应提交 `8991ad5`（WI-025 产品侧）。勾选项均有证据 id 或可复跑命令；
+状态记于 2026-07-20，对应提交 `8673ede`（含 WI-029 可达性修复）。勾选项均有证据 id 或可复跑命令；
 未勾选项就是未完成，不做"实质上算完成"的解释。
 
 ## 规格与决策
@@ -13,17 +13,17 @@
 
 - [x] 核心无 Qt/Tk 依赖。G-CORE 门禁 + TEST-ARCH-002 的 AST 全量扫描。
 - [x] 生产无 Tkinter。WI-023 删除 10 个 Tk 文件；生产源零 `tkinter` import 由 AST 扫描强制。
-- [x] 全门禁 100% 通过，覆盖率达标。`run_gates.py` → `ran=7 failed=0`；语句 97.12% / 分支 93.54%。
+- [x] 全门禁 100% 通过，覆盖率达标。`run_gates.py` → `ran=7 failed=0`；语句 96.64% / 分支 92.81%，六条门槛（含 WI-025 启用的 qt_controller_*）全部达标。
 - [x] Tk 187 行为合同映射 100%（WI-002：156 qt_replaced / 24 pure_preserved / 7 approved_retired）。
 - [x] race/fault/DPI/font/perf 证据完成（EVD-QT-014 / EVD-NET-002 / EVD-QT-016 / EVD-PERF-001）。
+- [x] 需求与变更日志宣称的功能在装配后真的可达（WI-029 / EVD-QT-018）——此前四个部件与回测接不通。
 
 ## 构建与合规
 
 - [x] 精确锁文件、干净环境、同一提交。构建脚本 `--clean`；清单记录 source.commit 与构建工具链版本。
 - [x] Qt plugins/resources/QSS/icon 完整。WI-024 打包产物含全套插件目录，真机冒烟零 stderr（RISK-003 已证伪）。
-- [ ] **SBOM、许可、NOTICE、漏洞、SHA-256。** SBOM（CycloneDX 1.5）、NOTICE、204 个文件的 SHA-256 与目录合并摘要均已产出；**缺 `licenses/GPL-3.0.txt`**——LGPL-3.0 正文声明它并入 GPL-3.0 条款，两份都要随附。`make_release_manifest.py` 因此以退出码 1 拒绝转绿。
-  - 已授权并尝试联网取用，**本机三条路径全部失败**：沙箱内 Python（TLS 握手超时）、关闭沙箱的 Python（同样超时）、应用内浏览器（导航被拒）。判定为本机对 gnu.org 无出口，不是工具问题——不必重试同一条路。
-  - 补齐方式：在有外网的机器上取 https://www.gnu.org/licenses/gpl-3.0.txt （约 35 KiB 纯文本），存为仓库根的 `licenses/GPL-3.0.txt`，然后 `python make_release_manifest.py`。落盘前脚本不校验正文，但 `make_release_manifest.py` 会把它复制进 `dist/licenses/` 并把 `license_compliance.complete` 转 true。
+- [x] **SBOM、许可、NOTICE、漏洞、SHA-256。** SBOM（CycloneDX 1.5，purl 按 PEP 503 规范化）、THIRD_PARTY_NOTICES、204 个文件的 SHA-256 与目录合并摘要均已产出；LGPL-3.0 与 GPL-3.0 两份正文都已随附（LGPL-3.0 正文声明并入 GPL-3.0 条款，故缺一不可），`license_compliance.complete` 为 true，`make_release_manifest.py` 输出 `RELEASE_MANIFEST_OK`。
+  - GPL-3.0 正文由人工提供（本机对 gnu.org 无出口：沙箱内/外 Python 与应用内浏览器三条路径均失败）。采用前逐条校验：标题、版本行、FSF 版权、逐字复制授权、Preamble、0–17 全部 18 条、END OF TERMS、How to Apply 附录、无编码替换字符。两份正文互查，确认各自不含对方的特征条款。
 - [x] dist 仅批准产物。`make_release_manifest.py --verify` 对多出来的文件同样报错。
 - [x] EXE self-test、Windows 冒烟。打包 EXE `--self-test` 0.49s 退出 0；真机 GUI 存活 6s 零 stderr（EVD-PKG-002）。
 
