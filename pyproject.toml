@@ -40,6 +40,13 @@ dev = [
     "pre-commit==4.6.0",
 ]
 
+# 构建期唯一依赖。精确钉版与 dev/gui 一致：交付物的可复现性取决于它，浮动版本会让"同一提交构建出
+# 不同产物"成为可能。此前它单独放在 requirements-build.txt 里且写作 `pyinstaller>=6.15`——既没钉住，
+# 又是第三套依赖声明机制。安装：python -m pip install --group build
+build = [
+    "pyinstaller==6.21.0",          # 与 RELEASE_MANIFEST 里记录的构建工具链版本一致
+]
+
 # Qt test tooling (dev-only). Install with:  python -m pip install --group gui
 # PySide6-Essentials itself now lives in [project].dependencies (WI-023 made Qt the shipping GUI);
 # it is repeated here only so `pip install --group gui` still provisions a complete Qt test

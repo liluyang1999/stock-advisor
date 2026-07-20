@@ -62,7 +62,7 @@ build.bat            # Windows（cmd / PowerShell）
 或手动执行：
 
 ```bash
-python -m pip install -r requirements-build.txt   # 唯一的构建期依赖 PyInstaller
+python -m pip install --group build   # 唯一的构建期依赖 PyInstaller（版本已钉）
 python build_exe.py
 ```
 
@@ -101,7 +101,7 @@ src/stock_advisor/
     store.py                  用户配置持久化（自选股/持仓、本金、档位、预设、预警）
   ui/                       与界面框架无关的展示层
     app.py                    薄入口：run_gui 委托给 qt_app 装配
-    theme.py                  token 单一真源（颜色/尺寸/字体/免责声明）——Qt 主题由此翻译成 QSS
+    theme.py                  应用身份/窗口尺寸/表列与排序序/免责声明（色值真源是 loop/product/tokens.json）
     view_format.py            结果行/剪贴板/CSV 格式化（导出注入中和 + 免责声明页脚）
     manual.py                 使用说明 HTML 生成
     assets.py                 打包/仓库两态的资源路径解析（图标、tokens.json）

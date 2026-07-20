@@ -6,8 +6,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-echo "[1/2] 安装构建依赖 (PyInstaller)..."
-python -m pip install -r requirements-build.txt
+echo "[1/2] 安装构建依赖 (PyInstaller，版本钉在 pyproject 的 build 组)..."
+python -m pip install --group build
 
 echo "[2/2] 开始打包..."
 python build_exe.py

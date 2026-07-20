@@ -7,8 +7,8 @@ REM ============================================================
 setlocal
 cd /d "%~dp0"
 
-echo [1/2] Installing build dependency (PyInstaller)...
-python -m pip install -r requirements-build.txt || goto :error
+echo [1/2] Installing build dependency (PyInstaller, pinned in pyproject)...
+python -m pip install --group build || goto :error
 
 echo [2/2] Building the app folder...
 python build_exe.py || goto :error
