@@ -1,0 +1,7 @@
+Ran 55 tests in 1.247s
+
+OK
+production tkinter imports: 0 (AST scan over src/ + main.py + build_exe.py); core domain Qt imports: 0
+removed Tk production layer: 10 files / ~4292 lines (app_*.py mixins, widgets.py, _app_members.py); ui/app.py now a thin PySide6 launcher
+Qt assembly: 4 controllers + 4 navigable pages; closeEvent drains the thread pools
+suite 843 -> 706 (deleted 187 Tk contract tests, extracted 44 tk-free pure-helper tests)

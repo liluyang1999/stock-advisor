@@ -4,16 +4,16 @@
 - Phase: `foundation_ready`
 - Status: `active`
 - Milestone: `MS-00`
-- Selected work item: `WI-023` — 切换主入口并移除 Tk 生产依赖 (`ready`)
+- Selected work item: `WI-024` — clean Qt 构建/EXE self-test/真机冒烟 (`ready`)
 - Baseline: `881099806deca77a7bf7e784d6786f9bccdf0ce6`
 - Dirty worktree: `true`
 - Current GUI / target GUI: `Tkinter / PySide6`
 - Runtime font target: `Microsoft YaHei`
-- Tests: `580/580`
+- Tests: `706/706`
 - Loop tooling tests: `52/52`
 - Loop schemas: `22`
 - Traceability: `34/34`
-- Coverage: `0.9299`
+- Coverage: `0.9712`
 - Release candidate: `false`
 - Latest gate run: `LOOP-20260711-003`
 
