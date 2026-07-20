@@ -81,6 +81,16 @@ class SingleSourceTests(unittest.TestCase):
         self.assertEqual(make_release_manifest._app_version(), stock_advisor.__version__)
 
 
+class UserFacingVersionTests(unittest.TestCase):
+    """用户手边能看到的版本号必须来自同一个真源。"""
+
+    def test_generated_manual_shows_the_running_version(self):
+        """说明书随交付物分发，是用户唯一能对出"我拿到的是哪一版"的地方——出问题时决定能否复现。"""
+        from stock_advisor.ui.manual import build_manual_html
+
+        self.assertIn(f"版本 {stock_advisor.__version__}", build_manual_html())
+
+
 class ChangelogTests(unittest.TestCase):
     """治理文档要求面向用户的变更日志存在且与版本号对得上。"""
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from html import escape
 
+from .. import __version__
 from ..domain.presets import PRESETS
 from ..domain.screener import OBJECTIVE_LABELS
 from .assets import tokens_path
@@ -153,6 +154,9 @@ def build_manual_html() -> str:
         "</style>\n</head>\n<body>\n"
         "<h1>股市锦囊 使用说明</h1>\n"
         '<p class="subtitle">个股分析 + 全市场实时选股推荐 · 五档决策强度 · 可解释的多因子辅助判断</p>\n'
+        # 版本号取自唯一真源（stock_advisor.__version__）。说明书随构建生成并随交付物分发，
+        # 是用户手边唯一能对出"我拿到的是哪一版"的东西——出问题时这一行决定了能不能复现。
+        f'<p class="subtitle">版本 {escape(__version__)}</p>\n'
         f"{body_html}\n"
         f'<div class="disclaimer">{escape(DISCLAIMER)}</div>\n'
         "</body>\n</html>\n"
