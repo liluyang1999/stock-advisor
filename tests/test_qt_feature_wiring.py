@@ -98,6 +98,26 @@ class IndividualPageWiringTests(unittest.TestCase):
         self.assertGreater(first, 0)
         self.assertGreater(self.page.evidence.factor_model.rowCount(), 0)
 
+    def test_selecting_a_row_runs_the_credibility_backtest(self):
+        """REQ-021 的可信度回测：README 与变更日志都宣称它已交付，就必须真的算出来并显示。"""
+        self.page.table.setCurrentIndex(self.page.model.index(0, 0))
+
+        text = self.page.position.backtest_label.text()
+
+        self.assertNotEqual(text, "—", "选中一行后回测区仍是空的——回测没有被调用")
+        self.assertTrue(text.strip())
+
+    def test_backtest_states_the_no_look_ahead_caveat(self):
+        """回测结论必须带引擎给的"只用当日及之前数据"说明，不能只报一个漂亮数字。"""
+        self.page.table.setCurrentIndex(self.page.model.index(0, 0))
+
+        text = self.page.position.backtest_label.text()
+
+        self.assertTrue(
+            any(k in text for k in ("未来", "当日", "样本")),
+            f"回测展示缺少无未来泄漏/样本说明：{text!r}",
+        )
+
     def test_a_new_analysis_clears_the_detail_panes(self):
         """上一轮的证据/仓位不能留在新一轮的空表下面。"""
         self.page._on_analyze()

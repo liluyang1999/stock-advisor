@@ -16,6 +16,7 @@ from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from ...domain.backtest import backtest_signals
 from ...domain.models import CORE_DISCLAIMER, AnalysisResult, DailyBar, Measurement
 from ...domain.policy import position_plan
 from ...services.batch import BatchProgress, BatchReport
@@ -145,9 +146,13 @@ class IndividualPage(QtWidgets.QWidget):
         if measurement is None:
             self.position.clear()
             return
-        self.position.show_plan(
-            position_plan(measurement, self.tier.current_level(), _DEFAULT_CAPITAL)
-        )
+        level = self.tier.current_level()
+        self.position.show_plan(position_plan(measurement, level, _DEFAULT_CAPITAL))
+        # 可信度回测：同股历史信号事后复盘，逐日只用当日及之前数据（REQ-021 无未来泄漏）。
+        # 没有日线也照样交给引擎——它会返回"历史样本不足"的说明。跳过不显示等于让用户对着空白
+        # 猜发生了什么，而"说不出结论"本身就是要如实告诉他的结论。
+        report = backtest_signals(self._history.get(code, []), level=level)
+        self.position.show_backtest(report)
 
     def _on_tier_results(self, results: object) -> None:
         """切档：用重判后的结果整体刷新表格与详情。这一步不联网（REQ-003）。"""
