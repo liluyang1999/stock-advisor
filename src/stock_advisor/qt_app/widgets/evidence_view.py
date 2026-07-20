@@ -25,6 +25,7 @@ class EvidenceView(QtWidgets.QWidget):
         layout.addWidget(self.strength_label)
 
         self.factor_model, self.factor_table = make_readonly_table(list(_FACTOR_HEADERS))
+        self.factor_table.setAccessibleName("因子明细表")
         layout.addWidget(self.factor_table)
 
         self.narrative = QtWidgets.QPlainTextEdit()

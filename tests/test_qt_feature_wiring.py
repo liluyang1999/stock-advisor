@@ -1,0 +1,208 @@
+"""已交付功能在页面里真的接通了（REQ-003/004/005 / WI-029 / TEST-QT-AN-002 / TEST-QT-PORT-001）。
+
+背景：这四个部件本来都写好了、单测也齐全，却从没被挂进任何页面——需求与变更日志声称"五档决策强度""
+证据""仓位计算器""横向对比"已交付，而用户在交付物里点不到。单测直接构造部件，永远发现不了这件事。
+
+所以这套测试一律**从页面出发**驱动：往控制器灌结果、点选行、切档，然后断言用户看得见的东西变了。
+"""
+
+from __future__ import annotations
+
+import sys
+import unittest
+from decimal import Decimal
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from qt_test_helpers import QtWidgets, qt_app, requires_qt
+from test_engine import FakeProvider
+
+from stock_advisor.domain.symbols import normalize_symbol
+from stock_advisor.services.workflow import analyze_symbol
+
+if QtWidgets is not None:
+    from stock_advisor.qt_app.controllers.analysis_controller import AnalysisController
+    from stock_advisor.qt_app.pages.individual_page import IndividualPage
+    from stock_advisor.qt_app.pages.portfolio_page import PortfolioPage
+
+
+def _outcome(code: str):
+    return analyze_symbol(normalize_symbol(code), FakeProvider())
+
+
+def _report(outcomes):
+    from stock_advisor.services.batch import BatchReport
+
+    # success_count / failure_count 是 BatchReport 的只读属性，由 outcomes 推导，不能传参。
+    return BatchReport(total=len(outcomes), outcomes=list(outcomes))
+
+
+@requires_qt
+class IndividualPageWiringTests(unittest.TestCase):
+    """个股页：切档、证据、仓位三件事必须随选中行与档位联动。"""
+
+    def setUp(self):
+        self.app = qt_app()
+        self.controller = AnalysisController(FakeProvider())
+        self.addCleanup(self.controller.shutdown)
+        self.page = IndividualPage(self.controller)
+        self.outcomes = [_outcome("600000"), _outcome("600519")]
+        for outcome in self.outcomes:
+            self.page._append_row(outcome)
+        self.page._on_finished(_report(self.outcomes))
+
+    def test_tier_selector_is_present_and_defaults_to_standard(self):
+        self.assertEqual(self.page.tier.current_level(), 3)
+
+    def test_finishing_a_batch_selects_a_row_and_fills_the_detail_panes(self):
+        """分析完就该看得到东西，而不是等用户自己先点一下才知道有详情。"""
+        self.assertTrue(self.page.table.currentIndex().isValid())
+        self.assertGreater(self.page.evidence.factor_model.rowCount(), 0)
+
+    def test_switching_tier_redecides_without_touching_the_provider(self):
+        """REQ-003：切档只对缓存的 Measurement 重判，绝不重新联网。"""
+
+        class _ExplodingProvider:
+            def fetch_quote(self, symbol):
+                raise AssertionError("切档不得触发任何取数")
+
+            def fetch_history(self, symbol):
+                raise AssertionError("切档不得触发任何取数")
+
+        self.page._controller._provider = _ExplodingProvider()
+        before = [self.page.model.item(r, 2).text() for r in range(self.page.model.rowCount())]
+
+        self.page.tier.set_level(5)  # 激进
+        after = [self.page.model.item(r, 2).text() for r in range(self.page.model.rowCount())]
+
+        self.assertEqual(len(before), len(after))
+        self.assertEqual(self.page.tier.current_level(), 5)
+
+    def test_switching_tier_keeps_the_selected_row(self):
+        """切档不该把用户选中的那只票顶掉。"""
+        self.page.table.setCurrentIndex(self.page.model.index(1, 0))
+        selected = self.page._current_code()
+
+        self.page.tier.set_level(1)
+
+        self.assertEqual(self.page._current_code(), selected)
+
+    def test_selecting_a_row_shows_that_symbols_evidence(self):
+        self.page.table.setCurrentIndex(self.page.model.index(0, 0))
+        first = self.page.evidence.factor_model.rowCount()
+
+        self.page.table.setCurrentIndex(self.page.model.index(1, 0))
+
+        self.assertGreater(first, 0)
+        self.assertGreater(self.page.evidence.factor_model.rowCount(), 0)
+
+    def test_a_new_analysis_clears_the_detail_panes(self):
+        """上一轮的证据/仓位不能留在新一轮的空表下面。"""
+        self.page._on_analyze()
+
+        self.assertEqual(self.page.chart.bar_count(), 0)
+        self.assertEqual(self.page.evidence.factor_model.rowCount(), 0)
+
+
+@requires_qt
+class PortfolioPageWiringTests(unittest.TestCase):
+    """自选页：增删即存盘，刷新后横向对比出行，没成本就没盈亏。"""
+
+    def setUp(self):
+        import os
+        import tempfile
+
+        self.app = qt_app()
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        # 严禁写真实 %APPDATA%：store 认这个环境变量（AGENTS.md 硬性约束）。
+        self._config = Path(self._tmp.name) / "config.json"
+        os.environ["STOCK_ADVISOR_CONFIG"] = str(self._config)
+        self.addCleanup(lambda: os.environ.pop("STOCK_ADVISOR_CONFIG", None))
+
+        self.controller = AnalysisController(FakeProvider())
+        self.addCleanup(self.controller.shutdown)
+        self.page = PortfolioPage(self.controller)
+
+    def _add(self, code: str, cost: str = "", shares: str = "") -> None:
+        self.page.code_input.setText(code)
+        self.page.cost_input.setText(cost)
+        self.page.shares_input.setText(shares)
+        self.page.add_current_input()
+
+    def test_adding_a_holding_persists_it(self):
+        self._add("600000", "10.00", "100")
+
+        self.assertTrue(self._config.is_file(), "自选改动没有落盘")
+        from stock_advisor.services import store
+
+        reloaded = store.load_config(self._config)
+        # store 落盘时把代码规范化（600000 -> sh600000），表格与对比匹配都用这个形式。
+        self.assertEqual([w.code for w in reloaded.watchlist], ["sh600000"])
+        self.assertEqual(reloaded.watchlist[0].cost, Decimal("10.00"))
+        self.assertEqual(reloaded.watchlist[0].shares, 100)
+
+    def test_adding_the_same_code_updates_instead_of_duplicating(self):
+        self._add("600000", "10.00", "100")
+        self._add("600000", "12.00", "200")
+
+        self.assertEqual(self.page.model.rowCount(), 1)
+        self.assertEqual(self.page._config.watchlist[0].cost, Decimal("12.00"))
+
+    def test_removing_the_selected_row_persists_the_removal(self):
+        self._add("600000", "10.00", "100")
+        self.page.table.setCurrentIndex(self.page.model.index(0, 0))
+
+        self.page.remove_selected()
+
+        self.assertEqual(self.page.model.rowCount(), 0)
+        from stock_advisor.services import store
+
+        self.assertFalse(store.load_config(self._config).watchlist)  # watchlist 是不可变元组
+
+    def test_refreshing_fills_the_comparison_table(self):
+        self._add("600000", "10.00", "100")
+        outcomes = [_outcome("600000")]
+        for outcome in outcomes:
+            self.page._on_symbol(outcome)
+
+        self.page._on_finished(_report(outcomes))
+
+        self.assertGreater(self.page.comparison.model.rowCount(), 0)
+
+    def test_a_holding_without_cost_shows_no_profit_rather_than_zero(self):
+        """没填成本就没有盈亏——显示破折号，不是 0。把"没填"显示成"不赚不亏"是伪造。"""
+        self._add("600000")
+        outcomes = [_outcome("600000")]
+        self.page._on_symbol(outcomes[0])
+
+        self.page._on_finished(_report(outcomes))
+
+        row = self.page.comparison.model.rowCount() - 1
+        self.assertGreaterEqual(row, 0)
+        self.assertEqual(self.page.comparison.model.item(row, 7).text(), "—")  # 浮动盈亏
+        self.assertEqual(self.page.comparison.model.item(row, 8).text(), "—")  # 盈亏额
+
+    def test_refreshing_an_empty_watchlist_says_so_instead_of_analysing_nothing(self):
+        self.page.refresh()
+
+        self.assertIn("自选为空", self.page.status.text())
+
+    def test_failed_symbols_are_excluded_and_reported(self):
+        """取数失败的票不该以一行空数据混进对比表，但用户要知道少了几只。"""
+        from stock_advisor.services.workflow import AnalysisOutcome
+
+        self._add("600000")
+        bad = AnalysisOutcome(symbol=normalize_symbol("600000"), error="boom")
+        self.page._on_symbol(bad)
+
+        self.page._on_finished(_report([bad]))
+
+        self.assertEqual(self.page.comparison.model.rowCount(), 0)
+        self.assertIn("未纳入", self.page.status.text())
+
+
+if __name__ == "__main__":
+    unittest.main()

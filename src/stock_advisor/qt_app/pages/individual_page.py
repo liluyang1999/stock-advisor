@@ -1,25 +1,36 @@
-"""个股批量分析页（REQ-001/010/013 / WI-010）。
+"""个股批量分析页（REQ-001/003/004/010/013 / WI-010/WI-011/WI-012/WI-027/WI-029）。
 
-薄视图：输入框 + 分析/停止按钮 + 结果表 + 状态行，全部连 `AnalysisController` 的信号。页面不含
-任何分析或线程逻辑——用户点"分析"就 `controller.start(text)`，结果经信号回来后逐行填进表格。
+薄视图：输入框 + 分析/停止按钮 + 结果表 + 详情区 + 状态行，全部连 `AnalysisController` 的信号。
+页面不含任何分析或线程逻辑——用户点"分析"就 `controller.start(text)`，结果经信号回来后逐行填进表格。
 QTableView + QStandardItemModel 承载结果（REQ-012 的模型/视图取向）。
+
+详情区随选中行联动：K 线、证据（因子/理由/风险）、仓位与回测。**决策强度切档只对缓存的
+`Measurement` 重判、不重新联网**（REQ-003）——所以每只票的 `Measurement` 与日线都留在页面里，
+切档和换行都是本地重算。
 """
 
 from __future__ import annotations
 
+from decimal import Decimal
 from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from ...domain.models import CORE_DISCLAIMER, AnalysisResult, DailyBar
+from ...domain.models import CORE_DISCLAIMER, AnalysisResult, DailyBar, Measurement
+from ...domain.policy import position_plan
 from ...services.batch import BatchProgress, BatchReport
 from ...services.workflow import AnalysisOutcome
 from ...ui.view_format import format_results_as_csv, format_results_for_clipboard
 from ..controllers.analysis_controller import AnalysisController
 from ..widgets.candlestick_chart import CandlestickChart
+from ..widgets.evidence_view import EvidenceView
+from ..widgets.position_plan import PositionPlanView
 from ..widgets.table_utils import make_readonly_table
+from ..widgets.tier_selector import TierSelector
 
 _HEADERS = ["代码", "名称", "建议", "分数", "最新价", "数据质量"]
+# 仓位计算器的默认本金。持久化的本金由 store 管理（REQ-009），此处仅作未配置时的展示基数。
+_DEFAULT_CAPITAL = Decimal("100000.00")
 
 
 class IndividualPage(QtWidgets.QWidget):
@@ -29,8 +40,10 @@ class IndividualPage(QtWidgets.QWidget):
         super().__init__(parent)
         self._controller = controller
         self._results: list[AnalysisResult] = []
-        # 每只票的日线留在页面里：K 线图按选中行切换，重选不必重新联网（REQ-004 / WI-027）。
+        # 每只票的日线与测量都留在页面里：换行换图、切档重判，两者都不必重新联网
+        # （REQ-003 切档不联网 / REQ-004 / WI-027）。
         self._history: dict[str, list[DailyBar]] = {}
+        self._measurements: dict[str, Measurement] = {}
         self._build_ui()
         self._connect()
 
@@ -50,12 +63,31 @@ class IndividualPage(QtWidgets.QWidget):
         row.addWidget(self.stop_button)
         layout.addLayout(row)
 
+        # 决策强度：切档只对缓存的 Measurement 重判，不重新联网（REQ-003）。
+        self.tier = TierSelector()
+        layout.addWidget(self.tier)
+
         self.model, self.table = make_readonly_table(_HEADERS)
         self.table.setAccessibleName("个股分析结果表")
         layout.addWidget(self.table)
 
+        # 详情区随选中行联动：左边 K 线，右边证据 + 仓位/回测。用 splitter 让用户自行分配空间，
+        # 小屏时也能把某一侧压扁而不是被裁掉（REQ-018 零裁切）。
+        details = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         self.chart = CandlestickChart()
-        layout.addWidget(self.chart)
+        details.addWidget(self.chart)
+
+        side = QtWidgets.QWidget()
+        side_layout = QtWidgets.QVBoxLayout(side)
+        side_layout.setContentsMargins(0, 0, 0, 0)
+        self.evidence = EvidenceView()
+        self.position = PositionPlanView()
+        side_layout.addWidget(self.evidence)
+        side_layout.addWidget(self.position)
+        details.addWidget(side)
+        details.setStretchFactor(0, 3)
+        details.setStretchFactor(1, 2)
+        layout.addWidget(details, 1)
 
         # 导出行：复制/CSV 仅在有结果时可用。导出件自带免责声明页脚（见 view_format）。
         export_row = QtWidgets.QHBoxLayout()
@@ -84,25 +116,84 @@ class IndividualPage(QtWidgets.QWidget):
         selection = self.table.selectionModel()
         if selection is not None:
             selection.currentRowChanged.connect(self._on_row_changed)
+        self.tier.results_changed.connect(self._on_tier_results)
 
     def _on_row_changed(self, current: QtCore.QModelIndex, previous: QtCore.QModelIndex) -> None:
-        """选中行切换时换 K 线。失败行没有日线，图上如实显示"暂无历史数据"，不沿用上一只的图。"""
+        """选中行切换时同步 K 线、证据与仓位。失败行没有数据，各视图如实清空，不沿用上一只的内容。"""
 
         del previous
         if not current.isValid():
-            self.chart.clear()
+            self._clear_details()
             return
         item = self.model.item(current.row(), 0)
         code = item.text() if item is not None else ""
         name_item = self.model.item(current.row(), 1)
         name = name_item.text() if name_item is not None else ""
         self.chart.set_bars(self._history.get(code, []), f"{code} {name}".strip())
+        self._show_details_for(code)
+
+    def _show_details_for(self, code: str) -> None:
+        """按当前档位渲染这只票的证据与仓位。档位变了也走这里，所以只有一条渲染路径。"""
+
+        result = next((r for r in self._results if r.symbol.normalized == code), None)
+        if result is None:
+            self.evidence.clear()
+            self.position.clear()
+            return
+        self.evidence.show_result(result)
+        measurement = self._measurements.get(code)
+        if measurement is None:
+            self.position.clear()
+            return
+        self.position.show_plan(
+            position_plan(measurement, self.tier.current_level(), _DEFAULT_CAPITAL)
+        )
+
+    def _on_tier_results(self, results: object) -> None:
+        """切档：用重判后的结果整体刷新表格与详情。这一步不联网（REQ-003）。"""
+
+        if not isinstance(results, list) or not results:
+            return
+        self._results = list(results)
+        self._refresh_rows()
+        self._show_details_for(self._current_code())
+
+    def _current_code(self) -> str:
+        index = self.table.currentIndex()
+        if not index.isValid():
+            return ""
+        item = self.model.item(index.row(), 0)
+        return item.text() if item is not None else ""
+
+    def _refresh_rows(self) -> None:
+        """就地更新已有行的建议/分数/价格，保留选中行——切档不该把用户的选择顶掉。"""
+
+        by_code = {r.symbol.normalized: r for r in self._results}
+        for row in range(self.model.rowCount()):
+            item = self.model.item(row, 0)
+            result = by_code.get(item.text()) if item is not None else None
+            if result is None:
+                continue
+            for column, text in (
+                (2, result.action_label),
+                (3, str(result.score)),
+                (4, str(result.last)),
+            ):
+                cell = self.model.item(row, column)
+                if cell is not None:
+                    cell.setText(text)
+
+    def _clear_details(self) -> None:
+        self.chart.clear()
+        self.evidence.clear()
+        self.position.clear()
 
     def _on_analyze(self) -> None:
         self.model.removeRows(0, self.model.rowCount())
         self._results = []
         self._history.clear()
-        self.chart.clear()
+        self._measurements.clear()
+        self._clear_details()
         self._set_export_enabled(False)
         self.analyze_button.setEnabled(False)
         self.stop_button.setEnabled(True)
@@ -115,6 +206,8 @@ class IndividualPage(QtWidgets.QWidget):
     def _append_row(self, outcome: AnalysisOutcome) -> None:
         if outcome.history:
             self._history[outcome.symbol.normalized] = list(outcome.history)
+        if outcome.measurement is not None:
+            self._measurements[outcome.symbol.normalized] = outcome.measurement
         if outcome.ok and outcome.result is not None:
             r = outcome.result
             cells = [
@@ -135,6 +228,10 @@ class IndividualPage(QtWidgets.QWidget):
         # 收集成功结果供导出；有结果才放开复制/CSV（失败/取消/空输入则保持禁用）。
         self._results = [o.result for o in report.outcomes if o.ok and o.result is not None]
         self._set_export_enabled(bool(self._results))
+        # 交给切档器缓存；它随即按当前档位发一次 results_changed，表格与详情由那条路径统一渲染。
+        self.tier.set_measurements(
+            [o.measurement for o in report.outcomes if o.measurement is not None]
+        )
         # 批次结束后自动选中首行，K 线随之出现——不必让用户先自己点一下才知道有图。
         if self.model.rowCount() and not self.table.currentIndex().isValid():
             self.table.setCurrentIndex(self.model.index(0, 0))

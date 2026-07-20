@@ -27,6 +27,8 @@ class TierSelector(QtWidgets.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(QtWidgets.QLabel("决策强度"))
         self.combo = QtWidgets.QComboBox()
+        # 旁边的 QLabel 不是 buddy，读屏取不到它；下拉框必须自带可访问名（REQ-017）。
+        self.combo.setAccessibleName("决策强度选择")
         for level in self._levels:
             self.combo.addItem(LEVEL_NAMES[level], level)
         self.combo.setCurrentIndex(self._levels.index(STANDARD_LEVEL))

@@ -42,7 +42,7 @@ def _imported_roots(path: Path) -> set[str]:
 
 @requires_qt
 class AppAssemblyTests(unittest.TestCase):
-    """装配契约：四页导航齐备、控制器接上、关闭即排空。"""
+    """装配契约：五页导航齐备、控制器接上、关键功能部件真的挂上了、关闭即排空。"""
 
     def setUp(self):
         self.app = qt_app()
@@ -52,16 +52,47 @@ class AppAssemblyTests(unittest.TestCase):
         self.addCleanup(window.deleteLater)
         return window
 
-    def test_all_four_feature_pages_are_navigable(self):
+    def test_every_feature_page_is_navigable(self):
         window = self._window()
         labels = [window.tabs.tabText(i) for i in range(window.tabs.count())]
-        self.assertEqual(labels, ["个股分析", "全市场选股", "条件预警", "个股资金流"])
+        self.assertEqual(
+            labels, ["个股分析", "全市场选股", "自选 / 持仓", "条件预警", "个股资金流"]
+        )
 
     def test_every_page_has_its_controller_wired(self):
         window = self._window()
-        self.assertEqual(len(window.controllers()), 4)
+        self.assertEqual(len(window.controllers()), len(set(window.controllers())))
+        self.assertEqual(len(window.controllers()), 5)
         for controller in window.controllers():
             self.assertFalse(controller.is_running())  # 装配后处于空闲态
+
+    def test_every_delivered_feature_widget_is_actually_reachable(self):
+        """部件存在且有测试 ≠ 用户点得到。
+
+        这条守的是一类真实发生过的缺陷：TierSelector / EvidenceView / PositionPlanView /
+        ComparisonView 四个部件写好了、单测齐全、却从没被挂进任何页面——于是"五档决策强度""证据""
+        仓位计算器""横向对比"在交付物里根本不存在，而需求和变更日志都声称它们已交付。单元测试
+        直接构造部件，永远发现不了这件事；只有从装好的主窗往下找才能。
+        """
+        from stock_advisor.qt_app.widgets.candlestick_chart import CandlestickChart
+        from stock_advisor.qt_app.widgets.comparison_view import ComparisonView
+        from stock_advisor.qt_app.widgets.evidence_view import EvidenceView
+        from stock_advisor.qt_app.widgets.position_plan import PositionPlanView
+        from stock_advisor.qt_app.widgets.tier_selector import TierSelector
+
+        window = self._window()
+        for widget_type, feature in (
+            (TierSelector, "五档决策强度切换（REQ-003）"),
+            (EvidenceView, "因子/理由/风险证据（REQ-004）"),
+            (PositionPlanView, "仓位与风控计算器（REQ-004）"),
+            (CandlestickChart, "K 线（REQ-004）"),
+            (ComparisonView, "自选/持仓横向对比（REQ-005）"),
+        ):
+            with self.subTest(feature=feature):
+                self.assertTrue(
+                    window.findChildren(widget_type),
+                    f"{widget_type.__name__} 没有挂进任何页面——{feature} 用户根本点不到",
+                )
 
     def test_disclaimer_is_resident_in_the_shell(self):
         window = self._window()
