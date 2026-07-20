@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -91,9 +92,43 @@ def main() -> int:
     print(f"App written to: {target_dir}")
     print(f"  EXE: {target.name} ({size_mib:.1f} MiB); folder total {folder_mib:.1f} MiB")
 
+    info_path = _write_build_info(target_dir)
+    print(f"Build info written to: {info_path.name} (commit {_git_commit() or '未知'})")
+
     manual_path = _write_manual()
     print(f"Manual written to: {manual_path}")
     return 0
+
+
+def _write_build_info(target_dir: Path) -> Path:
+    """把构建时的源提交写进应用目录。
+
+    没有这一条，产物就无法自证来历：清单是事后扫 dist/ 生成的，它只知道"生成清单时仓库在哪个提交"，
+    而那未必是"构建出这个二进制的提交"——中间只要有一次提交或改动，清单就会把错误的来源写进发布
+    元数据。这个文件让 make_release_manifest.py 能把两者对上，对不上就拒绝出清单。
+    """
+    info = {
+        "commit": _git_commit(),
+        "python": sys.version.split()[0],
+        "packaging_mode": "onedir (ADR-0004)",
+    }
+    path = target_dir / "BUILD_INFO.json"
+    path.write_text(json.dumps(info, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def _git_commit() -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    return result.stdout.strip() or None if result.returncode == 0 else None
 
 
 def _write_manual() -> Path:

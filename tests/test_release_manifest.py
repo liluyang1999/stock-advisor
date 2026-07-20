@@ -53,6 +53,12 @@ class _StagedDist:
         for name in rel.REQUIRED_LICENSE_TEXTS:
             (self.licenses_src / name).write_text(f"{name} 正文", encoding="utf-8")
 
+    def write_build_info(self, commit: str) -> None:
+        """冒充 build_exe.py 落在应用目录里的来源标记。"""
+        (self.app / "BUILD_INFO.json").write_text(
+            json.dumps({"commit": commit, "python": "3.14.4"}), encoding="utf-8"
+        )
+
 
 class ReleaseManifestTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -64,6 +70,10 @@ class ReleaseManifestTests(unittest.TestCase):
         for patch in self.staged.patches():
             patch.start()
             self.addCleanup(patch.stop)
+        # 默认铺成一份"来历正常"的交付：来源标记与仓库当前提交一致。来源相关的用例各自推翻它。
+        head = rel._git("rev-parse", "HEAD")
+        if head is not None:
+            self.staged.write_build_info(head)
 
     def _run(self) -> int:
         return self._run_args([])
@@ -239,6 +249,42 @@ class ReleaseManifestTests(unittest.TestCase):
         self.assertIn("branch", source)
         if source["commit"] is not None:
             self.assertEqual(len(source["commit"]), 40)
+
+    def test_a_delivery_built_from_another_commit_is_refused(self):
+        """清单不能给来历不明的产物盖章：构建提交和仓库提交对不上就拒绝转绿。"""
+        self.staged.write_all_licenses()
+        self.staged.write_build_info("0" * 40)
+
+        code = self._run()
+        source = self._manifest()["source"]
+
+        self.assertEqual(code, 1)
+        self.assertFalse(source["build_matches_repo"])
+        self.assertEqual(source["build_commit"], "0" * 40)
+        self.assertNotEqual(source["repo_commit"], source["build_commit"])
+
+    def test_a_delivery_without_build_info_cannot_prove_its_origin(self):
+        """缺 BUILD_INFO.json 就无从证明产物出自哪次构建——同样不能转绿。"""
+        self.staged.write_all_licenses()
+        (self.staged.app / "BUILD_INFO.json").unlink(missing_ok=True)
+
+        code = self._run()
+
+        self.assertEqual(code, 1)
+        self.assertIsNone(self._manifest()["source"]["build_commit"])
+
+    def test_matching_build_and_repo_commits_pass(self):
+        self.staged.write_all_licenses()
+        head = rel._git("rev-parse", "HEAD")
+        if head is None:
+            self.skipTest("不在 git 仓库中，无法比对提交")
+
+        code = self._run()
+        source = self._manifest()["source"]
+
+        self.assertEqual(code, 0)
+        self.assertTrue(source["build_matches_repo"])
+        self.assertEqual(source["commit"], head)
 
 
 if __name__ == "__main__":

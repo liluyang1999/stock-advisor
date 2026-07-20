@@ -101,14 +101,26 @@ def main(argv: list[str] | None = None) -> int:
         f"清单:      {MANIFEST_PATH}  ({len(artifacts['files'])} 个文件, {total / 1048576:.1f} MiB)"
     )
     print(f"应用目录 SHA-256(合并): {artifacts['tree_sha256']}")
+    source = manifest["source"]
+    blocked = False
     if missing:
         print(
             "RELEASE_MANIFEST_INCOMPLETE 缺少许可证正文: "
             + ", ".join(f"{n} <- {REQUIRED_LICENSE_TEXTS[n]}" for n in sorted(missing)),
             file=sys.stderr,
         )
+        blocked = True
+    if not source["build_matches_repo"]:
+        print(
+            "RELEASE_MANIFEST_STALE 产物构建自 "
+            f"{source['build_commit'] or '未知提交（缺 BUILD_INFO.json）'}，"
+            f"仓库现在在 {source['repo_commit']}；请重新构建后再出清单",
+            file=sys.stderr,
+        )
+        blocked = True
+    if blocked:
         return 1
-    print("RELEASE_MANIFEST_OK")
+    print(f"RELEASE_MANIFEST_OK commit={source['commit']}")
     return 0
 
 
@@ -353,9 +365,26 @@ def _build_metadata() -> dict[str, Any]:
 
 
 def _source_metadata() -> dict[str, Any]:
+    """产物是哪个提交构建的，仓库现在停在哪个提交，两者是否一致。
+
+    `build_commit` 由 build_exe.py 写进应用目录；`repo_commit` 是生成清单时的 HEAD。清单是事后扫
+    dist/ 生成的，只记 HEAD 就等于假设"当前代码 = 构建这份二进制的代码"——中间只要有一次提交，
+    这个假设就不成立，而错误的来源标记会被盖章发布出去。
+    """
+    build_commit = None
+    build_info = APP_DIR / "BUILD_INFO.json"
+    if build_info.is_file():
+        try:
+            build_commit = json.loads(build_info.read_text(encoding="utf-8")).get("commit")
+        except OSError, json.JSONDecodeError:
+            build_commit = None
+    repo_commit = _git("rev-parse", "HEAD")
     return {
-        "commit": _git("rev-parse", "HEAD"),
+        "commit": build_commit or repo_commit,
+        "build_commit": build_commit,
+        "repo_commit": repo_commit,
         "branch": _git("rev-parse", "--abbrev-ref", "HEAD"),
+        "build_matches_repo": bool(build_commit) and build_commit == repo_commit,
     }
 
 
