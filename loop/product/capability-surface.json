@@ -1,0 +1,104 @@
+{
+  "$schema": "../schemas/capability-surface.schema.json",
+  "schema_version": "1.0.0",
+  "purpose": "把「产品宣称的能力」与「用户真的点得到的界面」逐条绑定，并由 G-SURFACE 机器校验。此前两轮都出现过同一类缺陷：部件写好、单测齐全、却从未挂进任何页面（WI-029 的五项功能、WI-030 的本金/预设/预警规则）。单元测试直接构造部件，结构上跳过了应用没做的那一步；两次都靠人工追问才发现。本清单把那次追问变成每次提交都跑的检查。",
+  "completeness_rule": "traceability.csv 里的每一条 REQ 必须在 capabilities 或 internal 中恰好出现一次。新增需求时必须回答「它长在界面的哪里」，回答「没有界面」也要写明理由——不允许沉默略过。",
+  "capabilities": [
+    {
+      "requirement_id": "REQ-001",
+      "widget": "IndividualPage",
+      "controls": ["股票代码输入", "个股分析结果表"],
+      "note": "最多 30 只代码批量分析：输入框 + 结果表"
+    },
+    {
+      "requirement_id": "REQ-002",
+      "widget": "ScreenerPage",
+      "controls": ["筛选预设选择", "全市场选股结果表"],
+      "note": "六预设全市场筛选"
+    },
+    {
+      "requirement_id": "REQ-003",
+      "widget": "TierSelector",
+      "controls": ["决策强度选择", "决策强度光谱"],
+      "note": "五档切换 + 五档一眼对照；切档只重判不联网"
+    },
+    {
+      "requirement_id": "REQ-004",
+      "widget": "EvidenceView",
+      "controls": ["因子明细表", "K线图"],
+      "note": "结论/因子/证据强度与 K 线；仓位与回测见 PositionPlanView"
+    },
+    {
+      "requirement_id": "REQ-005",
+      "widget": "ComparisonView",
+      "controls": ["自选持仓表"],
+      "note": "自选/持仓横向对比与浮动盈亏"
+    },
+    {
+      "requirement_id": "REQ-006",
+      "widget": "AlertsPage",
+      "controls": ["预警规则表", "预警股票代码输入", "预警字段选择", "预警阈值输入"],
+      "note": "条件预警的规则编辑与监控开关"
+    },
+    {
+      "requirement_id": "REQ-007",
+      "widget": "EvidencePage",
+      "controls": [],
+      "note": "个股资金流独立查询页"
+    },
+    {
+      "requirement_id": "REQ-008",
+      "widget": "IndividualPage",
+      "controls": [],
+      "note": "复制/导出 CSV 按钮与 F1 帮助；自检走命令行 --self-test"
+    },
+    {
+      "requirement_id": "REQ-009",
+      "widget": "PortfolioPage",
+      "controls": ["仓位计算本金输入", "自选股代码输入"],
+      "note": "自选/本金/档位/预设/预警五项配置跨会话保留"
+    },
+    {
+      "requirement_id": "REQ-012",
+      "widget": "IndividualPage",
+      "controls": ["个股分析结果表"],
+      "note": "结果由 QTableView + model 承载"
+    },
+    {
+      "requirement_id": "REQ-021",
+      "widget": "PositionPlanView",
+      "controls": [],
+      "note": "仓位计算器与可信度回测（含无未来泄漏说明）"
+    },
+    {
+      "requirement_id": "REQ-031",
+      "widget": "MainWindow",
+      "controls": [],
+      "note": "免责声明常驻状态栏，且每份导出带页脚"
+    }
+  ],
+  "internal": [
+    {"requirement_id": "REQ-010", "reason": "单项失败继续与安全停止是控制器行为，由 TEST-RACE-001 证明；界面上表现为「停止」按钮与失败行，不额外占一个面"},
+    {"requirement_id": "REQ-011", "reason": "PySide6 主框架本身就是所有页面的载体，由装配测试整体证明，不对应单一控件"},
+    {"requirement_id": "REQ-013", "reason": "GUI 线程不阻塞是性能与并发性质，由 TEST-RACE-001/TEST-PERF-001 度量"},
+    {"requirement_id": "REQ-014", "reason": "应用身份只出现在标题栏——它的验收恰恰是「内容区没有品牌头」，由 TEST-VIS-002 反向断言"},
+    {"requirement_id": "REQ-015", "reason": "决策强度控件的居中与协调是视觉属性，由视觉矩阵度量"},
+    {"requirement_id": "REQ-016", "reason": "全局字体是应用级属性，由字体契约测试度量"},
+    {"requirement_id": "REQ-017", "reason": "可访问名与键盘可达是对所有控件的横切要求，由 a11y 审计遍历全部页面"},
+    {"requirement_id": "REQ-018", "reason": "居中与 DPI 适配是布局属性，由视觉矩阵在多分辨率下度量"},
+    {"requirement_id": "REQ-019", "reason": "计算可追溯性是引擎属性，由黄金用例证明"},
+    {"requirement_id": "REQ-020", "reason": "异常数值防御是纯函数行为"},
+    {"requirement_id": "REQ-022", "reason": "措辞约束是对文案的静态断言，落在证据视图的文本上"},
+    {"requirement_id": "REQ-023", "reason": "数据 provenance/新鲜度是数据层信封属性"},
+    {"requirement_id": "REQ-024", "reason": "禁止伪造是全局不变量，由各降级路径的用例分别守住"},
+    {"requirement_id": "REQ-025", "reason": "deadline/重试/取消是传输层合同"},
+    {"requirement_id": "REQ-026", "reason": "网络故障矩阵与分页完整度是传输层合同"},
+    {"requirement_id": "REQ-027", "reason": "全链路追溯率是控制面属性，无用户界面"},
+    {"requirement_id": "REQ-028", "reason": "质量与构建门禁是工程属性，无用户界面"},
+    {"requirement_id": "REQ-029", "reason": "依赖锁定与 SBOM 是交付元数据，无用户界面"},
+    {"requirement_id": "REQ-030", "reason": "Windows 交付与回滚是发布流程，无用户界面"},
+    {"requirement_id": "REQ-032", "reason": "导出注入中和作用在导出内容上，由导出安全用例守住"},
+    {"requirement_id": "REQ-033", "reason": "字体缺失的可见失败是环境相关行为，由字体契约测试度量"},
+    {"requirement_id": "REQ-034", "reason": "性能预算是度量属性，无用户界面"}
+  ]
+}

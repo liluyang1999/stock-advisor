@@ -85,7 +85,12 @@ class LoopToolingTests(unittest.TestCase):
         actual = (LOOP_ROOT / "STATUS.md").read_text(encoding="utf-8")
         self.assertEqual(actual, rendered)
         self.assertIn("Loop tooling tests:", rendered)
-        self.assertIn("Loop schemas: `22`", rendered)
+        # 不写死数字：新增一份受 schema 校验的控制面文档就要来改一次，而它并不保护什么。
+        # 真正的不变量是「STATUS 渲染出的数字 == metrics 记录的数字」。
+        recorded = json.loads((LOOP_ROOT / "state/metrics.json").read_text(encoding="utf-8"))
+        self.assertIn(
+            f"Loop schemas: `{recorded['control_plane']['schema_documents_validated']}`", rendered
+        )
         self.assertIn("Traceability: `34/34`", rendered)
 
     def test_target_stack_and_font_are_explicit(self) -> None:

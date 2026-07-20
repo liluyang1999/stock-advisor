@@ -1021,6 +1021,40 @@
       "scope_out": [
         "把应用切到 BoundedUrllibProvider —— 那是 envelope 化的传输改造，属另一个工作项"
       ]
+    },
+    {
+      "id": "WI-031",
+      "title": "能力面可达性门禁（G-SURFACE）",
+      "milestone": "MS-08",
+      "status": "accepted",
+      "priority": "P0",
+      "depends_on": [
+        "WI-029",
+        "WI-030"
+      ],
+      "requirements": [
+        "REQ-027"
+      ],
+      "acceptance": [
+        "AC-008"
+      ],
+      "implementation_paths": [
+        "loop/product/capability-surface.json",
+        "loop/scripts/check_capability_surface.py",
+        "loop/quality/quality-gates.json"
+      ],
+      "tests": [
+        "TEST-TRACE-001"
+      ],
+      "evidence_ids": [
+        "EVD-SURFACE-001"
+      ],
+      "next_action": "done",
+      "size": "M",
+      "definition_of_done": "every requirement is classified exactly once as user-facing or explicitly internal, every user-facing capability's widget and named controls are found on the assembled window, and the check is a required release gate proven to fail on both an unmounted page and an unclassified requirement.",
+      "scope_out": [
+        "像素级视觉审查——本门禁只回答「用户点得到吗」，不回答「好不好看」"
+      ]
     }
   ]
 }

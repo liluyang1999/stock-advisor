@@ -1,25 +1,363 @@
 {
-  "$schema":"../schemas/quality-gates.schema.json",
-  "schema_version":"1.0.0",
-  "gates":[
-    {"id":"G-LOOP","order":1,"name":"Loop structure and traceability","commands":[["python","loop/scripts/validate_loop.py"],["python","loop/scripts/check_traceability.py"],["python","loop/scripts/render_status.py","--check"],["python","loop/scripts/render_backlog.py","--check"],["python","loop/scripts/check_core_boundaries.py"],["python","-m","unittest","discover","-s","loop/tests"]],"enabled":true,"required_for_release":true,"pass_condition":"all exit 0","evidence_type":"command","owning_work_item":"WI-000"},
-    {"id":"G-FORMAT","order":2,"name":"Format","commands":[["python","-m","ruff","format","--check","."]],"enabled":true,"required_for_release":true,"pass_condition":"exit 0 and no diff","evidence_type":"report","owning_work_item":"WI-000","note":"owned by WI-000 (control-plane tooling, REQ-028); toolchain implemented in WS-8 (Plan 6), config in pyproject.toml [tool.ruff]. Enabled 2026-07-16: the product-code adoption debt this gate waited on is cleared -- `python -m ruff format --check .` exits 0 across all 81 files. Splitting a dedicated dev-tooling work item from WI-000 is a tracked fast-follow."},
-    {"id":"G-LINT","order":3,"name":"Lint","commands":[["python","-m","ruff","check","."]],"enabled":true,"required_for_release":true,"pass_condition":"0 errors and unapproved warnings","evidence_type":"report","owning_work_item":"WI-000","note":"owned by WI-000 (control-plane tooling, REQ-028); toolchain implemented in WS-8 (Plan 6), config in pyproject.toml [tool.ruff.lint] (E/W/F/I/UP/B, E501 delegated to the formatter). Enabled 2026-07-16: the product-code adoption debt this gate waited on is cleared -- `python -m ruff check .` exits 0 across the whole repo (src/, tests/, loop/)."},
-    {"id":"G-TYPE","order":4,"name":"Type check (pyright)","commands":[["python","-m","pyright"]],"enabled":true,"required_for_release":true,"pass_condition":"0 errors","evidence_type":"report","owning_work_item":"WI-000","note":"owned by WI-000 (control-plane tooling, REQ-028); pyright (basic) per ADR-0008, config in pyproject.toml [tool.pyright] — replaces the earlier mypy placeholder (dev-only tool, needs Node, never in the EXE). Enabled 2026-07-16: the product-code adoption debt this gate waited on is cleared -- `python -m pyright` reports 0 errors repo-wide. Clearing the last one required removing the annotated function-attribute form (`check.stats: dict[str, int] = {}`), a statement Python does not support annotating; check_traceability/check_core_boundaries now return (errors, stats)."},
-    {"id":"G-CORE","order":5,"name":"Core and baseline tests","commands":[["python","-m","unittest","discover","-s","tests"],["python","main.py","--self-test"]],"enabled":true,"required_for_release":true,"pass_condition":"0 failures/errors/skips and SELF_TEST_OK","evidence_type":"test","owning_work_item":"WI-000"},
-    {"id":"G-COVERAGE","order":6,"name":"Coverage policy","commands":[["python","-m","coverage","run","-m","unittest","discover","-s","tests"],["python","-m","coverage","json","-q","-o","build/coverage.json"],["python","loop/scripts/check_coverage.py","build/coverage.json"]],"enabled":true,"required_for_release":true,"pass_condition":"overall statement >=90%/branch >=85%; core statement >=95%/branch >=90% per quality/convergence.json.coverage; loop/scripts/check_coverage.py reads those four thresholds from that document and asserts each dimension separately against the coverage json report, exiting non-zero and naming every dimension below its floor; the two qt_controller_* thresholds are reported as an explicit SKIP until ADR-0001's PySide6 migration makes them measurable","evidence_type":"report","owning_work_item":"WI-000","note":"owned by WI-000 (control-plane tooling, REQ-028); coverage runs via the authoritative unittest runner, not pytest (the legacy Tk GUI suite is flaky under pytest — see loop/quality/TOOLCHAIN_BASELINE.md). Enabled 2026-07-16 at 5906cf0 on freshly measured evidence: all four documented thresholds now pass — overall stmt 92.99/90, branch 87.84/85; core stmt 99.75/95, branch 99.26/90 (values recorded in quality/convergence.json.coverage.current), after the two test-strengthening rounds 209c19b and 5906cf0 took the suite from 467 to 580 tests. The former `coverage report --fail-under=85` step was replaced by loop/scripts/check_coverage.py because --fail-under floors only coverage.py's combined statement+branch total: on 2026-07-15 that blended 86.8% passed while all four documented thresholds failed, so the gate would have certified a green it never checked. Coverage omits ui/_app_members.py (ADR-0014 type-only base for pyright, never imported at runtime; its 310 declarations are unexecutable and uncoverable by any test, and counting them distorted the total to 82.7%)."},
-    {"id":"G-NUMERIC","order":7,"name":"Numeric golden/property tests","commands":[],"enabled":false,"required_for_release":true,"pass_condition":"100% golden/property/invariant pass","evidence_type":"test","owning_work_item":"WI-008"},
-    {"id":"G-NETWORK","order":8,"name":"Network contracts and faults","commands":[],"enabled":false,"required_for_release":true,"pass_condition":"fault matrix 100%, fabricated fallback 0","evidence_type":"test","owning_work_item":"WI-020"},
-    {"id":"G-WORKFLOW","order":9,"name":"FakeProvider integration","commands":[],"enabled":false,"required_for_release":true,"pass_condition":"all workflows and partial failure pass","evidence_type":"test","owning_work_item":"WI-014"},
-    {"id":"G-QT-MODEL","order":10,"name":"Qt model consistency","commands":[],"enabled":false,"required_for_release":true,"pass_condition":"QAbstractItemModelTester and behavior tests pass","evidence_type":"test","owning_work_item":"WI-011"},
-    {"id":"G-QT-GUI","order":11,"name":"Qt offscreen GUI","commands":[],"environment":{"QT_QPA_PLATFORM":"offscreen"},"enabled":false,"required_for_release":true,"pass_condition":"0 failures, race/lifecycle pass","evidence_type":"test","owning_work_item":"WI-019"},
-    {"id":"G-VISUAL","order":12,"name":"Windows visual/accessibility matrix","commands":[],"enabled":false,"required_for_release":true,"pass_condition":"all target profiles pass","evidence_type":"screenshot_and_checklist","owning_work_item":"WI-021"},
-    {"id":"G-PERF","order":13,"name":"Performance/resource budgets","commands":[],"enabled":false,"required_for_release":true,"pass_condition":"all approved budgets pass","evidence_type":"benchmark","owning_work_item":"WI-022"},
-    {"id":"G-SECURITY","order":14,"name":"Security and export safety","commands":[["python","-m","unittest","tests.test_export_security"],["python","-m","unittest","tests.test_qt_export_security"]],"enabled":true,"required_for_release":true,"pass_condition":"TEST-SEC-001 passes: every CSV/clipboard export neutralizes the =/+/-/@ (and TAB/CR) formula-injection leads. The dependency-scan half of the original condition ('0 critical/high') is vacuous for the shipped artifact and is not asserted here -- see note; re-add a scan command the moment a runtime dependency is introduced.","evidence_type":"scan_and_test","owning_work_item":"WI-028","note":"Enabled 2026-07-16 with the REQ-032 defence it was always meant to guard. Until then the gate was an empty placeholder (commands:[]) that could neither pass nor fail, and the defence it named did not exist: exports wrote \"=cmd|' /C calc'!A0\" verbatim into CSV, so Excel/WPS evaluated it (DDE). Owner moved WI-018 -> WI-028 to match the export-security split. Two halves of the old pass_condition are deliberately NOT asserted, rather than faked: (1) '0 critical/high' -- the product declares zero runtime dependencies and the EXE bundles only the stdlib, so there is no third-party surface to scan; this becomes real the moment a runtime dependency (e.g. PySide6 per ADR-0001) lands. (2) path traversal -- no path is derived from data anywhere (CSV path comes from the OS save dialog, config from %APPDATA% plus a fixed filename, assets from code constants), so there is no surface to defend."},
-    {"id":"G-LICENSE","order":15,"name":"Dependency license and SBOM","commands":[],"enabled":false,"required_for_release":true,"pass_condition":"human gate HG-LICENSE accepted","evidence_type":"human_gate","owning_work_item":"WI-025"},
-    {"id":"G-BUILD","order":16,"name":"Clean PyInstaller build","commands":[["python","build_exe.py"]],"enabled":false,"required_for_release":true,"pass_condition":"exit 0; dist manifest exact; Qt plugins/resources verified","evidence_type":"artifact","owning_work_item":"WI-024"},
-    {"id":"G-EXE","order":17,"name":"Packaged self-test and Windows smoke","commands":[["dist\\股市锦囊.exe","--self-test"]],"enabled":false,"required_for_release":true,"pass_condition":"exit 0, SELF_TEST_OK, GUI smoke pass","evidence_type":"artifact_and_screenshot","owning_work_item":"WI-024"},
-    {"id":"G-TRACE","order":18,"name":"Requirement/evidence traceability","commands":[["python","loop/scripts/check_traceability.py","--release"]],"enabled":true,"required_for_release":true,"pass_condition":"100% requirements and evidence","evidence_type":"report","owning_work_item":"WI-000"},
-    {"id":"G-RELEASE","order":19,"name":"Release decision","commands":[],"enabled":false,"required_for_release":true,"pass_condition":"five consecutive full green runs and HG-RELEASE","evidence_type":"human_gate","owning_work_item":"WI-025"}
+  "$schema": "../schemas/quality-gates.schema.json",
+  "schema_version": "1.0.0",
+  "gates": [
+    {
+      "id": "G-LOOP",
+      "order": 1,
+      "name": "Loop structure and traceability",
+      "commands": [
+        [
+          "python",
+          "loop/scripts/validate_loop.py"
+        ],
+        [
+          "python",
+          "loop/scripts/check_traceability.py"
+        ],
+        [
+          "python",
+          "loop/scripts/render_status.py",
+          "--check"
+        ],
+        [
+          "python",
+          "loop/scripts/render_backlog.py",
+          "--check"
+        ],
+        [
+          "python",
+          "loop/scripts/check_core_boundaries.py"
+        ],
+        [
+          "python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "loop/tests"
+        ]
+      ],
+      "enabled": true,
+      "required_for_release": true,
+      "pass_condition": "all exit 0",
+      "evidence_type": "command",
+      "owning_work_item": "WI-000"
+    },
+    {
+      "id": "G-FORMAT",
+      "order": 2,
+      "name": "Format",
+      "commands": [
+        [
+          "python",
+          "-m",
+          "ruff",
+          "format",
+          "--check",
+          "."
+        ]
+      ],
+      "enabled": true,
+      "required_for_release": true,
+      "pass_condition": "exit 0 and no diff",
+      "evidence_type": "report",
+      "owning_work_item": "WI-000",
+      "note": "owned by WI-000 (control-plane tooling, REQ-028); toolchain implemented in WS-8 (Plan 6), config in pyproject.toml [tool.ruff]. Enabled 2026-07-16: the product-code adoption debt this gate waited on is cleared -- `python -m ruff format --check .` exits 0 across all 81 files. Splitting a dedicated dev-tooling work item from WI-000 is a tracked fast-follow."
+    },
+    {
+      "id": "G-LINT",
+      "order": 3,
+      "name": "Lint",
+      "commands": [
+        [
+          "python",
+          "-m",
+          "ruff",
+          "check",
+          "."
+        ]
+      ],
+      "enabled": true,
+      "required_for_release": true,
+      "pass_condition": "0 errors and unapproved warnings",
+      "evidence_type": "report",
+      "owning_work_item": "WI-000",
+      "note": "owned by WI-000 (control-plane tooling, REQ-028); toolchain implemented in WS-8 (Plan 6), config in pyproject.toml [tool.ruff.lint] (E/W/F/I/UP/B, E501 delegated to the formatter). Enabled 2026-07-16: the product-code adoption debt this gate waited on is cleared -- `python -m ruff check .` exits 0 across the whole repo (src/, tests/, loop/)."
+    },
+    {
+      "id": "G-TYPE",
+      "order": 4,
+      "name": "Type check (pyright)",
+      "commands": [
+        [
+          "python",
+          "-m",
+          "pyright"
+        ]
+      ],
+      "enabled": true,
+      "required_for_release": true,
+      "pass_condition": "0 errors",
+      "evidence_type": "report",
+      "owning_work_item": "WI-000",
+      "note": "owned by WI-000 (control-plane tooling, REQ-028); pyright (basic) per ADR-0008, config in pyproject.toml [tool.pyright] — replaces the earlier mypy placeholder (dev-only tool, needs Node, never in the EXE). Enabled 2026-07-16: the product-code adoption debt this gate waited on is cleared -- `python -m pyright` reports 0 errors repo-wide. Clearing the last one required removing the annotated function-attribute form (`check.stats: dict[str, int] = {}`), a statement Python does not support annotating; check_traceability/check_core_boundaries now return (errors, stats)."
+    },
+    {
+      "id": "G-CORE",
+      "order": 5,
+      "name": "Core and baseline tests",
+      "commands": [
+        [
+          "python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests"
+        ],
+        [
+          "python",
+          "main.py",
+          "--self-test"
+        ]
+      ],
+      "enabled": true,
+      "required_for_release": true,
+      "pass_condition": "0 failures/errors/skips and SELF_TEST_OK",
+      "evidence_type": "test",
+      "owning_work_item": "WI-000"
+    },
+    {
+      "id": "G-COVERAGE",
+      "order": 6,
+      "name": "Coverage policy",
+      "commands": [
+        [
+          "python",
+          "-m",
+          "coverage",
+          "run",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests"
+        ],
+        [
+          "python",
+          "-m",
+          "coverage",
+          "json",
+          "-q",
+          "-o",
+          "build/coverage.json"
+        ],
+        [
+          "python",
+          "loop/scripts/check_coverage.py",
+          "build/coverage.json"
+        ]
+      ],
+      "enabled": true,
+      "required_for_release": true,
+      "pass_condition": "overall statement >=90%/branch >=85%; core statement >=95%/branch >=90% per quality/convergence.json.coverage; loop/scripts/check_coverage.py reads those four thresholds from that document and asserts each dimension separately against the coverage json report, exiting non-zero and naming every dimension below its floor; the two qt_controller_* thresholds are reported as an explicit SKIP until ADR-0001's PySide6 migration makes them measurable",
+      "evidence_type": "report",
+      "owning_work_item": "WI-000",
+      "note": "owned by WI-000 (control-plane tooling, REQ-028); coverage runs via the authoritative unittest runner, not pytest (the legacy Tk GUI suite is flaky under pytest — see loop/quality/TOOLCHAIN_BASELINE.md). Enabled 2026-07-16 at 5906cf0 on freshly measured evidence: all four documented thresholds now pass — overall stmt 92.99/90, branch 87.84/85; core stmt 99.75/95, branch 99.26/90 (values recorded in quality/convergence.json.coverage.current), after the two test-strengthening rounds 209c19b and 5906cf0 took the suite from 467 to 580 tests. The former `coverage report --fail-under=85` step was replaced by loop/scripts/check_coverage.py because --fail-under floors only coverage.py's combined statement+branch total: on 2026-07-15 that blended 86.8% passed while all four documented thresholds failed, so the gate would have certified a green it never checked. Coverage omits ui/_app_members.py (ADR-0014 type-only base for pyright, never imported at runtime; its 310 declarations are unexecutable and uncoverable by any test, and counting them distorted the total to 82.7%)."
+    },
+    {
+      "id": "G-NUMERIC",
+      "order": 7,
+      "name": "Numeric golden/property tests",
+      "commands": [],
+      "enabled": false,
+      "required_for_release": true,
+      "pass_condition": "100% golden/property/invariant pass",
+      "evidence_type": "test",
+      "owning_work_item": "WI-008"
+    },
+    {
+      "id": "G-NETWORK",
+      "order": 8,
+      "name": "Network contracts and faults",
+      "commands": [],
+      "enabled": false,
+      "required_for_release": true,
+      "pass_condition": "fault matrix 100%, fabricated fallback 0",
+      "evidence_type": "test",
+      "owning_work_item": "WI-020"
+    },
+    {
+      "id": "G-WORKFLOW",
+      "order": 9,
+      "name": "FakeProvider integration",
+      "commands": [],
+      "enabled": false,
+      "required_for_release": true,
+      "pass_condition": "all workflows and partial failure pass",
+      "evidence_type": "test",
+      "owning_work_item": "WI-014"
+    },
+    {
+      "id": "G-QT-MODEL",
+      "order": 10,
+      "name": "Qt model consistency",
+      "commands": [],
+      "enabled": false,
+      "required_for_release": true,
+      "pass_condition": "QAbstractItemModelTester and behavior tests pass",
+      "evidence_type": "test",
+      "owning_work_item": "WI-011"
+    },
+    {
+      "id": "G-QT-GUI",
+      "order": 11,
+      "name": "Qt offscreen GUI",
+      "commands": [],
+      "environment": {
+        "QT_QPA_PLATFORM": "offscreen"
+      },
+      "enabled": false,
+      "required_for_release": true,
+      "pass_condition": "0 failures, race/lifecycle pass",
+      "evidence_type": "test",
+      "owning_work_item": "WI-019"
+    },
+    {
+      "id": "G-VISUAL",
+      "order": 12,
+      "name": "Windows visual/accessibility matrix",
+      "commands": [],
+      "enabled": false,
+      "required_for_release": true,
+      "pass_condition": "all target profiles pass",
+      "evidence_type": "screenshot_and_checklist",
+      "owning_work_item": "WI-021"
+    },
+    {
+      "id": "G-PERF",
+      "order": 13,
+      "name": "Performance/resource budgets",
+      "commands": [],
+      "enabled": false,
+      "required_for_release": true,
+      "pass_condition": "all approved budgets pass",
+      "evidence_type": "benchmark",
+      "owning_work_item": "WI-022"
+    },
+    {
+      "id": "G-SECURITY",
+      "order": 14,
+      "name": "Security and export safety",
+      "commands": [
+        [
+          "python",
+          "-m",
+          "unittest",
+          "tests.test_export_security"
+        ],
+        [
+          "python",
+          "-m",
+          "unittest",
+          "tests.test_qt_export_security"
+        ]
+      ],
+      "enabled": true,
+      "required_for_release": true,
+      "pass_condition": "TEST-SEC-001 passes: every CSV/clipboard export neutralizes the =/+/-/@ (and TAB/CR) formula-injection leads. The dependency-scan half of the original condition ('0 critical/high') is vacuous for the shipped artifact and is not asserted here -- see note; re-add a scan command the moment a runtime dependency is introduced.",
+      "evidence_type": "scan_and_test",
+      "owning_work_item": "WI-028",
+      "note": "Enabled 2026-07-16 with the REQ-032 defence it was always meant to guard. Until then the gate was an empty placeholder (commands:[]) that could neither pass nor fail, and the defence it named did not exist: exports wrote \"=cmd|' /C calc'!A0\" verbatim into CSV, so Excel/WPS evaluated it (DDE). Owner moved WI-018 -> WI-028 to match the export-security split. Two halves of the old pass_condition are deliberately NOT asserted, rather than faked: (1) '0 critical/high' -- the product declares zero runtime dependencies and the EXE bundles only the stdlib, so there is no third-party surface to scan; this becomes real the moment a runtime dependency (e.g. PySide6 per ADR-0001) lands. (2) path traversal -- no path is derived from data anywhere (CSV path comes from the OS save dialog, config from %APPDATA% plus a fixed filename, assets from code constants), so there is no surface to defend."
+    },
+    {
+      "id": "G-LICENSE",
+      "order": 15,
+      "name": "Dependency license and SBOM",
+      "commands": [],
+      "enabled": false,
+      "required_for_release": true,
+      "pass_condition": "human gate HG-LICENSE accepted",
+      "evidence_type": "human_gate",
+      "owning_work_item": "WI-025"
+    },
+    {
+      "id": "G-BUILD",
+      "order": 16,
+      "name": "Clean PyInstaller build",
+      "commands": [
+        [
+          "python",
+          "build_exe.py"
+        ]
+      ],
+      "enabled": false,
+      "required_for_release": true,
+      "pass_condition": "exit 0; dist manifest exact; Qt plugins/resources verified",
+      "evidence_type": "artifact",
+      "owning_work_item": "WI-024"
+    },
+    {
+      "id": "G-EXE",
+      "order": 17,
+      "name": "Packaged self-test and Windows smoke",
+      "commands": [
+        [
+          "dist\\股市锦囊.exe",
+          "--self-test"
+        ]
+      ],
+      "enabled": false,
+      "required_for_release": true,
+      "pass_condition": "exit 0, SELF_TEST_OK, GUI smoke pass",
+      "evidence_type": "artifact_and_screenshot",
+      "owning_work_item": "WI-024"
+    },
+    {
+      "id": "G-TRACE",
+      "order": 18,
+      "name": "Requirement/evidence traceability",
+      "commands": [
+        [
+          "python",
+          "loop/scripts/check_traceability.py",
+          "--release"
+        ]
+      ],
+      "enabled": true,
+      "required_for_release": true,
+      "pass_condition": "100% requirements and evidence",
+      "evidence_type": "report",
+      "owning_work_item": "WI-000"
+    },
+    {
+      "id": "G-RELEASE",
+      "order": 19,
+      "name": "Release decision",
+      "commands": [],
+      "enabled": false,
+      "required_for_release": true,
+      "pass_condition": "five consecutive full green runs and HG-RELEASE",
+      "evidence_type": "human_gate",
+      "owning_work_item": "WI-025"
+    },
+    {
+      "id": "G-SURFACE",
+      "order": 20,
+      "name": "Capability surface reachability",
+      "commands": [
+        [
+          "python",
+          "loop/scripts/check_capability_surface.py"
+        ]
+      ],
+      "enabled": true,
+      "required_for_release": true,
+      "pass_condition": "traceability.csv 的每条 REQ 在 product/capability-surface.json 中恰好分类一次（面向用户 or 明确无界面），且每条面向用户的能力所声明的部件与可访问名控件都能从装配好的主窗 findChildren 找到；否则退出非零并逐条列出。",
+      "evidence_type": "report",
+      "owning_work_item": "WI-031",
+      "note": "因两次真实缺陷而设，不是理论洁癖：WI-029 发现 TierSelector/EvidenceView/PositionPlanView/ComparisonView 四个部件写好且单测齐全却从未挂进任何页面、回测零调用；WI-030 又发现本金/预设从不被界面读写、条件预警连新建规则的入口都没有。两轮门禁全绿都没拦住——单元测试直接构造部件，结构上跳过了应用没做的那一步，两次都靠人工追问才发现。本门禁把那次追问变成机器动作。完整性检查是关键的一半：只验「清单里列的在不在」等于允许下一个功能压根不进清单。已做变异验证：摘掉一个页面 -> 退出码 1 并点名 REQ-005/REQ-009；新增一条未分类需求 -> 退出码 1 并点名该 REQ。"
+    }
   ]
 }

@@ -7,15 +7,15 @@
     "requirements_verified": 0,
     "acceptance_total": 16,
     "acceptance_verified": 1,
-    "work_items_total": 31,
-    "work_items_accepted": 30,
+    "work_items_total": 32,
+    "work_items_accepted": 31,
     "risks_open": 10,
     "defects_open": 0
   },
   "control_plane": {
     "tool_tests_total": 54,
     "tool_tests_passed": 52,
-    "schema_documents_validated": 22,
+    "schema_documents_validated": 23,
     "requirements_traced": 34,
     "operational_json_schema_coverage": 1.0,
     "canonical_sources_reconciled": true,

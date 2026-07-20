@@ -144,7 +144,7 @@
       "exit_code": 0,
       "artifact_path": "evidence/baselines/EVD-LOOP-004-hardening.txt",
       "sha256": "b3e2dcc0573170ee051dbe6a62f623d09b3e36e9bb37d0fdebd6b8a4e931030f",
-      "control_plane_sha256": "7f615e7c00604a340049e331e8c644fa5c0a4df18d5b9ab78d47d55322400edc",
+      "control_plane_sha256": "6945c391d2c5ba71080e27e7c0a9653ec8647b77e34a3e585f4e5217fa43202e",
       "commit": "6a75499",
       "dirty_worktree": true,
       "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",
@@ -803,6 +803,27 @@
       "started_at": null,
       "finished_at": "2026-07-20T11:30:00+09:00",
       "summary": "WI-030: config.capital and config.preset had zero references in qt_app, config.alerts was never read or written, AlertsPage had no way to create a rule and nothing called set_rules, and policy.spectrum was displayed nowhere — so persistence of 本金/档位/预设/预警 and the tier spectrum, all claimed by README, did not exist. The position calculator sized every plan against a hardcoded 100000. All five AppConfig fields now flow through one Settings owner doing read-modify-write per field; a test edits watchlist and capital in turn and asserts neither is lost, which is the clobbering bug that per-page config copies would have caused. Settings.path is required with an explicit for_user() for production, after the first version's default reached the real %APPDATA% config and a test wrote level=5 into it (restored); pages refuse construction without settings and a test asserts for_user() appears in exactly one production file. Alert rules are creatable, removable, restored next session, and handed to the controller — storing without handing over would leave monitoring inert. 812 tests, run_gates ran=7 failed=0.",
+      "verified_by": "root"
+    },
+    {
+      "id": "EVD-SURFACE-001",
+      "requirement_ids": [
+        "REQ-027"
+      ],
+      "acceptance_ids": [
+        "AC-008"
+      ],
+      "work_item_id": "WI-031",
+      "type": "gate",
+      "command": "python loop/scripts/check_capability_surface.py",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-SURFACE-001-capability-gate.txt",
+      "sha256": "7c44f15d323d1c7ce34ffaa0e45c8f82eea577cd0e20a95993010a3cce52ace2",
+      "commit": "45ac44f",
+      "environment": "Windows 11 AMD64 / Python 3.14.4 / PySide6-Essentials 6.11.1 / QT_QPA_PLATFORM=offscreen",
+      "started_at": null,
+      "finished_at": "2026-07-20T12:30:00+09:00",
+      "summary": "WI-031 / G-SURFACE: the same class of defect — implemented but not reachable — got through two full-green gate rounds (WI-029's four unmounted widgets and uncalled backtest; WI-030's unread capital/preset and the alert page with no way to create a rule). Both were found by a human asking whether a user could reach it, which is not a repeatable engineering control, and unit tests cannot catch it by construction because they instantiate the widget directly. The gate binds every requirement to a surface: each REQ must be classified exactly once as user-facing (naming a widget and its accessible-named controls) or explicitly internal with a reason, and every user-facing surface must be findable on the assembled window. SURFACE_OK requirements=34 user_facing=12 internal=22. Mutation-proven in both halves: removing the portfolio tab exits 1 naming REQ-005 and REQ-009 with the missing widget and controls, and adding an unclassified requirement exits 1 naming it. The completeness half is what makes it systematic — checking only that listed surfaces exist would let the next feature skip the list entirely.",
       "verified_by": "root"
     }
   ]

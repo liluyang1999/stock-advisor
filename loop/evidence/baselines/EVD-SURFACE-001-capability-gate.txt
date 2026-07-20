@@ -1,0 +1,30 @@
+EVD-SURFACE-001 — 能力面可达性门禁 G-SURFACE（WI-031 / REQ-027 / AC-008）
+记录时间 2026-07-20 / Windows 11 AMD64 / Python 3.14.4 / QT_QPA_PLATFORM=offscreen
+
+== 1. 为什么需要这道门禁 ==
+  同一类缺陷发生了两轮，两轮门禁都全绿：
+   WI-029：TierSelector/EvidenceView/PositionPlanView/ComparisonView 四个部件写好、单测齐全，
+           却从未挂进任何页面；backtest_signals 生产代码零调用。
+   WI-030：本金与预设从不被界面读写；条件预警连新建规则的入口都没有。
+  两次都靠人工追问「这个用户点得到吗」才发现——不可重复，也不会自己再发生。
+  单元测试结构上发现不了：它们直接构造部件，恰好跳过了应用没做的那一步。
+
+== 2. 正常运行 ==
+$ python loop/scripts/check_capability_surface.py
+SURFACE_OK requirements=34 user_facing=12 internal=22
+exit=0
+
+== 3. 变异验证：门禁必须真的会红 ==
+  变异 A：把自选/持仓页从导航里摘掉（复刻 WI-029 那类缺陷）
+    SURFACE_FAIL REQ-005: 部件 ComparisonView 没有挂进装配好的主窗——自选/持仓横向对比与浮动盈亏
+    SURFACE_FAIL REQ-005: 界面上找不到可访问名为「自选持仓表」的控件
+    SURFACE_FAIL REQ-009: 部件 PortfolioPage 没有挂进装配好的主窗——自选/本金/档位/预设/预警五项配置跨会话保留
+    SURFACE_FAIL REQ-009: 界面上找不到可访问名为「自选股代码输入」的控件
+    退出码=1
+
+  变异 B：新增一条需求但不回答它长在界面哪里
+    SURFACE_FAIL 这些需求没有回答「它长在界面的哪里」（要么写进 capabilities，要么在 internal 里写明没有界面的理由）：['REQ-099']
+    退出码=1
+
+== 4. 还原后 ==
+SURFACE_OK requirements=34 user_facing=12 internal=22
