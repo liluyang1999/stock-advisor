@@ -1,0 +1,37 @@
+EVD-VER-001 — 版本号单一真源与两段式（CHG-004 / VERSION_AND_CHANGE_CONTROL.md）
+记录时间 2026-07-20 / 提交 9137631 / Windows 11 AMD64 / Python 3.14.4
+
+== 1. 为什么真源是包而不是 pyproject（实测，非选择偏好）==
+$ grep -c "build-system" pyproject.toml
+0
+0（无 [build-system]：不可构建 wheel、从不被 pip 安装）
+$ python -c "importlib.metadata.version(\"stock-advisor\")"
+PackageNotFoundError —— 无 dist-info，运行期取不到；冻结成 EXE 后同样取不到
+
+== 2. 收敛后的状态 ==
+  唯一真源 stock_advisor.__version__ = '1.0'
+  pyproject 静态 version 存在: False | dynamic = ['version']
+
+== 3. 守卫测试 ==
+$ python -m unittest tests.test_version_single_source
+Ran 8 tests in 0.062s
+
+OK
+
+== 4. 变异验证：把重复字面量塞回 pyproject，守卫必须报警 ==
+AssertionError: 'version' unexpectedly found in {'name': 'stock-advisor', 'dynamic': ['version'], 'version': '1.0', 'description': '股市锦囊 — an offline, rule-based A-share desktop decision-support tool.', 'requires-python': '>=3.14', 'dependencies': ['PySide6-Essentials==6.11.1']} : pyproject 又抄了一份版本号字面量；真源是 stock_advisor.__version__，这里应当只用 dynamic 引用它
+FAILED (failures=1)
+  （已还原）
+
+== 5. 工具链不受 dynamic 影响 ==
+  ruff: 0
+  pyright errors: 0
+
+== 6. 全量测试与门禁 ==
+Ran 782 tests in 11.760s
+
+OK
+RUN_GATES_FAIL ran=7 failed=1 skipped=0
+  说明：这次运行发生在 loop/ 已改动但尚未再基线的中间态，G-LOOP 因控制面摘要不符而红——
+  属预期，不是产品问题。再基线（EVD-LOOP-004 -> 9f458f34）后复跑：
+  RUN_GATES_OK ran=7 failed=0 skipped=0

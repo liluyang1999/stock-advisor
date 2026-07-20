@@ -22,13 +22,13 @@
     "independent_verification": true
   },
   "tests": {
-    "modules": 67,
-    "methods": 775,
-    "passed": 775,
+    "modules": 69,
+    "methods": 782,
+    "passed": 782,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
-    "duration_seconds": 12.194,
+    "duration_seconds": 11.76,
     "tk_specific": 0,
     "qt_specific": 167
   },

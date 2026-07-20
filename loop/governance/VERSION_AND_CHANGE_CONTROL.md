@@ -23,7 +23,9 @@
 
 ## 应用版本号（大版本.小版本）
 
-- `src/stock_advisor/__init__.py::__version__` 是应用对外版本号的唯一权威字段，采用**两段式 `MAJOR.MINOR`（大版本.小版本）**，不使用三段式 PATCH 位（当前 `1.0`，见 `CHANGELOG.md` 的追溯记录）。这是从 SemVer 裁剪出的两段方案：保留"破坏性=大版本、兼容变更=小版本"的判据，把原 PATCH 级改动并入小版本。
+- `src/stock_advisor/__init__.py::__version__` 是应用对外版本号的唯一权威字段，采用**两段式 `MAJOR.MINOR`（大版本.小版本）**，不使用三段式 PATCH 位（当前 `1.0`，见 `CHANGELOG.md`）。这是从 SemVer 裁剪出的两段方案：保留"破坏性=大版本、兼容变更=小版本"的判据，把原 PATCH 级改动并入小版本。
+- **为什么真源是包而不是 `pyproject.toml`。** PEP 621 的 `[project].version` 是通行做法，前提是这个项目会被安装——运行期靠 `importlib.metadata.version()` 读回来。本项目没有 `[build-system]`，从不被 pip 安装，因此没有 dist-info，该调用在开发期和冻结后的 EXE 里都抛 `PackageNotFoundError`（实测）。运行期唯一取得到的版本号只能来自被 import 的模块，所以真源必须是模块。`pyproject.toml` 用 PEP 621 的 `dynamic = ["version"]` 声明"版本不静态写在这里"——这是标准里专为此准备的表达，而不是再抄一份字面量。
+- **不允许出现第二处版本号字面量。** `tests/test_version_single_source.py` 机器强制：`pyproject.toml` 不得有静态 `[project].version`、`src/` 下 `__version__` 只能被赋值一次、发布清单与 SBOM 报告的版本必须等于运行期的值、`CHANGELOG.md` 必须存在且其发布标题同样是两段式。曾经的写法是 `pyproject.toml` 抄一份并在注释里写 "mirrors ..."，靠人手同步——那种约定不会报错，只会某天悄悄对不上。
 - **MAJOR（大版本）**：破坏用户可观察的行为合同或持久化兼容性——例如移除/重命名一个现有功能页面、`AppConfig.schema_version`（`ADR-0009`）发生不兼容跃迁且旧配置文件无法被 `parse_config()` 隐式兼容解析、或 EXE 命令行/`--self-test` 合同发生不兼容变化。
 - **MINOR（小版本）**：其余所有面向用户的发布——新增向后兼容的用户可见能力（新增一个 `REQ-*`、新增一个筛选预设、新增一个工作台模块），以及缺陷修复、用户可感知的性能/可观测性改进，均不破坏任何既有行为。三段式里原属 PATCH 的修复类改动，在两段式下并入小版本。
 - 纯内部、用户不可观察的改动（行为保持的重构、不改变任何用户合同的内部优化）**不单独触发**应用版本变化，随下一个小版本一并发布，仅记录在 `registers/changes.jsonl`。
