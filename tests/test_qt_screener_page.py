@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from qt_test_helpers import qt_app, requires_qt, wait_for
+from qt_test_helpers import qt_app, requires_qt, temp_settings, wait_for
 from test_screener import snap
 
 from stock_advisor.domain.models import CORE_DISCLAIMER
@@ -54,7 +54,7 @@ class ScreenerPageTests(unittest.TestCase):
     def _page(self):
         controller = ScreenerController(_FakeScreeningProvider())
         self.addCleanup(controller.shutdown)
-        page = ScreenerPage(controller)
+        page = ScreenerPage(controller, temp_settings(self))
         self.addCleanup(page.deleteLater)
         return page, controller
 
@@ -99,7 +99,7 @@ class ScreenerPageTests(unittest.TestCase):
 
         controller = ScreenerController(_PartialProvider())
         self.addCleanup(controller.shutdown)
-        page = ScreenerPage(controller)
+        page = ScreenerPage(controller, temp_settings(self))
         self.addCleanup(page.deleteLater)
         page._on_screen()
         wait_for(controller.screen_finished)

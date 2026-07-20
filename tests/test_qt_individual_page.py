@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from qt_test_helpers import QtWidgets, qt_app, requires_qt, wait_for
+from qt_test_helpers import QtWidgets, qt_app, requires_qt, temp_settings, wait_for
 from test_engine import FakeProvider
 
 from stock_advisor.domain.models import CORE_DISCLAIMER
@@ -29,7 +29,7 @@ class IndividualPageTests(unittest.TestCase):
     def _page(self, provider):
         controller = AnalysisController(provider)
         self.addCleanup(controller.shutdown)
-        page = IndividualPage(controller)
+        page = IndividualPage(controller, temp_settings(self))
         self.addCleanup(page.deleteLater)
         return page, controller
 

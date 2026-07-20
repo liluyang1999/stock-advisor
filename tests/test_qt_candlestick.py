@@ -21,7 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from qt_test_helpers import QtGui, QtWidgets, qt_app, requires_qt
+from qt_test_helpers import QtGui, QtWidgets, qt_app, requires_qt, temp_settings
 
 from stock_advisor.domain import chart as geometry
 from stock_advisor.domain.models import DailyBar
@@ -267,7 +267,7 @@ class IndividualPageChartTests(unittest.TestCase):
 
         self.controller = AnalysisController(FakeProvider())
         self.addCleanup(self.controller.shutdown)
-        self.page = IndividualPage(self.controller)
+        self.page = IndividualPage(self.controller, temp_settings(self))
 
     def _make_outcome(self, code: str, bars: list[DailyBar], ok: bool = True):
         from stock_advisor.domain.symbols import normalize_symbol

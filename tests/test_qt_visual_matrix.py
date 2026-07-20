@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from qt_test_helpers import QtWidgets, qt_app, requires_qt
+from qt_test_helpers import QtWidgets, qt_app, requires_qt, temp_settings
 from test_engine import FakeProvider
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -40,11 +40,13 @@ if QtWidgets is not None:
 _SIZES = [(1000, 680), (1280, 800), (1536, 960)]
 
 
-def _page_factories():
+def _page_factories(case):
+    """页面工厂。要 case 是因为 Settings 必须指向临时配置——页面不再有"缺省读用户真实配置"这条路。"""
+    settings = temp_settings(case)
     return {
-        "individual": lambda: IndividualPage(AnalysisController(FakeProvider())),
+        "individual": lambda: IndividualPage(AnalysisController(FakeProvider()), settings),
         "evidence": lambda: EvidencePage(FundFlowController(FakeProvider())),
-        "screener": lambda: ScreenerPage(ScreenerController(FakeProvider())),
+        "screener": lambda: ScreenerPage(ScreenerController(FakeProvider()), settings),
         "alerts": lambda: AlertsPage(AlertController(FakeProvider())),
     }
 
@@ -67,7 +69,7 @@ class VisualMatrixTests(unittest.TestCase):
         return host
 
     def test_no_page_clips_at_any_target_size(self):
-        for name, factory in _page_factories().items():
+        for name, factory in _page_factories(self).items():
             for width, height in _SIZES:
                 with self.subTest(page=name, size=f"{width}x{height}"):
                     page = factory()
@@ -92,7 +94,7 @@ class VisualMatrixTests(unittest.TestCase):
 
     def test_captures_the_full_screenshot_matrix(self):
         captured = 0
-        for name, factory in _page_factories().items():
+        for name, factory in _page_factories(self).items():
             for width, height in _SIZES:
                 page = factory()
                 self._host(page, (width, height))
@@ -100,7 +102,9 @@ class VisualMatrixTests(unittest.TestCase):
                 self.assertTrue(page.grab().save(str(path)), f"截图保存失败：{path}")
                 self.assertGreater(path.stat().st_size, 0)
                 captured += 1
-        self.assertEqual(captured, len(_page_factories()) * len(_SIZES))  # 4 页 × 3 尺寸 = 12 张
+        self.assertEqual(
+            captured, len(_page_factories(self)) * len(_SIZES)
+        )  # 4 页 × 3 尺寸 = 12 张
 
 
 if __name__ == "__main__":

@@ -23,12 +23,13 @@ from .pages.evidence_page import EvidencePage
 from .pages.individual_page import IndividualPage
 from .pages.portfolio_page import PortfolioPage
 from .pages.screener_page import ScreenerPage
+from .settings import Settings
 
 
 class AppWindow(MainWindow):
     """主窗 + 五页导航。持有控制器，关闭时负责把它们排空。"""
 
-    def __init__(self, provider, parent: QtWidgets.QWidget | None = None) -> None:
+    def __init__(self, provider, parent: QtWidgets.QWidget | None = None, settings=None) -> None:
         super().__init__(parent)
         self.analysis = AnalysisController(provider, self)
         self.screener = ScreenerController(provider, self)
@@ -36,12 +37,14 @@ class AppWindow(MainWindow):
         self.fund_flow = FundFlowController(provider, self)
         # 自选页自带一份分析控制器：与个股页共用会让两页的信号互相串扰，一页的取消也会打断另一页。
         self.portfolio = AnalysisController(provider, self)
+        # 进程内唯一的配置持有者：各页共用，避免各存各的互相覆盖（REQ-009）。
+        self.settings = settings if settings is not None else Settings.for_user()
 
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.setAccessibleName("功能页导航")
-        self.tabs.addTab(IndividualPage(self.analysis), "个股分析")
-        self.tabs.addTab(ScreenerPage(self.screener), "全市场选股")
-        self.tabs.addTab(PortfolioPage(self.portfolio), "自选 / 持仓")
+        self.tabs.addTab(IndividualPage(self.analysis, self.settings), "个股分析")
+        self.tabs.addTab(ScreenerPage(self.screener, self.settings), "全市场选股")
+        self.tabs.addTab(PortfolioPage(self.portfolio, self.settings), "自选 / 持仓")
         self.tabs.addTab(AlertsPage(self.alerts), "条件预警")
         self.tabs.addTab(EvidencePage(self.fund_flow), "个股资金流")
         self.set_page(self.tabs)
@@ -57,12 +60,12 @@ class AppWindow(MainWindow):
 
 
 def build_app(
-    argv: list[str] | None = None, provider=None
+    argv: list[str] | None = None, provider=None, settings=None
 ) -> tuple[QtWidgets.QApplication, AppWindow]:
     """构造完整应用（QApplication + 装好五页的主窗）。返回二元组，便于测试不进事件循环。"""
     app, shell = build_application(argv)
     shell.deleteLater()  # build_application 造的是空壳；这里换成装好页的 AppWindow
-    window = AppWindow(provider if provider is not None else EastmoneyProvider())
+    window = AppWindow(provider if provider is not None else EastmoneyProvider(), settings=settings)
     return app, window
 
 

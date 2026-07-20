@@ -16,13 +16,15 @@ from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from ...domain import money
 from ...domain.backtest import backtest_signals
 from ...domain.models import CORE_DISCLAIMER, AnalysisResult, DailyBar, Measurement
-from ...domain.policy import position_plan
+from ...domain.policy import flip_hint, position_plan, spectrum
 from ...services.batch import BatchProgress, BatchReport
 from ...services.workflow import AnalysisOutcome
 from ...ui.view_format import format_results_as_csv, format_results_for_clipboard
 from ..controllers.analysis_controller import AnalysisController
+from ..settings import Settings
 from ..widgets.candlestick_chart import CandlestickChart
 from ..widgets.evidence_view import EvidenceView
 from ..widgets.position_plan import PositionPlanView
@@ -36,10 +38,14 @@ _DEFAULT_CAPITAL = Decimal("100000.00")
 
 class IndividualPage(QtWidgets.QWidget):
     def __init__(
-        self, controller: AnalysisController, parent: QtWidgets.QWidget | None = None
+        self,
+        controller: AnalysisController,
+        settings: Settings,
+        parent: QtWidgets.QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._controller = controller
+        self._settings = settings
         self._results: list[AnalysisResult] = []
         # 每只票的日线与测量都留在页面里：换行换图、切档重判，两者都不必重新联网
         # （REQ-003 切档不联网 / REQ-004 / WI-027）。
@@ -64,9 +70,17 @@ class IndividualPage(QtWidgets.QWidget):
         row.addWidget(self.stop_button)
         layout.addLayout(row)
 
-        # 决策强度：切档只对缓存的 Measurement 重判，不重新联网（REQ-003）。
+        # 决策强度 + 本金。两者都跨会话保留（REQ-009）：档位恢复上次选择，本金喂给仓位计算器。
+        tier_row = QtWidgets.QHBoxLayout()
         self.tier = TierSelector()
-        layout.addWidget(self.tier)
+        self.tier.set_level(self._settings.config.level)
+        tier_row.addWidget(self.tier)
+        tier_row.addWidget(QtWidgets.QLabel("本金"))
+        self.capital_input = QtWidgets.QLineEdit(f"{self._capital():.2f}")
+        self.capital_input.setAccessibleName("仓位计算本金输入")
+        self.capital_input.setMaximumWidth(140)
+        tier_row.addWidget(self.capital_input)
+        layout.addLayout(tier_row)
 
         self.model, self.table = make_readonly_table(_HEADERS)
         self.table.setAccessibleName("个股分析结果表")
@@ -81,8 +95,13 @@ class IndividualPage(QtWidgets.QWidget):
         side = QtWidgets.QWidget()
         side_layout = QtWidgets.QVBoxLayout(side)
         side_layout.setContentsMargins(0, 0, 0, 0)
+        # 决策强度光谱：同一只票五档结论一眼对照 + 在哪一档翻转（REQ-003 的对照视图）。
+        self.spectrum_label = QtWidgets.QLabel("—")
+        self.spectrum_label.setWordWrap(True)
+        self.spectrum_label.setAccessibleName("决策强度光谱")
         self.evidence = EvidenceView()
         self.position = PositionPlanView()
+        side_layout.addWidget(self.spectrum_label)
         side_layout.addWidget(self.evidence)
         side_layout.addWidget(self.position)
         details.addWidget(side)
@@ -118,6 +137,8 @@ class IndividualPage(QtWidgets.QWidget):
         if selection is not None:
             selection.currentRowChanged.connect(self._on_row_changed)
         self.tier.results_changed.connect(self._on_tier_results)
+        self.tier.combo.currentIndexChanged.connect(self._on_tier_persist)
+        self.capital_input.editingFinished.connect(self._on_capital_changed)
 
     def _on_row_changed(self, current: QtCore.QModelIndex, previous: QtCore.QModelIndex) -> None:
         """选中行切换时同步 K 线、证据与仓位。失败行没有数据，各视图如实清空，不沿用上一只的内容。"""
@@ -147,7 +168,11 @@ class IndividualPage(QtWidgets.QWidget):
             self.position.clear()
             return
         level = self.tier.current_level()
-        self.position.show_plan(position_plan(measurement, level, _DEFAULT_CAPITAL))
+        self.position.show_plan(position_plan(measurement, level, self._capital()))
+        # 五档一眼对照 + 在哪一档翻转；不重新联网，同样只对缓存的 Measurement 重判。
+        cells = spectrum(measurement, level)
+        parts = [("▸" if cell.is_current else "·") + f"{cell.name}:{cell.action}" for cell in cells]
+        self.spectrum_label.setText("　".join(parts) + "\n" + flip_hint(cells))
         # 可信度回测：同股历史信号事后复盘，逐日只用当日及之前数据（REQ-021 无未来泄漏）。
         # 没有日线也照样交给引擎——它会返回"历史样本不足"的说明。跳过不显示等于让用户对着空白
         # 猜发生了什么，而"说不出结论"本身就是要如实告诉他的结论。
@@ -192,6 +217,32 @@ class IndividualPage(QtWidgets.QWidget):
         self.chart.clear()
         self.evidence.clear()
         self.position.clear()
+        self.spectrum_label.setText("—")
+
+    def _capital(self) -> Decimal:
+        """本金：优先用输入框里的当前值，回落到配置，再回落到默认。非法输入不改动已有值。"""
+        raw = getattr(self, "capital_input", None)
+        if raw is not None:
+            parsed = money.positive_money(raw.text())
+            if parsed is not None:
+                return parsed
+        return self._settings.config.capital or _DEFAULT_CAPITAL
+
+    def _on_tier_persist(self) -> None:
+        """档位跨会话保留（REQ-009）。存盘失败如实提示，不假装存上了。"""
+        if not self._settings.update(level=self.tier.current_level()):
+            self.status.setText(f"设置保存失败（配置文件不可写）　|　{CORE_DISCLAIMER}")
+
+    def _on_capital_changed(self) -> None:
+        """本金改了：落盘并按新本金重算当前选中票的仓位。非法输入回填为当前有效值。"""
+        capital = money.positive_money(self.capital_input.text())
+        if capital is None:
+            self.capital_input.setText(f"{self._capital():.2f}")
+            return
+        self.capital_input.setText(f"{capital:.2f}")
+        if not self._settings.update(capital=capital):
+            self.status.setText(f"设置保存失败（配置文件不可写）　|　{CORE_DISCLAIMER}")
+        self._show_details_for(self._current_code())
 
     def _on_analyze(self) -> None:
         self.model.removeRows(0, self.model.rowCount())

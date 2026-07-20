@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from qt_test_helpers import QtCore, QtWidgets, qt_app, requires_qt
+from qt_test_helpers import QtCore, QtWidgets, qt_app, requires_qt, temp_settings
 from test_engine import FakeProvider
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -61,9 +61,9 @@ class AccessibilityAuditTests(unittest.TestCase):
 
     def _pages(self):
         pages = [
-            IndividualPage(AnalysisController(FakeProvider())),
+            IndividualPage(AnalysisController(FakeProvider()), temp_settings(self)),
             EvidencePage(FundFlowController(FakeProvider())),
-            ScreenerPage(ScreenerController(FakeProvider())),
+            ScreenerPage(ScreenerController(FakeProvider()), temp_settings(self)),
             AlertsPage(AlertController(FakeProvider())),
         ]
         for page in pages:

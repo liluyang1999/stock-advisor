@@ -18,6 +18,7 @@ from ...services import store
 from ...services.batch import BatchReport
 from ...services.workflow import AnalysisOutcome
 from ..controllers.analysis_controller import AnalysisController
+from ..settings import Settings
 from ..widgets.comparison_view import ComparisonView
 from ..widgets.table_utils import make_readonly_table
 
@@ -26,11 +27,14 @@ _HEADERS = ["代码", "成本", "股数"]
 
 class PortfolioPage(QtWidgets.QWidget):
     def __init__(
-        self, controller: AnalysisController, parent: QtWidgets.QWidget | None = None
+        self,
+        controller: AnalysisController,
+        settings: Settings,
+        parent: QtWidgets.QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._controller = controller
-        self._config = store.load_config()
+        self._settings = settings
         self._outcomes: dict[str, AnalysisOutcome] = {}
         self._build_ui()
         self._connect()
@@ -101,8 +105,7 @@ class PortfolioPage(QtWidgets.QWidget):
         )
         # 同一只票再次加入视为更新成本/股数，而不是产生第二行。
         kept = [w for w in self._config.watchlist if w.code.lower() != code.lower()]
-        self._config = _with_watchlist(self._config, [*kept, item])
-        self._persist()
+        self._persist([*kept, item])
         self.code_input.clear()
         self.cost_input.clear()
         self.shares_input.clear()
@@ -116,17 +119,21 @@ class PortfolioPage(QtWidgets.QWidget):
         if cell is None:
             return
         code = cell.text()
-        self._config = _with_watchlist(
-            self._config, [w for w in self._config.watchlist if w.code != code]
-        )
-        self._persist()
+        self._persist([w for w in self._config.watchlist if w.code != code])
         self._outcomes.pop(code, None)
         self._reload_table()
         self._render_comparison()
 
-    def _persist(self) -> None:
-        """存盘失败不该让界面崩，也不该假装成功：save_config 返回 False 时如实提示。"""
-        if not store.save_config(None, self._config):
+    @property
+    def _config(self) -> store.AppConfig:
+        return self._settings.config
+
+    def _persist(self, watchlist: list[store.WatchItem]) -> None:
+        """经共享 Settings 做读-改-写：只动 watchlist，不会把别的页刚存的本金/档位覆盖掉。
+
+        存盘失败不该让界面崩，也不该假装成功：update 返回 False 时如实提示。
+        """
+        if not self._settings.update(watchlist=watchlist):
             self.status.setText(f"自选保存失败（配置文件不可写）　|　{CORE_DISCLAIMER}")
 
     def _reload_table(self) -> None:
@@ -188,12 +195,6 @@ class PortfolioPage(QtWidgets.QWidget):
         missing = len(self._outcomes) - shown
         note = f"对比 {shown} 只" + (f"，{missing} 只取数失败未纳入" if missing else "")
         self.status.setText(f"{note}　|　{CORE_DISCLAIMER}")
-
-
-def _with_watchlist(config: store.AppConfig, watchlist: list[store.WatchItem]) -> store.AppConfig:
-    import dataclasses
-
-    return dataclasses.replace(config, watchlist=watchlist)
 
 
 def _optional_int(text: str) -> int | None:

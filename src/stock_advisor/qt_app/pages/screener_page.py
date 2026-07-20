@@ -13,6 +13,7 @@ from ...domain.models import CORE_DISCLAIMER
 from ...domain.presets import PRESETS
 from ...services.workflow import Recommendation, ScreenReport
 from ..controllers.screener_controller import ScreenerController
+from ..settings import Settings
 from ..widgets.table_utils import make_readonly_table
 
 _HEADERS = ["排名", "代码", "名称", "最新价", "涨跌幅", "筛选分", "板块"]
@@ -20,10 +21,14 @@ _HEADERS = ["排名", "代码", "名称", "最新价", "涨跌幅", "筛选分",
 
 class ScreenerPage(QtWidgets.QWidget):
     def __init__(
-        self, controller: ScreenerController, parent: QtWidgets.QWidget | None = None
+        self,
+        controller: ScreenerController,
+        settings: Settings,
+        parent: QtWidgets.QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._controller = controller
+        self._settings = settings
         self._build_ui()
         self._connect()
 
@@ -36,6 +41,10 @@ class ScreenerPage(QtWidgets.QWidget):
         self.preset_combo.setAccessibleName("筛选预设选择")  # REQ-017 可访问名
         for preset in PRESETS:
             self.preset_combo.addItem(preset.name, preset.key)
+        # 预设跨会话保留（REQ-009）：恢复上次选择，找不到就留在第一个。
+        restored = self.preset_combo.findData(self._settings.config.preset)
+        if restored >= 0:
+            self.preset_combo.setCurrentIndex(restored)
         row.addWidget(self.preset_combo)
         row.addWidget(QtWidgets.QLabel("数量"))
         self.top_n = QtWidgets.QSpinBox()
@@ -59,7 +68,14 @@ class ScreenerPage(QtWidgets.QWidget):
         self.status = QtWidgets.QLabel(CORE_DISCLAIMER)
         layout.addWidget(self.status)
 
+    def _on_preset_changed(self) -> None:
+        """预设改了就存盘。存盘失败如实提示，不假装存上了。"""
+        key = self.preset_combo.currentData()
+        if key and not self._settings.update(preset=key):
+            self.status.setText(f"设置保存失败（配置文件不可写）　|　{CORE_DISCLAIMER}")
+
     def _connect(self) -> None:
+        self.preset_combo.currentIndexChanged.connect(self._on_preset_changed)
         self.screen_button.clicked.connect(self._on_screen)
         self.stop_button.clicked.connect(self._controller.cancel)
         self._controller.recommendation.connect(self._append_row)

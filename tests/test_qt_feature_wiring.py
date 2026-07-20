@@ -26,6 +26,7 @@ if QtWidgets is not None:
     from stock_advisor.qt_app.controllers.analysis_controller import AnalysisController
     from stock_advisor.qt_app.pages.individual_page import IndividualPage
     from stock_advisor.qt_app.pages.portfolio_page import PortfolioPage
+    from stock_advisor.qt_app.settings import Settings
 
 
 def _outcome(code: str):
@@ -44,10 +45,16 @@ class IndividualPageWiringTests(unittest.TestCase):
     """个股页：切档、证据、仓位三件事必须随选中行与档位联动。"""
 
     def setUp(self):
+        import tempfile
+
         self.app = qt_app()
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        # Settings 的 path 是必填的，正是为了让"碰真实用户配置"不可能悄悄发生。
+        self.settings = Settings(Path(self._tmp.name) / "config.json")
         self.controller = AnalysisController(FakeProvider())
         self.addCleanup(self.controller.shutdown)
-        self.page = IndividualPage(self.controller)
+        self.page = IndividualPage(self.controller, self.settings)
         self.outcomes = [_outcome("600000"), _outcome("600519")]
         for outcome in self.outcomes:
             self.page._append_row(outcome)
@@ -118,12 +125,85 @@ class IndividualPageWiringTests(unittest.TestCase):
             f"回测展示缺少无未来泄漏/样本说明：{text!r}",
         )
 
+    def test_spectrum_shows_all_five_tiers_and_the_flip_point(self):
+        """README 宣称的"决策强度光谱：同一只股票五档结论一眼对照"。"""
+        self.page.table.setCurrentIndex(self.page.model.index(0, 0))
+
+        text = self.page.spectrum_label.text()
+
+        for name in ("稳健", "稳进", "标准", "积极", "激进"):
+            self.assertIn(name, text, f"光谱缺少 {name} 档")
+        self.assertIn("▸", text, "光谱没有标出当前档")
+
+    def test_tier_choice_is_persisted_for_the_next_session(self):
+        """REQ-009：档位跨会话保留。"""
+        self.page.tier.set_level(4)
+
+        from stock_advisor.services import store
+
+        self.assertEqual(store.load_config(self.settings._path).level, 4)
+
+    def test_capital_is_persisted_and_feeds_the_position_calculator(self):
+        self.page.capital_input.setText("250000")
+        self.page._on_capital_changed()
+
+        from stock_advisor.services import store
+
+        self.assertEqual(store.load_config(self.settings._path).capital, Decimal("250000.00"))
+        self.assertEqual(self.page.capital_input.text(), "250000.00")  # 回填为规范形式
+
+    def test_invalid_capital_is_rejected_without_destroying_the_current_value(self):
+        """乱填不该把本金变成 0——那会让仓位计算器给出"可买 0 股"的假结论。"""
+        self.page.capital_input.setText("abc")
+
+        self.page._on_capital_changed()
+
+        self.assertEqual(self.page._capital(), Decimal("100000.00"))
+        self.assertEqual(self.page.capital_input.text(), "100000.00")
+
     def test_a_new_analysis_clears_the_detail_panes(self):
         """上一轮的证据/仓位不能留在新一轮的空表下面。"""
         self.page._on_analyze()
 
         self.assertEqual(self.page.chart.bar_count(), 0)
         self.assertEqual(self.page.evidence.factor_model.rowCount(), 0)
+
+
+@requires_qt
+class SettingsIsolationTests(unittest.TestCase):
+    """页面拿不到"默认的真实用户配置"——这条曾经真的让测试写进了 %APPDATA%。"""
+
+    def setUp(self):
+        self.app = qt_app()
+
+    def test_pages_refuse_to_be_built_without_explicit_settings(self):
+        controller = AnalysisController(FakeProvider())
+        self.addCleanup(controller.shutdown)
+
+        for page_type in (IndividualPage, PortfolioPage):
+            with self.subTest(page=page_type.__name__), self.assertRaises(TypeError):
+                page_type(controller)  # type: ignore[call-arg]
+
+    def test_settings_requires_an_explicit_path(self):
+        """没有 Settings() 这种写法：缺省值就是"悄悄碰真实数据"的那条路径。"""
+        with self.assertRaises(TypeError):
+            Settings()  # type: ignore[call-arg]
+
+    def test_only_the_assembly_reaches_the_real_user_config(self):
+        """生产代码里 `Settings.for_user()` 只应出现在装配处一处。
+
+        它是唯一通往用户真实 %APPDATA% 配置的入口。多一处调用就多一个绕开注入、直接读写用户数据的
+        地方，也就多一条测试会污染真实配置的路——这正是本轮真实发生过的事。
+        """
+        qt_app_dir = Path(__file__).resolve().parents[1] / "src" / "stock_advisor" / "qt_app"
+        callers = []
+        for path in sorted(qt_app_dir.rglob("*.py")):
+            if path.name == "settings.py":  # 定义处本身不算调用处
+                continue
+            if "for_user()" in path.read_text(encoding="utf-8"):
+                callers.append(path.relative_to(qt_app_dir).as_posix())
+
+        self.assertEqual(callers, ["app.py"], f"这些文件也在读真实用户配置：{callers}")
 
 
 @requires_qt
@@ -142,9 +222,10 @@ class PortfolioPageWiringTests(unittest.TestCase):
         os.environ["STOCK_ADVISOR_CONFIG"] = str(self._config)
         self.addCleanup(lambda: os.environ.pop("STOCK_ADVISOR_CONFIG", None))
 
+        self.settings = Settings(self._config)
         self.controller = AnalysisController(FakeProvider())
         self.addCleanup(self.controller.shutdown)
-        self.page = PortfolioPage(self.controller)
+        self.page = PortfolioPage(self.controller, self.settings)
 
     def _add(self, code: str, cost: str = "", shares: str = "") -> None:
         self.page.code_input.setText(code)
@@ -209,6 +290,18 @@ class PortfolioPageWiringTests(unittest.TestCase):
         self.page.refresh()
 
         self.assertIn("自选为空", self.page.status.text())
+
+    def test_watchlist_and_capital_edits_do_not_clobber_each_other(self):
+        """两页共用一份 Settings 的理由：各存各的整份配置会互相覆盖，用户会静默丢数据。"""
+        from stock_advisor.services import store
+
+        self._add("600000", "10.00", "100")
+        self.settings.update(capital=Decimal("777000.00"))  # 冒充个股页改本金
+        self._add("600519", "20.00", "200")  # 自选页再次存盘
+
+        reloaded = store.load_config(self._config)
+        self.assertEqual(reloaded.capital, Decimal("777000.00"), "自选存盘把本金覆盖掉了")
+        self.assertEqual(len(reloaded.watchlist), 2)
 
     def test_failed_symbols_are_excluded_and_reported(self):
         """取数失败的票不该以一行空数据混进对比表，但用户要知道少了几只。"""

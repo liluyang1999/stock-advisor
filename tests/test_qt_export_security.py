@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from qt_test_helpers import QtWidgets, qt_app, requires_qt
+from qt_test_helpers import QtWidgets, qt_app, requires_qt, temp_settings
 from test_engine import FakeProvider
 
 from stock_advisor.data.sample_data import make_sample_analysis
@@ -44,7 +44,7 @@ class IndividualPageExportSecurityTests(unittest.TestCase):
     def _page_with_hostile_results(self):
         controller = AnalysisController(FakeProvider())
         self.addCleanup(controller.shutdown)
-        page = IndividualPage(controller)
+        page = IndividualPage(controller, temp_settings(self))
         self.addCleanup(page.deleteLater)
         # 直接注入含恶意名称的结果，聚焦验证导出方法本身的中和路由（批量→provider 路径另有测试覆盖）。
         page._results = [_hostile_result()]
