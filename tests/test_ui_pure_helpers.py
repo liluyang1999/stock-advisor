@@ -1,23 +1,20 @@
-"""Tests for the UI polish pass: window centering, opacity, scrollbar/card
-consistency, factor-score coloring, mode-aware shortcuts and input validation.
+"""ui/ 纯helper 契约（不依赖 Tk）：布局几何、堆叠文本、模式派发、因子着色、输入校验。
 
-Pure helpers are tested without Tk; widget wiring uses a headless (withdrawn) root.
+由 WI-023 从原 test_ui_polish.py 抽出——那个文件随 Tk 生产层一并删除，但这些断言验证的是
+框架无关的纯函数（ui/layout.py、ui/theme.py 常量、ui/view_format.py、domain/input_validate），
+在 PySide6 下继续成立，故按 WI-002 的 pure_preserved 分类保留下来。
 """
 
 import sys
-import tkinter as tk
 import unittest
 from pathlib import Path
-from tkinter import ttk
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.data.sample_data import make_sample_recommendation
 from stock_advisor.domain.input_validate import is_partial_number, validate_tunable
 from stock_advisor.domain.presets import get_preset
-from stock_advisor.ui.app import StockAdvisorApp
 from stock_advisor.ui.layout import (  # noqa: E402
     active_mode_action,
     choose_centering_screen_size,
@@ -33,20 +30,15 @@ from stock_advisor.ui.layout import (  # noqa: E402
 from stock_advisor.ui.theme import (  # noqa: E402
     ACCENT,
     CARD_BG,
-    CARD_BORDER,
-    CHILD_WINDOW_WORKAREA_MARGIN,
     COMMAND_BG,
     COMMAND_INK,
     COMMAND_MUTED_INK,
-    COMMAND_SELECTED_BG,
-    CONTROL_BG,
     DANGER_COLOR,
     INK,
     MUTED_INK,
     NEG_COLOR,
     PAGE_BG,
     POS_COLOR,
-    WINDOW_ALPHA,
 )
 from stock_advisor.ui.view_format import detail_line_tags
 
@@ -331,12 +323,6 @@ class StackedTextLayoutTests(unittest.TestCase):
         self.assertEqual(stacked_text_y(top=5, line_height=99, count=1), [5])
 
 
-class OpacityTests(unittest.TestCase):
-    def test_window_is_fully_opaque_for_performance(self):
-        # 用户要求不透明 + 顾及性能：不创建分层窗口
-        self.assertGreaterEqual(WINDOW_ALPHA, 1.0)
-
-
 class ModeAwareShortcutTests(unittest.TestCase):
     def test_individual_tab_runs_stock_analysis(self):
         self.assertEqual(active_mode_action(0), "analyze")
@@ -397,323 +383,6 @@ class PartialNumberValidationTests(unittest.TestCase):
     def test_rejects_non_numeric_and_malformed(self):
         for text in ("abc", "1a", "1.2.3", "+1", "1,2", "1 2"):
             self.assertFalse(is_partial_number(text, allow_negative=True), text)
-
-
-class WidgetWiringTests(unittest.TestCase):
-    def setUp(self):
-        self.root = tk.Tk()
-        self.root.withdraw()
-        self.app = StockAdvisorApp(self.root)
-        self.root.update_idletasks()
-
-    def tearDown(self):
-        self.root.destroy()
-
-    def test_child_minimum_falls_back_to_root_frame_extents(self):
-        child = tk.Toplevel(self.root)
-        original_work_area = self.app._screen_work_area
-        original_frame_extents = self.app._frame_extents
-        original_scale = self.app._ui_scale
-        try:
-            self.app._ui_scale = 2.5
-            self.app._screen_work_area = lambda _window: (0, 0, 1920, 1040)
-            self.app._frame_extents = lambda window: (0, 0) if window is child else (16, 39)
-
-            self.app._apply_child_minimum(child, (900, 500))
-
-            self.assertEqual(
-                child.minsize(),
-                compute_scaled_minimum(
-                    1920,
-                    1040,
-                    2.5,
-                    900,
-                    500,
-                    margin=CHILD_WINDOW_WORKAREA_MARGIN,
-                    frame_width=16,
-                    frame_height=39,
-                ),
-            )
-        finally:
-            self.app._screen_work_area = original_work_area
-            self.app._frame_extents = original_frame_extents
-            self.app._ui_scale = original_scale
-            child.destroy()
-
-    def test_f5_dispatch_runs_screen_on_screener_tab(self):
-        calls = []
-        self.app.analyze = lambda: calls.append("analyze")
-        self.app.start_screen = lambda: calls.append("screen")
-        self.app._select_tab(1)
-        self.root.update_idletasks()
-        self.app._run_active_tab()
-        self.assertEqual(calls, ["screen"])
-
-    def test_f5_dispatch_runs_analyze_on_individual_tab(self):
-        calls = []
-        self.app.analyze = lambda: calls.append("analyze")
-        self.app.start_screen = lambda: calls.append("screen")
-        self.app._select_tab(0)
-        self.root.update_idletasks()
-        self.app._run_active_tab()
-        self.assertEqual(calls, ["analyze"])
-
-    def test_primary_shortcuts_are_bound_to_the_dispatcher(self):
-        self.assertTrue(self.root.bind("<F5>"))
-        self.assertTrue(self.root.bind("<Control-Return>"))
-
-    def test_primary_and_secondary_controls_use_flat_visual_language(self):
-        style = ttk.Style(self.root)
-
-        self.assertEqual(str(style.lookup("Primary.TButton", "relief")), "flat")
-        self.assertEqual(str(style.lookup("Action.TButton", "relief")), "flat")
-        self.assertEqual(str(style.lookup("Primary.TButton", "borderwidth")), "0")
-        self.assertEqual(str(style.lookup("Action.TButton", "background")), CONTROL_BG)
-
-    def test_command_ribbon_is_the_single_dark_visual_anchor(self):
-        self.assertEqual(str(self.app.mode_control_body.cget("background")), COMMAND_BG)
-        self.assertEqual(str(self.app.mode_row.cget("background")), COMMAND_BG)
-        self.assertEqual(str(self.app.level_control_group.cget("background")), COMMAND_BG)
-
-        selected_mode = self.app._tab_buttons[self.app._active_tab]
-        selected_level = self.app.level_buttons[self.app.level_var.get() - 1]
-        self.assertEqual(str(selected_mode.cget("background")), COMMAND_SELECTED_BG)
-        self.assertEqual(str(selected_level.cget("background")), COMMAND_SELECTED_BG)
-
-    def test_header_and_input_panel_explain_context_at_a_glance(self):
-        self.assertEqual(self.app.header_meta_label.cget("text"), "本地规则引擎 · 行情按需更新")
-        self.assertEqual(self.app.input_context_title.cget("text"), "研究标的")
-        self.assertEqual(self.app.input_context_hint.cget("text"), "最多 30 只")
-        self.assertIs(self.app.input_context_frame.master, self.app.input_panel_body)
-
-    def test_screener_parameters_form_one_balanced_horizontal_band(self):
-        spinboxes = [
-            widget
-            for widget in self.app.tunable_frame.winfo_children()
-            if isinstance(widget, ttk.Spinbox)
-        ]
-        labels = [
-            widget
-            for widget in self.app.tunable_frame.winfo_children()
-            if isinstance(widget, ttk.Label)
-        ]
-
-        self.assertEqual(len(spinboxes), 4)
-        self.assertEqual({int(spin.grid_info()["row"]) for spin in spinboxes}, {1})
-        self.assertEqual(
-            sorted(int(spin.grid_info()["column"]) for spin in spinboxes), list(range(4))
-        )
-        self.assertEqual({int(label.grid_info()["row"]) for label in labels}, {0})
-        self.assertTrue(all(spin.grid_info()["sticky"] == "ew" for spin in spinboxes))
-
-    def test_screener_selected_preset_uses_clear_accent_surface(self):
-        active = self.app.preset_buttons[self.app.active_preset_key]
-
-        self.assertEqual(str(active.cget("bg")), ACCENT)
-        self.assertEqual(str(active.cget("selectcolor")), ACCENT)
-        self.assertEqual(str(active.cget("fg")), "#ffffff")
-
-    def test_empty_state_teaches_the_three_step_workflow_in_a_guided_panel(self):
-        self.assertEqual(
-            [label.cget("text") for label in self.app.empty_state_steps],
-            ["01  输入标的", "02  调整强度", "03  阅读结论与依据"],
-        )
-        self.assertEqual(self.app.empty_state_title.cget("text"), "从一组代码开始")
-        self.assertEqual(self.app.results_placeholder.cget("background"), CARD_BORDER)
-
-    def test_spacious_workspace_uses_large_touch_targets(self):
-        style = ttk.Style(self.root)
-
-        self.assertGreaterEqual(int(self.app._tab_buttons[0].cget("pady")), 8)
-        self.assertGreaterEqual(int(self.app.level_buttons[0].cget("pady")), 7)
-        self.assertGreaterEqual(self.app.analyze_button.winfo_reqheight(), 42)
-        self.assertGreaterEqual(int(style.lookup("Treeview", "rowheight")), 40)
-
-    def test_result_components_have_clear_section_headers(self):
-        self.assertEqual(self.app.stock_list_title_label.cget("text"), "股票列表")
-        self.assertEqual(self.app.verdict_title_label.cget("text"), "当前股票摘要")
-        self.assertEqual(self.app.visual_workspace_title_label.cget("text"), "判断依据与价格走势")
-        self.assertEqual(self.app.detail_title_label.cget("text"), "详细解释与操作计划")
-        self.assertIs(self.app.table_header_bar.master, self.app.table_card)
-        self.assertIs(self.app.verdict_header.master, self.app.verdict_body)
-        self.assertIs(self.app.visual_workspace_header.master, self.app.visual_workspace)
-        self.assertIs(self.app.detail_header.master, self.app.detail_panel_body)
-
-    def test_risk_surfaces_use_the_dedicated_danger_color(self):
-        self.assertEqual(self.app.alert_banner.cget("fg"), DANGER_COLOR)
-        self.assertEqual(self.app.detail.tag_cget("risk", "foreground"), DANGER_COLOR)
-
-    def test_result_table_alignment_matches_data_type(self):
-        self.assertEqual(str(self.app.tree.column("code", "anchor")), "w")
-        self.assertEqual(str(self.app.tree.column("name", "anchor")), "w")
-        for column in ("score", "confidence", "last", "change"):
-            self.assertEqual(str(self.app.tree.column(column, "anchor")), "e")
-        for column in ("action", "risk"):
-            self.assertEqual(str(self.app.tree.column(column, "anchor")), "center")
-
-    def test_detail_box_uses_ttk_scrollbar_for_consistent_style(self):
-        self.assertIsInstance(self.app.detail_scroll, ttk.Scrollbar)
-        self.assertIsInstance(self.app.symbol_scroll, ttk.Scrollbar)
-        self.assertEqual(self.app.detail_scroll.winfo_manager(), "pack")
-
-    def test_symbol_input_scrollbar_is_hidden_for_short_input(self):
-        self.root.update_idletasks()
-
-        self.assertEqual(self.app.symbol_scroll.winfo_manager(), "")
-
-    def test_symbol_input_scrollbar_appears_only_when_content_overflows(self):
-        self.app.symbol_input.delete("1.0", tk.END)
-        self.app.symbol_input.insert("1.0", "\n".join(f"600{index:03d}" for index in range(20)))
-        self.app._refresh_symbol_scrollbar()
-        self.root.update_idletasks()
-
-        self.assertEqual(self.app.symbol_scroll.winfo_manager(), "pack")
-
-        self.app.symbol_input.delete("1.0", tk.END)
-        self.app.symbol_input.insert("1.0", "600519, 000001")
-        self.app._refresh_symbol_scrollbar()
-        self.root.update_idletasks()
-
-        self.assertEqual(self.app.symbol_scroll.winfo_manager(), "")
-
-    def test_visual_dashboard_is_wrapped_in_consistent_card_border(self):
-        shell = getattr(self.app, "visual_workspace_shell", None)
-        self.assertIsNotNone(shell)
-        self.assertEqual(str(shell.cget("background")), CARD_BORDER)
-        self.assertIs(self.app.visual_workspace.master, shell)
-
-    def test_header_logo_uses_full_canvas_footprint(self):
-        self.assertEqual(int(self.app.logo_canvas.cget("width")), 48)
-        self.assertEqual(int(self.app.logo_canvas.cget("height")), 48)
-        bbox = self.app.logo_canvas.bbox("all")
-        self.assertIsNotNone(bbox)
-        assert bbox is not None
-        self.assertGreaterEqual(bbox[2] - bbox[0], 40)
-        self.assertGreaterEqual(bbox[3] - bbox[1], 40)
-        logo_colors = {
-            str(self.app.logo_canvas.itemcget(item, "fill")).lower()
-            for item in self.app.logo_canvas.find_all()
-        }
-        self.assertIn(POS_COLOR.lower(), logo_colors)
-        self.assertNotIn("#19c37d", logo_colors)
-
-    def test_secondary_result_tools_are_grouped_under_more_menu(self):
-        watchlist_button = getattr(self.app, "add_to_watchlist_button", None)
-        copy_button = getattr(self.app, "copy_tools_button", None)
-        copy_menu = getattr(self.app, "copy_tools_menu", None)
-        button = getattr(self.app, "secondary_tools_button", None)
-        menu = getattr(self.app, "secondary_tools_menu", None)
-
-        self.assertIsNotNone(watchlist_button)
-        self.assertIsNotNone(copy_button)
-        self.assertIsNotNone(copy_menu)
-        self.assertIsNotNone(button)
-        self.assertIsNotNone(menu)
-        self.assertEqual(watchlist_button.cget("text"), "加入自选")
-        self.assertEqual(copy_button.cget("text"), "复制")
-        self.assertEqual(button.cget("text"), "更多")
-
-        self.assertEqual(
-            [
-                widget.cget("text")
-                for widget in self.app.results_actions_cluster.winfo_children()
-                if isinstance(widget, ttk.Button) and widget.winfo_manager()
-            ],
-            [],
-        )
-        self.assertEqual(
-            [
-                widget.cget("text")
-                for widget in self.app.results_actions_cluster.winfo_children()
-                if isinstance(widget, ttk.Menubutton) and widget.winfo_manager()
-            ],
-            ["更多"],
-        )
-        self.assertLessEqual(button.winfo_reqwidth(), 112)
-
-        rec = make_sample_recommendation(deep=True)
-        self.app._add_recommendation(rec, done=1, total=1)
-        self.root.update_idletasks()
-
-        self.assertEqual(
-            [
-                widget.cget("text")
-                for widget in self.app.results_actions_cluster.winfo_children()
-                if isinstance(widget, ttk.Button) and widget.winfo_manager()
-            ],
-            ["加入自选"],
-        )
-        self.assertEqual(
-            [
-                widget.cget("text")
-                for widget in self.app.results_actions_cluster.winfo_children()
-                if isinstance(widget, ttk.Menubutton) and widget.winfo_manager()
-            ],
-            ["复制", "更多"],
-        )
-        self.assertLessEqual(copy_button.winfo_reqwidth(), 112)
-        self.assertLessEqual(button.winfo_reqwidth(), 112)
-
-        copy_end = copy_menu.index("end")
-        copy_labels = [copy_menu.entrycget(index, "label") for index in range(copy_end + 1)]
-        self.assertEqual(copy_labels, ["复制结果", "复制解释"])
-
-        end = menu.index("end")
-        labels = [menu.entrycget(index, "label") for index in range(end + 1)]
-        self.assertEqual(labels, ["导出 CSV", "自选股", "横向对比", "预警", "资金流"])
-
-    def test_snapshot_rows_show_copy_without_watchlist_action(self):
-        rec = make_sample_recommendation(deep=False)
-        self.app._add_recommendation(rec, done=1, total=1)
-        self.root.update_idletasks()
-
-        visible_buttons = [
-            widget.cget("text")
-            for widget in self.app.results_actions_cluster.winfo_children()
-            if isinstance(widget, ttk.Button) and widget.winfo_manager()
-        ]
-        visible_menus = [
-            widget.cget("text")
-            for widget in self.app.results_actions_cluster.winfo_children()
-            if isinstance(widget, ttk.Menubutton) and widget.winfo_manager()
-        ]
-
-        self.assertEqual(visible_buttons, [])
-        self.assertEqual(visible_menus, ["复制", "更多"])
-
-    def test_tunable_spinboxes_have_key_validation(self):
-        spinboxes = [
-            w for w in self.app.tunable_frame.winfo_children() if isinstance(w, ttk.Spinbox)
-        ]
-        self.assertTrue(spinboxes)
-        for spin in spinboxes:
-            self.assertEqual(str(spin.cget("validate")), "key")
-
-    def _set_tunable(self, key, value):
-        self.app.tunable_vars[key].set(value)
-
-    def test_collect_rejects_out_of_range_recommendation_count(self):
-        # 推荐数量超过 30 → 必须抛错（弹错误窗口），不静默纠正
-        self._set_tunable("top_n", "45")
-        with self.assertRaises(ValueError) as ctx:
-            self.app._collect_tunable_values()
-        self.assertIn("推荐数量", str(ctx.exception))
-
-    def test_collect_rejects_too_few_recommendations(self):
-        self._set_tunable("top_n", "3")
-        with self.assertRaises(ValueError) as ctx:
-            self.app._collect_tunable_values()
-        self.assertIn("推荐数量", str(ctx.exception))
-
-    def test_collect_rejects_blank_parameter(self):
-        self._set_tunable("top_n", "")
-        with self.assertRaises(ValueError):
-            self.app._collect_tunable_values()
-
-    def test_collect_accepts_valid_parameters(self):
-        self._set_tunable("top_n", "20")
-        values = self.app._collect_tunable_values()
-        self.assertEqual(values["top_n"], 20.0)
 
 
 class ValidateTunableTests(unittest.TestCase):

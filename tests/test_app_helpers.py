@@ -13,7 +13,6 @@ from stock_advisor.data.sample_data import (
     make_sample_measurement,
     make_sample_recommendation,
 )
-from stock_advisor.ui.app import StockAdvisorApp
 from stock_advisor.ui.layout import (
     compute_centered_geometry,
     compute_content_band,
@@ -75,24 +74,9 @@ class AppHelperTests(unittest.TestCase):
         self.assertGreater(WINDOW_WORKAREA_MARGIN, 0)
         self.assertGreaterEqual(WINDOW_MAX_SIZE[0], MAIN_MIN_SIZE[0])
         self.assertGreaterEqual(WINDOW_MAX_SIZE[1], MAIN_MIN_SIZE[1])
-        self.assertTrue(hasattr(StockAdvisorApp, "_center_window"))
-        self.assertTrue(hasattr(StockAdvisorApp, "_center_child_window"))
 
-    def test_app_class_has_scrollable_page_handlers(self):
-        self.assertTrue(hasattr(StockAdvisorApp, "_bind_page_scroll"))
-        self.assertTrue(hasattr(StockAdvisorApp, "_on_page_mousewheel"))
-
-    def test_app_class_has_refined_detail_layout_helpers(self):
-        self.assertTrue(hasattr(StockAdvisorApp, "_configure_detail_tags"))
-        self.assertTrue(hasattr(StockAdvisorApp, "_insert_styled_detail"))
-
-    def test_app_class_has_operation_shortcut_helpers(self):
-        self.assertTrue(hasattr(StockAdvisorApp, "_bind_shortcuts"))
-        self.assertTrue(hasattr(StockAdvisorApp, "_configure_tree_tags"))
-        self.assertTrue(hasattr(StockAdvisorApp, "_draw_logo"))
-        self.assertTrue(hasattr(StockAdvisorApp, "clean_input"))
-        self.assertTrue(hasattr(StockAdvisorApp, "copy_current_detail"))
-        self.assertTrue(hasattr(StockAdvisorApp, "show_strategy"))
+    # WI-023：原先三条断言 Tk StockAdvisorApp 私有方法存在的结构性用例随 Tk 生产层一并移除
+    # （WI-002 归类为 qt_replaced —— 对应能力已由 test_qt_* 的行为测试覆盖，不再断言私有方法名）。
 
     def test_action_button_labels_remove_unneeded_paste_action(self):
         self.assertNotIn("粘贴代码", ACTION_BUTTON_LABELS)
