@@ -1,7 +1,7 @@
 # ADR-0004：PySide6 打包策略
 
-- 状态：proposed
-- 日期：2026-07-10
+- 状态：accepted
+- 日期：2026-07-10（决策定档：2026-07-20，依据 EXP-001 实测）
 - 人工门禁：HG-PACKAGING、HG-LICENSE
 
 ## 背景
@@ -10,7 +10,14 @@ REQ-029 要求 PySide6/PyInstaller/开发依赖精确锁定并完成许可证、
 
 ## 决策
 
-在 WI-003/WI-006 完成 spike 测量前，暂定沿用 PyInstaller onefile/windowed 作为默认打包路径（见"目标"）；是否最终采用取决于"决策规则"中的量化门槛，最终决策仍待测量证据支持后由人工门禁 HG-PACKAGING/HG-LICENSE 批准，本 ADR 因此保持 `proposed`，不在测量完成前提前定档。
+**采用 PyInstaller onedir/windowed**（`股市锦囊/股市锦囊.exe` + 同目录 Qt 运行时），随发布打包成一个 zip 分发；不再采用 onefile。EXP-001（EVD-QT-003）测量到齐后按下方"决策规则"重评，两条独立理由都指向 onedir：
+
+1. **启动时间——onefile 不达标**。onefile 热启动 2.903s，已超过 `performance-budgets.json` 的 `warm_start_seconds` p95 ≤ 2.5s；冷启动只会更慢（onefile 每次启动都要把约 100 MB 运行时重新解压到临时目录）。onedir 热启动 0.685s，比 onefile 快 4.2 倍，对两条预算都有数倍余量。这正是决策规则里"onefile 无法满足冷启动门槛"的触发条件。
+2. **LGPL 重链接义务——onedir 才履行得了**。PySide6/Qt 以 LGPL-3.0 交付，第 4(d) 条要求接收方能用修改过的库版本替换并重新链接。onedir 把 Qt DLL 以独立文件放在应用目录，用户替换即可满足；onefile 把它们压进单个可执行文件，实际上剥夺了这个能力，使合规论证变得脆弱。
+
+体积不是决定因素：onefile 39.3 MB vs onedir 1.8 MB EXE + 99.9 MB 目录，两者都在可交付范围内（`single_file_exe_mib` 的 150 MiB 上限本就是给 onefile 形态的）。
+
+**代价与缓解**：这改变了原先"单文件双击即用"的交付合同——用户拿到的是一个目录而非孤立 exe。缓解：发布物为 zip，解压后双击 `股市锦囊.exe` 即可，无需安装；这也是 Qt 桌面应用的通行形态。该变更须经 HG-PACKAGING/HG-LICENSE 人工门禁确认后方可正式发布。
 
 ## 目标
 
