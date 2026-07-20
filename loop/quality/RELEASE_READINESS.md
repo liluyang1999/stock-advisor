@@ -21,7 +21,9 @@
 
 - [x] 精确锁文件、干净环境、同一提交。构建脚本 `--clean`；清单记录 source.commit 与构建工具链版本。
 - [x] Qt plugins/resources/QSS/icon 完整。WI-024 打包产物含全套插件目录，真机冒烟零 stderr（RISK-003 已证伪）。
-- [ ] **SBOM、许可、NOTICE、漏洞、SHA-256。** SBOM（CycloneDX 1.5）、NOTICE、203 个文件的 SHA-256 与目录合并摘要均已产出；**缺 `licenses/GPL-3.0.txt`**——LGPL-3.0 正文声明它并入 GPL-3.0 条款，两份都要随附。`make_release_manifest.py` 因此以退出码 1 拒绝转绿。取自 https://www.gnu.org/licenses/gpl-3.0.txt 放进 `licenses/` 后重跑即可。
+- [ ] **SBOM、许可、NOTICE、漏洞、SHA-256。** SBOM（CycloneDX 1.5）、NOTICE、204 个文件的 SHA-256 与目录合并摘要均已产出；**缺 `licenses/GPL-3.0.txt`**——LGPL-3.0 正文声明它并入 GPL-3.0 条款，两份都要随附。`make_release_manifest.py` 因此以退出码 1 拒绝转绿。
+  - 已授权并尝试联网取用，**本机三条路径全部失败**：沙箱内 Python（TLS 握手超时）、关闭沙箱的 Python（同样超时）、应用内浏览器（导航被拒）。判定为本机对 gnu.org 无出口，不是工具问题——不必重试同一条路。
+  - 补齐方式：在有外网的机器上取 https://www.gnu.org/licenses/gpl-3.0.txt （约 35 KiB 纯文本），存为仓库根的 `licenses/GPL-3.0.txt`，然后 `python make_release_manifest.py`。落盘前脚本不校验正文，但 `make_release_manifest.py` 会把它复制进 `dist/licenses/` 并把 `license_compliance.complete` 转 true。
 - [x] dist 仅批准产物。`make_release_manifest.py --verify` 对多出来的文件同样报错。
 - [x] EXE self-test、Windows 冒烟。打包 EXE `--self-test` 0.49s 退出 0；真机 GUI 存活 6s 零 stderr（EVD-PKG-002）。
 
