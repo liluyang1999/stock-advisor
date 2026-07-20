@@ -1,0 +1,30 @@
+EVD-QT-017 — K 线蜡烛图部件（WI-027 / REQ-004 / AC-003 / AC-004 / TEST-QT-AN-002）
+记录时间 2026-07-20 / 提交 a9d2d84 / Windows 11 AMD64 / Python 3.14.4 / PySide6-Essentials 6.11.1 / QT_QPA_PLATFORM=offscreen
+
+== 1. 部件测试 ==
+$ python -m unittest tests.test_qt_candlestick
+Ran 20 tests in 0.185s
+
+OK
+
+== 2. 核心边界（domain/chart.py 不得因此染上 Qt）==
+$ python loop/scripts/check_core_boundaries.py
+CORE_BOUNDARY_OK modules=12 forbidden_roots=6 forbidden_internal=4
+
+== 3. 全量测试 ==
+$ python -m unittest discover -s tests
+Ran 747 tests in 11.297s
+
+OK
+
+== 4. 全门禁 ==
+$ python loop/scripts/run_gates.py
+RUN_GATES_OK ran=7 failed=0 skipped=0
+
+== 5. 覆盖的行为 ==
+  几何一致性：部件 _layout() 与 domain.chart.candle_layout 逐字段相等（不靠肉眼看图）
+  hover：nearest_index 命中 + 读数含该根 date/开高低收；离开清空；空图不报读数
+  Decimal 直出：10.10/10.30/10.35/10.05 原样出现在读数里，不经 float
+  真实绘制：QPainter 画进 QPixmap，覆盖 正常序列 / 单根(n=1 居中分支) / 开=收(零高实体) / 零成交量
+  页面接线：选中行换图、切行换图、无历史清空、重新分析清空
+  可访问：accessibleName 含「K线」、有描述、mouseTracking 开启

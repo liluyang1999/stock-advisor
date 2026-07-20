@@ -15,6 +15,7 @@
   "completed_ids": [
     "WI-000",
     "WI-001",
+    "WI-002",
     "WI-003",
     "WI-004",
     "WI-005",
@@ -31,14 +32,14 @@
     "WI-016",
     "WI-017",
     "WI-018",
-    "WI-028",
     "WI-019",
     "WI-020",
     "WI-021",
     "WI-022",
-    "WI-002",
     "WI-023",
-    "WI-024"
+    "WI-024",
+    "WI-027",
+    "WI-028"
   ],
   "in_progress_ids": [
     "WI-025"
@@ -64,12 +65,12 @@
   "pending_decision_ids": [],
   "latest_gate_run_id": "LOOP-20260711-003",
   "quality_summary": {
-    "tests_total": 727,
-    "tests_passed": 727,
+    "tests_total": 747,
+    "tests_passed": 747,
     "tests_failed": 0,
     "tests_skipped": 0,
-    "coverage": 0.9807,
-    "qt_tests": 143,
+    "coverage": 0.972,
+    "qt_tests": 167,
     "release_ready": false
   },
   "release_candidate": false,

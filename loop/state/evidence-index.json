@@ -144,7 +144,7 @@
       "exit_code": 0,
       "artifact_path": "evidence/baselines/EVD-LOOP-004-hardening.txt",
       "sha256": "b3e2dcc0573170ee051dbe6a62f623d09b3e36e9bb37d0fdebd6b8a4e931030f",
-      "control_plane_sha256": "bd7547c84f205ad44f6b246bc08f90884772b756fcd03c86540bbce31a918fc6",
+      "control_plane_sha256": "c15ad4c888116026df555bc1e6d5d6f2686798d5c2e4a7ee111582437b8f2983",
       "commit": "6a75499",
       "dirty_worktree": true,
       "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",
@@ -689,6 +689,28 @@
       "started_at": null,
       "finished_at": "2026-07-20T06:00:00+09:00",
       "summary": "AC-010: five consecutive full gate runs, every one RUN_GATES_OK ran=7 failed=0 skipped=0 (32-39s each), against control-plane digest f77d5585. All seven gates pass every run: G-LOOP, G-FORMAT, G-LINT, G-TYPE, G-CORE, G-COVERAGE, G-SECURITY. G-COVERAGE now enforces six dimensions rather than four — the qt_controller_* floors were skipped as unmeasurable until WI-023 made PySide6 the shipping GUI, and enabling them immediately failed at 75% branch coverage before the missing generation-guard tests were written.",
+      "verified_by": "root"
+    },
+    {
+      "id": "EVD-QT-017",
+      "requirement_ids": [
+        "REQ-004"
+      ],
+      "acceptance_ids": [
+        "AC-003",
+        "AC-004"
+      ],
+      "work_item_id": "WI-027",
+      "type": "gui",
+      "command": "python -m unittest tests.test_qt_candlestick && python loop/scripts/check_core_boundaries.py && python loop/scripts/run_gates.py",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-QT-017-candlestick.txt",
+      "sha256": "30da97a591ec349f247eb1e8a0bb353d22065dbb9f0b317939ed8540b4344367",
+      "commit": "a9d2d84",
+      "environment": "Windows 11 AMD64 / Python 3.14.4 / PySide6-Essentials 6.11.1 / QT_QPA_PLATFORM=offscreen",
+      "started_at": null,
+      "finished_at": "2026-07-20T07:10:00+09:00",
+      "summary": "TEST-QT-AN-002 / AC-003+AC-004: the candlestick widget renders domain/chart.py geometry and computes none of it — the test asserts the widget's layout equals candle_layout field for field rather than eyeballing a picture. Hover hit-tests through nearest_index and reads out that bar's own date/OHLC, formatted straight off Decimal (10.10/10.30/10.35/10.05 appear verbatim, no float round trip). Painting runs through a real QPainter into a QPixmap so paintEvent branches execute: normal series, single bar (index_to_x centring), open==close (zero-height body kept visible), zero volume (no division by zero). The individual page swaps the chart with the selected row and clears it for a row with no history instead of showing the previous stock's candles. 20 tests, 747 total, G-CORE still 12 clean modules, run_gates ran=7 failed=0.",
       "verified_by": "root"
     }
   ]
