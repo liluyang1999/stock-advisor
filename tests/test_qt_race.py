@@ -12,6 +12,7 @@ import sys
 import threading
 import unittest
 from pathlib import Path
+from typing import Any, cast
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -189,6 +190,94 @@ class FundFlowDuplicateLaunchTests(unittest.TestCase):
         wait_for(controller.fund_flow_ready)
         _drain(150)
         self.assertEqual(len(ready), 1)  # 只交付最后一次；上一次迟到结果被丢弃
+
+
+@requires_qt
+class StaleSignalReachesTheSlotTests(unittest.TestCase):
+    """迟到信号真的抵达槽时，槽必须自己丢弃它。
+
+    上面几组测试走的是真实 worker 路径，而 worker 在被 supersede 后往往还没来得及发进度/单项信号
+    就先看见取消令牌停下了——于是槽里的世代守卫从没被执行过。那正是问题：它是第二道防线，专为
+    "worker 已经把信号发出来了才被 supersede" 这个交错准备的，恰恰无法靠真实时序稳定复现。
+
+    这里直接把上一代的信号投给槽，断言它一声不响地丢弃。这是对守卫契约本身的单元测试：给定过期
+    世代号，对外零发射。
+    """
+
+    def setUp(self):
+        self.app = qt_app()
+
+    @staticmethod
+    def _payload():
+        """守卫只看世代号，载荷是什么无关紧要——用哨兵对象让这一点在测试里也显而易见。"""
+        return cast(Any, object())
+
+    def _superseded(self, controller):
+        """跑两轮 start，返回第 1 轮（已过期）的世代号。"""
+        first = controller.generation() + 1
+        controller.start("600000")
+        controller.start("600001")
+        self.assertNotEqual(controller.generation(), first, "第 2 次 start 应当推进世代")
+        return first
+
+    def test_analysis_slots_drop_progress_and_symbols_from_a_superseded_cycle(self):
+        controller = AnalysisController(FakeProvider())
+        self.addCleanup(controller.shutdown)
+        progress: list = []
+        analyzed: list = []
+        controller.progress.connect(lambda p: progress.append(p))
+        controller.symbol_analyzed.connect(lambda o: analyzed.append(o))
+        stale = self._superseded(controller)
+
+        controller._on_progress(stale, self._payload())
+        controller._on_symbol(stale, self._payload())
+
+        self.assertEqual(progress, [], "被 supersede 的上一轮进度泄漏到视图")
+        self.assertEqual(analyzed, [], "被 supersede 的上一轮单项结果泄漏到视图")
+
+    def test_analysis_slots_still_deliver_the_current_cycle(self):
+        """守卫必须只挡过期的那一代——挡住当前代就把功能守没了。"""
+        controller = AnalysisController(FakeProvider())
+        self.addCleanup(controller.shutdown)
+        progress: list = []
+        controller.progress.connect(lambda p: progress.append(p))
+        controller.start("600000")
+
+        marker = self._payload()
+        controller._on_progress(controller.generation(), marker)
+
+        self.assertEqual(progress, [marker])
+
+    def test_screener_slots_drop_recommendations_from_a_superseded_run(self):
+        from test_qt_screener_controller import _FakeScreeningProvider
+
+        from stock_advisor.qt_app.controllers.screener_controller import ScreenerController
+
+        controller = ScreenerController(_FakeScreeningProvider())
+        self.addCleanup(controller.shutdown)
+        recommendations: list = []
+        controller.recommendation.connect(lambda r: recommendations.append(r))
+        first = controller.generation() + 1
+        controller.start("strong_momentum", {}, False)
+        controller.start("strong_momentum", {}, False)
+
+        controller._on_progress(first, self._payload())
+
+        self.assertEqual(recommendations, [], "被 supersede 的上一轮选股结果泄漏到表格")
+
+    def test_alert_cycle_with_no_new_hits_emits_nothing(self):
+        """空结果不得触发预警横幅——alerts_triggered 只在真有新命中时发。"""
+        from stock_advisor.qt_app.controllers.alert_controller import AlertController
+
+        controller = AlertController(FakeProvider())
+        self.addCleanup(controller.shutdown)
+        triggered: list = []
+        controller.alerts_triggered.connect(lambda a: triggered.append(a))
+        controller._running = True
+
+        controller._on_cycle_done(controller._guard.current, [], set())
+
+        self.assertEqual(triggered, [], "无新命中却发出了预警")
 
 
 if __name__ == "__main__":

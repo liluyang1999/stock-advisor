@@ -373,12 +373,15 @@ class LoopToolingTests(unittest.TestCase):
             self.assertTrue(gates[gate_id].get("note"), gate_id)
 
     def test_every_declared_coverage_threshold_is_asserted_or_explicitly_skipped(self) -> None:
-        # The hole this closes: convergence.json documents six coverage floors, the checker
-        # measures four, and the two qt_controller_* ones are unmeasurable until ADR-0001's
-        # PySide6 migration lands. Nothing structural stopped a declared threshold from being
-        # quietly ignored -- exactly how --fail-under came to certify four floors it never read.
-        # Any threshold added to (or renamed in) convergence.json must now be either asserted by
+        # The hole this closes: nothing structural stopped a declared threshold from being quietly
+        # ignored -- exactly how --fail-under came to certify four floors it never read. Any
+        # threshold added to (or renamed in) convergence.json must be either asserted by
         # check_coverage.py or listed as an explicit, reported SKIP.
+        #
+        # All six floors are asserted as of WI-025. The two qt_controller_* ones sat in UNMEASURABLE
+        # while no controller existed to attribute files to; enabling them immediately failed at
+        # 75% branch coverage, which is the point of the invariant -- a skipped dimension reads as
+        # "passing" in every summary above it.
         section = json.loads((LOOP_ROOT / "quality/convergence.json").read_text(encoding="utf-8"))[
             "coverage"
         ]
@@ -596,6 +599,7 @@ class CoverageCheckerTests(unittest.TestCase):
     # counter, so a failure names the dimension under test and nothing else.
     CORE = "src\\stock_advisor\\domain\\engine.py"  # backslashes as coverage.py emits on Windows
     OTHER = "src\\stock_advisor\\ui\\app.py"
+    QT_CONTROLLER = "src\\stock_advisor\\qt_app\\controllers\\analysis_controller.py"
 
     def _report(
         self,
@@ -604,6 +608,8 @@ class CoverageCheckerTests(unittest.TestCase):
         core_missing_branches: int = 20,
         other_missing_lines: int = 60,
         other_missing_branches: int = 100,
+        qt_missing_lines: int = 20,
+        qt_missing_branches: int = 40,
     ) -> dict:
         def entry(missing_lines: int, missing_branches: int) -> dict:
             return {
@@ -620,6 +626,7 @@ class CoverageCheckerTests(unittest.TestCase):
             "files": {
                 self.CORE: entry(core_missing_lines, core_missing_branches),
                 self.OTHER: entry(other_missing_lines, other_missing_branches),
+                self.QT_CONTROLLER: entry(qt_missing_lines, qt_missing_branches),
             },
         }
 
@@ -770,6 +777,30 @@ class CoverageCheckerTests(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("COVERAGE_ERROR", err)
         self.assertIn("domain", err)
+        self.assertNotIn("COVERAGE_OK", out)
+
+    def test_report_without_qt_controller_files_cannot_certify_the_policy(self) -> None:
+        # Same rule as the core: PySide6 is the shipping GUI, so a report with no controller files
+        # is measuring a partial tree. Vacuously passing that dimension is how a skipped floor
+        # reads as green -- which is exactly what enabling it caught at 75% branch coverage.
+        report = self._report()
+        report["files"].pop(self.QT_CONTROLLER)
+        with tempfile.TemporaryDirectory() as directory:
+            code, out, err = self._run(self._write(directory, report))
+        self.assertEqual(code, 2)
+        self.assertIn("COVERAGE_ERROR", err)
+        self.assertIn("controllers", err)
+        self.assertNotIn("COVERAGE_OK", out)
+
+    def test_qt_controller_branch_below_floor_fails_even_though_overall_passes(self) -> None:
+        # The regression that enabling the dimension found: controllers are a small slice of the
+        # tree, so their branch gaps vanish into the overall average.
+        report = self._report(qt_missing_branches=500)
+        with tempfile.TemporaryDirectory() as directory:
+            code, out, err = self._run(self._write(directory, report))
+        self.assertEqual(code, 1)
+        self.assertIn("qt_controller_branch", err)
+        self.assertIn("overall_branch", out)  # overall still reported as a PASS line
         self.assertNotIn("COVERAGE_OK", out)
 
     def test_report_without_branch_data_is_an_error_not_a_pass(self) -> None:

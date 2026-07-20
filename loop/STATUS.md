@@ -4,16 +4,16 @@
 - Phase: `foundation_ready`
 - Status: `active`
 - Milestone: `MS-00`
-- Selected work item: `WI-025` — 许可证/SBOM/连续全绿/发布门禁 (`ready`)
+- Selected work item: `WI-025` — 许可证/SBOM/连续全绿/发布门禁 (`verifying`)
 - Baseline: `881099806deca77a7bf7e784d6786f9bccdf0ce6`
 - Dirty worktree: `true`
 - Current GUI / target GUI: `Tkinter / PySide6`
 - Runtime font target: `Microsoft YaHei`
-- Tests: `706/706`
-- Loop tooling tests: `52/52`
+- Tests: `724/724`
+- Loop tooling tests: `52/54`
 - Loop schemas: `22`
 - Traceability: `34/34`
-- Coverage: `0.9712`
+- Coverage: `0.9807`
 - Release candidate: `false`
 - Latest gate run: `LOOP-20260711-003`
 

@@ -42,6 +42,11 @@ CONVERGENCE = "quality/convergence.json"
 # higher floor than the codebase average.
 CORE_DIRECTORY = "domain"
 
+# The Qt controllers: the async boundary between the GUI thread and the workers (ADR-0003).
+# Held to their own floor because a regression here is the class of bug -- late results, dropped
+# cancellations -- that unit-testing the domain cannot catch.
+QT_CONTROLLER_DIRECTORY = "controllers"
+
 # Dimension name -> the key that carries its floor in convergence.json's `coverage` object.
 # Values there are fractions in [0,1]. No threshold is ever written as a literal in this file.
 THRESHOLD_KEYS = {
@@ -49,14 +54,17 @@ THRESHOLD_KEYS = {
     "overall_branch": "overall_branch_min",
     "core_statement": "core_statement_min",
     "core_branch": "core_branch_min",
+    "qt_controller_statement": "qt_controller_statement_min",
+    "qt_controller_branch": "qt_controller_branch_min",
 }
 
-# convergence.json also declares qt_controller_statement_min / qt_controller_branch_min.
-# ADR-0001's Tkinter->PySide6 migration has not landed, so no Qt controller exists and no file
-# can be attributed to that dimension. It is printed as an explicit SKIP every run rather than
-# silently dropped -- and it is never counted as a pass.
-UNMEASURABLE = ("qt_controller_statement", "qt_controller_branch")
-UNMEASURABLE_REASON = "no Qt controller exists yet -- ADR-0001 PySide6 migration pending"
+# Nothing is unmeasurable any more. The qt_controller_* dimensions sat here as an explicit SKIP
+# while ADR-0001's migration was pending and no controller existed to attribute files to; WI-023
+# made PySide6 the shipping GUI, so they are measured and enforced like every other dimension.
+# The tuple stays (empty) so the reporting path and its test keep their shape for the next
+# dimension that is declared before it can be measured.
+UNMEASURABLE: tuple[str, ...] = ()
+UNMEASURABLE_REASON = "declared in convergence.json but no file can be attributed to it yet"
 
 # Width of the dimension column: the longest name printed, measured or skipped.
 _NAME_WIDTH = max(len(name) for name in (*THRESHOLD_KEYS, *UNMEASURABLE))
@@ -162,6 +170,18 @@ def core_files(files: dict[str, Any]) -> list[str]:
     return sorted(name for name in files if CORE_DIRECTORY in normalize(name).split("/")[:-1])
 
 
+def qt_controller_files(files: dict[str, Any]) -> list[str]:
+    """Report keys inside a Qt ``controllers`` package directory.
+
+    Same component match as :func:`core_files`, for the same reason: a ``services/controllers.py``
+    must not be able to join this dimension by name.
+    """
+
+    return sorted(
+        name for name in files if QT_CONTROLLER_DIRECTORY in normalize(name).split("/")[:-1]
+    )
+
+
 def _totals(files: dict[str, Any], selected: list[str]) -> dict[str, int]:
     totals: dict[str, int] = {counter: 0 for counter in _COUNTERS}
     for name in selected:
@@ -188,8 +208,19 @@ def evaluate(files: dict[str, Any], thresholds: dict[str, float]) -> list[Dimens
             f"coverage report contains no '{CORE_DIRECTORY}/' files: the core dimensions "
             "cannot be measured, so this report cannot certify the coverage policy"
         )
+    qt_controllers = qt_controller_files(files)
+    if not qt_controllers:
+        raise CoverageError(
+            f"coverage report contains no '{QT_CONTROLLER_DIRECTORY}/' files: the Qt controller "
+            "dimensions cannot be measured. PySide6 is the shipping GUI, so an absent controller "
+            "package means the report is partial -- it must not certify the coverage policy"
+        )
     dimensions: list[Dimension] = []
-    for scope, selected in (("overall", sorted(files)), ("core", core)):
+    for scope, selected in (
+        ("overall", sorted(files)),
+        ("core", core),
+        ("qt_controller", qt_controllers),
+    ):
         totals = _totals(files, selected)
         for kind, total_key, missing_key in _RATIOS:
             total = totals[total_key]

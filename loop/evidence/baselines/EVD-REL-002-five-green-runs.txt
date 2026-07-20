@@ -1,0 +1,20 @@
+EVD-REL-002 — 全门禁连续 5 次绿色（WI-025 / AC-010）
+记录时间 2026-07-20 / Windows 11 AMD64 / Python 3.14.4 / PySide6-Essentials 6.11.1 / QT_QPA_PLATFORM=offscreen
+
+被测控制平面摘要（跑这 5 次时的状态）: f77d55857f5882ad
+命令: python loop/scripts/run_gates.py   （每次都跑全部 7 道门禁，无 skip）
+
+run#1  34s  RUN_GATES_OK ran=7 failed=0 skipped=0
+run#2  33s  RUN_GATES_OK ran=7 failed=0 skipped=0
+run#3  34s  RUN_GATES_OK ran=7 failed=0 skipped=0
+run#4  39s  RUN_GATES_OK ran=7 failed=0 skipped=0
+run#5  38s  RUN_GATES_OK ran=7 failed=0 skipped=0
+
+门禁清单（每次运行均 PASS）:
+  G-LOOP  G-FORMAT  G-LINT  G-TYPE  G-CORE  G-COVERAGE  G-SECURITY
+
+说明：记录本条证据本身会改动 loop/ 从而改变控制平面摘要，因此 5 连绿之后另跑一次确认运行，
+证明记录了 5 连绿的那个状态自身同样全绿；该次结果见下方。
+
+确认运行（控制平面摘要 8a1fe7663ff2ae7c，即已记入 5 连绿与本条证据之后的状态）:
+  RUN_GATES_OK ran=7 failed=0 skipped=0

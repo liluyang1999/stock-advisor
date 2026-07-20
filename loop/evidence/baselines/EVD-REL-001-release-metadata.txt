@@ -1,0 +1,39 @@
+EVD-REL-001 — 发布元数据与回滚校验（WI-025 / TEST-REL-001 / REQ-029 / REQ-030 / AC-010）
+记录时间 2026-07-20 / 提交 8991ad5 / Windows 11 AMD64 / Python 3.14.4 / PySide6-Essentials 6.11.1
+
+== 1. 单元测试 ==
+$ python -m unittest tests.test_release_manifest
+Ran 14 tests in 2.435s
+
+OK
+
+== 2. 真实交付物上生成清单 ==
+$ python make_release_manifest.py
+RELEASE_MANIFEST_INCOMPLETE 缺少许可证正文: GPL-3.0.txt <- https://www.gnu.org/licenses/gpl-3.0.txt
+SBOM:      D:\Projects\stock-advisor\dist\SBOM.json  (2 个随产品分发的组件)
+通知:      D:\Projects\stock-advisor\dist\THIRD_PARTY_NOTICES.md
+许可正文:  D:\Projects\stock-advisor\dist\licenses  (1 份)
+清单:      D:\Projects\stock-advisor\dist\RELEASE_MANIFEST.json  (203 个文件, 100.6 MiB)
+应用目录 SHA-256(合并): 9f890a7c64673292021e991374fc7a34003495ff8082b7de3e87418a8373c657
+exit=1
+
+== 3. 回滚校验（对未改动的交付物）==
+$ python make_release_manifest.py --verify
+RELEASE_VERIFY_OK files=203 version=1.0
+  基准提交 8991ad573f1094b987f0ef67e761adaebf28cd29
+exit=0
+
+== 4. 需求-证据覆盖 ==
+$ python loop/scripts/check_traceability.py
+TRACEABILITY_OK 34/34
+
+== 5. SBOM 组件 ==
+bomFormat CycloneDX 1.5 | 应用 股市锦囊 1.0
+ - PySide6_Essentials 6.11.1 | LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only | pkg:pypi/pyside6-essentials@6.11.1
+ - shiboken6 6.11.1 | LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only | pkg:pypi/shiboken6@6.11.1
+
+== 6. 许可合规状态 ==
+选用: LGPL-3.0-only | 完整: False
+已随附: ['LGPL-3.0.txt'] | 缺失: ['GPL-3.0.txt']
+产物文件数: 203 | 目录合并摘要: 9f890a7c64673292021e991374fc7a34003495ff8082b7de3e87418a8373c657
+基准提交: 8991ad573f1094b987f0ef67e761adaebf28cd29

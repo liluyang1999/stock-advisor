@@ -1,17 +1,238 @@
 {
-  "$schema":"../schemas/risk.schema.json",
-  "schema_version":"1.0.0",
-  "risks":[
-    {"id":"RISK-001","category":"governance","description":"最新 PySide6 目标与仓库标准库/Tkinter 约束冲突","trigger":"source migration starts before constraints are reconciled","probability":5,"impact":5,"score":25,"mitigation":"ADR-0001; update AGENTS/README/dependencies in WI-001","contingency":"stop migration and restore consistent rules","owner":"project","status":"open","review_at":"MS-00","related_ids":["ADR-0001","WI-001"]},
-    {"id":"RISK-002","category":"delivery","description":"PySide6 onefile 包体或冷启动不可接受","trigger":"spike exceeds provisional budgets","probability":4,"impact":4,"score":16,"mitigation":"early packaging spike and measured budget","contingency":"human choice between optimization/onedir/rollback","owner":"project","status":"open","review_at":"MS-01","related_ids":["ADR-0004","WI-006"]},
-    {"id":"RISK-003","category":"packaging","description":"Qt platform/image/style 插件遗漏导致目标机失败","trigger":"clean or target machine cannot launch/render","probability":4,"impact":5,"score":20,"mitigation":"plugin manifest, clean build, target smoke","contingency":"fix collection or rollback build","owner":"project","status":"open","review_at":"MS-01","related_ids":["WI-006","WI-024"]},
-    {"id":"RISK-004","category":"architecture","description":"GUI 迁移把业务逻辑搬入 QWidget","trigger":"core behavior only testable through UI","probability":3,"impact":5,"score":15,"mitigation":"ADR-0002 and import boundary gate","contingency":"extract controller/domain before continuing","owner":"project","status":"open","review_at":"each milestone","related_ids":["ADR-0002"]},
-    {"id":"RISK-005","category":"concurrency","description":"取消/切页后的迟到结果覆盖新状态","trigger":"generation mismatch writes state","probability":4,"impact":5,"score":20,"mitigation":"task_id/generation checks and race suite","contingency":"disable affected async path and rollback","owner":"project","status":"open","review_at":"MS-06","related_ids":["ADR-0003","WI-019"]},
-    {"id":"RISK-006","category":"network","description":"接口限流、字段漂移、分页不完整或 stale 数据被误用","trigger":"contract validation/freshness fails","probability":5,"impact":5,"score":25,"mitigation":"deadline, envelope, fault tests, explicit completeness","contingency":"fail closed or visible degrade","owner":"project","status":"open","review_at":"MS-02/MS-06","related_ids":["WI-007","WI-009","WI-020"]},
-    {"id":"RISK-007","category":"model","description":"回测前视、复权/成本或幸存者偏差导致虚假表现","trigger":"research protocol violation","probability":3,"impact":5,"score":15,"mitigation":"fixed data hashes, walk-forward, baseline and leakage properties","contingency":"withdraw model claim and revalidate","owner":"project","status":"open","review_at":"MS-02","related_ids":["WI-008"]},
-    {"id":"RISK-008","category":"ui","description":"Microsoft YaHei/DPI/长中文导致字体 fallback 或裁切","trigger":"QFontInfo mismatch or visual matrix fail","probability":4,"impact":4,"score":16,"mitigation":"global font tokens and early matrix","contingency":"fix layout; do not shrink below token","owner":"project","status":"open","review_at":"MS-01/MS-07","related_ids":["ADR-0005","WI-021"]},
-    {"id":"RISK-009","category":"accessibility","description":"只用红绿传达涨跌/买卖","trigger":"meaning lost in monochrome/color-blind review","probability":3,"impact":3,"score":9,"mitigation":"text/sign/shape redundancy","contingency":"block release until a11y fix","owner":"project","status":"open","review_at":"MS-07","related_ids":["WI-021"]},
-    {"id":"RISK-010","category":"communication","description":"启发式 confidence 被用户理解为统计概率","trigger":"UI/copy uses probability or certainty wording","probability":4,"impact":5,"score":20,"mitigation":"rename to evidence strength and model card","contingency":"correct UI/export/docs and revalidate","owner":"project","status":"open","review_at":"MS-02/MS-03","related_ids":["WI-008","WI-011"]}
+  "$schema": "../schemas/risk.schema.json",
+  "schema_version": "1.0.0",
+  "risks": [
+    {
+      "id": "RISK-001",
+      "category": "governance",
+      "description": "最新 PySide6 目标与仓库标准库/Tkinter 约束冲突",
+      "trigger": "source migration starts before constraints are reconciled",
+      "probability": 5,
+      "impact": 5,
+      "score": 25,
+      "mitigation": "ADR-0001; update AGENTS/README/dependencies in WI-001",
+      "contingency": "stop migration and restore consistent rules",
+      "owner": "project",
+      "status": "closed",
+      "review_at": "MS-00",
+      "related_ids": [
+        "ADR-0001",
+        "WI-001"
+      ],
+      "resolution": "WI-023 完成迁移，约束被有意识地改写而非违反：PySide6 现在是 [project].dependencies 里声明的唯一运行期依赖，AGENTS.md 的「只用标准库」规则已同步更新为「只有 PySide6 一个例外」。领域内核仍是纯标准库，由 G-CORE 静态强制。",
+      "evidence_ids": [
+        "EVD-ARCH-002"
+      ],
+      "reviewed_at": "2026-07-20"
+    },
+    {
+      "id": "RISK-002",
+      "category": "delivery",
+      "description": "PySide6 onefile 包体或冷启动不可接受",
+      "trigger": "spike exceeds provisional budgets",
+      "probability": 4,
+      "impact": 4,
+      "score": 16,
+      "mitigation": "early packaging spike and measured budget",
+      "contingency": "human choice between optimization/onedir/rollback",
+      "owner": "project",
+      "status": "closed",
+      "review_at": "MS-01",
+      "related_ids": [
+        "ADR-0004",
+        "WI-006"
+      ],
+      "resolution": "风险发生了，并按 contingency 处置：EXP-001 实测 onefile 热启动 2.903s，超出 warm_start 2.5s 预算；ADR-0004 据此选定 onedir（0.685s）。体积不是决定因素（onefile 39.3MB vs onedir 2.3MB EXE + 100.6MB 目录，都在 150MiB 上限内）。",
+      "evidence_ids": [
+        "EVD-QT-003",
+        "EVD-PKG-002"
+      ],
+      "reviewed_at": "2026-07-20"
+    },
+    {
+      "id": "RISK-003",
+      "category": "packaging",
+      "description": "Qt platform/image/style 插件遗漏导致目标机失败",
+      "trigger": "clean or target machine cannot launch/render",
+      "probability": 4,
+      "impact": 5,
+      "score": 20,
+      "mitigation": "plugin manifest, clean build, target smoke",
+      "contingency": "fix collection or rollback build",
+      "owner": "project",
+      "status": "closed",
+      "review_at": "MS-01",
+      "related_ids": [
+        "WI-006",
+        "WI-024"
+      ],
+      "resolution": "已证伪：WI-024 的打包产物含 platforms/styles/imageformats/iconengines/networkinformation/generic 全套 Qt 插件，本机真机冒烟 6s 零 stderr，打包 EXE --self-test 0.49s 退出 0。",
+      "evidence_ids": [
+        "EVD-PKG-002"
+      ],
+      "reviewed_at": "2026-07-20"
+    },
+    {
+      "id": "RISK-004",
+      "category": "architecture",
+      "description": "GUI 迁移把业务逻辑搬入 QWidget",
+      "trigger": "core behavior only testable through UI",
+      "probability": 3,
+      "impact": 5,
+      "score": 15,
+      "mitigation": "ADR-0002 and import boundary gate",
+      "contingency": "extract controller/domain before continuing",
+      "owner": "project",
+      "status": "mitigated",
+      "review_at": "each milestone",
+      "related_ids": [
+        "ADR-0002"
+      ],
+      "resolution": "由机器守而非靠自觉：G-CORE 门禁禁止 domain/ 的 12 个模块导入 PySide6/urllib，TEST-ARCH-002 用 AST 全量扫描生产源。控制器只做编排，业务判断留在 engine/policy/backtest。风险不会消失（每个新页面都可能违反），但每次提交都会被拦。",
+      "evidence_ids": [
+        "EVD-ARCH-002"
+      ],
+      "reviewed_at": "2026-07-20"
+    },
+    {
+      "id": "RISK-005",
+      "category": "concurrency",
+      "description": "取消/切页后的迟到结果覆盖新状态",
+      "trigger": "generation mismatch writes state",
+      "probability": 4,
+      "impact": 5,
+      "score": 20,
+      "mitigation": "task_id/generation checks and race suite",
+      "contingency": "disable affected async path and rollback",
+      "owner": "project",
+      "status": "closed",
+      "review_at": "MS-06",
+      "related_ids": [
+        "ADR-0003",
+        "WI-019"
+      ],
+      "resolution": "WI-019 的代次守卫：取消/迟到/重复启动/拆卸四类竞态由 TEST-RACE-001 覆盖，超期结果一律丢弃，取消必定送达终态。",
+      "evidence_ids": [
+        "EVD-QT-014"
+      ],
+      "reviewed_at": "2026-07-20"
+    },
+    {
+      "id": "RISK-006",
+      "category": "network",
+      "description": "接口限流、字段漂移、分页不完整或 stale 数据被误用",
+      "trigger": "contract validation/freshness fails",
+      "probability": 5,
+      "impact": 5,
+      "score": 25,
+      "mitigation": "deadline, envelope, fault tests, explicit completeness",
+      "contingency": "fail closed or visible degrade",
+      "owner": "project",
+      "status": "monitoring",
+      "review_at": "MS-02/MS-06",
+      "related_ids": [
+        "WI-007",
+        "WI-009",
+        "WI-020"
+      ],
+      "resolution": "WI-020 的故障矩阵覆盖限流/超时/字段漂移/半截响应，失败一律降级为可见提示而非伪造数据；但上游接口随时可能再变，这条风险按 RELEASE_PLAN 的发布后监控持续观察，不宣告关闭。",
+      "evidence_ids": [
+        "EVD-NET-002",
+        "EVD-NET-001",
+        "EVD-DATA-001"
+      ],
+      "reviewed_at": "2026-07-20"
+    },
+    {
+      "id": "RISK-007",
+      "category": "model",
+      "description": "回测前视、复权/成本或幸存者偏差导致虚假表现",
+      "trigger": "research protocol violation",
+      "probability": 3,
+      "impact": 5,
+      "score": 15,
+      "mitigation": "fixed data hashes, walk-forward, baseline and leakage properties",
+      "contingency": "withdraw model claim and revalidate",
+      "owner": "project",
+      "status": "closed",
+      "review_at": "MS-02",
+      "related_ids": [
+        "WI-008"
+      ],
+      "resolution": "WI-008 的黄金用例逐值手算可追溯，无未来函数由专门用例证明；样本不足时 WI-012 的回测视图原样显示引擎给的说明，不编造数字。",
+      "evidence_ids": [
+        "EVD-NUM-001",
+        "EVD-QT-007"
+      ],
+      "reviewed_at": "2026-07-20"
+    },
+    {
+      "id": "RISK-008",
+      "category": "ui",
+      "description": "Microsoft YaHei/DPI/长中文导致字体 fallback 或裁切",
+      "trigger": "QFontInfo mismatch or visual matrix fail",
+      "probability": 4,
+      "impact": 4,
+      "score": 16,
+      "mitigation": "global font tokens and early matrix",
+      "contingency": "fix layout; do not shrink below token",
+      "owner": "project",
+      "status": "mitigated",
+      "review_at": "MS-01/MS-07",
+      "related_ids": [
+        "ADR-0005",
+        "WI-021"
+      ],
+      "resolution": "WI-021 的视觉矩阵证明从设计下限 1000x680 起各分辨率零裁切、应用字体等于 tokens 声明的 Microsoft YaHei；字体缺失时 QFontInfo 如实报告并给出可见提示（REQ-033）。残余项是目标机是否装有该字体（ASM-001），已有文档化回退兜底。",
+      "evidence_ids": [
+        "EVD-QT-016"
+      ],
+      "reviewed_at": "2026-07-20"
+    },
+    {
+      "id": "RISK-009",
+      "category": "accessibility",
+      "description": "只用红绿传达涨跌/买卖",
+      "trigger": "meaning lost in monochrome/color-blind review",
+      "probability": 3,
+      "impact": 3,
+      "score": 9,
+      "mitigation": "text/sign/shape redundancy",
+      "contingency": "block release until a11y fix",
+      "owner": "project",
+      "status": "closed",
+      "review_at": "MS-07",
+      "related_ids": [
+        "WI-021"
+      ],
+      "resolution": "TEST-A11Y-001 的色彩冗余用例：涨跌列除颜色外必带 +/- 符号，不依赖红绿单通道传达。",
+      "evidence_ids": [
+        "EVD-QT-016"
+      ],
+      "reviewed_at": "2026-07-20"
+    },
+    {
+      "id": "RISK-010",
+      "category": "communication",
+      "description": "启发式 confidence 被用户理解为统计概率",
+      "trigger": "UI/copy uses probability or certainty wording",
+      "probability": 4,
+      "impact": 5,
+      "score": 20,
+      "mitigation": "rename to evidence strength and model card",
+      "contingency": "correct UI/export/docs and revalidate",
+      "owner": "project",
+      "status": "closed",
+      "review_at": "MS-02/MS-03",
+      "related_ids": [
+        "WI-008",
+        "WI-011"
+      ],
+      "resolution": "REQ-022 在证据视图上被断言：措辞只能是「证据强度」，不得出现「胜率/收益概率/确定置信」；MODEL_CARD 同步声明该分数未经统计校准。",
+      "evidence_ids": [
+        "EVD-QT-006"
+      ],
+      "reviewed_at": "2026-07-20"
+    }
   ]
 }
-
