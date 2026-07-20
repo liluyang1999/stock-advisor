@@ -39,6 +39,7 @@ class TokenLoaderTests(unittest.TestCase):
         self.assertEqual(loaded.colors["interactive"], raw["colors"]["interactive"])
         self.assertEqual(loaded.colors["page"], raw["colors"]["page"])
         self.assertEqual(loaded.state_colors["focus_ring"], raw["state_colors"]["focus_ring"])
+        self.assertEqual(loaded.surfaces["command_bg"], raw["surfaces"]["command_bg"])
 
 
 @requires_qt
@@ -55,7 +56,11 @@ class QssContractTests(unittest.TestCase):
         """核心单一真源断言：QSS 里的每个十六进制色都必须在 tokens.json 中。"""
         allowed = {
             value.upper()
-            for value in list(self.tokens.colors.values()) + list(self.tokens.state_colors.values())
+            for value in (
+                list(self.tokens.colors.values())
+                + list(self.tokens.state_colors.values())
+                + list(self.tokens.surfaces.values())  # WI-034 的结构面色同属 tokens
+            )
         }
         used = {m.group(0).upper() for m in re.finditer(r"#[0-9A-Fa-f]{6}", self.qss)}
         stray = used - allowed

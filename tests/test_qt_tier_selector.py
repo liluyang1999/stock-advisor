@@ -16,7 +16,7 @@ try:
 except ImportError:  # pragma: no cover
     QtWidgets = None
 
-from qt_test_helpers import qt_app, requires_qt
+from qt_test_helpers import QtWidgets, qt_app, requires_qt
 from test_engine import make_measurements
 
 from stock_advisor.domain.models import LEVEL_NAMES
@@ -30,9 +30,48 @@ class TierSelectorTests(unittest.TestCase):
     def setUp(self):
         self.app = qt_app()
 
-    def test_offers_all_five_levels(self):
+    def test_offers_all_five_levels_as_visible_segments(self):
+        """五档是并排的分段按钮，不是下拉框。
+
+        形态本身就是需求的一部分：产品的卖点是"五档一眼对照"，藏进下拉框就把对照关系藏掉了
+        （REQ-015 / WI-034 视觉基线沿用 Tkinter 版）。
+        """
         selector = TierSelector()
-        self.assertEqual(selector.combo.count(), len(LEVEL_NAMES))
+
+        segments = [
+            b
+            for b in selector.findChildren(QtWidgets.QPushButton)
+            if b.property("role") == "segment"
+        ]
+
+        self.assertEqual(len(segments), len(LEVEL_NAMES))
+        for name in LEVEL_NAMES.values():
+            self.assertIn(name, [b.text() for b in segments])
+
+    def test_exactly_one_segment_is_checked(self):
+        """分段是互斥的：任何时候恰好一段亮着，用户才知道自己在第几档。"""
+        selector = TierSelector()
+
+        checked = [
+            b
+            for b in selector.findChildren(QtWidgets.QPushButton)
+            if b.property("role") == "segment" and b.isChecked()
+        ]
+
+        self.assertEqual(len(checked), 1)
+        self.assertEqual(checked[0].text(), LEVEL_NAMES[3])  # 默认标准档
+
+    def test_clicking_a_segment_switches_the_level(self):
+        selector = TierSelector()
+        segments = {
+            b.text(): b
+            for b in selector.findChildren(QtWidgets.QPushButton)
+            if b.property("role") == "segment"
+        }
+
+        segments[LEVEL_NAMES[5]].click()
+
+        self.assertEqual(selector.current_level(), 5)
 
     def test_default_level_is_standard(self):
         selector = TierSelector()

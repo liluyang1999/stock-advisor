@@ -78,12 +78,27 @@ class MainWindow(QtWidgets.QMainWindow):
         return dialog
 
     def _build_central(self, content: QtWidgets.QWidget) -> QtWidgets.QWidget:
+        """内容带：四边等距留白 + 限制最大宽度并水平居中（REQ-018）。
+
+        超宽屏上不让表格与文字被拉成一条长线——老 Tkinter 版就是这么做的（MAX_CONTENT_WIDTH +
+        CONTENT_MARGIN），而 Qt 版此前只做了留白、没做最大宽度，内容会一直铺满整个窗口宽度。
+        两侧用等权 stretch 吃掉多余空间，因此留白始终对称。
+        """
         holder = QtWidgets.QWidget()
-        layout = QtWidgets.QVBoxLayout(holder)
+        layout = QtWidgets.QHBoxLayout(holder)
         layout.setContentsMargins(
             theme.CONTENT_MARGIN, theme.CONTENT_MARGIN, theme.CONTENT_MARGIN, theme.CONTENT_MARGIN
         )
-        layout.addWidget(content)
+        content.setMaximumWidth(theme.MAX_CONTENT_WIDTH)
+        content.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding
+        )
+        # 内容的伸展权重远大于两侧：先把可用宽度吃满（受 maximumWidth 封顶），剩下的才由两侧
+        # 等分。只给 stretch(1)/stretch(1) 而内容不伸展的话，内容会停在自身 sizeHint 上，
+        # 常规窗口下就变成"中间一条窄带、两边大片空白"，与老版"填满 + 超宽才收窄"不符。
+        layout.addStretch(1)
+        layout.addWidget(content, 1000)
+        layout.addStretch(1)
         # REQ-031：免责声明在结果视图常驻。状态栏是外壳级常驻位，页面切换不会带走它。
         return holder
 

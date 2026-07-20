@@ -54,6 +54,13 @@ class IndividualPage(QtWidgets.QWidget):
         self._build_ui()
         self._connect()
 
+    @staticmethod
+    def _gap() -> int:
+        """内边距取自设计 token，不写死数字。"""
+        from ..theme.tokens import load_tokens
+
+        return load_tokens().spacing_dip[1]
+
     def _build_ui(self) -> None:
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -70,17 +77,22 @@ class IndividualPage(QtWidgets.QWidget):
         row.addWidget(self.stop_button)
         layout.addLayout(row)
 
-        # 决策强度 + 本金。两者都跨会话保留（REQ-009）：档位恢复上次选择，本金喂给仓位计算器。
-        tier_row = QtWidgets.QHBoxLayout()
+        # 决策控制台：整条墨蓝指挥带横贯内容宽度，左边决策强度五档、右边仓位本金——沿用老 Tkinter 版
+        # 的锚点（WI-034）。两者都跨会话保留（REQ-009）：档位恢复上次选择，本金喂给仓位计算器。
+        console = QtWidgets.QWidget()
+        console.setProperty("role", "command")
+        console_row = QtWidgets.QHBoxLayout(console)
+        console_row.setContentsMargins(0, 0, self._gap(), 0)
         self.tier = TierSelector()
         self.tier.set_level(self._settings.config.level)
-        tier_row.addWidget(self.tier)
-        tier_row.addWidget(QtWidgets.QLabel("本金"))
+        console_row.addWidget(self.tier)
+        console_row.addStretch(1)
+        console_row.addWidget(QtWidgets.QLabel("本金"))
         self.capital_input = QtWidgets.QLineEdit(f"{self._capital():.2f}")
         self.capital_input.setAccessibleName("仓位计算本金输入")
         self.capital_input.setMaximumWidth(140)
-        tier_row.addWidget(self.capital_input)
-        layout.addLayout(tier_row)
+        console_row.addWidget(self.capital_input)
+        layout.addWidget(console)
 
         self.model, self.table = make_readonly_table(_HEADERS, "个股分析结果表")
         layout.addWidget(self.table)

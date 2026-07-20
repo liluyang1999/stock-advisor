@@ -25,6 +25,7 @@ class DesignTokens:
     window_minimum_dip: list[int]
     colors: dict[str, str]
     state_colors: dict[str, str]
+    surfaces: dict[str, str]
 
 
 def load_tokens(path: Path | None = None) -> DesignTokens:
@@ -43,4 +44,5 @@ def load_tokens(path: Path | None = None) -> DesignTokens:
         window_minimum_dip=list(raw["window_minimum_dip"]),
         colors=dict(raw["colors"]),
         state_colors=dict(raw["state_colors"]),
+        surfaces=dict(raw["surfaces"]),
     )
