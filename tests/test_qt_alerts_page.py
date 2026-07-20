@@ -10,7 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from qt_test_helpers import qt_app, requires_qt, wait_for
+from qt_test_helpers import qt_app, requires_qt, temp_settings, wait_for
 from test_engine import FakeProvider
 
 from stock_advisor.domain.models import CORE_DISCLAIMER, AlertRule
@@ -35,7 +35,7 @@ class AlertsPageTests(unittest.TestCase):
     def _page(self, provider=None):
         controller = AlertController(provider or FakeProvider())
         self.addCleanup(controller.shutdown)
-        page = AlertsPage(controller)
+        page = AlertsPage(controller, temp_settings(self))
         self.addCleanup(page.deleteLater)
         return page, controller
 

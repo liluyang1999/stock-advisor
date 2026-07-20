@@ -23,7 +23,9 @@ from stock_advisor.domain.symbols import normalize_symbol
 from stock_advisor.services.workflow import analyze_symbol
 
 if QtWidgets is not None:
+    from stock_advisor.qt_app.controllers.alert_controller import AlertController
     from stock_advisor.qt_app.controllers.analysis_controller import AnalysisController
+    from stock_advisor.qt_app.pages.alerts_page import AlertsPage
     from stock_advisor.qt_app.pages.individual_page import IndividualPage
     from stock_advisor.qt_app.pages.portfolio_page import PortfolioPage
     from stock_advisor.qt_app.settings import Settings
@@ -319,3 +321,75 @@ class PortfolioPageWiringTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@requires_qt
+class AlertRuleWiringTests(unittest.TestCase):
+    """条件预警此前没有任何新建规则的入口，set_rules 也无人调用——功能实际不可用。"""
+
+    def setUp(self):
+        import tempfile
+
+        self.app = qt_app()
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self._config = Path(self._tmp.name) / "config.json"
+        self.settings = Settings(self._config)
+        self.controller = AlertController(FakeProvider())
+        self.addCleanup(self.controller.stop)
+        self.page = AlertsPage(self.controller, self.settings)
+
+    def _add(self, code="600000", field="价格", op=">=", threshold="12.5"):
+        self.page.rule_code.setText(code)
+        self.page.rule_field.setCurrentText(field)
+        self.page.rule_op.setCurrentText(op)
+        self.page.rule_threshold.setText(threshold)
+        self.page.add_rule_button.click()
+
+    def test_adding_a_rule_shows_it_and_persists_it(self):
+        self._add()
+
+        from stock_advisor.services import store
+
+        self.assertEqual(self.page.rule_model.rowCount(), 1)
+        saved = store.load_config(self._config).alerts
+        self.assertEqual(len(saved), 1)
+        self.assertEqual(saved[0].field, "price")  # 中文标签映射回 domain 的键
+        self.assertEqual(saved[0].threshold, 12.5)
+
+    def test_rules_are_restored_on_the_next_session(self):
+        """REQ-009：预警跨会话保留。"""
+        self._add()
+
+        reopened = AlertsPage(AlertController(FakeProvider()), Settings(self._config))
+        self.addCleanup(reopened._controller.stop)
+
+        self.assertEqual(reopened.rule_model.rowCount(), 1)
+
+    def test_removing_the_selected_rule_persists_the_removal(self):
+        self._add()
+        self._add(code="600519", threshold="20")
+        self.page.rule_table.setCurrentIndex(self.page.rule_model.index(0, 0))
+
+        self.page.remove_selected_rule()
+
+        from stock_advisor.services import store
+
+        self.assertEqual(self.page.rule_model.rowCount(), 1)
+        self.assertEqual(len(store.load_config(self._config).alerts), 1)
+
+    def test_an_incomplete_rule_is_refused_with_a_message(self):
+        """缺代码或阈值不该静默丢弃用户的输入。"""
+        self.page.rule_code.setText("")
+        self.page.rule_threshold.setText("abc")
+
+        self.page.add_rule_button.click()
+
+        self.assertEqual(self.page.rule_model.rowCount(), 0)
+        self.assertIn("请填写", self.page.status.text())
+
+    def test_the_controller_receives_the_rules_so_monitoring_can_fire(self):
+        """规则只存不给控制器，监控就永远不会触发。"""
+        self._add()
+
+        self.assertEqual(len(self.controller._rules), 1)

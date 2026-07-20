@@ -45,7 +45,7 @@ class AppWindow(MainWindow):
         self.tabs.addTab(IndividualPage(self.analysis, self.settings), "个股分析")
         self.tabs.addTab(ScreenerPage(self.screener, self.settings), "全市场选股")
         self.tabs.addTab(PortfolioPage(self.portfolio, self.settings), "自选 / 持仓")
-        self.tabs.addTab(AlertsPage(self.alerts), "条件预警")
+        self.tabs.addTab(AlertsPage(self.alerts, self.settings), "条件预警")
         self.tabs.addTab(EvidencePage(self.fund_flow), "个股资金流")
         self.set_page(self.tabs)
 

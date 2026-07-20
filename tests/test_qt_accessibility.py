@@ -64,7 +64,7 @@ class AccessibilityAuditTests(unittest.TestCase):
             IndividualPage(AnalysisController(FakeProvider()), temp_settings(self)),
             EvidencePage(FundFlowController(FakeProvider())),
             ScreenerPage(ScreenerController(FakeProvider()), temp_settings(self)),
-            AlertsPage(AlertController(FakeProvider())),
+            AlertsPage(AlertController(FakeProvider()), temp_settings(self)),
         ]
         for page in pages:
             self.addCleanup(page.deleteLater)

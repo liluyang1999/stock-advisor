@@ -47,7 +47,7 @@ def _page_factories(case):
         "individual": lambda: IndividualPage(AnalysisController(FakeProvider()), settings),
         "evidence": lambda: EvidencePage(FundFlowController(FakeProvider())),
         "screener": lambda: ScreenerPage(ScreenerController(FakeProvider()), settings),
-        "alerts": lambda: AlertsPage(AlertController(FakeProvider())),
+        "alerts": lambda: AlertsPage(AlertController(FakeProvider()), settings),
     }
 
 
