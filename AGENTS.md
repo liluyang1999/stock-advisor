@@ -4,13 +4,13 @@
 
 ## 硬性约束
 
-- **GUI 栈：目标是 PySide6，出货的仍是 Tkinter。** ADR-0001 已接受从 Tkinter 迁移到 PySide6 Widgets（REQ-011/012/013），迁移**正在进行**（`src/stock_advisor/qt_app/`，MS-01 的骨架已落地）。**当前交付给用户的仍然是 Tkinter 版**（`src/stock_advisor/ui/`，`main.py` 的入口未变）；在 Qt 版通过发布门禁之前，任何"迁移已完成"的表述都不成立。两套 GUI 迁移期内并存，`ui/theme.py` 是两者共用的 token 单一真源。
-- **运行期依赖**：出货版今天**只用标准库**（`tkinter`、`urllib`、`json`、`csv`、`threading`）。唯一在途的例外是迁移目标 PySide6-Essentials，它在 `pyproject.toml` 的 `[dependency-groups].gui` 里、尚未进 `[project].dependencies`——即尚未出货。新增其它运行期第三方依赖仍然不允许。
-  - 这条约束原本的理由是"会破坏单文件 EXE 的「放哪都能跑」目标"。EXP-001 已实测该理由对 Qt 的实际份量：Qt onefile 39.3 MB（Tk 基线 12.4 MB），体积可交付；真正的代价是每次启动都要重新解包，热启动 2.691 s vs onedir 0.641 s。见 `loop/registers/experiments.jsonl`。
+- **GUI 栈就是 PySide6。** ADR-0001 的 Tkinter→PySide6 Widgets 迁移（REQ-011/012/013）已由 **WI-023 完成**：`main.py` → `ui/app.run_gui` → `qt_app.app.run_qt_gui`，Tkinter 生产层（10 个文件）已删除，生产源零 `tkinter` import 由 TEST-ARCH-002 的 AST 全量扫描机器强制。新界面代码一律写在 `src/stock_advisor/qt_app/`；`ui/` 只保留与框架无关的展示层，`ui/theme.py` 仍是 token 单一真源。
+- **运行期依赖只有 PySide6-Essentials**，它在 `pyproject.toml` 的 `[project].dependencies` 里（WI-025 随出货一并移入）。除它以外一律只用标准库（`urllib`、`json`、`csv`、`decimal`、`threading`）。**新增其它运行期第三方依赖仍然不允许**——每加一个都要重做许可证、SBOM 与打包体积的论证。
+  - 领域内核（`domain/` 12 个模块）连 PySide6 和 `urllib` 都不许 import，由 G-CORE 门禁静态强制。Qt 是应用的依赖，不是模型的依赖。
 - **构建期唯一依赖是 PyInstaller**，通过 `pip install pyinstaller` 安装；见 `requirements-build.txt`。
 - **不引入** Node、.NET、Electron、浏览器框架或其他非 Python 工具链。
-- **交付物只有一个单文件 EXE**：`股市锦囊.exe`（onefile、windowed），随构建附带一份 HTML 说明书。
-  - onefile 的去留是 **ADR-0004（仍是 `proposed`）**。它对 Qt 版有两个新约束：EXP-001 实测的启动代价（见上），以及 PySide6 的 **LGPL-3.0/GPL** 许可证——其重新链接义务 onedir 可轻易满足（用户能替换 `Qt6*.dll`），onefile 不能。**Qt 版在 ADR-0004 带着这两点定下来之前不得发布。**
+- **交付物是一个应用目录**：`dist/股市锦囊/`（onedir、windowed，内含 `股市锦囊.exe` 与 Qt 运行时），随构建附带一份 HTML 说明书 `dist/使用说明.html`。
+  - **ADR-0004 已 accepted：onedir，不是 onefile**，两条独立理由：onefile 热启动 2.903 s 超出 `warm_start_seconds` 2.5 s 预算（每次启动重解压约 100 MB），onedir 0.685 s；且 PySide6 的 **LGPL-3.0** 第 4(d) 条重链接义务只有 onedir 履行得了（Qt DLL 是可替换的独立文件）。不要改回 onefile。
 - **构建目录约定**：`build/` 只放构建中间产物（含 PyInstaller 原始产物）；`dist/` 只放最终交付物（EXE + HTML 报告）。不要使用 `outputs/`。
 - **写边界**：构建只写项目内 `build/` 与 `dist/`，绝不写到项目目录之外。
 
@@ -19,7 +19,7 @@
 核心逻辑与界面严格分离，便于测试与打包：
 
 - `models.py` 只放数据结构（全部 `@dataclass(frozen=True)`）。
-- `symbols.py` / `screener.py` / `presets.py` / `engine.py` / `policy.py` / `backtest.py` / `chart.py` / `compare.py` / `alerts.py` 是**纯逻辑、无网络、无 tkinter**，必须可独立单测。`store.py` 做配置读写（I/O），解析/序列化是纯函数。
+- `symbols.py` / `screener.py` / `presets.py` / `engine.py` / `policy.py` / `backtest.py` / `chart.py` / `compare.py` / `alerts.py` 是**纯逻辑、无网络、无 GUI**（G-CORE 静态禁止 `urllib` 与 `PySide6`），必须可独立单测。`store.py` 做配置读写（I/O），解析/序列化是纯函数。
 - **条件预警**：`alerts.check_rules` 是**边沿触发纯函数**（条件假→真才触发，回落复位）；`app.py` 的监控环按 `MONITOR_INTERVAL_MS` 用线程跑 `analyze_symbol`，经队列回主线程判定，仅程序开启且不忙时进行。
 - **持久化写到 `%APPDATA%\股市锦囊\config.json`**（应用自身运行态：自选股/持仓、本金、档位、预设），非项目产物；读坏/不可写都回退默认且不崩溃。测试经环境变量 `STOCK_ADVISOR_CONFIG` 指向临时文件隔离，**严禁让测试写真实 %APPDATA%**。
 - **测量与决策分离**：`engine.measure()` 产出客观 `Measurement`（与档位无关）；`policy.decide(m, level)` 按 5 档决策强度翻译为买/持/卖与仓位；`engine.analyze_stock(..., level)` 是二者的薄包装，默认 L3「标准」复现既有行为。改档只对缓存的 `Measurement` 重判，不重新联网。

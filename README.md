@@ -1,6 +1,6 @@
 # 股市锦囊
 
-一个只用 Python 标准库构建的 Windows 桌面小工具，最终打包为**单文件 EXE**（`股市锦囊.exe`），放在任何位置都能直接运行。它提供两种能力：
+一个 Windows 桌面小工具，界面用 PySide6，其余全部基于 Python 标准库。打包为一个免安装的应用目录（`股市锦囊/股市锦囊.exe`），解压后双击即用。它提供两种能力：
 
 - **个股分析**：输入一个或多个 A 股代码，基于实时行情 + 历史日线，用可解释的多因子模型给出当日「买入/持有/卖出」倾向、理由、风险与保守投入参考。
 - **全市场选股**：选择策略预设（强势动量、放量突破、超跌反弹、低估值蓝筹、高换手活跃、稳健低波动），微调关键参数，从**当前全市场实时行情**中按证券特征自动挑选股票，并对入选股做与个股分析一致的深度判断。
@@ -28,17 +28,19 @@ python main.py            # 启动图形界面
 python main.py --self-test  # 离线自测：验证个股分析与选股管线（不触网）
 ```
 
-要求 Python 3.12+（开发使用 3.14）。运行期只依赖标准库（`tkinter`、`urllib`、`json` 等），无需安装任何第三方包。
-
-### GUI 栈：出货是 Tkinter，目标是 PySide6
-
-`python main.py` 跑的、以及 `股市锦囊.exe` 里的，**都是 Tkinter 版**——这是当前唯一交付给用户的界面。
-
-ADR-0001 已接受迁移到 PySide6 Widgets，工作正在进行中（`src/stock_advisor/qt_app/`）。Qt 版**尚未出货**，也还没通过发布门禁。参与迁移需要额外装 GUI 依赖：
+要求 Python 3.14+。运行期依赖只有一个：PySide6-Essentials（图形界面）。其余全部是标准库（`urllib`、`json`、`csv`、`decimal` 等）。从源码运行前先装：
 
 ```bash
-python -m pip install --group gui   # PySide6-Essentials + pytest-qt（仅开发期）
+python -m pip install --group gui   # PySide6-Essentials（运行期）+ pytest-qt（仅测试期）
 ```
+
+拿到打包好的 `股市锦囊.exe` 的用户不需要装任何东西——Qt 运行时已随应用目录分发。
+
+### GUI 栈：PySide6
+
+ADR-0001 接受的 Tkinter → PySide6 Widgets 迁移已经完成（WI-023）：`python main.py` 和 `股市锦囊.exe` 跑的都是 PySide6 版（`src/stock_advisor/qt_app/`），Tkinter 生产层已经删除，`ui/app.py` 只剩一个把 `run_gui` 委托给 Qt 装配的薄入口。
+
+领域内核（`domain/` 的 12 个模块）与 Qt 无关，这一点由 G-CORE 门禁静态强制：内核里不允许出现 `PySide6` 或 `urllib` 的 import。换界面框架不需要动内核。
 
 ## 测试
 
@@ -48,7 +50,7 @@ python -m unittest discover -s tests
 
 纯逻辑（代码解析、行情解析、指标、筛选、排序、预设、编排、布局计算）均有单元测试覆盖；GUI 关键布局与交互也有 headless 测试。
 
-## 构建单文件 EXE
+## 构建 Windows 交付物
 
 直接用脚本打包（会自动安装唯一的构建依赖 PyInstaller）：
 
@@ -66,10 +68,12 @@ python build_exe.py
 
 构建中间产物全部放在 `build/`；最终交付物输出到 `dist/`：
 
-- `dist/股市锦囊.exe` —— 单文件、可独立分发的可执行程序。
+- `dist/股市锦囊/` —— 应用目录，双击其中的 `股市锦囊.exe` 即可运行，无需安装。
 - `dist/使用说明.html` —— 随构建生成的图文说明书。
 
-构建完成后可执行 `dist\股市锦囊.exe --self-test` 验证打包程序能启动并跑通核心逻辑。
+采用 onedir 而非单文件是 ADR-0004 的决定，有两条独立理由：onefile 每次启动都要重新解压约 100 MB 运行时（实测热启动 2.9s，超出 2.5s 预算），而 onedir 是 0.69s；且 Qt 以 LGPL-3.0 分发，其第 4(d) 条要求用户能用自己的 Qt 重新链接——Qt DLL 作为独立文件放在应用目录里才做得到，压进单文件就做不到。
+
+构建完成后可执行 `dist\股市锦囊\股市锦囊.exe --self-test` 验证打包程序能启动并跑通核心逻辑。
 
 ## 目录结构
 
@@ -95,13 +99,19 @@ src/stock_advisor/
   services/                 编排与持久化
     workflow.py               个股分析与全市场选股编排（回传测量供改档重判）
     store.py                  用户配置持久化（自选股/持仓、本金、档位、预设、预警）
-  ui/                       Tkinter 界面（出货中）
-    app.py                    Tkinter 界面（决策强度分段按钮、光谱/K线/计算器/回测、自选股/持仓、横向对比、K线 hover）
-    theme.py                  UI token 单一真源（颜色/尺寸/字体/免责声明）——Tk 与 Qt 共用
+  ui/                       与界面框架无关的展示层
+    app.py                    薄入口：run_gui 委托给 qt_app 装配
+    theme.py                  token 单一真源（颜色/尺寸/字体/免责声明）——Qt 主题由此翻译成 QSS
+    view_format.py            结果行/剪贴板/CSV 格式化（导出注入中和 + 免责声明页脚）
     manual.py                 使用说明 HTML 生成
-  qt_app/                   PySide6 界面（ADR-0001 迁移目标，进行中，尚未出货）
+    assets.py                 打包/仓库两态的资源路径解析（图标、tokens.json）
+  qt_app/                   PySide6 界面（出货）
+    app.py                    装配：4 个控制器 + 4 个功能页挂上 QTabWidget
     main_window.py            QMainWindow 外壳（标题栏身份、免责声明常驻、页面挂载）
+    controllers/              异步控制器（QThreadPool + 队列信号，代次守卫丢弃迟到结果）
+    pages/                    个股分析 / 全市场选股 / 条件预警 / 资金流四个功能页
     theme/fonts.py            字体契约：QFontInfo 如实报告实际字体，禁止静默回退（REQ-016/033）
+  observability/            结构化日志（NDJSON；只写声明过的字段，原始报文不入日志）
 tests/                      单元测试
 docs/                       设计说明与实现计划
 ```
