@@ -37,8 +37,7 @@ class AlertsPage(QtWidgets.QWidget):
     def _build_ui(self) -> None:
         layout = QtWidgets.QVBoxLayout(self)
 
-        self.rule_model, self.rule_table = make_readonly_table(_RULE_HEADERS)
-        self.rule_table.setAccessibleName("预警规则表")  # REQ-017 可访问名
+        self.rule_model, self.rule_table = make_readonly_table(_RULE_HEADERS, "预警规则表")
         layout.addWidget(self.rule_table)
 
         # 新建规则：代码 + 字段 + 比较 + 阈值。字段下拉显示中文标签，写库时映射回 domain 的键。

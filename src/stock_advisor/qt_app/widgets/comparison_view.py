@@ -20,7 +20,7 @@ class ComparisonView(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         layout = QtWidgets.QVBoxLayout(self)
-        self.model, self.table = make_readonly_table(_HEADERS)
+        self.model, self.table = make_readonly_table(_HEADERS, "自选持仓横向对比表")
         layout.addWidget(self.table)
         # REQ-031：结果视图常驻免责声明。
         self.disclaimer = QtWidgets.QLabel(CORE_DISCLAIMER)

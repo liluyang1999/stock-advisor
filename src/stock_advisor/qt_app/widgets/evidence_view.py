@@ -24,8 +24,9 @@ class EvidenceView(QtWidgets.QWidget):
         self.strength_label = QtWidgets.QLabel("证据强度：—")
         layout.addWidget(self.strength_label)
 
-        self.factor_model, self.factor_table = make_readonly_table(list(_FACTOR_HEADERS))
-        self.factor_table.setAccessibleName("因子明细表")
+        self.factor_model, self.factor_table = make_readonly_table(
+            list(_FACTOR_HEADERS), "因子明细表"
+        )
         layout.addWidget(self.factor_table)
 
         self.narrative = QtWidgets.QPlainTextEdit()

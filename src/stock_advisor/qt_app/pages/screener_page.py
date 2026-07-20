@@ -60,8 +60,7 @@ class ScreenerPage(QtWidgets.QWidget):
         row.addStretch(1)
         layout.addLayout(row)
 
-        self.model, self.table = make_readonly_table(_HEADERS)
-        self.table.setAccessibleName("全市场选股结果表")
+        self.model, self.table = make_readonly_table(_HEADERS, "全市场选股结果表")
         layout.addWidget(self.table)
 
         # REQ-031：结果视图常驻免责声明。

@@ -18,15 +18,7 @@ from test_engine import FakeProvider
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.controllers.alert_controller import AlertController
-    from stock_advisor.qt_app.controllers.analysis_controller import AnalysisController
-    from stock_advisor.qt_app.controllers.fund_flow_controller import FundFlowController
-    from stock_advisor.qt_app.controllers.screener_controller import ScreenerController
     from stock_advisor.qt_app.main_window import build_application
-    from stock_advisor.qt_app.pages.alerts_page import AlertsPage
-    from stock_advisor.qt_app.pages.evidence_page import EvidencePage
-    from stock_advisor.qt_app.pages.individual_page import IndividualPage
-    from stock_advisor.qt_app.pages.screener_page import ScreenerPage
 
     _INTERACTIVE = (
         QtWidgets.QLineEdit,
@@ -60,15 +52,17 @@ class AccessibilityAuditTests(unittest.TestCase):
         self.app = qt_app()
 
     def _pages(self):
-        pages = [
-            IndividualPage(AnalysisController(FakeProvider()), temp_settings(self)),
-            EvidencePage(FundFlowController(FakeProvider())),
-            ScreenerPage(ScreenerController(FakeProvider()), temp_settings(self)),
-            AlertsPage(AlertController(FakeProvider()), temp_settings(self)),
-        ]
-        for page in pages:
-            self.addCleanup(page.deleteLater)
-        return pages
+        """审计装配好的主窗里的每一页，而不是手写一份页面清单。
+
+        手写清单会过期：自选/持仓页加进产品后，这里一直没跟上，于是它的代码/成本/股数输入、增删
+        按钮和对比表从未被审计过——和"部件写好却没挂上"是同一类失误，只不过发生在测试这一侧。
+        从装好的窗口拿页面，新增一页就自动进审计范围，没有清单可忘。
+        """
+        from stock_advisor.qt_app.app import build_app
+
+        _app, window = build_app([], provider=FakeProvider(), settings=temp_settings(self))
+        self.addCleanup(window.deleteLater)
+        return [window.tabs.widget(i) for i in range(window.tabs.count())]
 
     def _interactive(self, page):
         controls = []
@@ -104,6 +98,34 @@ class AccessibilityAuditTests(unittest.TestCase):
                         _effective_accessible_name(widget),
                         f"{type(widget).__name__} 无可访问名（屏幕阅读器读不出）",
                     )
+
+    def test_a_readonly_table_cannot_be_created_without_an_accessible_name(self):
+        """把"记得设可访问名"变成参数，而不是靠自觉。
+
+        ComparisonView 就漏过一次，而且直到审计改为遍历装配好的主窗才暴露——两层疏漏叠在一起。
+        表格没有文本，读屏只能靠可访问名认出它（REQ-017）。
+        """
+        from stock_advisor.qt_app.widgets.table_utils import make_readonly_table
+
+        with self.assertRaises(TypeError):
+            make_readonly_table(["代码"])  # type: ignore[call-arg]
+        with self.assertRaises(ValueError):
+            make_readonly_table(["代码"], "   ")
+
+    def test_every_table_in_the_assembled_window_is_named(self):
+        """装配好的窗口里不该有任何无名表格。"""
+        from stock_advisor.qt_app.app import build_app
+
+        _app, window = build_app([], provider=FakeProvider(), settings=temp_settings(self))
+        self.addCleanup(window.deleteLater)
+
+        unnamed = [
+            table
+            for table in window.findChildren(QtWidgets.QTableView)
+            if not table.accessibleName()
+        ]
+
+        self.assertEqual(unnamed, [], f"{len(unnamed)} 个表格没有可访问名")
 
     def test_applied_qss_defines_a_visible_focus_indicator(self):
         app, window = build_application([])

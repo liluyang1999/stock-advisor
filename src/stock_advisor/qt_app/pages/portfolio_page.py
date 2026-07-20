@@ -64,8 +64,7 @@ class PortfolioPage(QtWidgets.QWidget):
         row.addWidget(self.remove_button)
         layout.addLayout(row)
 
-        self.model, self.table = make_readonly_table(_HEADERS)
-        self.table.setAccessibleName("自选持仓表")
+        self.model, self.table = make_readonly_table(_HEADERS, "自选持仓表")
         self.table.setMaximumHeight(160)
         layout.addWidget(self.table)
 

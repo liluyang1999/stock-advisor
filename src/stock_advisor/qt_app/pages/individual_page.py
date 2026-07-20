@@ -82,8 +82,7 @@ class IndividualPage(QtWidgets.QWidget):
         tier_row.addWidget(self.capital_input)
         layout.addLayout(tier_row)
 
-        self.model, self.table = make_readonly_table(_HEADERS)
-        self.table.setAccessibleName("个股分析结果表")
+        self.model, self.table = make_readonly_table(_HEADERS, "个股分析结果表")
         layout.addWidget(self.table)
 
         # 详情区随选中行联动：左边 K 线，右边证据 + 仓位/回测。用 splitter 让用户自行分配空间，
