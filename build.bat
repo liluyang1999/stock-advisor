@@ -11,7 +11,7 @@ echo [1/2] Installing build dependency (PyInstaller, pinned in pyproject)...
 python -m pip install --group build || goto :error
 
 echo [2/2] Building the app folder...
-python build_exe.py || goto :error
+python scripts/build_exe.py || goto :error
 
 echo.
 echo Done. dist\股市锦囊\ (double-click 股市锦囊.exe) plus the HTML manual are in dist\.

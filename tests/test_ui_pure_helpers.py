@@ -13,9 +13,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.domain.input_validate import is_partial_number, validate_tunable
-from stock_advisor.domain.presets import get_preset
-from stock_advisor.ui.layout import (  # noqa: E402
+from domain.input_validate import is_partial_number, validate_tunable
+from domain.presets import get_preset
+from ui.layout import (  # noqa: E402
     active_mode_action,
     choose_centering_screen_size,
     compute_centered_window,
@@ -27,7 +27,7 @@ from stock_advisor.ui.layout import (  # noqa: E402
     stacked_text_y,
     ui_scale,
 )
-from stock_advisor.ui.theme import (  # noqa: E402
+from ui.theme import (  # noqa: E402
     ACCENT,
     CARD_BG,
     COMMAND_BG,
@@ -40,7 +40,7 @@ from stock_advisor.ui.theme import (  # noqa: E402
     PAGE_BG,
     POS_COLOR,
 )
-from stock_advisor.ui.view_format import detail_line_tags
+from ui.view_format import detail_line_tags
 
 
 def _relative_luminance(color: str) -> float:

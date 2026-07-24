@@ -6,15 +6,15 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.domain.models import TunableParam
-from stock_advisor.domain.presets import (
+from domain.models import TunableParam
+from domain.presets import (
     PRESETS,
     _pair_label,
     apply_tunables,
     default_values,
     get_preset,
 )
-from stock_advisor.domain.screener import OBJECTIVES
+from domain.screener import OBJECTIVES
 
 
 class PresetCatalogTests(unittest.TestCase):

@@ -86,8 +86,8 @@ def check_reachability(manifest: dict[str, Any]) -> list[str]:
     # 运行期才把 tests/ 注入 sys.path，pyright 静态解析不到它——这是预期，不是缺陷。
     from test_engine import FakeProvider  # type: ignore[import-not-found]
 
-    from stock_advisor.qt_app.app import build_app
-    from stock_advisor.qt_app.settings import Settings
+    from qt_app.app import build_app
+    from qt_app.settings import Settings
 
     problems: list[str] = []
     with tempfile.TemporaryDirectory() as tmp:

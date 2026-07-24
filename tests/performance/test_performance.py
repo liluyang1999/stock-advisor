@@ -24,7 +24,7 @@ _BUDGETS = load_budgets()
 _WINDOWS_ONLY = unittest.skipUnless(sys.platform == "win32", "RSS 测量为 Windows-only（ctypes）")
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.dialogs import HelpDialog
+    from qt_app.dialogs import HelpDialog
 
 
 def _model_5000():
@@ -101,8 +101,8 @@ def _assembled_window(case):
 
     from test_engine import FakeProvider
 
-    from stock_advisor.qt_app.app import build_app
-    from stock_advisor.qt_app.settings import Settings
+    from qt_app.app import build_app
+    from qt_app.settings import Settings
 
     tmp = tempfile.TemporaryDirectory()
     case.addCleanup(tmp.cleanup)
@@ -124,8 +124,8 @@ class StartupBudgetTests(unittest.TestCase):
             "import sys, tempfile, pathlib; sys.path.insert(0, r'"
             + str(PROJECT_ROOT / "src")
             + "'); "
-            "from stock_advisor.qt_app.app import build_app; "
-            "from stock_advisor.qt_app.settings import Settings; "
+            "from qt_app.app import build_app; "
+            "from qt_app.settings import Settings; "
             "tmp = tempfile.mkdtemp(); "
             "a, w = build_app([], settings=Settings(pathlib.Path(tmp) / 'config.json')); w.show()"
         )

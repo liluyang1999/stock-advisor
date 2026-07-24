@@ -1,6 +1,6 @@
 # 发布就绪检查
 
-状态记于 2026-07-20，对应提交 `8673ede`（含 WI-029 可达性修复）。勾选项均有证据 id 或可复跑命令；
+状态记于 2026-07-20，对应提交 `63efb70`（含 WI-029 可达性修复）。勾选项均有证据 id 或可复跑命令；
 未勾选项就是未完成，不做"实质上算完成"的解释。
 
 ## 规格与决策
@@ -24,7 +24,7 @@
 - [x] Qt plugins/resources/QSS/icon 完整。WI-024 打包产物含全套插件目录，真机冒烟零 stderr（RISK-003 已证伪）。
 - [x] **SBOM、许可、NOTICE、漏洞、SHA-256。** SBOM（CycloneDX 1.5，purl 按 PEP 503 规范化）、THIRD_PARTY_NOTICES、204 个文件的 SHA-256 与目录合并摘要均已产出；LGPL-3.0 与 GPL-3.0 两份正文都已随附（LGPL-3.0 正文声明并入 GPL-3.0 条款，故缺一不可），`license_compliance.complete` 为 true，`make_release_manifest.py` 输出 `RELEASE_MANIFEST_OK`。
   - GPL-3.0 正文由人工提供（本机对 gnu.org 无出口：沙箱内/外 Python 与应用内浏览器三条路径均失败）。采用前逐条校验：标题、版本行、FSF 版权、逐字复制授权、Preamble、0–17 全部 18 条、END OF TERMS、How to Apply 附录、无编码替换字符。两份正文互查，确认各自不含对方的特征条款。
-- [x] dist 仅批准产物。`make_release_manifest.py --verify` 对多出来的文件同样报错。
+- [x] dist 仅批准产物。`scripts/make_release_manifest.py --verify` 对多出来的文件同样报错。
 - [x] EXE self-test、Windows 冒烟。打包 EXE `--self-test` 0.49s 退出 0；真机 GUI 存活 6s 零 stderr（EVD-PKG-002）。
 
 ## 产品

@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.ui.view_format import (
+from ui.view_format import (
     format_results_as_csv,
     format_results_for_clipboard,
     format_table_rows_as_csv,
@@ -103,7 +103,7 @@ def _hostile_result():
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from dataclasses import replace
 
-    from stock_advisor.data.sample_data import make_sample_analysis
+    from data.sample_data import make_sample_analysis
 
     sample = make_sample_analysis()
     if isinstance(sample, list):

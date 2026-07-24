@@ -19,16 +19,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from qt_test_helpers import QtWidgets, qt_app, requires_qt
 from test_engine import FakeProvider
 
-from stock_advisor.domain.symbols import normalize_symbol
-from stock_advisor.services.workflow import analyze_symbol
+from domain.symbols import normalize_symbol
+from services.workflow import analyze_symbol
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.controllers.alert_controller import AlertController
-    from stock_advisor.qt_app.controllers.analysis_controller import AnalysisController
-    from stock_advisor.qt_app.pages.alerts_page import AlertsPage
-    from stock_advisor.qt_app.pages.individual_page import IndividualPage
-    from stock_advisor.qt_app.pages.portfolio_page import PortfolioPage
-    from stock_advisor.qt_app.settings import Settings
+    from qt_app.controllers.alert_controller import AlertController
+    from qt_app.controllers.analysis_controller import AnalysisController
+    from qt_app.pages.alerts_page import AlertsPage
+    from qt_app.pages.individual_page import IndividualPage
+    from qt_app.pages.portfolio_page import PortfolioPage
+    from qt_app.settings import Settings
 
 
 def _outcome(code: str):
@@ -36,7 +36,7 @@ def _outcome(code: str):
 
 
 def _report(outcomes):
-    from stock_advisor.services.batch import BatchReport
+    from services.batch import BatchReport
 
     # success_count / failure_count 是 BatchReport 的只读属性，由 outcomes 推导，不能传参。
     return BatchReport(total=len(outcomes), outcomes=list(outcomes))
@@ -68,7 +68,7 @@ class IndividualPageWiringTests(unittest.TestCase):
     def test_finishing_a_batch_selects_a_row_and_fills_the_detail_panes(self):
         """分析完就该看得到东西，而不是等用户自己先点一下才知道有详情。"""
         self.assertTrue(self.page.table.currentIndex().isValid())
-        self.assertGreater(self.page.evidence.factor_model.rowCount(), 0)
+        self.assertGreater(self.page.factor_bars.factor_count(), 0)
 
     def test_switching_tier_redecides_without_touching_the_provider(self):
         """REQ-003：切档只对缓存的 Measurement 重判，绝不重新联网。"""
@@ -100,27 +100,27 @@ class IndividualPageWiringTests(unittest.TestCase):
 
     def test_selecting_a_row_shows_that_symbols_evidence(self):
         self.page.table.setCurrentIndex(self.page.model.index(0, 0))
-        first = self.page.evidence.factor_model.rowCount()
+        first = self.page.factor_bars.factor_count()
 
         self.page.table.setCurrentIndex(self.page.model.index(1, 0))
 
         self.assertGreater(first, 0)
-        self.assertGreater(self.page.evidence.factor_model.rowCount(), 0)
+        self.assertGreater(self.page.factor_bars.factor_count(), 0)
 
     def test_selecting_a_row_runs_the_credibility_backtest(self):
         """REQ-021 的可信度回测：README 与变更日志都宣称它已交付，就必须真的算出来并显示。"""
         self.page.table.setCurrentIndex(self.page.model.index(0, 0))
 
-        text = self.page.position.backtest_label.text()
+        text = self.page.detail.toPlainText()
 
-        self.assertNotEqual(text, "—", "选中一行后回测区仍是空的——回测没有被调用")
+        self.assertIn("可信度回测", text, "选中一行后解释里没有回测一节——回测没有被调用")
         self.assertTrue(text.strip())
 
     def test_backtest_states_the_no_look_ahead_caveat(self):
         """回测结论必须带引擎给的"只用当日及之前数据"说明，不能只报一个漂亮数字。"""
         self.page.table.setCurrentIndex(self.page.model.index(0, 0))
 
-        text = self.page.position.backtest_label.text()
+        text = self.page.detail.toPlainText()
 
         self.assertTrue(
             any(k in text for k in ("未来", "当日", "样本")),
@@ -128,20 +128,25 @@ class IndividualPageWiringTests(unittest.TestCase):
         )
 
     def test_spectrum_shows_all_five_tiers_and_the_flip_point(self):
-        """README 宣称的"决策强度光谱：同一只股票五档结论一眼对照"。"""
+        """README 宣称的"决策强度光谱：同一只股票五档结论一眼对照"。
+
+        老 Tkinter 版把它画成五个并排的圆角格子（当前档描口音色边并带 ●），Qt 版此前退化成一行
+        `▸标准:HOLD` 的纯文字，五档的对照关系就此消失。这里断言的是那条对照带本身。
+        """
         self.page.table.setCurrentIndex(self.page.model.index(0, 0))
 
-        text = self.page.spectrum_label.text()
+        cells = self.page.spectrum.cells()
 
-        for name in ("稳健", "稳进", "标准", "积极", "激进"):
-            self.assertIn(name, text, f"光谱缺少 {name} 档")
-        self.assertIn("▸", text, "光谱没有标出当前档")
+        self.assertEqual([c.name for c in cells], ["稳健", "稳进", "标准", "积极", "激进"])
+        self.assertEqual(sum(1 for c in cells if c.is_current), 1, "光谱没有标出当前档")
+        # 翻转提示与五档结论同样要可读（老版把它放在光谱条下面一行）。
+        self.assertTrue(self.page.flip_hint.text().strip())
 
     def test_tier_choice_is_persisted_for_the_next_session(self):
         """REQ-009：档位跨会话保留。"""
         self.page.tier.set_level(4)
 
-        from stock_advisor.services import store
+        from services import store
 
         self.assertEqual(store.load_config(self.settings._path).level, 4)
 
@@ -149,7 +154,7 @@ class IndividualPageWiringTests(unittest.TestCase):
         self.page.capital_input.setText("250000")
         self.page._on_capital_changed()
 
-        from stock_advisor.services import store
+        from services import store
 
         self.assertEqual(store.load_config(self.settings._path).capital, Decimal("250000.00"))
         self.assertEqual(self.page.capital_input.text(), "250000.00")  # 回填为规范形式
@@ -168,7 +173,7 @@ class IndividualPageWiringTests(unittest.TestCase):
         self.page._on_analyze()
 
         self.assertEqual(self.page.chart.bar_count(), 0)
-        self.assertEqual(self.page.evidence.factor_model.rowCount(), 0)
+        self.assertEqual(self.page.factor_bars.factor_count(), 0)
 
 
 @requires_qt
@@ -197,7 +202,7 @@ class SettingsIsolationTests(unittest.TestCase):
         它是唯一通往用户真实 %APPDATA% 配置的入口。多一处调用就多一个绕开注入、直接读写用户数据的
         地方，也就多一条测试会污染真实配置的路——这正是本轮真实发生过的事。
         """
-        qt_app_dir = Path(__file__).resolve().parents[1] / "src" / "stock_advisor" / "qt_app"
+        qt_app_dir = Path(__file__).resolve().parents[1] / "src" / "qt_app"
         callers = []
         for path in sorted(qt_app_dir.rglob("*.py")):
             if path.name == "settings.py":  # 定义处本身不算调用处
@@ -239,7 +244,7 @@ class PortfolioPageWiringTests(unittest.TestCase):
         self._add("600000", "10.00", "100")
 
         self.assertTrue(self._config.is_file(), "自选改动没有落盘")
-        from stock_advisor.services import store
+        from services import store
 
         reloaded = store.load_config(self._config)
         # store 落盘时把代码规范化（600000 -> sh600000），表格与对比匹配都用这个形式。
@@ -261,7 +266,7 @@ class PortfolioPageWiringTests(unittest.TestCase):
         self.page.remove_selected()
 
         self.assertEqual(self.page.model.rowCount(), 0)
-        from stock_advisor.services import store
+        from services import store
 
         self.assertFalse(store.load_config(self._config).watchlist)  # watchlist 是不可变元组
 
@@ -273,7 +278,7 @@ class PortfolioPageWiringTests(unittest.TestCase):
 
         self.page._on_finished(_report(outcomes))
 
-        self.assertGreater(self.page.comparison.model.rowCount(), 0)
+        self.assertGreater(self.page.comparison_model.rowCount(), 0)
 
     def test_a_holding_without_cost_shows_no_profit_rather_than_zero(self):
         """没填成本就没有盈亏——显示破折号，不是 0。把"没填"显示成"不赚不亏"是伪造。"""
@@ -283,10 +288,11 @@ class PortfolioPageWiringTests(unittest.TestCase):
 
         self.page._on_finished(_report(outcomes))
 
-        row = self.page.comparison.model.rowCount() - 1
+        row = self.page.comparison_model.rowCount() - 1
         self.assertGreaterEqual(row, 0)
-        self.assertEqual(self.page.comparison.model.item(row, 7).text(), "—")  # 浮动盈亏
-        self.assertEqual(self.page.comparison.model.item(row, 8).text(), "—")  # 盈亏额
+        # 十一列版（与老 Tk 同形）：持仓成本第 8 列，浮动盈亏第 9 列（百分比与金额合并一格）。
+        self.assertEqual(self.page.comparison_model.item(row, 8).text(), "—")  # 持仓成本
+        self.assertEqual(self.page.comparison_model.item(row, 9).text(), "—")  # 浮动盈亏
 
     def test_refreshing_an_empty_watchlist_says_so_instead_of_analysing_nothing(self):
         self.page.refresh()
@@ -295,7 +301,7 @@ class PortfolioPageWiringTests(unittest.TestCase):
 
     def test_watchlist_and_capital_edits_do_not_clobber_each_other(self):
         """两页共用一份 Settings 的理由：各存各的整份配置会互相覆盖，用户会静默丢数据。"""
-        from stock_advisor.services import store
+        from services import store
 
         self._add("600000", "10.00", "100")
         self.settings.update(capital=Decimal("777000.00"))  # 冒充个股页改本金
@@ -307,7 +313,7 @@ class PortfolioPageWiringTests(unittest.TestCase):
 
     def test_failed_symbols_are_excluded_and_reported(self):
         """取数失败的票不该以一行空数据混进对比表，但用户要知道少了几只。"""
-        from stock_advisor.services.workflow import AnalysisOutcome
+        from services.workflow import AnalysisOutcome
 
         self._add("600000")
         bad = AnalysisOutcome(symbol=normalize_symbol("600000"), error="boom")
@@ -315,7 +321,7 @@ class PortfolioPageWiringTests(unittest.TestCase):
 
         self.page._on_finished(_report([bad]))
 
-        self.assertEqual(self.page.comparison.model.rowCount(), 0)
+        self.assertEqual(self.page.comparison_model.rowCount(), 0)
         self.assertIn("未纳入", self.page.status.text())
 
 
@@ -349,7 +355,7 @@ class AlertRuleWiringTests(unittest.TestCase):
     def test_adding_a_rule_shows_it_and_persists_it(self):
         self._add()
 
-        from stock_advisor.services import store
+        from services import store
 
         self.assertEqual(self.page.rule_model.rowCount(), 1)
         saved = store.load_config(self._config).alerts
@@ -373,7 +379,7 @@ class AlertRuleWiringTests(unittest.TestCase):
 
         self.page.remove_selected_rule()
 
-        from stock_advisor.services import store
+        from services import store
 
         self.assertEqual(self.page.rule_model.rowCount(), 1)
         self.assertEqual(len(store.load_config(self._config).alerts), 1)

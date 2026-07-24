@@ -14,8 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_screener import snap
 
-from stock_advisor.ports import Completeness
-from stock_advisor.services.screener_run import run_screen
+from ports import Completeness
+from services.screener_run import run_screen
 
 
 def _market(n=40):

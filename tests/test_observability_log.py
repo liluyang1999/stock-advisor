@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.observability import (
+from observability import (
     JsonLinesFormatter,
     configure_logging,
     get_logger,
@@ -21,7 +21,7 @@ from stock_advisor.observability import (
 
 
 def _format(level: int, msg: str, **extra) -> dict:
-    record = logging.LogRecord("stock_advisor.test", level, __file__, 1, msg, (), None)
+    record = logging.LogRecord("test", level, __file__, 1, msg, (), None)
     for k, v in extra.items():
         setattr(record, k, v)
     return json.loads(JsonLinesFormatter().format(record))
@@ -37,7 +37,7 @@ class JsonLinesFormatterTests(unittest.TestCase):
     def test_carries_standard_fields(self):
         payload = _format(logging.WARNING, "degraded read")
         self.assertEqual(payload["level"], "WARNING")
-        self.assertEqual(payload["logger"], "stock_advisor.test")
+        self.assertEqual(payload["logger"], "test")
         self.assertEqual(payload["message"], "degraded read")
         self.assertIn("timestamp", payload)
 

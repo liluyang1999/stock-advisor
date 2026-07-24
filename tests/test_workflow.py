@@ -7,10 +7,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.data.data_provider import MarketDataError
-from stock_advisor.domain.models import DailyBar, FilterCriteria, MarketSnapshot, Quote
-from stock_advisor.domain.symbols import normalize_symbol
-from stock_advisor.services.workflow import (
+from data.data_provider import MarketDataError
+from domain.models import DailyBar, FilterCriteria, MarketSnapshot, Quote
+from domain.symbols import normalize_symbol
+from services.workflow import (
     CancelToken,
     ScreeningProvider,
     analyze_symbol,

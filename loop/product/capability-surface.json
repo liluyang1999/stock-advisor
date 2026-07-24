@@ -17,38 +17,42 @@
       "requirement_id": "REQ-002",
       "widget": "ScreenerPage",
       "controls": [
-        "筛选预设选择",
+        "筛选预设 强势动量",
+        "筛选预设 低估值蓝筹",
         "全市场选股结果表"
       ],
-      "note": "六预设全市场筛选"
+      "note": "六宫格策略预设 + 每预设可微调参数 + 全市场筛选"
     },
     {
       "requirement_id": "REQ-003",
       "widget": "TierSelector",
       "controls": [
-        "决策强度 稳健",
-        "决策强度 标准",
-        "决策强度 激进",
+        "决策强度 L1稳健",
+        "决策强度 L3标准",
+        "决策强度 L5激进",
+        "当前决策强度口径",
         "决策强度光谱"
       ],
-      "note": "五档分段按钮（并排可见，非下拉框）+ 五档一眼对照；切档只重判不联网"
+      "note": "五档分段按钮（读屏可见档位序号与名称）+ 当前档口径 + 五档一眼对照的光谱条"
     },
     {
       "requirement_id": "REQ-004",
-      "widget": "EvidenceView",
+      "widget": "FactorBars",
       "controls": [
-        "因子明细表",
-        "K线图"
+        "因子拆解条形图",
+        "K线图",
+        "详细解释"
       ],
-      "note": "结论/因子/证据强度与 K 线；仓位与回测见 PositionPlanView"
+      "note": "因子拆解条形图给出每个因子的正负贡献，理由与风险在 DetailView 的整篇解释里（WI-035 用 FactorBars + DetailView 取代了 EvidenceView 的四列因子表）"
     },
     {
       "requirement_id": "REQ-005",
-      "widget": "ComparisonView",
+      "widget": "PortfolioPage",
       "controls": [
-        "自选持仓表"
+        "自选持仓表",
+        "自选持仓横向对比表"
       ],
-      "note": "自选/持仓横向对比与浮动盈亏"
+      "note": "自选/持仓横向对比与浮动盈亏。WI-035 把 ComparisonView 并回自选页的十一列对比表（与老 Tkinter 版同形），故这里改盯两张表的可访问名，而不是一个已不存在的部件类"
     },
     {
       "requirement_id": "REQ-006",
@@ -92,9 +96,11 @@
     },
     {
       "requirement_id": "REQ-021",
-      "widget": "PositionPlanView",
-      "controls": [],
-      "note": "仓位计算器与可信度回测（含无未来泄漏说明）"
+      "widget": "DetailView",
+      "controls": [
+        "详细解释"
+      ],
+      "note": "仓位与风控计算器、可信度回测（含无未来泄漏说明）作为整篇解释的两节呈现（WI-035 用 DetailView 取代了 PositionPlanView 的两个 label）"
     },
     {
       "requirement_id": "REQ-031",

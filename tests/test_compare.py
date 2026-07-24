@@ -8,10 +8,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_engine import make_history, make_quote
 
-from stock_advisor.domain.compare import build_comparison_rows
-from stock_advisor.domain.engine import build_analysis_result, measure
-from stock_advisor.domain.policy import decide
-from stock_advisor.ui.view_format import format_comparison_row
+from domain.compare import build_comparison_rows
+from domain.engine import build_analysis_result, measure
+from domain.policy import decide
+from ui.view_format import format_comparison_row
 
 
 def entry(code, last_price, cost=None, shares=None, step=0.25):

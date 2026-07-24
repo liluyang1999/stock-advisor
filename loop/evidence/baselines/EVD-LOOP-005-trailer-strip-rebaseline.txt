@@ -1,0 +1,171 @@
+Evidence: EVD-LOOP-005
+Record version: 2.0.0
+Control-plane SHA-256: 999ff80b7575edf684c046d2fd4dc3f6011c840e0a101af7c02ac04b64efd907
+Working directory: D:\Projects\stock-advisor
+Commit: 4bd895467d6b7f22f362568a9582ab15d67c4dbf
+Dirty worktree: true (see "Provenance of the changes in this baseline" below -- this
+capture deliberately covers an uncommitted tree, because the control-plane edits that
+made the previous baseline stale are themselves uncommitted)
+Implemented by: history-rewrite-remediation
+Verified by: loop/scripts/run_gates.py (machine gate suite)
+Verification started: 2026-07-22T01:10:00+09:00
+Verification finished: 2026-07-22T01:25:04+09:00
+
+INDEPENDENCE CAVEAT -- read before trusting the verified_by field:
+
+The v2 invariant requires implemented_by != verified_by so that work is not signed off by
+whoever did it. That independence is only partly satisfied here and the record says so
+rather than manufacturing a second name. The changes in group 1 and group 2 below were
+made by the same actor that ran the checks. What is partly independent is the checking
+machinery: loop/scripts/ has zero modifications in this working tree (verified with git
+status over that path), so validate_loop.py, run_gates.py, check_traceability.py,
+check_core_boundaries.py, check_capability_surface.py and check_coverage.py are exactly as
+they stood before this task and could not have been bent to pass.
+
+loop/tests/ is NOT untouched: this task rewrote one test in
+loop/tests/test_loop_tooling.py -- see group 4 below. That change is the one place where
+this task edited a check and then reported the check passing, so it is called out here
+rather than buried: the replacement test was mutation-proven (injecting a deliberate
+config.json/tokens.json divergence makes it fail, and the injected change was reverted),
+and it is strictly stronger than what it replaced, but it has had no independent review.
+
+Within tests/, this task touched only tests/test_numeric_golden.py (its fixture path) and
+the git-mv of the fixture itself; the other 15 changed test files under tests/ are the
+author's pre-existing staged work, not this task's.
+
+No independent human review has taken place. Whoever reviews this work should replace
+verified_by with their own identity.
+
+Context:
+
+EVD-LOOP-004's recorded control_plane_sha256 (1f5b7450...) no longer matched the tree, so
+validate_loop.py reported both "EVD-LOOP-004 control-plane digest differs from the current
+tree" and "no live v2 baseline evidence matches the current control plane". This record
+re-baselines onto digest 999ff80b... and supersedes EVD-LOOP-004.
+
+What changed the digest, in four groups:
+
+1. Commit-history rewrite remediation (this task). All 158 commits were rewritten to strip
+   the Co-Authored-By trailer (see governance/HISTORY_REWRITE.md for the full record and
+   governance/history-rewrite-2026-07-21-sha-map.tsv for the 158-entry old->new mapping).
+   That invalidated 111 SHA references inside the repository. 100 of them, in 13 living
+   documents, were rewritten to the corresponding new SHA preserving each site's
+   abbreviation length; the 11 references inside the 8 sealed evidence artifacts under
+   evidence/baselines/ were deliberately left untouched, since those artifacts carry a
+   recorded sha256 that validate_loop.py checks and are tamper-evident by design. Two new
+   files were added under governance/ (the rewrite record and the mapping table); both are
+   inside the digest.
+
+2. Test-fixture relocation (this task). testdata/golden_indicators.json moved to
+   tests/fixtures/golden_indicators.json via git mv (rename preserved). Inside loop/ this
+   touched three path references only: planning/work-items.json (WI-008
+   implementation_paths dropped the now-nonexistent "testdata/", already covered by
+   "tests/"), quality/traceability.csv (REQ-019 note) and state/evidence-index.json
+   (EVD-NUM-001 summary). state/progress.jsonl's historical entry was NOT rewritten for
+   this: it is an append-only log of what was done at the time.
+
+3. The repository author's in-flight design-token work, which was already staged in the
+   working tree before this task began and is carried into this baseline unreviewed.
+   It spans config.json, planning/dependency-graph.json, planning/work-items.json,
+   product/UI_DESIGN_SYSTEM.md, product/capability-surface.json, product/tokens.json,
+   quality/traceability.csv, schemas/tokens.schema.json, state/backlog.json,
+   state/current.json and state/metrics.json (851 insertions / 506 deletions). This
+   record does NOT assert that work is complete or correct -- see "Scope limit".
+
+4. A stale pinned value in loop/tests/test_loop_tooling.py, found by this task and fixed.
+   test_target_stack_and_font_are_explicit asserted control_min_height_dip == 44,
+   primary_control_height_dip == 48 and table_row_height_dip == 48. All three are
+   superseded: product/UI_DESIGN_SYSTEM.md now specifies 32 / 36 / 30 and records why (44
+   and 48 are Apple HIG / Material *touch*-target figures, wrong for a mouse-driven
+   desktop app), and both product/tokens.json and config.json already carry the new
+   values. Only the test still pinned the old ones, so it failed. The three literals were
+   NOT simply retyped to 32/36/30 -- that would re-create the same brittleness. They were
+   replaced by test_config_ui_tokens_mirror_the_design_token_source, which asserts every
+   key of config.json's ui_tokens equals the same key in product/tokens.json. That is the
+   invariant actually worth protecting (tokens.json is the single source; config.json
+   mirrors a subset of it) and it is what the previous literals failed to protect: it
+   catches drift in either direction instead of breaking on every legitimate token change.
+   It follows the same "assert the invariant, not the number" principle the neighbouring
+   test in that file already documents. Mutation-proven: injecting a divergence into
+   config.json makes it fail; the injection was reverted and config.json re-verified.
+
+Verifier results (run against the tree this digest was computed from):
+
+- run_gates.py: ran=8 failed=1. G-FORMAT, G-LINT, G-TYPE, G-CORE, G-COVERAGE, G-SECURITY
+  and G-SURFACE all PASS. The single failure was G-LOOP, failing on exactly the
+  baseline-staleness/registration errors this record exists to clear; it is expected to
+  pass once this record is registered, and that is re-confirmed below.
+  (An earlier run in this same task also had G-FORMAT red: the group-4 test rewrite was
+  not ruff-formatted on first write. It was reformatted with `ruff format`, re-linted
+  clean, and the rewritten test re-run green before this capture -- recorded here rather
+  than quietly re-run, since an evidence artifact that only ever shows the passing attempt
+  is not evidence.)
+- check_traceability.py: exit 0; TRACEABILITY_OK 34/34.
+- render_status.py --check: exit 0; STATUS_OK.
+- render_backlog.py --check: exit 0; BACKLOG_OK.
+- check_core_boundaries.py: exit 0; CORE_BOUNDARY_OK modules=12 forbidden_roots=6
+  forbidden_internal=4.
+- check_capability_surface.py: exit 0; SURFACE_OK requirements=34 user_facing=12
+  internal=22.
+- product tests (python -m unittest discover -s tests, QT_QPA_PLATFORM=offscreen): exit 0;
+  847 tests in 45.621s; OK. Unchanged in count and result from before this task -- the
+  fixture relocation moved a file and rewrote one path, it did not add or remove a test.
+- python main.py --self-test: exit 0; SELF_TEST_OK symbol=SH.600519 action=BUY score=47
+  confidence=84 L1=BUY L5=BUY plan_shares=1300 backtest_ok=True self_check=True
+  checks=8/8 screen_candidates=3 top=600000.
+- loop unit tests (python -m unittest discover -s loop/tests): 55 tests (54 before group 4
+  split one test into two); final result 55/55 OK. The intermediate states are recorded
+  here rather than only the final green, because each one was a real finding:
+    * 10 failures while the baseline was stale -- all ten assert
+      validate_loop.validate() == [] and failed on the same staleness/registration string
+      as G-LOOP. One root cause, not ten.
+    * then 1 failure: test_target_stack_and_font_are_explicit, the stale pinned token
+      value described in group 4 above.
+    * then 1 failure: test_metrics_tool_test_count_is_anchored_to_the_real_suite, because
+      group 4 took the suite from 54 to 55 tests while state/metrics.json still said 54.
+      That test exists precisely to stop that number rotting (its own comment records that
+      tool_tests once sat at 13 while the suite had reached 50), so it was doing its job.
+      Fixed by updating metrics.json control_plane.tool_tests_total 54 -> 55 and
+      tool_tests_passed 52 -> 55 (the latter was not machine-checked and was simply stale),
+      then re-rendering STATUS.md, whose "Loop tooling tests" line moved 52/54 -> 55/55.
+
+History-rewrite integrity check (the basis for claiming the rewrite changed no content):
+
+The pre-rewrite history is retained locally at refs/backup/pre-trailer-strip (413a23dd).
+Both histories were exported as "tree SHA | author name | author email | author timestamp |
+subject" for all 158 commits in --reverse order and diffed: identical, zero differences.
+Identical tree SHAs mean no file content changed in any commit. The old->new pairing used
+for the 100 reference rewrites was derived from that same positional correspondence and
+re-verified per pair on those five fields before any substitution. No substituted token was
+a prefix of more than one old SHA, and none was a prefix of any new SHA.
+
+Known unresolved reference (pre-existing, NOT caused by the rewrite):
+
+881099806deca77a7bf7e784d6786f9bccdf0ce6 appears in STATUS.md, state/current.json
+(baseline_commit), baseline/REPOSITORY_INVENTORY.md, baseline/test-baseline.json and the
+six EVD-BASE-001/002/003 + EVD-LOOP-001/002/003 records. That object does not exist in the
+current history, in the pre-rewrite history (refs/backup/pre-trailer-strip), or in the
+older repository backup that predates today's work. It is therefore outside the rewrite's
+mapping and was left untouched rather than guessed at; correcting it needs a human decision
+about which commit it was meant to name.
+
+Registration note:
+
+This artifact is written and hashed before its record is added to state/evidence-index.json.
+Both evidence/ and state/evidence-index.json are excluded from control_plane_digest(), so
+neither this file nor its own registration perturbs the digest recorded above. After
+registration, validate_loop.py returns exit 0 / LOOP_VALIDATION_OK and the ten loop unit
+tests that assert validate() == [] pass, taking loop/tests to 54/54 and run_gates.py to
+ran=8 failed=0 RUN_GATES_OK.
+
+Scope limit:
+
+This record re-confirms AC-000 (the standalone Loop control plane is internally valid and
+its declared gates run green) at the digest above. It does NOT review, endorse, or claim
+completion of the in-flight design-token work described in group 3 -- that work was already
+staged when this task started, was neither authored nor reviewed here, and is carried into
+this baseline only because it is physically present in the tree the digest hashes. If that
+work is intended to close out under its own work item and evidence record, this baseline
+does not substitute for it. Nor does this record make any claim about packaging, release
+readiness, licence gates, or visual QA; G-TRACE and G-RELEASE remain release-phase gates
+excluded from the run above.

@@ -7,18 +7,18 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.data.sample_data import (
+from data.sample_data import (
     make_sample_analysis,
     make_sample_history,
     make_sample_measurement,
     make_sample_recommendation,
 )
-from stock_advisor.ui.layout import (
+from ui.layout import (
     compute_centered_geometry,
     compute_content_band,
     compute_window_position,
 )
-from stock_advisor.ui.theme import (
+from ui.theme import (
     ACTION_BUTTON_LABELS,
     APP_ICON_FILENAME,
     APP_TITLE,
@@ -29,7 +29,7 @@ from stock_advisor.ui.theme import (
     WINDOW_MAX_SIZE,
     WINDOW_WORKAREA_MARGIN,
 )
-from stock_advisor.ui.view_format import (
+from ui.view_format import (
     build_snapshot_detail,
     build_snapshot_summary,
     format_comparison_row,
@@ -42,7 +42,7 @@ from stock_advisor.ui.view_format import (
     table_sort_key,
     watchlist_rows,
 )
-from stock_advisor.ui.view_text import (
+from ui.view_text import (
     build_backtest_text,
     build_detail_text,
     build_fund_flow_text,
@@ -239,7 +239,7 @@ class AppHelperTests(unittest.TestCase):
         self.assertNotIn("绝对预测", text)
 
     def test_colors_use_a_share_native_red_up_green_down(self):
-        from stock_advisor.ui.view_format import _action_color, _score_color
+        from ui.view_format import _action_color, _score_color
 
         # 红=涨/买，绿=跌/卖：买入与正分同色，卖出与负分同色
         self.assertEqual(_action_color("BUY"), _score_color(10))
@@ -260,7 +260,7 @@ class AppHelperTests(unittest.TestCase):
         self.assertIn("标准", level_summary("abc"))
 
     def test_position_plan_text_is_actionable(self):
-        from stock_advisor.domain.policy import position_plan
+        from domain.policy import position_plan
 
         m = make_sample_measurement()
         text = build_position_plan_text(position_plan(m, 3, 100000), "标准")
@@ -268,7 +268,7 @@ class AppHelperTests(unittest.TestCase):
         self.assertIn("最大亏损", text)
 
     def test_position_plan_text_omits_zero_stop_for_invalid_plan(self):
-        from stock_advisor.domain.models import PositionPlan
+        from domain.models import PositionPlan
 
         plan = PositionPlan(
             fraction=0.0,
@@ -290,20 +290,20 @@ class AppHelperTests(unittest.TestCase):
         self.assertNotIn("参考止损价", text)
 
     def test_share_count_parser_rejects_fractional_input(self):
-        from stock_advisor.domain.input_validate import _parse_optional_positive_int
+        from domain.input_validate import _parse_optional_positive_int
 
         self.assertIsNone(_parse_optional_positive_int("100.5"))
         self.assertEqual(_parse_optional_positive_int("200.0"), 200)
 
     def test_positive_float_parser_rejects_non_finite_input(self):
-        from stock_advisor.domain.input_validate import _parse_optional_positive
+        from domain.input_validate import _parse_optional_positive
 
         self.assertIsNone(_parse_optional_positive("NaN"))
         self.assertIsNone(_parse_optional_positive("Infinity"))
         self.assertIsNone(_parse_optional_positive("-Infinity"))
 
     def test_alert_threshold_parser_rejects_non_finite_input(self):
-        from stock_advisor.domain.input_validate import _parse_alert_threshold
+        from domain.input_validate import _parse_alert_threshold
 
         self.assertEqual(_parse_alert_threshold("12.5"), 12.5)
         self.assertIsNone(_parse_alert_threshold("NaN"))
@@ -311,7 +311,7 @@ class AppHelperTests(unittest.TestCase):
         self.assertIsNone(_parse_alert_threshold("-Infinity"))
 
     def test_backtest_text_has_winrate_and_honest_caveat(self):
-        from stock_advisor.domain.backtest import backtest_signals
+        from domain.backtest import backtest_signals
 
         report = backtest_signals(make_sample_history(), level=3)
         text = build_backtest_text(report)
@@ -319,7 +319,7 @@ class AppHelperTests(unittest.TestCase):
         self.assertIn("不预示未来", text)
 
     def test_backtest_text_hides_non_finite_numbers(self):
-        from stock_advisor.domain.models import BacktestReport, BacktestStat
+        from domain.models import BacktestReport, BacktestStat
 
         report = BacktestReport(
             level=3,
@@ -340,14 +340,14 @@ class AppHelperTests(unittest.TestCase):
         self.assertNotIn("inf", text)
 
     def test_spectrum_text_lists_levels_and_hint(self):
-        from stock_advisor.domain.policy import spectrum
+        from domain.policy import spectrum
 
         text = build_spectrum_text(spectrum(make_sample_measurement(), 3))
         self.assertIn("决策强度光谱", text)
         self.assertIn("标准", text)
 
     def test_watchlist_rows_show_pl_when_held_and_analyzed(self):
-        from stock_advisor.domain.models import WatchItem
+        from domain.models import WatchItem
 
         result = make_sample_analysis()  # last≈26.6
         rows = watchlist_rows(
@@ -359,7 +359,7 @@ class AppHelperTests(unittest.TestCase):
         self.assertIn("元", rows[0][4])  # 含金额
 
     def test_watchlist_rows_hide_non_finite_cost_and_cached_price(self):
-        from stock_advisor.domain.models import WatchItem
+        from domain.models import WatchItem
 
         result = replace(make_sample_analysis(), last=float("inf"))
 
@@ -376,14 +376,14 @@ class AppHelperTests(unittest.TestCase):
         self.assertNotIn("inf", payload)
 
     def test_watchlist_rows_dash_when_no_cost(self):
-        from stock_advisor.domain.models import WatchItem
+        from domain.models import WatchItem
 
         rows = watchlist_rows([WatchItem("sh600519")], {})
         self.assertEqual(rows[0][2], "—")
         self.assertEqual(rows[0][4], "—")
 
     def test_comparison_row_formatter_hides_non_finite_numbers(self):
-        from stock_advisor.domain.models import ComparisonRow
+        from domain.models import ComparisonRow
 
         row = ComparisonRow(
             code="SH.600519",
@@ -405,7 +405,7 @@ class AppHelperTests(unittest.TestCase):
         self.assertNotIn("inf", payload)
 
     def test_fund_flow_text_formats_inflow_and_outflow(self):
-        from stock_advisor.domain.models import FundFlow
+        from domain.models import FundFlow
 
         text = build_fund_flow_text(
             FundFlow(today_main=3.0e8, main_5d=-1.0e8, recent=[("2026-06-24", 3.0e8)]), "测试"
@@ -416,7 +416,7 @@ class AppHelperTests(unittest.TestCase):
         self.assertIn("测试", text)
 
     def test_fund_flow_text_hides_non_finite_numbers(self):
-        from stock_advisor.domain.models import FundFlow
+        from domain.models import FundFlow
 
         text = build_fund_flow_text(
             FundFlow(

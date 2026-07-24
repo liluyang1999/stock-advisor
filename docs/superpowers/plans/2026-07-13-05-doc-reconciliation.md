@@ -29,7 +29,7 @@
 
 **Files:** new `docs/README.md`; `loop/governance/` (a short doc-hygiene policy — this touches loop/ → re-baseline).
 
-- [ ] **Step 1 — Docs index.** Create `docs/README.md`: state that `loop/` is the single source of truth; list the current design spec + plans (the 5 kept files) with one-line descriptions; note that the pre-2026-07-11 Tk-era `docs/superpowers/` material has been superseded by `loop/` + ADR-0001 (PySide6) and removed (recoverable from git history, e.g. commit range / the baseline `0d2fdf7`).
+- [ ] **Step 1 — Docs index.** Create `docs/README.md`: state that `loop/` is the single source of truth; list the current design spec + plans (the 5 kept files) with one-line descriptions; note that the pre-2026-07-11 Tk-era `docs/superpowers/` material has been superseded by `loop/` + ADR-0001 (PySide6) and removed (recoverable from git history, e.g. commit range / the baseline `61b3cde`).
 - [ ] **Step 2 — Hygiene policy.** Add a short "documentation hygiene" note to `loop/governance/` (or `loop/README.md`): `loop/` is authoritative; new design work goes to `docs/superpowers/specs|plans/`; superseded material is removed, not left to rot, with a git-history pointer. (loop/ edit → re-baseline this task.)
 - [ ] **Step 2b — Re-baseline + gates green; commit** `docs: add docs index; loop: doc-hygiene policy (loop as SSOT)`.
 

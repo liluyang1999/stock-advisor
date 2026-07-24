@@ -1,7 +1,7 @@
 """金融数值的黄金样本 + 属性 + 防御测试（REQ-019/020/021/022/024 / WI-008 / TEST-NUM-001）。
 
 WI-008 的 DoD 要求四类测试对**独立手算**的样本 100% 通过：
-1. golden —— 值来自 testdata/golden_indicators.json，每个 expected 由人手笔算（推导在 fixture 里），
+1. golden —— 值来自 tests/fixtures/golden_indicators.json，每个 expected 由人手笔算（推导在 fixture 里），
    不从被测代码生成，否则是循环验证；
 2. property —— 与具体数值无关、必须恒成立的不变量（如 RSI∈[0,100]、bollinger 单调）；
 3. look-ahead-guard —— 回测在第 i 天的决策不得读到第 i 天之后的数据（REQ-021）；
@@ -17,16 +17,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.domain.engine import (
+from domain.engine import (
     average_true_range_percent,
     bollinger_position,
     moving_average,
     rsi,
 )
-from stock_advisor.domain.models import DailyBar
+from domain.models import DailyBar
 
 GOLDEN = json.loads(
-    (Path(__file__).resolve().parents[1] / "testdata" / "golden_indicators.json").read_text(
+    (Path(__file__).resolve().parent / "fixtures" / "golden_indicators.json").read_text(
         encoding="utf-8"
     )
 )

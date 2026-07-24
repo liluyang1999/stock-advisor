@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_engine import make_history, make_quote
 
-from stock_advisor.domain.engine import (
+from domain.engine import (
     _clean_quote,
     _confidence,
     _dedupe_factors,
@@ -34,7 +34,7 @@ from stock_advisor.domain.engine import (
     exponential_moving_average,
     support_resistance,
 )
-from stock_advisor.domain.models import FactorScore, IndicatorSnapshot
+from domain.models import FactorScore, IndicatorSnapshot
 
 
 def _quote():

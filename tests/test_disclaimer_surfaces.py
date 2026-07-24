@@ -12,10 +12,10 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from stock_advisor.data.sample_data import make_sample_analysis
-from stock_advisor.domain.models import CORE_DISCLAIMER
-from stock_advisor.ui.manual import build_manual_html
-from stock_advisor.ui.view_format import (
+from data.sample_data import make_sample_analysis
+from domain.models import CORE_DISCLAIMER
+from ui.manual import build_manual_html
+from ui.view_format import (
     format_results_as_csv,
     format_results_for_clipboard,
     format_table_rows_as_csv,
@@ -30,10 +30,10 @@ _SAMPLE_TABLE_ROWS = [("600519", "贵州茅台", "买入", "47", "84", "1688.00"
 
 # 结果视图页：每个都必须在源码里静态引用 CORE_DISCLAIMER（常驻声明，切页不带走）。
 _RESULT_VIEW_PAGES = (
-    "src/stock_advisor/qt_app/pages/individual_page.py",
-    "src/stock_advisor/qt_app/pages/screener_page.py",
-    "src/stock_advisor/qt_app/pages/alerts_page.py",
-    "src/stock_advisor/qt_app/pages/evidence_page.py",
+    "src/qt_app/pages/individual_page.py",
+    "src/qt_app/pages/screener_page.py",
+    "src/qt_app/pages/alerts_page.py",
+    "src/qt_app/pages/evidence_page.py",
 )
 
 

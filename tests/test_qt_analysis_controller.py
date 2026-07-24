@@ -16,7 +16,7 @@ from qt_test_helpers import QtCore, QtWidgets, qt_app, requires_qt, wait_for
 from test_engine import FakeProvider
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.controllers.analysis_controller import AnalysisController
+    from qt_app.controllers.analysis_controller import AnalysisController
 
 
 @requires_qt

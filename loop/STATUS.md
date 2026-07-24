@@ -10,7 +10,7 @@
 - Current GUI / target GUI: `Tkinter / PySide6`
 - Runtime font target: `Microsoft YaHei`
 - Tests: `814/814`
-- Loop tooling tests: `52/54`
+- Loop tooling tests: `55/55`
 - Loop schemas: `23`
 - Traceability: `34/34`
 - Coverage: `0.9648`

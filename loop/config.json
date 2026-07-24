@@ -26,50 +26,142 @@
     }
   },
   "ui_tokens": {
-    "font_families": ["Microsoft YaHei"],
-    "font_points": {"caption": 9, "body": 10.5, "control": 10.5, "section": 13, "page": 17},
-    "spacing_dip": [8, 12, 16, 24, 32],
-    "control_min_height_dip": 44,
-    "primary_control_height_dip": 48,
-    "table_row_height_dip": 48,
-    "icon_size_dip": [16, 18, 20],
+    "font_families": [
+      "Microsoft YaHei"
+    ],
+    "font_points": {
+      "caption": 9,
+      "body": 10.5,
+      "control": 10.5,
+      "section": 13,
+      "page": 17
+    },
+    "spacing_dip": [
+      8,
+      12,
+      16,
+      24,
+      32
+    ],
+    "control_min_height_dip": 32,
+    "primary_control_height_dip": 36,
+    "table_row_height_dip": 30,
+    "icon_size_dip": [
+      16,
+      18,
+      20
+    ],
     "content_max_width_dip": 1520,
-    "window_minimum_dip": [1000, 680]
+    "window_minimum_dip": [
+      1000,
+      680
+    ],
+    "button_min_width_dip": 88
   },
   "network_policy": {
     "target_transport": "QNetworkAccessManager in a dedicated QObject + QThread event loop",
     "migration_transport": "bounded synchronous urllib provider in QThreadPool workers",
     "connect_timeout_seconds": 4,
     "read_timeout_seconds": 8,
-    "operation_deadlines_seconds": {"quote": 12, "history": 20, "market_snapshot": 30, "fund_flow": 12},
+    "operation_deadlines_seconds": {
+      "quote": 12,
+      "history": 20,
+      "market_snapshot": 30,
+      "fund_flow": 12
+    },
     "max_attempts": 3,
     "backoff_base_seconds": 0.35,
     "backoff_jitter_ratio": 0.2,
-    "retry_http_statuses": [408, 425, 429, 500, 502, 503, 504],
+    "retry_http_statuses": [
+      408,
+      425,
+      429,
+      500,
+      502,
+      503,
+      504
+    ],
     "retry_idempotent_only": true,
     "respect_retry_after_within_deadline": true,
     "max_concurrency_per_host": 4,
     "max_global_concurrency": 8,
-    "circuit_breaker": {"failures_to_open": 5, "cooldown_seconds": 30, "half_open_probes": 1},
-    "response_limits_bytes": {"quote": 2097152, "history": 8388608, "market_snapshot": 33554432, "fund_flow": 4194304},
+    "circuit_breaker": {
+      "failures_to_open": 5,
+      "cooldown_seconds": 30,
+      "half_open_probes": 1
+    },
+    "response_limits_bytes": {
+      "quote": 2097152,
+      "history": 8388608,
+      "market_snapshot": 33554432,
+      "fund_flow": 4194304
+    },
     "tls_verification_required": true,
     "https_to_http_redirect_allowed": false,
     "fabricated_fallbacks_allowed": false
   },
   "data_freshness": {
     "description_ref": "architecture/DATA_QUALITY.md#stale-ttl",
-    "stale_ttl_seconds": {"quote": 30, "history": 21600, "market_snapshot": 120, "fund_flow": 180}
+    "stale_ttl_seconds": {
+      "quote": 30,
+      "history": 21600,
+      "market_snapshot": 120,
+      "fund_flow": 180
+    }
   },
   "commands": {
-    "baseline_tests": ["python", "-m", "unittest", "discover", "-s", "tests"],
-    "loop_tests": ["python", "-m", "unittest", "discover", "-s", "loop/tests"],
-    "self_test": ["python", "main.py", "--self-test"],
-    "syntax": ["python", "-m", "compileall", "-q", "main.py", "build_exe.py", "src/stock_advisor"],
-    "loop_validate": ["python", "loop/scripts/validate_loop.py"],
-    "traceability": ["python", "loop/scripts/check_traceability.py"],
-    "status_check": ["python", "loop/scripts/render_status.py", "--check"],
-    "backlog_check": ["python", "loop/scripts/render_backlog.py", "--check"],
-    "core_boundary_check": ["python", "loop/scripts/check_core_boundaries.py"]
+    "baseline_tests": [
+      "python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests"
+    ],
+    "loop_tests": [
+      "python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "loop/tests"
+    ],
+    "self_test": [
+      "python",
+      "main.py",
+      "--self-test"
+    ],
+    "syntax": [
+      "python",
+      "-m",
+      "compileall",
+      "-q",
+      "main.py",
+      "scripts",
+      "src"
+    ],
+    "loop_validate": [
+      "python",
+      "loop/scripts/validate_loop.py"
+    ],
+    "traceability": [
+      "python",
+      "loop/scripts/check_traceability.py"
+    ],
+    "status_check": [
+      "python",
+      "loop/scripts/render_status.py",
+      "--check"
+    ],
+    "backlog_check": [
+      "python",
+      "loop/scripts/render_backlog.py",
+      "--check"
+    ],
+    "core_boundary_check": [
+      "python",
+      "loop/scripts/check_core_boundaries.py"
+    ]
   },
   "quality_policy": {
     "required_pass_rate": 1.0,
@@ -80,7 +172,7 @@
     "consecutive_full_green_runs_for_release": 5
   },
   "paths": {
-    "source": "../src/stock_advisor",
+    "source": "../src",
     "tests": "../tests",
     "build": "../build",
     "dist": "../dist",

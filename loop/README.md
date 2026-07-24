@@ -82,7 +82,7 @@ python -m unittest discover -s loop/tests
 ```powershell
 python -m unittest discover -s tests
 python main.py --self-test
-python -m compileall -q main.py build_exe.py src/stock_advisor
+python -m compileall -q main.py scripts src
 ```
 
 PySide6、pytest-qt、Ruff、pyright、覆盖率、Qt GUI 与打包门在工具链工作项完成前保持未启用/未验证，不能提前声称通过。
@@ -104,4 +104,4 @@ PySide6、pytest-qt、Ruff、pyright、覆盖率、Qt GUI 与打包门在工具�
 
 - `loop/` 是唯一权威源；`docs/`（`docs/superpowers/specs|plans/`）只保存推动 `loop/` 演进的叙事性设计说明与实现计划，不是第二真源——两者分歧时以 `loop/` 为准。
 - 新设计工作写入 `docs/superpowers/specs/`（设计说明）或 `docs/superpowers/plans/`（实现计划），不要散落到别处；其中长期有价值的内容仍需落到 `loop/` 对应文件。
-- 被 `loop/`（或新设计文档）取代且独有价值已提炼的旧文档要删除，不留着腐烂；删除前用 `git grep` 排查悬挂引用，并在提交信息/`docs/README.md`留一个 git 历史定位点（如本仓库的基线提交 `0d2fdf7`），保证内容仍可通过 `git log --all --full-history` 找回。
+- 被 `loop/`（或新设计文档）取代且独有价值已提炼的旧文档要删除，不留着腐烂；删除前用 `git grep` 排查悬挂引用，并在提交信息/`docs/README.md`留一个 git 历史定位点（如本仓库的基线提交 `61b3cde`），保证内容仍可通过 `git log --all --full-history` 找回。

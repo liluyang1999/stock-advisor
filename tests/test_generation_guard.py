@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.qt_app.workers import GenerationGuard
+from qt_app.workers import GenerationGuard
 
 
 class GenerationGuardTests(unittest.TestCase):

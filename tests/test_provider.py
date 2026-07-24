@@ -10,7 +10,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.data.data_provider import (
+from data.data_provider import (
     EastmoneyProvider,
     MarketDataError,
     parse_clist_payload,
@@ -21,7 +21,7 @@ from stock_advisor.data.data_provider import (
     parse_sina_quote_payload,
     parse_tencent_history_payload,
 )
-from stock_advisor.domain.symbols import normalize_symbol
+from domain.symbols import normalize_symbol
 
 
 def clist_item(code="600001", market=1, name="stock", price=10.0, change_pct=1.0, **overrides):

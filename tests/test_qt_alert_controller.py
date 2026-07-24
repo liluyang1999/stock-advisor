@@ -15,10 +15,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from qt_test_helpers import QtCore, QtWidgets, qt_app, requires_qt, wait_for
 from test_engine import FakeProvider
 
-from stock_advisor.domain.models import AlertRule
+from domain.models import AlertRule
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.controllers.alert_controller import AlertController
+    from qt_app.controllers.alert_controller import AlertController
 
 
 def _rule(code, threshold=5.0):

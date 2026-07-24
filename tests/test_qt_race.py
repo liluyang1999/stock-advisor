@@ -20,11 +20,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from qt_test_helpers import QtCore, QtWidgets, qt_app, requires_qt, wait_for
 from test_engine import FakeProvider, fake_quote
 
-from stock_advisor.domain.models import FundFlow
+from domain.models import FundFlow
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.controllers.analysis_controller import AnalysisController
-    from stock_advisor.qt_app.controllers.fund_flow_controller import FundFlowController
+    from qt_app.controllers.analysis_controller import AnalysisController
+    from qt_app.controllers.fund_flow_controller import FundFlowController
 
 
 def _drain(ms: int = 200) -> None:
@@ -251,7 +251,7 @@ class StaleSignalReachesTheSlotTests(unittest.TestCase):
     def test_screener_slots_drop_recommendations_from_a_superseded_run(self):
         from test_qt_screener_controller import _FakeScreeningProvider
 
-        from stock_advisor.qt_app.controllers.screener_controller import ScreenerController
+        from qt_app.controllers.screener_controller import ScreenerController
 
         controller = ScreenerController(_FakeScreeningProvider())
         self.addCleanup(controller.shutdown)
@@ -267,7 +267,7 @@ class StaleSignalReachesTheSlotTests(unittest.TestCase):
 
     def test_alert_cycle_with_no_new_hits_emits_nothing(self):
         """空结果不得触发预警横幅——alerts_triggered 只在真有新命中时发。"""
-        from stock_advisor.qt_app.controllers.alert_controller import AlertController
+        from qt_app.controllers.alert_controller import AlertController
 
         controller = AlertController(FakeProvider())
         self.addCleanup(controller.shutdown)

@@ -98,9 +98,25 @@ class LoopToolingTests(unittest.TestCase):
         self.assertEqual(config["target_stack"]["gui"], "PySide6")
         self.assertEqual(config["target_stack"]["runtime_font"], "Microsoft YaHei")
         self.assertEqual(config["ui_tokens"]["font_families"], ["Microsoft YaHei"])
-        self.assertEqual(config["ui_tokens"]["control_min_height_dip"], 44)
-        self.assertEqual(config["ui_tokens"]["primary_control_height_dip"], 48)
-        self.assertEqual(config["ui_tokens"]["table_row_height_dip"], 48)
+
+    def test_config_ui_tokens_mirror_the_design_token_source(self) -> None:
+        """config.json 的 ui_tokens 必须与 product/tokens.json 逐键一致。
+
+        真源是 product/tokens.json；config.json 只镜像其中一部分键供控制面自身引用。此前这里改成
+        断言三个写死的尺寸（44/48/48），既没有保护镜像关系，又在尺寸合法变更时误报——UI_DESIGN_SYSTEM.md
+        把普通控件最小高度从 44 改成 32（44/48 是 Apple HIG/Material 的**触摸**目标口径，套在桌面
+        鼠标应用上是错的）之后，tokens.json 与 config.json 都改了，唯独这个断言留在旧值上变红。
+        断言两份文件一致，才真正挡得住二者漂移。
+        """
+
+        config = json.loads((LOOP_ROOT / "config.json").read_text(encoding="utf-8"))
+        tokens = json.loads((LOOP_ROOT / "product/tokens.json").read_text(encoding="utf-8"))
+        for key, value in config["ui_tokens"].items():
+            with self.subTest(token=key):
+                self.assertIn(
+                    key, tokens, f"config.json 的 ui_tokens.{key} 在 tokens.json 里没有对应项"
+                )
+                self.assertEqual(value, tokens[key], f"ui_tokens.{key} 与 tokens.json 不一致")
 
     def test_market_timezone_is_shanghai(self) -> None:
         config = json.loads((LOOP_ROOT / "config.json").read_text(encoding="utf-8"))

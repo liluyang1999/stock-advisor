@@ -1,0 +1,159 @@
+old_sha	new_sha	subject
+0d2fdf7d613c138d9d52e18343ba24efe1f05e0a	61b3cde1a06de121db1b0edab0c36352a52d6c61	chore: initial baseline snapshot
+3dc08cde030cef46dbdda25549a5379fb32a0da3	b86b32de65b39b2ac8cc1871505935a6642f9e14	docs: add loop hardening and tooling design spec
+84a057eb39d9f8068c86211c390483b256198306	06103ba08d2f365998acea3533ff7573b43adf98	docs: fold src package restructuring (WS-R) into hardening spec
+dbc5f5b9d0a563bfe1264f1d87936fb2b96ca01f	ed12be140b0a804070d23b0390c38b181eb28943	docs: add Plan 1 (foundation hardening) implementation plan
+506b9748d23f4860fecbf319f46e4da195ad464e	3b5b0a2927d068d08630edf832101c02e4f7f810	loop: exempt superseded evidence from control-plane digest check
+80450e55e870f5395ee90f5bf086f361cfcdcb5f	427d7fb3d5bfb2ef9d21bfd3b18593bc29ca4336	loop: enforce register id uniqueness; fix duplicate EXP-003
+a3c2e91dc1b71745bf346e4ecd545c5362bbbb69	27ff166953d4605c99d33562558505f9eb30c900	loop: verify REQ<->WI edge agreement; reconcile trace mismatches incl REQ-024
+973f9c9a02457c5cabfd3beee25c8b5be9a12870	094d64ab7ad39520bb4976dcf35f86da2d730702	loop: trace acceptance criteria in the canonical traceability file
+bccc17a217ca3deed133d93885dbab4275e9fd69	81334c2d4c24e218b260975d80558e20c19f4d2d	loop: cross-check current-state risk ids against the risk register
+84e2fea5c01cebf13b8d34129931112cbe472626	c6df4f9762ac269997c0c1aaaca2db2b5ee82ab1	loop: declare test-catalog and dependency-graph as required files
+3b929be9191ec10a1a68dcd2d432ee37afff149a	d0e369c4cb3a104699a1907fff7d9beed2b64b07	loop: fix market timezone, RECOVER state, HG-ARCH status, MS-02 dependency
+67198251026344f6d09cab5c150c530202fddfbf	d08da8a3ec5d07354e06787ccc1918721efaa40c	loop: close record schemas, pin schema_version, validate JSONL registers
+d0f2f2a09463d57d00a1e15c0a43e84608faddb6	3b4268c9c516e59129ee4f0cb8f3b9bb4e7fdfce	loop: re-baseline control plane after Plan 1 hardening (EVD-LOOP-004)
+8e91327edfd707375b99565302b9b21ea724518a	c250ca32b751c24dda56be7cddf8957660eb88cc	loop: require a live matching v2 baseline + supersede referential integrity; guard register-schema load
+4adc19acea015ec75356702baa77aa96700d0a97	06879fcab83cb95edca40fcb1128c92c55f1e294	chore: pin loop/ to LF so the control-plane digest is checkout-stable
+6cf5f3768578b38a2883c02ff6e5769e1f68a771	02ab755e09d61b29e5a8f06bbee9591a8e066959	loop: re-baseline EVD-LOOP-004 to the canonical LF control-plane digest
+925326af632af14714483dcce7321bc0decce2fc	5c599042fabdc8e6b0941cd6728032c2003f11bb	docs: add Plan 2 (src package restructure) implementation plan
+b606844720d19d6ebce1543183f90b9d179df019	14cfdd8ddddff5f9880b1b734760f17ee50cc35f	refactor: reorganize src/stock_advisor into domain/data/services/ui subpackages (behavior-preserving)
+72c72dd47a243a31442f839177fc4cd2241b547b	6ada89a647a621aad91f159ac4340d61158eea0d	loop: sync control plane to src subpackage layout; ADR-0007 source layering; re-baseline
+be49a1aca2f9a365912fea2368d8dd7035de91a1	531e8e43c98a26259efbd560f8bdf811e79f52bc	docs: fix AGENTS.md syntax-check to compileall (covers new src subpackages)
+c9979280bea6ef339f8f90ff75f3d5c9e5194200	16cc8ec60d13ab238e1e6e168d218bd914a4eeab	docs: add Plan 3 (plans/requirements/test-goals hardening) implementation plan
+a29a70ed4fe32a9eaaacc2838f5b3815ffe219ec	a0703979120e1a286c8ab41bf8091381d0ffa52a	loop: give every catalog test a measurable goal, evidence level, owning WI and artifact
+53676f6c83988a3310cd34b92a8feb1218a8fee2	3ec38d586bf61ca4d15d85d665ef403ef9028d2b	loop: fix WI-007 implementation_paths to post-restructure subpackage layout
+6a754999c709305ec4724a5fdf6b5a7d0c2a9034	549f2f326eb85f02e5a6fb5662afd19dfe485256	docs: descope WI-007 from Plan 3 Task 5 (fixed separately in 53676f6)
+c74f772156f2feb7e7c34f28a95f8e825bc8e6bd	d880de1f65b337082b2787a7e864903ca9d7a619	loop: coverage gate + owning-WI per gate + measurable perf/reliability budgets + tk-contract contract
+ab72f0d4233f0160862ba7ecbf93d9714df9b162	22790dd3cd819c2656fecbcd9127ee87ada05aae	loop: add NFR requirements REQ-031..034 (disclaimer/export-security/font-fallback/perf) as full vertical slices; align AC-005 to 10.5pt
+004c02e29660e2016292286fdc7c4e48256e075a	f86e29b35a9188f21993175613a516145bd753e5	loop: machine-readable tokens.json (colors incl up_red/down_green/amber + state tokens); UI hex; UX per-page state spec
+45fc3c3820292da986d2ce3dda726903d229c58b	1c49cc00ded534bb33cac46732e32b14e45c8d16	loop: enrich work items with size/DoD/scope_out + human-gate wiring; ROADMAP exit criteria; fix remaining stale implementation_paths (WI-009/018/023)
+a3fb3c37693adc8eff886f41ba1734d2c77dd90b	b1b8e35378ac894ce8e06463fcbdfcec806c9dcf	loop: record Plan 3 progress + final re-baseline (content hardening complete)
+0402f72dcc70d9460f9abf27128bc992b819b0b7	86cef2d5ac8c8ac063e9f8722afa88cc870ec43d	docs: add Plan 4 (architecture & governance hardening) implementation plan
+551167ece0df0469cec1347ffe388abdf3a7988e	d84b6faa9030b3da65fc0a03b0a12f90a295ae2c	loop: quantify computation spec + stale TTLs + product AppConfig schema + observability
+fff517b59aa8c4ee935b6646f844558022316cd7	51e1c0aeec77d024270c1cd0f440b5cc7be8fd9a	loop: bring ADR-0001..0006 to the project ADR template
+55d70ff8b5f589e0142155102460bea977535680	e3748c03e06ebdbe3d51289d4309f23d5c70c120	loop: add ADR-0008..0012 (dev-toolchain, config-versioning, test-framework, observability, market-timezone)
+d604b7710a8a89e01ae3c4a239df7d5eecfe7e1e	a8f94d30af106a95f741956b6504f4cc90b70bcc	loop: governance floor - version/change control, waivers, verifier mechanism, SOURCES/glossary/invariants, distribution security
+d167dc381b705a3f7957e21a5c602424007b84f4	895366768d39bf69cc5edbde64eee5a49f43ca1d	loop: record Plan 4 progress + final re-baseline (architecture & governance complete)
+bfeb6fefc0f1a9e1f639ecd4a58485fb6c690382	26bbeeb69d440d76d133a9418120b455ecad4c7c	docs: add Plan 5 (documentation reconciliation, WS-9) implementation plan
+f087c488f50b7fca1734d08d98211fbcf490383b	54a2e915ec224c7b9528b3138d11ab9e41e6a901	loop: extract legacy screener/Eastmoney field contract into loop architecture
+9c338fe559cffdf0edae337e9908ade47e39a1a3	cba6c907bbcb1950298e3319f08890d495cbc9e1	docs: add repo docs index; loop: documentation-hygiene policy (loop as single source of truth)
+ff8d5936e4c22c8c5267533776979e456220242e	cd3d90686636dea0f0c33a1180fae31a42392c37	docs: remove superseded pre-2026-07-11 Tk-era superpowers docs (extracted into loop; recoverable from git history)
+93abe5c26f848a46a7f3d094c71411ecb90b7b63	3f2b9e1066ae637a1807da7ad3486e28485a5f44	loop: record Plan 5 (doc reconciliation) progress + final re-baseline
+0880afd81884510e99484d0caf74207c58f746aa	1bf6586690b12ecbae8dfb37cf2fbec571014500	docs: add Plan 6 (dev toolchain & CI) plan + index it in docs/README.md
+6a2ebe6dda983b416d2518367732264d7bb4ee79	f5cb769c9d23821784fd039fd9dae59f40550405	build: add unified pyproject.toml (ruff/pyright/pytest/coverage config + pinned dev group)
+21ec81128a435340a545dbc5ce7fbbc9508db896	8a5598ec7a1d63b78d96c89206b88201cf92d8f2	loop: adopt toolchain on control-plane Python + record product adoption baseline
+7fc19e82e24b91447573e26ea9c2332769f6ad1b	82f958e2f96e571e0502427d83391da2b5a61470	loop: wire G-FORMAT/LINT/TYPE/COVERAGE to real commands + replace mypy/pytest placeholders
+3b3b6ed23b5eda0c8784d7e078c3d89c7b644a05	5bc074b926a3dc413d3194050f9e9b04bac194a8	loop: local gate runner (run_gates.py); ci: pre-commit + GitHub Actions (windows) toolchain workflow
+b6c3f4fc71dc55e4fe20fed503ad2d48493b2e39	0730d171e238b54982b63ada41163340b45d2416	loop: record Plan 6 (dev toolchain & CI) progress + final re-baseline
+826725d3f1fdcf75858d592d2bd5205ade56ed8c	2ba5f82e17de94905af855e962704ccad74628df	style: apply ruff format to product code and tests (no logic change)
+40f0f269d22bd66cf1cac7acb376debce19b5e32	5e66d1703c51ebf030a88fcc5eb21ae4649f571d	fix: resolve ruff B905/B007/UP lint in product code (behavior-preserving)
+faa9ce1ecc4528e72637724d11070ed01385c8be	1f8a008926a199362b3e5e9ef53203eb97199953	style: consolidate app.py imports to top + sort all product imports (E402/I001)
+983ad8525e3117a7afd84b8e3bb880eb7dd5b187	8e5fb40e4069b4fd7bea6945fb9a7606e16c5174	refactor(ui): extract WindowGeometryMixin from StockAdvisorApp (behavior-preserving)
+382e6e9235a5e3bc6e4a68052369478057211112	64381934f03c0a2055db9bc77a18b965e021e1a5	refactor(ui): extract AlertsMonitorMixin from StockAdvisorApp (behavior-preserving)
+bf7912ae97bbf573c14d18130f2b63c326f5d1a1	c1e2cba41a41dbdf0f4db2acbd5ebcd8010d6f25	refactor(ui): extract ChartRenderMixin from StockAdvisorApp (behavior-preserving)
+2f0d39cab04ac924cbe86ad202baad70be9db3c4	ae8380de32aba31eaf80d194242edc52e24a11c6	refactor(ui): extract ScreenerMixin from StockAdvisorApp (behavior-preserving)
+631914bb8d62ad9bfe0693dcc6edf571e862bef4	4d8ce7cb142239713f91ce6840e214d5563e9991	refactor(ui): extract DetailViewMixin from StockAdvisorApp (behavior-preserving)
+df53913e154339d0f8be16d1513817228a8fbfec	da9623393afa22b36806d7a04f2716d5ed6c11b5	refactor(ui): extract WatchlistCompareMixin from StockAdvisorApp (behavior-preserving)
+4cc5bf73ea0220071c474ec47d274d70aa88f6fc	afe2ca9c982555b789bd4fd1f836b78ba08aef00	refactor(ui): extract StyleMixin from StockAdvisorApp (behavior-preserving)
+60cd5aea3b0401a9378488d7317e561d9f92d58a	d07b6d2e6428a981c7cdc5975bcf87eb930f6095	refactor(ui): extract ResultsTableMixin from StockAdvisorApp (behavior-preserving)
+6626a9d6ff651a9acc4264dcba7cb2c1e522d220	71705f2fc95a1445e2324e200141fd5a70d39433	refactor(ui): declare app.py re-export surface in __all__; drop dead imports
+b76f32377624349d77b21b87c84cb8b033523f40	144659d26ee5e749750dbbd232942484d7304006	chore: annotate main.py bootstrap import with noqa: E402
+9093ba5c893e38553d7e8c8dd218d7168efad72e	b11c8483a65162aa1d0b6247a0a91f107e055100	style: wrap over-long line in engine.py after strict=True addition (format-only)
+670ab856acc64858e60fcf990c129965439829df	bbcf624695cb177dbc55d0d87f136cf931b0ca1c	refactor(ui): add TYPE_CHECKING AppMembers base so mixins type-check (pyright 591->48)
+0fb11e9c02626fbe2de450e0a8b3320143915a79	fe2731e727f7a938393b7d10c2d1b61a960b44d7	refactor: dismantle app.py re-export facade — importers use real source modules
+b870902aff8afb8863fe88a00a0293d9b614dcdb	2c348e6ba7df8f211225e722c5951b94be4561f1	fix(types): resolve all 48 pyright errors in product code (48 -> 0)
+6d0d6667884d1297f9a5c4697b19ff1eac4e13dc	68343f0ba057b934e9859298ec6f98f44fdfaa9d	test: fix B905/UP031 lint in the test suite
+38ff21305bb4165fd5ac0f71304ee954df3bd826	92d99261c8c11d5ef265be2aa7ff4754cd248026	chore: clear remaining lint/dead-code — B009 in tests + dead _safe_int
+382a0efeb90a11a99923cab539ff793a56501050	e60f88a2e77035235e1c601672e2668f60032b2c	refactor(domain): add money.py (Decimal) + numeric.py (float helpers); consolidate the 4x-duplicated _finite_float family
+86fa253f70930f21a9243ed8e885bf5916bf37e0	2112200c460243cf27dddc6e89aa29bf4835804a	feat(money): migrate money & quoted-price fields to Decimal (exact 2-dp) — fixes float precision loss
+d04755143213cb0a6aa7a621b0f5ce1ac8691684	43a7d7673abebf5a4af9367210b5217ac95f311c	loop: record ADR-0013 (money Decimal) + ADR-0014 (UI mixin decomposition); numeric convention in DATA_QUALITY
+94de2235587ff656926c44ee64d6a753e940152f	5a56a9f3c3007d24e04daf9d1c1a90448aec575e	fix(engine): declare each factor's true score range in max_abs_score (趋势质量 25->29, 布林位置 8->6)
+3470891c33f1b6bc3acbe5a3b33e51d3ca80b182	adfacfa34e901bee83f72871ed73e35e9ddaeb5d	test(measure): lock the factor max_abs_score invariant shut (3 regression tests)
+1a7b937d69233811829b832d7b9b3ced5fc2ebb9	b84b1ddeb5a241e8c6f582290333d4b37a4ab9db	loop: record the factor max_abs_score audit + re-baseline (d6b5bfaf -> 9a56415b)
+d915ddc8d2110ccd0401521e9d9bba1f0736c692	b13a7f0aa2c021965172ddb7552605bb1ed0439b	test(money): cover the Decimal money core directly (75.4% -> 100%, 15 tests)
+364aeebb157a998549c594dea26675d3b5fd603c	3f2de4c0fed9771d8e827cbe010f90304fadda34	fix(coverage): stop counting the type-only base; record measured coverage; keep G-COVERAGE honestly disabled
+209c19bd717b8775d14f8146f9564af643a16d28	be93713ff1608cfe109b810bd28a2f146f85551e	test(domain): close the domain coverage gap with behavior-locking tests
+5906cf02fa20d2ff415842926d2ea4958779e272	40e4f87580934220a9a085432d78df32050d5ee1	test(data,services): close the data/services coverage gap with offline tests
+d1133173fd614c1ae35f0a5ba753bfa9b80d8aab	3e2c64caada21380e85f77408c19ac739d5ee425	feat(loop): assert coverage per dimension and enable G-COVERAGE
+c8d7c25bfa793a945031271da5922f20c2c334d8	a9f65c29de87a5409727b981716997972a624efa	loop: split the three deferred work items and correct stale status metrics
+0a3a7d54e4b8d5843b4dcc1d7f132b1bd34cf914	005054adb1468b9b9315426a40b152fee7a3986b	test(loop): anchor the metrics that had no anchor, so they cannot rot again
+0f64d184e4c0e53997751a53dd9f4d4d3a57bbef	31d38462980ac937fd0d5d2dcd85ee35844b21e0	feat(loop): enforce format, lint and type as real gates; clear the last pyright error
+287b42d70b8368e466503d78632f42ba7463a150	3b51a2d064cf2ffd2227ac6720db702764107003	fix(security): neutralize formula injection in every CSV and clipboard export (REQ-032)
+4a1e0e71fa265faf3cad6b86ebf595b091441b89	cba34894fd28129a97f520e479c52e40232264e3	feat(loop): turn G-SECURITY from an empty placeholder into a real gate; fix the projection writer
+7d7926428bb792b41456200237ed8a56121219a6	943b76f66a5fad1f7b83cd9706466a88b0d1b54d	feat(qt): start the PySide6 migration — pinned deps, QMainWindow shell, font contract (WI-003/WI-004)
+1d8dafde6d45ad2114b30fe02546248a51e1fdac	98ccc2e2b4e8cbfab391cb8e846eef08873b46b5	loop: run EXP-001 packaging spike, declare the PySide6 target, accept WI-001/003/004/006
+66d5d194d6bb9c90cf249ab4efaa72da06e2fc6c	321f62339727b9749f5253d2735f8414059cfcc1	feat(qt): generate the QSS theme from tokens.json, single source of truth (WI-005)
+a90bedd7ecc75b1cd57c331e73de0ba8b73e0592	a03f748d6692975fe2fb3cc2ca1df96ae14973b8	fix(qt): unify the font source on tokens.json so QSS can't override the font contract
+4759e75416a5a12efa1d81363203716e9bd6eaf2	4737c1e293b17b740c4c66b0f28c2152440beca7	loop: accept WI-005 with evidence; MS-01 shell complete, active moves to MS-02 (WI-007)
+1a293c8d7323539c05d0b52daddeb618024174bd	6dea8f2b9d1fd401da91af4951a10afca3bebfcc	feat(data): add the backward-compatible data-quality envelope (REQ-023/WI-007)
+767b36378e8eb95f0131179882a6bc09c2f82b09	c4c1e914d5de037db1c76d0f42718f81a6ced4d9	loop: accept WI-007 with evidence; REQ-023 to verifying, active advances to WI-008
+58c76fd4b29786fa34f06239ea909e863089199f	37ef4f2c5fe641aeaa5d6097f530bc868c9a2191	test(numeric): golden/property/look-ahead/NaN suite against hand-calculated fixtures (WI-008)
+05b2085aa91b686792ffb946b20a2bbae644153b	35273422b2800b8fa75b3581b4f4ccd852b37c51	loop: accept WI-008 with evidence; REQ-019/020 to verifying, active advances to WI-009
+1bde32a5efdab561d7e912edb658db9dcc510baf	202017206dba44b855c842638673e6fbaa297d10	feat(net): framework-agnostic transport port + fault-matrix contract (WI-009/ADR-0003)
+ee4c01d4c8a9b82a346078e1d3e1c9f2a678d883	e32acb835d89f9e36c2a3b3c46f9142652f16be0	loop: accept WI-009 with evidence; MS-02 complete, active enters MS-03 (WI-010, first feature page)
+7dc839cd68759e1a318232b54c51aaa42d40ce0f	a73119ae109b4306398f7cb2ad28e7c4f8f8b1cd	feat(qt): async individual-analysis controller — first feature-page vertical slice (WI-010)
+401afb8f3f9854d78e62fecef0d94e76f2d9285b	6c21bd16da0ff2ecb9b1eaf5ab5997a6cb032f7d	feat(qt): individual-analysis page wires the controller into the shell (WI-010)
+8dc26b329b95e22cd3f6f2de8ec298384bd89c3a	1d4f4abfb156275d81a128e7c94da2439ffddc9b	loop: accept WI-010 with evidence; first feature page done, active advances to WI-011
+f6d5b794c01626ea7f7721358f2cfa6456ea66e2	53d975e3d37b368c486f079e862e06081c6a5f3e	feat(qt): individual result workspace — table model, tier switch, evidence view (WI-011)
+c347f3eee99a7cdc7d68c4483cbc25daf4e0272f	dc505d1fa803ffcdedfd3f9bfd0086b6f74d4d39	loop: accept WI-011 with evidence; individual result workspace done, active advances to WI-012
+f7eebcde66d87816d9ed2538a9e8308a57bc92f4	bee904497b761de4b5ece46592580222b20a4df1	feat(qt): position plan and backtest workspace, pure presentation (WI-012)
+44837cddccdcaa25e5c6b966f8414eeff2ba648f	11aee14e88007bea55561e2273bb49e17adb50be	loop: accept WI-012 with evidence; MS-03 complete, active enters MS-04 (WI-013)
+f38c59085d7a8ce38533500b57ff6379827f117c	7d44335d04d987ef156530205e7db3db13e3f0a2	refactor(test): consolidate Qt/batch test fixtures into shared helpers (no behaviour change)
+5cdd77f739d497ca86da1220061734b7fc23c2b6	39200a1af9ea71900eabc5b2e300c9653228bd32	feat(qt): whole-market screener page + N=2 controller-base extraction (WI-013)
+d623f4eab5c1f4b4aab0372e52d7ca372e51e12d	69b18194644d99bb5883da312827764e2ea9c0ad	loop: accept WI-013 with evidence; screener + controller-base done, active advances to WI-014
+95c2a779b86b3fbb152eaf4ab0fdeda7e5bb8269	84bb2116f61947dd868be82a654bd778969c2699	feat(qt): surface market completeness + isolate deep-analysis failures in the screener (WI-014)
+a27a371b84ad8373db9d6c4910fefaef4858ce0e	8fee1eaab34e9ce885dc44c9c3d71556508fa907	loop: accept WI-014 with evidence; screener completeness/isolation done, active advances to WI-015
+1c4323de1e5881608d1c4d84ba2e3b1e861993f0	06c3e051f776f44550297b88d640ee1b00a65a13	feat(qt): watchlist/holdings comparison view — floating P&L from the engine (WI-015)
+541b6e59fcc82c119c2a6107106018e01463002e	5c898dc1f64d97933923e36ed3d18b9f1f1b8d0d	loop: accept WI-015 with evidence; watchlist/compare done, active advances to WI-016
+8f8b7fd90568097d676bc0fdcab0b9294f7584e8	0f39649079794630e110c3e3216f0dda9c3cc748	feat(qt): alerts monitoring — QTimer cycles with generation drop of late results (WI-016)
+4773da19534d48bce7b44199aff753806a23e937	858468b7fe53b9813ced8045e764f9a2a227677f	loop: accept WI-016 with evidence; alerts monitoring done, active advances to WI-017
+0333d3f54fe447cdf36023ac55b91251242b4a6e	337b94f5f2f8a3cf5a6b275c91abe374048b2b2b	feat(qt): standalone on-demand fund-flow page that degrades visibly (WI-017)
+3615af615a7ce886f2ca44c1ff2e698cea4b51df	35d1aec79f1dcd35a017cce85e7b4c026bb95f23	loop: accept WI-017 with evidence; fund-flow channel done, active advances to WI-018
+a9e3b28dadf34dd8dfdecf1fd9b1244c0f2ad2c5	c98634744a5e393b0d4be6fe2d08889cc7fa3cfe	feat(qt): help/strategy/self-test dialogs + copy/CSV export with resident disclaimer (WI-018)
+82746b9ae2681d21e56ff4b4f14e19c807835ba3	c81e38fb5ca6751d5406517c33cb3aa8a3213a9a	loop: accept WI-018 with evidence; help/strategy/export dialogs done, active advances to WI-028
+a0b5f6b27868ed236fa820eb2186b2df4efe7ceb	8388a5e990f8acab484bc23199e147d9ccd84545	test(sec): prove Qt individual-page export routes through neutralization (WI-028)
+b3312009f778058f3a9a96012e39c8be2afc52a6	b94227899195cfebdc76d4b5b54b125f57e788fc	loop: accept WI-028 with evidence; export-security covers Qt, MS-05 complete, active advances to WI-019
+bb94ff3d6a4ed429aeb12ea44a8c9b05ba9a3e20	592e74622c711f5c056bac7ca78b9debf4ff45ec	chore: adopt two-part 大版本.小版本 app version scheme (__version__ 1.0.0 -> 1.0)
+6506f2af41ebec19d58f946304f7db71932a4f19	3eaacc89ffa2be32eb4e1b9e546a9b3095025ddf	feat(qt): generation-guard convergence for cancel/late/teardown/duplicate-start (WI-019)
+6aed0488fa37bd1994ddf1413a91bc0a198f0c86	9d7ad471ec3118efeeee2a879194cd614660cd3e	loop: accept WI-019 with evidence; async convergence done, active advances to WI-020
+1e4684cd1cee264f73fe6cbf6a725402e530d9ae	597e7be5df50be75d2f51b3dedb5201334533a06	feat: structured NDJSON logging + offline fault-injection matrix (WI-020)
+1a85cc6c5b710e67b250057f8e4b68de83aa2bdf	495d8d2031b50d305b896465e3be535ec7acecec	loop: accept WI-020 with evidence; structured logging + fault matrix done, active advances to WI-021
+bb30361e5c15d52642821101bbd222bbf58d4de1	2bd823bcb1c34c032f1aeac40ee128ae0849822a	feat(qt): accessibility names + DPI/no-clip/font-token visual matrix (WI-021)
+ccf32523f7eabe88414c1d57043e1649d8ab3cc5	60209e6b1970e21cf4148f0159029dd6c53d3465	loop: accept WI-021 with evidence; a11y + visual matrix (automatable half) done, active advances to WI-022
+f3405a1d3c84cde0a6c88dc349d33bd1ff8dae65	9f6d88a2baea3ecd5033fd931ceb16d659cdf8dd	feat(perf): offscreen performance/resource benchmark harness (WI-022)
+55cbb0a03c281e39cad57b947200bd2229040541	84b01b3a9e55b248fd50653330877e3c13471668	loop: accept WI-022 with evidence; perf budgets measured, active advances to WI-002 (unblocks WI-023)
+acd503789e312fc708174d39336fa7d38fd3bc40	be237a8143b668b579d066c58f3e406f41fcc5c1	data(loop): classify all 187 legacy Tk behavior contracts (WI-002)
+d1490c87dbfc5ba4e9d3643eb14b03f107e333a4	12de51dfa42b50b79151c6480ff2d21264ce732f	loop: accept WI-002 with evidence; Tk contracts mapped, active advances to WI-023
+6ea120ae6c462933415753f2539a6a08da2871c9	e482ef0ac8b6f509c0820de6de11826cb47317ac	feat(qt)!: make PySide6 the sole GUI entry and remove the Tk production layer (WI-023)
+b6ae18f9b7e65a06ea027b63b5ce7de32ce0abc6	205c97442310faba56a057e46d8962ca8b349837	loop: accept WI-023 with evidence; PySide6 is the sole entry, Tk removed, active advances to WI-024
+7c39d05dba777ea6406baf69a990e5879df89997	a16e60177885d7869170d10e6d21e6a30490dae3	loop: accept ADR-0004 — package as PyInstaller onedir, not onefile
+ae72294d140212fdf8c6f586bbeac9a90666f32e	b95d8871e15c71559b64a2e9b11146eb54cc462f	build: package the PySide6 app as a onedir Windows deliverable (WI-024)
+0b56fc7a1554eb10a5e57e90469a763fe8a77488	4f330858a3a22154ef3441100ef14d7f32b8134b	loop: accept WI-024 with evidence; Qt EXE builds and smokes clean, active advances to WI-025
+8991ad573f1094b987f0ef67e761adaebf28cd29	b15168a3a92f3dc15b5b0e53d74b209f1aa142cf	feat(release): SBOM, licence notices, artifact hashes and rollback verification (WI-025)
+fff3aa52024ffc7a3753bf57f5fd2e86fb39da08	5cd2e71d7a9212d3e308be2350086ad0346d6df8	loop: WI-025 to verifying; traceability 100%, registers reconciled, 5 green runs, release awaits sign-off
+4322e7c30e87312180e0ef4a00534a3e8a0d8939	a20db3af15844789b55689181df3ad3f6bf836d9	feat(release): stamp the build commit into the delivery and refuse mismatched manifests
+35cde7e294c6a9e1c0398379ea7d6a904e9b3713	92e57b077b21a8226cd93173ff54d6b41cf09b0d	loop: record the provenance fix; 727 tests green, WI-025 still awaiting sign-off
+a9d2d8417633e2ae5d5f5c85496a282f724116f3	99101ebe746564b6431baecddf316504f5c3684a	feat(qt): candlestick chart with hover crosshair in the individual view (WI-027)
+1f824aaef74114bede11c46714a0c446e53e6fd5	e3571c53d441654a3e5dde930f1308426bd6159b	loop: accept WI-027 with evidence; REQ-004 fully surfaced in Qt, only WI-026 remains
+e23f7dacfd30bc22edbcce8a774bfff58b5fa0d4	8b54aa5e765de8bd856fce2b4c8e24178e4c7399	feat(data): bounded urllib transport adapter meeting the WI-009 port contract (WI-026)
+c2cad7bc7b58e1a14ba27052024ebef4fc1b1cd6	1a2b7609ed526bfde3043c431355caefbda8ccf5	loop: accept WI-026 with evidence; every work item now done bar the human release gate
+9137631135bc406d1f2d1ad592a1cea2b7d9c4d2	2d50eeeeb0a7968432f056a8ab285e91f5115a23	chore: single-source the version in the package and add the mandated CHANGELOG
+0ad7a286b1b56307c573a718a1731b3732384f21	5d1dd30820f8efb4d17ce6dd9af8022268ef0d1e	loop: record CHG-004 — one version source, machine-enforced, plus the missing changelog
+bc00e9bd39ab4ff40ca1313a062728d8468a32cb	d5f23542f8d52579dd154e7f87b73ce818a8cede	chore: surface the version in the shipped manual and correct the build scripts
+925c61a2dfcd657ed00e3bd4890cd69407f254d6	41f10cc2ce236d3b7d0d13d30899086a66014c20	loop: record that the authorized GPL-3.0 fetch has no network path from this machine
+f0492fae60cd121023fcfd32f8499fdfbdc8c78c	6a58d645107fc5c22edcbe599e92d48b29db24e9	Code Update
+811e40f8e5372b87ab4468e6245c8d05415af2d0	c9f8bbdcd3ab4a30d2546678e81a2058ae0e01c9	fix(licence): restore LGPL-3.0 and file the supplied GPL-3.0 under its own name
+d25070c2b3add27b0e9d32964341292c8b1af45c	c0d8d4be91eccc8f676f526e27f0f7f042aff43b	chore: remove Tk-era leftovers and fold the build dependency into pyproject
+43b5bd743fc928500ca7a52965bd5c0d241024d0	d7c2432e7f84998d7f28c27265b85c3165466698	fix(qt): mount the four delivered widgets that were never reachable (WI-029)
+f494651037d9f8a7e114476e502ec4012158d564	dd7168e2d691e84f6145a422c6caf065d135ac52	fix(qt): surface the credibility backtest, including when the sample is too small
+8673ede0296309023ecf8347724f4b208fc28c76	63efb70a085a6a9f1801b8db857ee0e3ef298b9a	loop: accept WI-029 — every claimed feature is now reachable and asserted so
+e2db9237ce7ece85b0a9661064da913febfe7e9d	915d1370491efa50037f70f4247b46a6457d0c66	loop: release readiness at 19/20 — only the three human signatures remain
+7e2e3ad3224fd08ccd6977600ec788562e19cfdc	98fef606bda4507d8db147a4f0ff710ac8c9c702	feat(qt): persist capital/tier/preset through one shared settings owner, surface the spectrum
+24833f69b1667956b66127a28b4e9777c2554d64	d120c6ee5219559126e130e62b272d4e59cc2b44	feat(qt): give 条件预警 a rule editor and persistence — it had neither
+45ac44f3fc941c34e87f8f883e0138b3ae3db5ca	0e50f3c04f7ab38db0ca849ed7a6682360e7666e	loop: accept WI-030 — all five persisted settings now flow through one owner
+ac8ae6c668aa4bfeb60aa5d7c7e9a6dd273f68de	f24b980c9d8f0f367f359fbae9d6cbfe85a28ad3	feat(gate): G-SURFACE binds every claimed capability to a reachable surface (WI-031)
+eaa10cee643b8cf5041998424ffa6e8ffdedf1fd	3c868dfe46f97cf838c1a7c3f4c1b380091fcd71	loop: track the two remaining judgement calls as proposed work items
+a4460f350a4b479d8232d4aff7d48a82fdd9ebbf	bd03f6386b38645e910c00366233d8b81833a24e	fix(perf): measure the assembled app, not an empty shell; cover the new page visually
+e7d3f821bc1e830be5f34e71684243758cbda8df	6d0499001fadd64dfbe2b00b65f84576a75b6d59	fix(a11y): audit the assembled window and make table accessible names mandatory
+7e5b14d4193660deb4a50c3ccce4f7f21d6f9586	4674a07f3e3d0d216ed8d36bf67729f592051292	loop: record EVD-QT-020 — the checks now measure the app they claim to measure
+413a23dd99a959aaf31ffea6c74dd4d5124103f3	4bd895467d6b7f22f362568a9582ab15d67c4dbf	feat(ui): restore the Tkinter visual baseline — command band, warm surfaces, segmented tiers

@@ -13,8 +13,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_engine import FakeProvider
 
-from stock_advisor.domain.models import AlertRule
-from stock_advisor.services.alert_monitor import run_alert_cycle
+from domain.models import AlertRule
+from services.alert_monitor import run_alert_cycle
 
 
 class _FlakyProvider(FakeProvider):

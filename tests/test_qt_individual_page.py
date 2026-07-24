@@ -14,11 +14,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from qt_test_helpers import QtWidgets, qt_app, requires_qt, temp_settings, wait_for
 from test_engine import FakeProvider
 
-from stock_advisor.domain.models import CORE_DISCLAIMER
+from domain.models import CORE_DISCLAIMER
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.controllers.analysis_controller import AnalysisController
-    from stock_advisor.qt_app.pages.individual_page import IndividualPage
+    from qt_app.controllers.analysis_controller import AnalysisController
+    from qt_app.pages.individual_page import IndividualPage
 
 
 @requires_qt
@@ -39,14 +39,14 @@ class IndividualPageTests(unittest.TestCase):
 
     def test_analyze_fills_a_row_per_symbol(self):
         page, controller = self._page(FakeProvider())
-        page.input.setText("600519 000001 600000")
+        page.input.setPlainText("600519 000001 600000")
         page._on_analyze()
         wait_for(controller.batch_finished)
         self.assertEqual(page.model.rowCount(), 3)
 
     def test_failed_symbol_still_gets_a_row(self):
         page, controller = self._page(FakeProvider(fail_codes={"600519"}))
-        page.input.setText("600519 000001")
+        page.input.setPlainText("600519 000001")
         page._on_analyze()
         wait_for(controller.batch_finished)
         self.assertEqual(page.model.rowCount(), 2)  # 失败的也占一行（REQ-010 可见）
@@ -55,7 +55,7 @@ class IndividualPageTests(unittest.TestCase):
         page, controller = self._page(FakeProvider())
         self.assertTrue(page.analyze_button.isEnabled())
         self.assertFalse(page.stop_button.isEnabled())
-        page.input.setText("600519 000001")
+        page.input.setPlainText("600519 000001")
         page._on_analyze()
         self.assertFalse(page.analyze_button.isEnabled())  # 运行中禁用分析
         self.assertTrue(page.stop_button.isEnabled())  # 运行中启用停止
@@ -65,19 +65,25 @@ class IndividualPageTests(unittest.TestCase):
 
     def test_input_error_is_shown_in_status(self):
         page, controller = self._page(FakeProvider())
-        page.input.setText("   ")  # 空输入
+        page.input.setPlainText("   ")  # 空输入
         page._on_analyze()
         wait_for(controller.batch_finished)
-        self.assertIn("输入有误", page.status.text())
+        self.assertIn("输入有误", page.run_status.text())
         self.assertEqual(page.model.rowCount(), 0)
 
     def test_finished_status_reports_counts_and_keeps_disclaimer(self):
+        """成败计数与免责声明分居两处，且都必须可见。
+
+        老 Tkinter 版把"这次跑得怎么样"（summary/status）与常驻免责声明分开放置，免责声明不随
+        每次运行被覆写；Qt 版此前把两者拼进同一个 label，于是每条状态消息都要手工再拼一遍
+        CORE_DISCLAIMER，漏拼一次免责声明就消失了（REQ-031）。
+        """
         page, controller = self._page(FakeProvider(fail_codes={"600519"}))
-        page.input.setText("600519 000001")
+        page.input.setPlainText("600519 000001")
         page._on_analyze()
         wait_for(controller.batch_finished)
-        self.assertIn("成功 1", page.status.text())
-        self.assertIn("失败 1", page.status.text())
+        self.assertIn("完成 1 只", page.summary.text())
+        self.assertIn("失败 1 只", page.summary.text())
         self.assertIn(CORE_DISCLAIMER, page.status.text())  # 结果态仍常驻免责声明
 
     # --- 复制 / CSV 导出（WI-018 / TEST-QT-HELP-001）---
@@ -86,7 +92,7 @@ class IndividualPageTests(unittest.TestCase):
         page, controller = self._page(FakeProvider())
         self.assertFalse(page.copy_button.isEnabled())  # 初始无结果 → 禁用
         self.assertFalse(page.export_button.isEnabled())
-        page.input.setText("600519 000001")
+        page.input.setPlainText("600519 000001")
         page._on_analyze()
         wait_for(controller.batch_finished)
         self.assertTrue(page.copy_button.isEnabled())  # 有结果 → 放开
@@ -94,7 +100,7 @@ class IndividualPageTests(unittest.TestCase):
 
     def test_export_buttons_redisable_when_a_new_batch_starts(self):
         page, controller = self._page(FakeProvider())
-        page.input.setText("600519")
+        page.input.setPlainText("600519")
         page._on_analyze()
         wait_for(controller.batch_finished)
         self.assertTrue(page.copy_button.isEnabled())
@@ -104,7 +110,7 @@ class IndividualPageTests(unittest.TestCase):
 
     def test_copy_results_puts_disclaimer_bearing_text_on_clipboard(self):
         page, controller = self._page(FakeProvider())
-        page.input.setText("600519 000001")
+        page.input.setPlainText("600519 000001")
         page._on_analyze()
         wait_for(controller.batch_finished)
         text = page.copy_results()
@@ -115,7 +121,7 @@ class IndividualPageTests(unittest.TestCase):
         import tempfile
 
         page, controller = self._page(FakeProvider())
-        page.input.setText("600519 000001")
+        page.input.setPlainText("600519 000001")
         page._on_analyze()
         wait_for(controller.batch_finished)
         with tempfile.TemporaryDirectory() as tmp:
@@ -125,6 +131,52 @@ class IndividualPageTests(unittest.TestCase):
         self.assertIn("代码", content)  # 表头
         self.assertIn(CORE_DISCLAIMER, content)  # 免责声明页脚
         self.assertIn("模型", content.strip().splitlines()[-1])  # 声明在末行
+
+
+@requires_qt
+class FailureRowReadabilityTests(unittest.TestCase):
+    """失败原因必须读得到：行上有全文 tooltip，选中失败行时摘要区如实显示原因。"""
+
+    def setUp(self):
+        self.app = qt_app()
+
+    def _page(self, provider):
+        from qt_app.controllers.analysis_controller import AnalysisController
+        from qt_app.pages.individual_page import IndividualPage
+
+        controller = AnalysisController(provider)
+        self.addCleanup(controller.shutdown)
+        page = IndividualPage(controller, temp_settings(self))
+        self.addCleanup(page.deleteLater)
+        return page, controller
+
+    def test_failed_row_carries_the_full_reason_as_tooltip(self):
+        page, controller = self._page(FakeProvider(fail_codes={"000001"}))
+        page.input.setPlainText("600519 000001")
+        page._on_analyze()
+        wait_for(controller.batch_finished)
+
+        failed = None
+        for row in range(page.model.rowCount()):
+            if page.model.item(row, 2).text() == "失败":
+                failed = row
+        self.assertIsNotNone(failed, "应有一条失败行")
+        tooltip = page.model.item(failed, 0).toolTip()
+        self.assertIn("000001", tooltip)
+        self.assertTrue(len(tooltip) >= 6, f"tooltip 应是完整原因：{tooltip!r}")
+
+    def test_selecting_a_failed_row_shows_the_reason_in_the_summary(self):
+        page, controller = self._page(FakeProvider(fail_codes={"000001"}))
+        page.input.setPlainText("600519 000001")
+        page._on_analyze()
+        wait_for(controller.batch_finished)
+
+        for row in range(page.model.rowCount()):
+            if page.model.item(row, 2).text() == "失败":
+                page.table.selectRow(row)
+        hint = page.summary_card.hint_text()
+        self.assertIn("失败", hint)
+        self.assertIn("000001", hint)
 
 
 if __name__ == "__main__":

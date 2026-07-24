@@ -18,11 +18,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from qt_test_helpers import QtWidgets, qt_app, requires_qt, temp_settings
 from test_engine import FakeProvider
 
-from stock_advisor.data.sample_data import make_sample_analysis
+from data.sample_data import make_sample_analysis
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.controllers.analysis_controller import AnalysisController
-    from stock_advisor.qt_app.pages.individual_page import IndividualPage
+    from qt_app.controllers.analysis_controller import AnalysisController
+    from qt_app.pages.individual_page import IndividualPage
 
 _INJECTION_NAME = "=cmd|' /C calc'!A0"
 _FORMULA_LEADS = ("=", "+", "-", "@")

@@ -7,8 +7,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.domain.presets import PRESETS
-from stock_advisor.ui.manual import build_manual_html
+from domain.presets import PRESETS
+from ui.manual import build_manual_html
 
 
 class ManualHtmlTests(unittest.TestCase):
@@ -37,6 +37,14 @@ class ManualHtmlTests(unittest.TestCase):
         for term in ("决策强度", "仓位", "回测", "红=上涨"):
             self.assertIn(term, self.html)
         self.assertIn("股市锦囊", self.html)
+
+    def test_documents_current_qt_interactions_not_tk_ones(self):
+        """说明书必须描述现在的五页布局与真实入口，而不是老 Tk 的弹窗按钮。"""
+        for term in ("条件预警", "个股资金流", "载入分析", "查看当前标的资金流", "表头", "排序"):
+            self.assertIn(term, self.html)
+        # 旧交互的原话不许再出现：这些按钮已不存在。
+        for stale in ("点「横向对比」", "点「预警」", "点「资金流」", "自选股」窗"):
+            self.assertNotIn(stale, self.html)
 
     def test_uses_segmented_button_wording_not_slider_wording(self):
         # 决策强度控件是一排点选式分段按钮（tk.Radiobutton, indicatoron=False），不是可拖动的
@@ -80,7 +88,7 @@ class ManualFontAuditTests(unittest.TestCase):
         # 字体应来自 tokens.json 的 font_families，与 Qt QSS/字体契约同一真源（WI-005 教训）。
         import json
 
-        from stock_advisor.ui.assets import tokens_path
+        from ui.assets import tokens_path
 
         families = json.loads(tokens_path().read_text(encoding="utf-8"))["font_families"]
         for family in families:

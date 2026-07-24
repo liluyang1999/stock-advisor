@@ -23,7 +23,7 @@ except ImportError:  # pragma: no cover - Qt 是可选的迁移期依赖（pypro
     QtGui = QtWidgets = None
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.theme import fonts
+    from qt_app.theme import fonts
 
 
 @requires_qt
@@ -45,7 +45,7 @@ class FontContractTests(unittest.TestCase):
     def test_requested_family_comes_from_the_tokens_single_source(self):
         # 字体名与 QSS 同源自 tokens.json，不得在 Qt 侧另写一份，否则真源分叉
         # （曾出现 QSS 的"Microsoft YaHei"覆盖字体契约的"Microsoft YaHei UI"）。
-        from stock_advisor.qt_app.theme import tokens as tokens_mod
+        from qt_app.theme import tokens as tokens_mod
 
         self.assertEqual(
             fonts.resolve_ui_font().requested_family, tokens_mod.load_tokens().font_families[0]

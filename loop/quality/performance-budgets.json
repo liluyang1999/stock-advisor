@@ -105,7 +105,7 @@
       "max": 150,
       "rebaseline_rule": "after first approved clean Qt build, regression <=10%",
       "method": "file size of the built onefile executable measured on disk after a clean PyInstaller build",
-      "scenario": "clean release build per build_exe.py (see G-BUILD)",
+      "scenario": "clean release build per scripts/build_exe.py (see G-BUILD)",
       "owning_test": "TEST-PKG-002"
     },
     {

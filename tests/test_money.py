@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.domain.money import (
+from domain.money import (
     CENT,
     ZERO_MONEY,
     parse_money,

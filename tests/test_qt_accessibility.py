@@ -18,7 +18,7 @@ from test_engine import FakeProvider
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.main_window import build_application
+    from qt_app.main_window import build_application
 
     _INTERACTIVE = (
         QtWidgets.QLineEdit,
@@ -58,7 +58,7 @@ class AccessibilityAuditTests(unittest.TestCase):
         按钮和对比表从未被审计过——和"部件写好却没挂上"是同一类失误，只不过发生在测试这一侧。
         从装好的窗口拿页面，新增一页就自动进审计范围，没有清单可忘。
         """
-        from stock_advisor.qt_app.app import build_app
+        from qt_app.app import build_app
 
         _app, window = build_app([], provider=FakeProvider(), settings=temp_settings(self))
         self.addCleanup(window.deleteLater)
@@ -105,7 +105,7 @@ class AccessibilityAuditTests(unittest.TestCase):
         ComparisonView 就漏过一次，而且直到审计改为遍历装配好的主窗才暴露——两层疏漏叠在一起。
         表格没有文本，读屏只能靠可访问名认出它（REQ-017）。
         """
-        from stock_advisor.qt_app.widgets.table_utils import make_readonly_table
+        from qt_app.widgets.table_utils import make_readonly_table
 
         with self.assertRaises(TypeError):
             make_readonly_table(["代码"])  # type: ignore[call-arg]
@@ -114,7 +114,7 @@ class AccessibilityAuditTests(unittest.TestCase):
 
     def test_every_table_in_the_assembled_window_is_named(self):
         """装配好的窗口里不该有任何无名表格。"""
-        from stock_advisor.qt_app.app import build_app
+        from qt_app.app import build_app
 
         _app, window = build_app([], provider=FakeProvider(), settings=temp_settings(self))
         self.addCleanup(window.deleteLater)
@@ -158,8 +158,8 @@ class ColorRedundancyTests(unittest.TestCase):
         sys.path.insert(0, str(PROJECT_ROOT / "src"))
         from dataclasses import replace
 
-        from stock_advisor.data.sample_data import make_sample_analysis
-        from stock_advisor.ui.view_format import format_result_row
+        from data.sample_data import make_sample_analysis
+        from ui.view_format import format_result_row
 
         up = make_sample_analysis()  # 正涨幅样例
         down = replace(up, change_pct=-1.53)

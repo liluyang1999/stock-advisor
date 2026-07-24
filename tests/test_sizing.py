@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_policy import make_measurement
 
-from stock_advisor.domain.policy import position_plan, size_fraction
+from domain.policy import position_plan, size_fraction
 
 
 class SizingTests(unittest.TestCase):

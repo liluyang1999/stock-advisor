@@ -57,7 +57,7 @@ def temp_settings(case):
     import tempfile
     from pathlib import Path
 
-    from stock_advisor.qt_app.settings import Settings
+    from qt_app.settings import Settings
 
     tmp = tempfile.TemporaryDirectory()
     case.addCleanup(tmp.cleanup)

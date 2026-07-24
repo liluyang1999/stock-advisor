@@ -15,7 +15,7 @@ from qt_test_helpers import QtCore, QtWidgets, qt_app, requires_qt, wait_for
 from test_screener import snap
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.controllers.screener_controller import ScreenerController
+    from qt_app.controllers.screener_controller import ScreenerController
 
 
 class _FakeScreeningProvider:

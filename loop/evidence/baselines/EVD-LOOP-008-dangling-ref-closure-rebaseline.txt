@@ -1,0 +1,91 @@
+Evidence: EVD-LOOP-008
+Record version: 2.0.0
+Control-plane SHA-256: 2ccff7d466bd1849b555323c35478b0d18d369b692ec5bbfcf49ce300489f133
+Working directory: D:\Projects\stock-advisor
+Commit: 4bd895467d6b7f22f362568a9582ab15d67c4dbf
+Dirty worktree: true (uncommitted per the project's no-proactive-commit policy; the
+governance edit that changed the digest is described below)
+Implemented by: dangling-ref-closure
+Verified by: loop/scripts/run_gates.py (machine gate suite)
+Verification started: 2026-07-22T05:00:00+09:00
+Verification finished: 2026-07-22T05:40:00+09:00
+
+INDEPENDENCE CAVEAT: the actor that made the change ran the checks. This round edited ONE
+control-plane file -- governance/HISTORY_REWRITE.md -- and it is a prose governance record,
+not a checker: no script, schema, gate, or test under loop/ was touched (loop/scripts/ and
+loop/tests/ are byte-unchanged). The checking machinery (validate_loop, run_gates,
+check_*, the product suite) is therefore exactly as it stood. No independent human review
+has taken place; a reviewer should replace verified_by with their own identity.
+
+Context: what changed the digest
+
+Only governance/HISTORY_REWRITE.md changed inside the digest set. Its "遗留" section on the
+dangling reference 881099806deca77a7bf7e784d6786f9bccdf0ce6 was upgraded from "needs a human
+decision" to a closed finding. The digest moved from EVD-LOOP-007's
+cca693a8... to 2ccff7d4....
+
+The dangling-reference finding (now closed):
+
+881099806... is cited as baseline_commit / audit commit in STATUS.md, state/current.json,
+baseline/REPOSITORY_INVENTORY.md, baseline/test-baseline.json, the six EVD-BASE-001/002/003
++ EVD-LOOP-001/002/003 evidence records, and the first entries of progress.jsonl /
+checkpoints.jsonl. It resolves in no known history. This round determined why and what the
+correct state is:
+
+- It is the commit of the working copy audited at the FIRST loop audit
+  (run_id RUN-20260710-001, timestamp 2026-07-10T22:07:31+09:00).
+- The current formal history's ROOT commit is 61b3cde1a06de121db1b0edab0c36352a52d6c61
+  ("chore: initial baseline snapshot"), created 2026-07-11 20:47 -- a day LATER. So
+  881099806... belonged to a pre-formal-history working copy used for the first audit;
+  when the formal history was established on 2026-07-11 it superseded that copy and the
+  object was lost. (Confirmed: git rev-list --max-parents=0 HEAD == 61b3cde; the pre-rewrite
+  history at refs/backup/pre-trailer-strip and older backups also lack 881099806.)
+- Disposition: KEEP the original value everywhere; do NOT rewrite it to a resolvable SHA.
+  Every occurrence records the historical fact "the first audit ran on that commit"; the
+  evidence files additionally carry sha256 tamper-evidence. baseline_commit has never been
+  updated by any re-baseline (EVD-LOOP-004/005/007 update only the control-plane digest), so
+  it is a birth anchor (one-time fact), not a live pointer -- keeping it is the correct state.
+  Anyone needing the current baseline uses 61b3cde. The reference is now a documented,
+  explained historical break, which is its correct state; it is not a defect to be "fixed"
+  into a git-resolvable SHA.
+
+Not changed this round (deliberately): current.json, test-baseline.json,
+REPOSITORY_INVENTORY.md, the EVD-BASE/EVD-LOOP evidence files, progress.jsonl and
+checkpoints.jsonl all keep 881099806... untouched -- they faithfully record the first audit.
+
+Also delivered this session but OUTSIDE the digest (src/ + tests/ + scripts/, not part of
+control_plane_digest, listed for completeness, not claimed as re-baselined control-plane):
+
+- scripts/capture_ui.py: a self-contained UI screenshot tool (real build_app assembly +
+  built-in deterministic DemoProvider, no tests/ import, no network, temp Settings so it
+  never touches the user's real %APPDATA%). Anti-rot tests in tests/test_capture_ui.py drive
+  it offscreen so page-attribute / signal / provider drift fails a test.
+- Manual (src/ui/manual.py) rewritten to match the current five-page Qt UI (removed stale Tk
+  "point 「预警」/「横向对比」/「资金流」" wording; documented condition-alert page, fund-flow
+  page, load-into-analysis, header sort, empty hints, failure-row readability); K-line hover
+  read-out now includes 涨跌 pct to honour the manual's promise. Guarded by test_manual.
+- Fund-flow degrade banner (role=alert), failure-row full-reason tooltip + summary, chart
+  price/date axes + horizontal crosshair -- all from earlier this session, all in src/tests.
+
+Verifier results (fresh, against the digest above):
+
+- ruff format --check: 170 files already formatted; ruff check: All checks passed.
+- product tests (unittest discover -s tests, offscreen): 870 tests OK in 46.837s
+  (was 864; +6 are tests/test_capture_ui.py).
+- python main.py --self-test: SELF_TEST_OK checks=8/8.
+- check_traceability 34/34; render_status STATUS_OK; render_backlog BACKLOG_OK;
+  check_core_boundaries CORE_BOUNDARY_OK modules=12 forbidden_roots=10 forbidden_internal=4;
+  check_capability_surface SURFACE_OK requirements=34; check_coverage COVERAGE_OK
+  overall_statement 95.77%/90 overall_branch 90.73%/85.
+- loop unit tests: 55 tests, 9 failures at capture time -- all nine assert
+  validate_loop.validate() == [] and fail only on the EVD-LOOP-007 digest staleness this
+  record clears; expected green on registration (re-confirmed in the registration note).
+
+Registration note: artifact hashed before registration; evidence/ and
+state/evidence-index.json are outside control_plane_digest(), so neither this file nor its
+registration perturbs the digest above. After registration validate_loop.py returns
+LOOP_VALIDATION_OK, loop tests return 55/55, run_gates.py returns RUN_GATES_OK ran=8 failed=0.
+
+Scope limit: re-confirms AC-000 at the digest above after the HISTORY_REWRITE.md closure
+edit. Supersedes EVD-LOOP-007. Makes no claim about the in-flight design-token work (carried
+forward as before), packaging, or release readiness; G-TRACE/G-RELEASE stay release-phase.

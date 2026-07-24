@@ -7,8 +7,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_engine import make_history, make_quote
 
-from stock_advisor.domain.engine import _score_bollinger, analyze_stock, measure
-from stock_advisor.domain.policy import decide
+from domain.engine import _score_bollinger, analyze_stock, measure
+from domain.policy import decide
 
 
 class MeasureTests(unittest.TestCase):

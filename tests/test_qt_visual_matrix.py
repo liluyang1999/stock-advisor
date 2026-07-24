@@ -26,16 +26,16 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _SHOTS = PROJECT_ROOT / "build" / "screenshots"
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.controllers.alert_controller import AlertController
-    from stock_advisor.qt_app.controllers.analysis_controller import AnalysisController
-    from stock_advisor.qt_app.controllers.fund_flow_controller import FundFlowController
-    from stock_advisor.qt_app.controllers.screener_controller import ScreenerController
-    from stock_advisor.qt_app.main_window import build_application
-    from stock_advisor.qt_app.pages.alerts_page import AlertsPage
-    from stock_advisor.qt_app.pages.evidence_page import EvidencePage
-    from stock_advisor.qt_app.pages.individual_page import IndividualPage
-    from stock_advisor.qt_app.pages.portfolio_page import PortfolioPage
-    from stock_advisor.qt_app.pages.screener_page import ScreenerPage
+    from qt_app.controllers.alert_controller import AlertController
+    from qt_app.controllers.analysis_controller import AnalysisController
+    from qt_app.controllers.fund_flow_controller import FundFlowController
+    from qt_app.controllers.screener_controller import ScreenerController
+    from qt_app.main_window import build_application
+    from qt_app.pages.alerts_page import AlertsPage
+    from qt_app.pages.evidence_page import EvidencePage
+    from qt_app.pages.individual_page import IndividualPage
+    from qt_app.pages.portfolio_page import PortfolioPage
+    from qt_app.pages.screener_page import ScreenerPage
 
 # 设计最小窗（tokens.window_minimum_dip）+ 两档更大分辨率，模拟 DPI/分辨率放大后的布局分配。
 _SIZES = [(1000, 680), (1280, 800), (1536, 960)]

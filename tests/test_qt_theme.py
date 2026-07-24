@@ -21,7 +21,7 @@ except ImportError:  # pragma: no cover - Qt 是可选的迁移期依赖
     QtWidgets = None
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.theme import qss as qss_mod, tokens as tokens_mod
+    from qt_app.theme import qss as qss_mod, tokens as tokens_mod
 
 
 TOKENS_PATH = Path(__file__).resolve().parents[1] / "loop" / "product" / "tokens.json"

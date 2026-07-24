@@ -19,10 +19,10 @@ except ImportError:  # pragma: no cover
 from qt_test_helpers import QtWidgets, qt_app, requires_qt
 from test_engine import make_measurements
 
-from stock_advisor.domain.models import LEVEL_NAMES
+from domain.models import LEVEL_NAMES
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.widgets.tier_selector import TierSelector
+    from qt_app.widgets.tier_selector import TierSelector, level_label
 
 
 @requires_qt
@@ -45,8 +45,9 @@ class TierSelectorTests(unittest.TestCase):
         ]
 
         self.assertEqual(len(segments), len(LEVEL_NAMES))
-        for name in LEVEL_NAMES.values():
-            self.assertIn(name, [b.text() for b in segments])
+        # 文案沿用老版的 "L3标准"：序号让用户看出五档的先后，光有名字看不出。
+        for level in LEVEL_NAMES:
+            self.assertIn(level_label(level), [b.text() for b in segments])
 
     def test_exactly_one_segment_is_checked(self):
         """分段是互斥的：任何时候恰好一段亮着，用户才知道自己在第几档。"""
@@ -59,7 +60,7 @@ class TierSelectorTests(unittest.TestCase):
         ]
 
         self.assertEqual(len(checked), 1)
-        self.assertEqual(checked[0].text(), LEVEL_NAMES[3])  # 默认标准档
+        self.assertEqual(checked[0].text(), level_label(3))  # 默认标准档
 
     def test_clicking_a_segment_switches_the_level(self):
         selector = TierSelector()
@@ -69,7 +70,7 @@ class TierSelectorTests(unittest.TestCase):
             if b.property("role") == "segment"
         }
 
-        segments[LEVEL_NAMES[5]].click()
+        segments[level_label(5)].click()
 
         self.assertEqual(selector.current_level(), 5)
 

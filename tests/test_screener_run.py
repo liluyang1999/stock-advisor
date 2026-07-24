@@ -14,9 +14,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_screener import snap
 
-from stock_advisor.domain.presets import PRESETS
-from stock_advisor.ports import ManualCancel
-from stock_advisor.services.screener_run import run_screen
+from domain.presets import PRESETS
+from ports import ManualCancel
+from services.screener_run import run_screen
 
 
 class _FakeScreeningProvider:

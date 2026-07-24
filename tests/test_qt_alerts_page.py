@@ -13,12 +13,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from qt_test_helpers import qt_app, requires_qt, temp_settings, wait_for
 from test_engine import FakeProvider
 
-from stock_advisor.domain.models import CORE_DISCLAIMER, AlertRule
+from domain.models import CORE_DISCLAIMER, AlertRule
 
 if True:
     try:
-        from stock_advisor.qt_app.controllers.alert_controller import AlertController
-        from stock_advisor.qt_app.pages.alerts_page import AlertsPage
+        from qt_app.controllers.alert_controller import AlertController
+        from qt_app.pages.alerts_page import AlertsPage
     except ImportError:  # pragma: no cover
         AlertController = AlertsPage = None
 
@@ -49,14 +49,16 @@ class AlertsPageTests(unittest.TestCase):
         self.assertEqual(page.rule_model.rowCount(), 2)
 
     def test_monitor_toggle_starts_and_stops(self):
+        # 开关文案沿用老 Tkinter 版的「实时预警 开 / 关」（WI-035）：按钮自己说出当前状态，
+        # 而不是"开始监控 / 停止监控"这种只说下一步动作、看不出现在开着没有的写法。
         page, controller = self._page()
         page.set_rules([_rule("sh600519")])
         page.monitor_button.setChecked(True)  # 触发 toggled(True)
         self.assertTrue(controller.is_running())
-        self.assertEqual(page.monitor_button.text(), "停止监控")
+        self.assertEqual(page.monitor_button.text(), "实时预警 开")
         page.monitor_button.setChecked(False)
         self.assertFalse(controller.is_running())
-        self.assertEqual(page.monitor_button.text(), "开始监控")
+        self.assertEqual(page.monitor_button.text(), "实时预警 关")
 
     def test_triggered_alert_appears_in_the_log(self):
         page, controller = self._page()
@@ -75,9 +77,9 @@ class AlertsPageTests(unittest.TestCase):
 
 class DisclaimerStaticDetectionTests(unittest.TestCase):
     def test_module_references_the_core_disclaimer(self):
-        src = (
-            Path(__file__).resolve().parents[1] / "src/stock_advisor/qt_app/pages/alerts_page.py"
-        ).read_text(encoding="utf-8")
+        src = (Path(__file__).resolve().parents[1] / "src/qt_app/pages/alerts_page.py").read_text(
+            encoding="utf-8"
+        )
         self.assertIn("CORE_DISCLAIMER", src)
 
 

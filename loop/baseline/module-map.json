@@ -1,7 +1,7 @@
 {
   "$schema":"../schemas/module-map.schema.json",
   "schema_version": "1.0.0",
-  "generated_from_commit": "b606844720d19d6ebce1543183f90b9d179df019",
+  "generated_from_commit": "14cfdd8ddddff5f9880b1b734760f17ee50cc35f",
   "modules": [
     {"module":"domain/models.py","layer":"domain","responsibility":"immutable domain records","side_effects":[],"tests":["test_models_new.py"],"migration_action":"preserve"},
     {"module":"domain/symbols.py","layer":"domain","responsibility":"symbol normalization and market identity","side_effects":[],"tests":["test_symbols.py"],"migration_action":"preserve"},
@@ -25,6 +25,6 @@
     {"module":"ui/manual.py","layer":"delivery","responsibility":"HTML manual generation","side_effects":[],"tests":["test_manual.py"],"migration_action":"update_font_and_ui_copy"},
     {"module":"data/sample_data.py","layer":"test_support","responsibility":"offline samples for self-test","side_effects":[],"tests":["test_main.py"],"migration_action":"preserve_explicit_sample_label"},
     {"module":"ui/app.py","layer":"ui_and_controller","responsibility":"Tk views, session state, threads, dialogs and painting","side_effects":["gui","threading","clipboard","filesystem_dialog"],"tests":["test_gui_layout.py","test_ui_polish.py"],"migration_action":"strangler_rewrite_into_qt_app"},
-    {"module":"src/stock_advisor/__init__.py","layer":"package","responsibility":"package marker; each of the four subpackages (domain/data/services/ui) also has its own empty __init__.py (5 package markers total)","side_effects":[],"tests":[],"migration_action":"preserve"}
+    {"module":"src/__init__.py","layer":"package","responsibility":"package marker; each of the four subpackages (domain/data/services/ui) also has its own empty __init__.py (5 package markers total)","side_effects":[],"tests":[],"migration_action":"preserve"}
   ]
 }

@@ -39,11 +39,11 @@ Their still-valuable content (e.g. the screener/Eastmoney field contract) was ex
 `loop/architecture/` before removal. They are being removed as part of this
 documentation-reconciliation effort rather than left to rot alongside the current docs — see
 "Documentation hygiene" below. Nothing is lost: every one of them is recoverable from git history,
-present from the initial baseline commit `0d2fdf7` ("chore: initial baseline snapshot") onward:
+present from the initial baseline commit `61b3cde` ("chore: initial baseline snapshot") onward:
 
 ```bash
-git ls-tree -r --name-only 0d2fdf7 -- docs/superpowers      # list the legacy files as of the baseline
-git show 0d2fdf7:docs/superpowers/specs/<name>.md           # recover one file's content at that commit
+git ls-tree -r --name-only 61b3cde -- docs/superpowers      # list the legacy files as of the baseline
+git show 61b3cde:docs/superpowers/specs/<name>.md           # recover one file's content at that commit
 git log --all --full-history -- docs/superpowers/<specs-or-plans>/<name>.md   # full history of one file
 ```
 

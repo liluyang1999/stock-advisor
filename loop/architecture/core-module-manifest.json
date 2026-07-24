@@ -1,9 +1,9 @@
 {
   "$schema":"../schemas/core-module-manifest.schema.json",
   "schema_version":"1.0.0",
-  "source_root":"../src/stock_advisor",
+  "source_root":"../src",
   "package_name":"stock_advisor",
-  "forbidden_import_roots":["PySide6","tkinter","urllib","pathlib","os","subprocess"],
+  "forbidden_import_roots":["PySide6","tkinter","urllib","pathlib","os","subprocess","data","services","ui","qt_app"],
   "forbidden_internal_modules":["data","services","ui","qt_app"],
   "modules":[
     {"path":"domain/models.py","layer":"domain_models"},

@@ -20,11 +20,11 @@ except ImportError:  # pragma: no cover
 from qt_test_helpers import requires_qt
 from test_engine import make_measurement
 
-from stock_advisor.domain.models import CORE_DISCLAIMER
-from stock_advisor.services.tier_switch import redecide_at_level
+from domain.models import CORE_DISCLAIMER
+from services.tier_switch import redecide_at_level
 
 if QtCore is not None:
-    from stock_advisor.qt_app.table_models.result_model import ResultTableModel
+    from qt_app.table_models.result_model import ResultTableModel
 
 
 def _results(n=3):
@@ -99,8 +99,7 @@ class DisclaimerStaticDetectionTests(unittest.TestCase):
 
     def test_result_model_module_references_the_core_disclaimer(self):
         src = (
-            Path(__file__).resolve().parents[1]
-            / "src/stock_advisor/qt_app/table_models/result_model.py"
+            Path(__file__).resolve().parents[1] / "src/qt_app/table_models/result_model.py"
         ).read_text(encoding="utf-8")
         self.assertIn("CORE_DISCLAIMER", src)
 

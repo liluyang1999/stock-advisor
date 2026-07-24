@@ -8,6 +8,7 @@ __pycache__/
 htmlcov/
 
 # 本地虚拟环境与敏感配置
+.idea/
 .venv/
 venv/
 .env

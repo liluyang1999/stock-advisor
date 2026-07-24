@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.domain.data_quality import (
+from domain.data_quality import (
     QUALITY_LEVELS,
     DataProvenance,
     DataQuality,
@@ -107,8 +107,8 @@ class WorkflowIntegrationTests(unittest.TestCase):
         from datetime import date
         from decimal import Decimal
 
-        from stock_advisor.data.data_provider import MarketDataError
-        from stock_advisor.domain.models import DailyBar, Quote
+        from data.data_provider import MarketDataError
+        from domain.models import DailyBar, Quote
 
         quote = Quote(
             symbol="SH.600519",
@@ -149,7 +149,7 @@ class WorkflowIntegrationTests(unittest.TestCase):
         return _P()
 
     def test_healthy_fetch_yields_complete_quality(self):
-        from stock_advisor.services.workflow import analyze_symbol
+        from services.workflow import analyze_symbol
 
         outcome = analyze_symbol("SH.600519", self._provider(history_fails=False))
         self.assertTrue(outcome.ok)
@@ -158,7 +158,7 @@ class WorkflowIntegrationTests(unittest.TestCase):
         self.assertTrue(outcome.quality.is_actionable)
 
     def test_history_failure_is_degraded_history_with_a_visible_reason(self):
-        from stock_advisor.services.workflow import analyze_symbol
+        from services.workflow import analyze_symbol
 
         outcome = analyze_symbol("SH.600519", self._provider(history_fails=True))
         self.assertTrue(outcome.ok)  # 降级仍出结果（保守判断）
@@ -175,7 +175,7 @@ class BackwardCompatibilityTests(unittest.TestCase):
         # 用最少必填字段构造 Quote，证明它仍可在不知道 DataQuality 的情况下建立。
         from decimal import Decimal
 
-        from stock_advisor.domain.models import Quote
+        from domain.models import Quote
 
         quote = Quote(
             symbol="SH.600519",

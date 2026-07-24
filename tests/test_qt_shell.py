@@ -18,11 +18,11 @@ try:
 except ImportError:  # pragma: no cover - Qt 是可选的迁移期依赖
     QtGui = QtWidgets = None
 
-from stock_advisor.domain.models import CORE_DISCLAIMER
-from stock_advisor.ui import theme
+from domain.models import CORE_DISCLAIMER
+from ui import theme
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app import main_window
+    from qt_app import main_window
 
 
 @requires_qt
@@ -47,7 +47,7 @@ class QtShellTests(unittest.TestCase):
 
     def test_every_visible_widget_inherits_the_resolved_ui_font(self):
         """DoD 的核心判据：每个可见控件都经 QFontInfo 解析到同一个实际字体族。"""
-        from stock_advisor.qt_app.theme import fonts
+        from qt_app.theme import fonts
 
         expected = fonts.resolve_ui_font().actual_family
         self.window.set_page(QtWidgets.QLabel("测试页"))

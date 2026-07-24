@@ -1,0 +1,109 @@
+Evidence: EVD-LOOP-006
+Record version: 2.0.0
+Control-plane SHA-256: a5853b2d7b2be9a15d08b8a940106264530e37d0aac20fd92faa1d7c3b2dedd6
+Working directory: D:\Projects\stock-advisor
+Commit: 4bd895467d6b7f22f362568a9582ab15d67c4dbf
+Dirty worktree: true (the repository author's staged design-token work plus this task's
+uncommitted layout change; same provenance split as EVD-LOOP-005)
+Implemented by: repo-layout-regroup
+Verified by: loop/scripts/run_gates.py (machine gate suite)
+Verification started: 2026-07-22T02:20:00+09:00
+Verification finished: 2026-07-22T02:45:00+09:00
+
+INDEPENDENCE CAVEAT: same situation as EVD-LOOP-005 -- the actor that made the changes also
+ran the checks; the checking machinery itself (loop/scripts/, loop/tests/) has ZERO
+modifications in this round (verified with git status over both paths), so it could not
+have been bent to pass. No independent human review has taken place; a reviewer should
+replace verified_by with their own identity.
+
+Context:
+
+The repository adopted the root layout src/ + tests/ + scripts/: the two build-tool
+scripts moved from the repository root into scripts/ (git mv, history preserved):
+
+  build_exe.py             -> scripts/build_exe.py
+  make_release_manifest.py -> scripts/make_release_manifest.py
+
+src/stock_advisor/ and tests/ did not move -- they were already in the intended place.
+main.py stays at the root deliberately: it is the documented entry point (`python
+main.py`, run.bat/run.sh) and the sys.path bootstrap that makes `src/` importable.
+
+What changed inside the digest (loop/ files, hence this re-baseline):
+
+- quality/quality-gates.json: G-BUILD command ["python","build_exe.py"] ->
+  ["python","scripts/build_exe.py"] (gate remains disabled; command must stay runnable).
+- config.json: commands.syntax now compiles "scripts" (the directory) instead of the
+  single file "build_exe.py" -- slightly broader on purpose: make_release_manifest.py is
+  now syntax-checked too. Verified exit 0.
+- quality/performance-budgets.json: PERF scenario text names scripts/build_exe.py.
+- quality/RELEASE_READINESS.md: --verify command path updated.
+- architecture/PACKAGING_AND_DEPLOYMENT.md: two build_exe.py mentions now carry the
+  scripts/ prefix.
+- README.md (loop): the compileall command line mirrors config.json's new syntax command.
+- governance/VERSION_AND_CHANGE_CONTROL.md: the product-change path list names
+  scripts/build_exe.py.
+- planning/work-items.json: three implementation_paths entries "build_exe.py" ->
+  "scripts/build_exe.py" (WI-006, and the two others carrying that path).
+
+Deliberately NOT touched, same sealed/historical rule as EVD-LOOP-005:
+
+- baseline/CURRENT_STATE.md and baseline/REPOSITORY_INVENTORY.md: dated snapshots of the
+  2026-07-10 Tkinter-era baseline; they describe that moment, not today.
+- baseline/test-baseline.json and the command fields of historical evidence records in
+  state/evidence-index.json: they record the commands actually run at capture time.
+- decisions/ (ADRs), CHANGELOG files, docs/superpowers/: historical records.
+- evidence/ artifacts: sealed.
+
+Outside the digest (for completeness of this change's audit trail):
+
+- scripts/build_exe.py and scripts/make_release_manifest.py: PROJECT_ROOT is now
+  Path(__file__).resolve().parents[1]; usage strings and the manifest's build_script
+  value ("scripts/build_exe.py") updated. Smoke-verified: both import cleanly and
+  PROJECT_ROOT == the repository root; ENTRY/ICON_PATH/TOKENS_PATH all exist.
+- build.bat / build.sh invoke python scripts/build_exe.py. build.bat was edited at byte
+  level and kept CRLF (its .gitattributes contract). An editing accident first wrote a
+  0x08 backspace byte into build.bat ("scripts\x08uild_exe.py", from a mangled backslash
+  escape); it was caught by re-reading the file bytes and repaired to the forward-slash
+  form before anything else ran. Recorded because it happened, not because it survived.
+- tests/test_build_config.py, tests/test_release_manifest.py,
+  tests/test_version_single_source.py: their sys.path bootstrap now inserts
+  PROJECT_ROOT/"scripts" (replacing the bare PROJECT_ROOT insert whose only purpose was
+  importing these two scripts). tests/test_qt_app_assembly.py's no-tkinter entry scan now
+  lists "scripts/build_exe.py".
+- pyproject.toml [tool.pyright]: include swaps "build_exe.py" for "scripts" -- which for
+  the first time brings make_release_manifest.py into type-checking scope -- and
+  extraPaths adds "scripts" so the test imports resolve statically. G-TYPE passes with
+  the widened scope (verified below), so the broadening cost nothing and is kept.
+- Root README.md tree section and AGENTS.md's compileall line updated.
+
+Verifier results (all run against the tree this digest was computed from):
+
+- run_gates.py: ran=8 failed=1 -- G-FORMAT, G-LINT, G-TYPE (with scripts/ newly in
+  scope), G-CORE, G-COVERAGE, G-SECURITY, G-SURFACE all PASS; the single failure is
+  G-LOOP on exactly the two EVD-LOOP-005 staleness strings this record clears.
+- python -m compileall -q main.py scripts src/stock_advisor: exit 0.
+- Affected tests directly: tests.test_build_config + tests.test_release_manifest +
+  tests.test_version_single_source + tests.test_qt_app_assembly = 37 tests, OK.
+- Full product suite (unittest discover -s tests, offscreen): 847 tests, OK.
+- python main.py --self-test: SELF_TEST_OK checks=8/8.
+- pytest (testpaths tests + loop/tests, importlib mode): 893 passed + 365 subtests
+  passed; the 9 failures are all loop/tests asserting validate_loop.validate() == [],
+  i.e. the same single staleness root cause as G-LOOP, cleared by this record.
+- check_traceability 34/34, STATUS_OK, BACKLOG_OK, CORE_BOUNDARY_OK modules=12,
+  SURFACE_OK requirements=34.
+- ruff format --check: 167 files already formatted; ruff check: all passed.
+
+Registration note:
+
+This artifact is hashed before its record is registered; evidence/ and
+state/evidence-index.json are outside control_plane_digest(), so registration does not
+perturb the digest above. After registration validate_loop.py returns LOOP_VALIDATION_OK
+and the loop suite returns 55/55, taking run_gates.py to RUN_GATES_OK ran=8 failed=0.
+
+Scope limit:
+
+This record confirms AC-000 at the digest above after the scripts/ regrouping. The
+author's staged design-token work remains carried, unreviewed, exactly as stated in
+EVD-LOOP-005's scope limit. The G-BUILD gate stays disabled: its command path was kept
+runnable but no PyInstaller build was executed for this record. dist/ and build/ still
+contain artifacts of a pre-token-change build and are stale until the next real build.

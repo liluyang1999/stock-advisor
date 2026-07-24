@@ -46,7 +46,8 @@
     "WI-031"
   ],
   "in_progress_ids": [
-    "WI-025"
+    "WI-025",
+    "WI-035"
   ],
   "next_actions": [
     "execute WI-001 to align repository-level rules and metadata with the accepted PySide6 target",

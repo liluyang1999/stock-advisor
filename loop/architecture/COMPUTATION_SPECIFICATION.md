@@ -208,4 +208,4 @@ confidence = clamp(round(base + history_bonus + available_indicator_bonus − hi
 
 无未来泄漏：第 `t` 日信号只使用 `history[:t+1]`（含当日）经 `measure()+decide()` 生成；未来收益 `(close[t+horizon]-close[t])/close[t]×100−cost_pct` 仅作事后度量，不回流进第 `t` 日的信号计算。胜率口径：BUY/HOLD 以未来收益为正记胜，SELL 以未来收益为负记胜（卖出信号"对"意味着随后下跌）。报告同时给出买入持有基线收益、样本量与"仅用当日及之前数据，不预示未来"的诚实说明。
 
-来源：已归档/删除的遗留设计 `docs/superpowers/specs/2026-06-24-decision-strength-and-modules-design.md`（2026-06-24，可从 git 历史恢复）§8，默认参数已于 2026-07-13 对照 `src/stock_advisor/domain/backtest.py::backtest_signals` 签名核对仍然准确。
+来源：已归档/删除的遗留设计 `docs/superpowers/specs/2026-06-24-decision-strength-and-modules-design.md`（2026-06-24，可从 git 历史恢复）§8，默认参数已于 2026-07-13 对照 `src/domain/backtest.py::backtest_signals` 签名核对仍然准确。

@@ -6,8 +6,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.domain.models import CORE_DISCLAIMER, FactorScore, IndicatorSnapshot, Measurement
-from stock_advisor.domain.policy import (
+from domain.models import CORE_DISCLAIMER, FactorScore, IndicatorSnapshot, Measurement
+from domain.policy import (
     LEVELS,
     _confidence_value,
     _dedupe,
@@ -20,8 +20,8 @@ from stock_advisor.domain.policy import (
     policy_score,
     spectrum,
 )
-from stock_advisor.domain.symbols import normalize_symbol
-from stock_advisor.ui.theme import DISCLAIMER as THEME_DISCLAIMER
+from domain.symbols import normalize_symbol
+from ui.theme import DISCLAIMER as THEME_DISCLAIMER
 
 
 def make_measurement(objective_score, confidence=70, risk_penalty=0, atr=2.5, history_len=80):

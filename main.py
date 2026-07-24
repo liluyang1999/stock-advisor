@@ -9,14 +9,14 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 # Import must follow the sys.path bootstrap above.
-from stock_advisor.observability import configure_logging  # noqa: E402
-from stock_advisor.services.store import log_dir  # noqa: E402
-from stock_advisor.ui.app import run_gui  # noqa: E402
+from observability import configure_logging  # noqa: E402
+from services.store import log_dir  # noqa: E402
+from ui.app import run_gui  # noqa: E402
 
 
 def _self_test() -> int:
     """离线自测：委托给 `services.self_check`，一份自检逻辑同时供命令行与 Qt 自检对话框（避免漂移）。"""
-    from stock_advisor.services.self_check import self_check_cli_line
+    from services.self_check import self_check_cli_line
 
     ok, line = self_check_cli_line()
     if not ok:

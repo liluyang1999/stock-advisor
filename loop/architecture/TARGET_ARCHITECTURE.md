@@ -27,7 +27,7 @@ QtNetwork Adapter / legacy urllib migration adapter / JSON Store
 ## 目标目录
 
 ```text
-src/stock_advisor/
+src/
   models.py, engine.py, policy.py, screener.py, ...  # 保留纯核心
   app.py                                               # 最终仅兼容启动导出
   qt_app/

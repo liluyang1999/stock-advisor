@@ -2,7 +2,7 @@
 
 纯核心的机器权威清单为 `core-module-manifest.json`；Markdown 只解释原则，不能另建一份容易漂移的模块列表。
 
-`src/stock_advisor/` 按层拆成 4 个子包（ADR-0007）：`domain/`（12，纯核心，机器清单保护对象）、`data/`、`services/`、`ui/`。`core-module-manifest.json` 的 `forbidden_internal_modules` 是这非纯三者加 `qt_app`（PySide6 迁移后的界面子包）——`domain/` 模块的相对导入一旦跨出本包，检查器只看目标路径的第一级分量，因此禁止名单按子包而非逐模块列举。完整模块到子包的映射见 `module-map.json`。
+`src/` 按层拆成 4 个子包（ADR-0007）：`domain/`（12，纯核心，机器清单保护对象）、`data/`、`services/`、`ui/`。`core-module-manifest.json` 的 `forbidden_internal_modules` 是这非纯三者加 `qt_app`（PySide6 迁移后的界面子包）——`domain/` 模块的相对导入一旦跨出本包，检查器只看目标路径的第一级分量，因此禁止名单按子包而非逐模块列举。完整模块到子包的映射见 `module-map.json`。
 
 ## 允许依赖
 

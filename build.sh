@@ -10,6 +10,6 @@ echo "[1/2] 安装构建依赖 (PyInstaller，版本钉在 pyproject 的 build �
 python -m pip install --group build
 
 echo "[2/2] 开始打包..."
-python build_exe.py
+python scripts/build_exe.py
 
 echo "打包完成：dist/股市锦囊/（双击其中的 股市锦囊.exe 运行）与 dist/使用说明.html。"

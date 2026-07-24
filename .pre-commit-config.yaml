@@ -1,9 +1,22 @@
 # Pre-commit hooks for the dev toolchain (ADR-0008). Opt in with:  pre-commit install
 #
-# These are `local` / `system` hooks on purpose: the tool versions are pinned once, in
-# pyproject.toml [dependency-groups].dev (install with `python -m pip install --group dev`), so the
-# hooks invoke that single pinned copy instead of re-pinning ruff here and risking drift. They run
-# only on the files being committed, so the product-code adoption debt (see
+# The two ruff hooks run in a pre-commit-managed isolated environment (`language: python` +
+# `additional_dependencies`), NOT in whatever python happens to be on PATH at commit time. This
+# was a real bug: the hooks used `language: system` + `python -m ruff`, which resolves `python`
+# against the committing shell — a command-line commit hit the system interpreter (dev group
+# installed, ruff present) but an IDE commit hit the project's `.venv` (a PyInstaller build
+# sandbox with no ruff) and failed with "No module named ruff". Letting pre-commit own the
+# environment makes the hook behave identically no matter who invokes the commit.
+#
+# Cost: ruff's version is now pinned here as well as in pyproject.toml [dependency-groups].dev.
+# The two MUST stay in lockstep (both 0.15.21 today). CI installs the pyproject copy and runs the
+# full-repo ruff gate, so a drift would surface there; keep this rev equal to the pyproject pin
+# whenever either is bumped.
+#
+# validate-loop stays `language: system`: it only needs the standard library to run the loop
+# validator, so it works under any interpreter (including the .venv one) without a managed env.
+#
+# Hooks run only on the files being committed, so the product-code adoption debt (see
 # loop/quality/TOOLCHAIN_BASELINE.md) does not block commits that do not touch those files.
 minimum_pre_commit_version: "3.5.0"
 repos:
@@ -11,13 +24,15 @@ repos:
     hooks:
       - id: ruff-format
         name: ruff format
-        entry: python -m ruff format
-        language: system
+        entry: ruff format
+        language: python
+        additional_dependencies: ["ruff==0.15.21"]  # keep == pyproject dev group
         types_or: [python, pyi]
       - id: ruff-check
         name: ruff check (with --fix)
-        entry: python -m ruff check --fix
-        language: system
+        entry: ruff check --fix
+        language: python
+        additional_dependencies: ["ruff==0.15.21"]  # keep == pyproject dev group
         types_or: [python, pyi]
       - id: validate-loop
         name: validate loop control plane (enforces the re-baseline invariant)

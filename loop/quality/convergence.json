@@ -23,7 +23,7 @@
     "qt_controller_branch_min": 0.85,
     "current": {
       "measured_at": "2026-07-20",
-      "commit": "8991ad5",
+      "commit": "b15168a",
       "command": "python -m coverage run -m unittest discover -s tests; python -m coverage json -q -o build/coverage.json; python loop/scripts/check_coverage.py build/coverage.json",
       "omit": [
         "*/ui/_app_members.py"

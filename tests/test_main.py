@@ -49,7 +49,7 @@ class SelfTestModeTests(unittest.TestCase):
         """
         import inspect
 
-        from stock_advisor.ui import app as ui_app
+        from ui import app as ui_app
 
         self.assertIn("run_qt_gui", inspect.getsource(ui_app.run_gui))
 

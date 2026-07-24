@@ -8,7 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from stock_advisor.domain.engine import (
+from domain.engine import (
     analyze_stock,
     average_true_range_percent,
     bollinger_position,
@@ -17,8 +17,8 @@ from stock_advisor.domain.engine import (
     rsi,
     support_resistance,
 )
-from stock_advisor.domain.models import DailyBar, Quote
-from stock_advisor.domain.symbols import normalize_symbol
+from domain.models import DailyBar, Quote
+from domain.symbols import normalize_symbol
 
 
 def make_quote(code, last, open_price, high, low, previous_close, volume=500000):
@@ -105,7 +105,7 @@ class FakeProvider:
 
 def make_measurement(code="600519", last=41.0):
     """一次已完成的客观测量，供切档/结果视图等"分析已完成"场景复用。"""
-    from stock_advisor.domain.engine import measure
+    from domain.engine import measure
 
     history = make_history(start=20.0, step=0.25, days=80)
     quote = make_quote(code, last, 40.2, 41.2, 39.9, 40.0, volume=260000)

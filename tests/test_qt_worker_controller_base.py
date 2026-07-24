@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from qt_test_helpers import QtCore, QtWidgets, qt_app, requires_qt, wait_for
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.controllers.base import WorkerControllerBase
+    from qt_app.controllers.base import WorkerControllerBase
 
 
 @requires_qt

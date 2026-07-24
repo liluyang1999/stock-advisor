@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from qt_test_helpers import qt_app, requires_qt
+from qt_test_helpers import QtWidgets, qt_app, requires_qt
 from test_engine import FakeProvider
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +23,7 @@ SRC = PROJECT_ROOT / "src"
 
 if True:
     try:
-        from stock_advisor.qt_app.app import AppWindow, build_app
+        from qt_app.app import AppWindow, build_app
     except ImportError:  # pragma: no cover
         AppWindow = build_app = None
 
@@ -69,30 +69,42 @@ class AppAssemblyTests(unittest.TestCase):
     def test_every_delivered_feature_widget_is_actually_reachable(self):
         """部件存在且有测试 ≠ 用户点得到。
 
-        这条守的是一类真实发生过的缺陷：TierSelector / EvidenceView / PositionPlanView /
+        这条守的是一类真实发生过的缺陷：TierSelector / FactorBars / DetailView /
         ComparisonView 四个部件写好了、单测齐全、却从没被挂进任何页面——于是"五档决策强度""证据""
         仓位计算器""横向对比"在交付物里根本不存在，而需求和变更日志都声称它们已交付。单元测试
         直接构造部件，永远发现不了这件事；只有从装好的主窗往下找才能。
         """
-        from stock_advisor.qt_app.widgets.candlestick_chart import CandlestickChart
-        from stock_advisor.qt_app.widgets.comparison_view import ComparisonView
-        from stock_advisor.qt_app.widgets.evidence_view import EvidenceView
-        from stock_advisor.qt_app.widgets.position_plan import PositionPlanView
-        from stock_advisor.qt_app.widgets.tier_selector import TierSelector
+        from qt_app.widgets.candlestick_chart import CandlestickChart
+        from qt_app.widgets.detail_view import DetailView
+        from qt_app.widgets.factor_bars import FactorBars
+        from qt_app.widgets.spectrum_strip import SpectrumStrip
+        from qt_app.widgets.tier_selector import TierSelector
 
         window = self._window()
         for widget_type, feature in (
             (TierSelector, "五档决策强度切换（REQ-003）"),
-            (EvidenceView, "因子/理由/风险证据（REQ-004）"),
-            (PositionPlanView, "仓位与风控计算器（REQ-004）"),
+            (FactorBars, "因子拆解证据（REQ-004）"),
+            (DetailView, "理由/风险与仓位风控计算器（REQ-004）"),
+            (SpectrumStrip, "决策强度光谱对照（REQ-003/REQ-015）"),
             (CandlestickChart, "K 线（REQ-004）"),
-            (ComparisonView, "自选/持仓横向对比（REQ-005）"),
         ):
             with self.subTest(feature=feature):
                 self.assertTrue(
                     window.findChildren(widget_type),
                     f"{widget_type.__name__} 没有挂进任何页面——{feature} 用户根本点不到",
                 )
+
+        # 横向对比不再是一个独立部件：WI-035 把 ComparisonView 并回自选页的十一列对比表，与老
+        # Tkinter 版同形。保证不变（用户点得到横向对比），落点从"部件类"换成"那张表的可访问名"。
+        named_tables = {
+            table.accessibleName() for table in window.findChildren(QtWidgets.QTableView)
+        }
+        with self.subTest(feature="自选/持仓横向对比（REQ-005）"):
+            self.assertIn(
+                "自选持仓横向对比表",
+                named_tables,
+                "横向对比表没有挂进任何页面——自选/持仓横向对比（REQ-005）用户根本点不到",
+            )
 
     def test_disclaimer_is_resident_in_the_shell(self):
         window = self._window()
@@ -120,7 +132,7 @@ class ArchitectureBoundaryTests(unittest.TestCase):
         self.assertEqual(offenders, [], f"生产源仍 import tkinter：{offenders}")
 
     def test_entry_points_import_no_tkinter(self):
-        for entry in ("main.py", "build_exe.py"):
+        for entry in ("main.py", "scripts/build_exe.py"):
             path = PROJECT_ROOT / entry
             if path.exists():
                 with self.subTest(entry=entry):
@@ -128,7 +140,7 @@ class ArchitectureBoundaryTests(unittest.TestCase):
 
     def test_core_domain_imports_no_qt(self):
         # 与 G-CORE 同向复核：领域核心不得依赖任何 GUI 框架。
-        core = SRC / "stock_advisor" / "domain"
+        core = SRC / "domain"
         offenders = sorted(
             str(p.relative_to(SRC))
             for p in core.rglob("*.py")

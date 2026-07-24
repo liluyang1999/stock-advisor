@@ -1,0 +1,107 @@
+Evidence: EVD-LOOP-007
+Record version: 2.0.0
+Control-plane SHA-256: cca693a822e6ceb1ea17b8c740c488dd3ba76525341f2e231a1a08654fdcc19c
+Working directory: D:\Projects\stock-advisor
+Commit: 4bd895467d6b7f22f362568a9582ab15d67c4dbf
+Dirty worktree: true (this restructure plus the author's design-token work, staged together
+as one coherent index -- see "Index coherence" below)
+Implemented by: src-flatten
+Verified by: loop/scripts/run_gates.py (machine gate suite)
+Verification started: 2026-07-22T03:00:00+09:00
+Verification finished: 2026-07-22T04:05:00+09:00
+
+INDEPENDENCE CAVEAT: the actor that made the changes ran the checks. Unlike EVD-LOOP-005/006,
+this round DID edit two pieces of checking machinery, called out explicitly:
+- loop/architecture/core-module-manifest.json (data only, no checker code): source_root
+  ../src, and the four layer names added to forbidden_import_roots (6 -> 10).
+  Mutation-proven immediately after: injecting `from data.sample_data import ...` into
+  src/domain/formatting.py turned the gate red ("imports forbidden roots: ['data']");
+  reverting turned it green. check_core_boundaries.py itself is byte-unchanged.
+- loop/scripts/check_capability_surface.py: its two product imports
+  (stock_advisor.qt_app.app / .settings) had to follow the flattened module names
+  (qt_app.app / qt_app.settings) or the G-SURFACE gate cannot run at all. Two import
+  lines; no logic touched. SURFACE_OK requirements=34 user_facing=12 internal=22 after.
+loop/tests/ is byte-unchanged this round. No independent human review has taken place;
+a reviewer should replace verified_by with their own identity.
+
+Context (ADR-0015, registered in decisions/0015-flatten-src-package-root.md +
+registers/decisions.jsonl):
+
+The stock_advisor/ package root under src/ was removed. The ADR-0007 layers are now
+top-level packages directly under src/: domain, data, services, observability, ui, qt_app,
+plus ports.py and version.py (the version single source, ex stock_advisor/__init__.py).
+All moves via git mv. Imports shortened (stock_advisor.domain.engine -> domain.engine):
+- 145 cross-layer relative imports rewritten to absolute (layer-internal relative imports
+  untouched); the lone `from .. import __version__` maps to `from version import ...`.
+- ~260 absolute-import/patch-string/path-literal sites rewritten across src (21), tests
+  (239), main.py, scripts/. mock.patch("stock_advisor....") targets included.
+- Top-level name collision check performed BEFORE deciding: importlib.util.find_spec for
+  domain/data/services/ui/qt_app/observability/ports/version -- all unclaimed in the
+  pinned environment. The risk that a future runtime dependency claims one of these names
+  is recorded in ADR-0015 and README as a pre-add check.
+- The "stock_advisor" logging namespace (observability/log.py _ROOT_NAME) is deliberately
+  UNCHANGED: it is product identity, not a filesystem path; log behaviour is bit-identical.
+- Historical documents (ADRs, CHANGELOGs, progress.jsonl, sealed evidence, dated baseline
+  snapshots, docs/superpowers) keep their src/stock_advisor wording: true when written.
+
+Defects found BY this restructure and fixed in it:
+
+1. src/ui/assets.py computed the repo root as parents[3]; one level shallower after the
+   flatten it resolved to D:/Projects (outside the repo), so tokens_path() pointed at a
+   nonexistent D:/Projects/loop/product/tokens.json and 186 Qt tests failed fast. Fixed to
+   parents[2] with the comment updated. The 186-error run is recorded here, not hidden.
+2. src/ui/theme.py ASSET_DIR used parents[2]: under the OLD layout that resolved to
+   src/assets, which never existed -- a latent pre-existing defect (dev-mode icon lookups
+   silently missed). After the flatten the same expression happens to resolve correctly to
+   the repo-root assets/. Verified: ASSET_DIR exists, icon path exists, tokens_path()
+   exists. No code change needed -- recorded because a flatten accidentally FIXING a path
+   bug is exactly the kind of thing that must not go unwritten.
+3. The blanket stock_advisor.->version. rewrite produced `version = version.__version__`
+   in test_version_single_source (local variable shadowing, F823). Caught by ruff lint,
+   fixed by renaming the local. Recorded as a rewrite-tooling near-miss.
+
+Index coherence note:
+
+git mv stages the whole moved tree, so after the moves the INDEX held every file at its
+new path with its OLD import text -- a snapshot that could not compile if committed as-is.
+The import rewrites were therefore staged for the entire moved set (git add src tests
+scripts main.py + the root configs). This folds the author's previously staged token work
+and this restructure into one coherent staged snapshot; verified afterwards with
+`git grep --cached`: zero old-form imports remain in the index. The author's staged token
+files had no unstaged counterparts, so nothing was lost by staging.
+
+Verifier results (all fresh, against the digest above):
+
+- ruff format --check: 167 files already formatted; ruff check: All checks passed
+  (after ruff --fix resorted 26 import-order sites the rewrite left unsorted).
+- python -m compileall -q main.py scripts src: exit 0.
+- Product suite (unittest discover -s tests, offscreen): 847 tests OK in 54.994s
+  (after fix 1; the failing 186-error run before it is disclosed above).
+- Loop suite: 55 tests, 9 failures at capture time -- all nine assert
+  validate_loop.validate() == [] and fail on EVD-LOOP-006 digest staleness only; expected
+  green on registration of this record (re-confirmed in the registration note).
+- pytest dual-run: 893 passed + 365 subtests (the 9 loop staleness items are the same
+  single root cause).
+- python main.py --self-test: SELF_TEST_OK checks=8/8.
+- Version chain: rel._app_version() == version.__version__ == "1.0"; generated manual
+  embeds the same value.
+- check_traceability 34/34; STATUS_OK; BACKLOG_OK; CORE_BOUNDARY_OK modules=12
+  forbidden_roots=10 forbidden_internal=4; SURFACE_OK requirements=34.
+- REAL PyInstaller build (scripts/build_exe.py): completed, EXE 2.4 MiB, app folder
+  100.7 MiB, BUILD_INFO commit 4bd89546. The BUILT EXE itself was then executed:
+  `dist/股市锦囊/股市锦囊.exe --self-test` -> exit 0, SELF_TEST_OK checks=8/8. This is the
+  first packaging proof since the layout change; it also refreshed dist/ so the previously
+  stale 44/48 token values in the shipped tokens.json are gone.
+
+Registration note:
+
+Artifact hashed before registration; evidence/ and state/evidence-index.json are outside
+control_plane_digest(). After registration validate_loop.py returns LOOP_VALIDATION_OK,
+the loop suite returns 55/55, and run_gates.py returns RUN_GATES_OK ran=8 failed=0.
+
+Scope limit:
+
+Confirms AC-000 at the digest above after the ADR-0015 flatten. The author's design-token
+work remains unreviewed (carried as in EVD-LOOP-005/006, now inside the same staged
+snapshot). G-BUILD stays a disabled gate; the build above was run directly as evidence for
+this record, not as a gate enablement. G-TRACE/G-RELEASE remain release-phase.

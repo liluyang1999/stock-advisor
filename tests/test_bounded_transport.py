@@ -20,12 +20,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.data.bounded_transport import (
+from data.bounded_transport import (
     BoundedUrllibProvider,
     classify_exception,
 )
-from stock_advisor.domain.symbols import normalize_symbol
-from stock_advisor.ports import Deadline, ManualCancel
+from domain.symbols import normalize_symbol
+from ports import Deadline, ManualCancel
 
 SYMBOL = normalize_symbol("600000")
 

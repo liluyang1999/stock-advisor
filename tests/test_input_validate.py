@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.domain.input_validate import (
+from domain.input_validate import (
     _parse_alert_threshold,
     _parse_optional_positive,
     _parse_optional_positive_int,

@@ -14,8 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_engine import FakeProvider
 
-from stock_advisor.ports import ManualCancel
-from stock_advisor.services.batch import BatchProgress, run_batch_analysis
+from ports import ManualCancel
+from services.batch import BatchProgress, run_batch_analysis
 
 
 class ParseAndBatchTests(unittest.TestCase):

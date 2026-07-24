@@ -1,7 +1,7 @@
 """版本号只有一个来源，且必须是两段式（loop/governance/VERSION_AND_CHANGE_CONTROL.md）。
 
 这套测试守的是一条容易悄悄失效的约定。此前 `pyproject.toml` 抄了一份字面量，注释还写着
-"mirrors src/stock_advisor/__init__.py::__version__"——两处手工同步，迟早对不上，而对不上时
+"mirrors src/version.py::__version__"——两处手工同步，迟早对不上，而对不上时
 没有任何东西会响。
 
 真源为什么是包而不是 pyproject：本项目没有 `[build-system]`，从不被 pip 安装，因此没有 dist-info，
@@ -19,10 +19,10 @@ import unittest
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-import stock_advisor
+import version
 
 # 两段式 大版本.小版本，不允许第三段。
 _TWO_PART = re.compile(r"^\d+\.\d+$")
@@ -35,14 +35,14 @@ def _pyproject() -> dict:
 class VersionFormatTests(unittest.TestCase):
     def test_version_is_two_part_major_minor(self):
         """`x.x`。三段式（1.0.0）在这个项目里是数据格式版本的形状，不是应用版本的形状。"""
-        self.assertRegex(stock_advisor.__version__, _TWO_PART)
+        self.assertRegex(version.__version__, _TWO_PART)
 
     def test_version_carries_no_stray_characters(self):
-        version = stock_advisor.__version__
+        value = version.__version__
 
-        self.assertEqual(version, version.strip())
+        self.assertEqual(value, value.strip())
         for junk in ("#", '"', "'", " "):
-            self.assertNotIn(junk, version)
+            self.assertNotIn(junk, value)
 
 
 class SingleSourceTests(unittest.TestCase):
@@ -55,7 +55,7 @@ class SingleSourceTests(unittest.TestCase):
         self.assertNotIn(
             "version",
             project,
-            "pyproject 又抄了一份版本号字面量；真源是 stock_advisor.__version__，"
+            "pyproject 又抄了一份版本号字面量；真源是 version.__version__，"
             "这里应当只用 dynamic 引用它",
         )
 
@@ -70,7 +70,7 @@ class SingleSourceTests(unittest.TestCase):
 
         self.assertEqual(
             assignments,
-            ["src/stock_advisor/__init__.py:3"],
+            ["src/version.py:3"],
             f"__version__ 的赋值点不止一个：{assignments}",
         )
 
@@ -78,7 +78,7 @@ class SingleSourceTests(unittest.TestCase):
         """交付清单与 SBOM 写的版本号，必须就是运行期那一个。"""
         import make_release_manifest
 
-        self.assertEqual(make_release_manifest._app_version(), stock_advisor.__version__)
+        self.assertEqual(make_release_manifest._app_version(), version.__version__)
 
 
 class UserFacingVersionTests(unittest.TestCase):
@@ -86,9 +86,9 @@ class UserFacingVersionTests(unittest.TestCase):
 
     def test_generated_manual_shows_the_running_version(self):
         """说明书随交付物分发，是用户唯一能对出"我拿到的是哪一版"的地方——出问题时决定能否复现。"""
-        from stock_advisor.ui.manual import build_manual_html
+        from ui.manual import build_manual_html
 
-        self.assertIn(f"版本 {stock_advisor.__version__}", build_manual_html())
+        self.assertIn(f"版本 {version.__version__}", build_manual_html())
 
 
 class ChangelogTests(unittest.TestCase):
@@ -103,7 +103,7 @@ class ChangelogTests(unittest.TestCase):
     def test_changelog_documents_the_current_version(self):
         text = self.path.read_text(encoding="utf-8")
 
-        self.assertIn(f"[{stock_advisor.__version__}]", text)
+        self.assertIn(f"[{version.__version__}]", text)
 
     def test_every_changelog_release_heading_is_two_part(self):
         """变更日志里的发布标题同样受两段式约束——它是版本号最显眼的对外露出。"""

@@ -147,7 +147,7 @@
         "AC-033"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/"
+        "src/qt_app/"
       ],
       "tests": [
         "TEST-QT-001",
@@ -180,8 +180,8 @@
         "AC-005"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/theme/",
-        "src/stock_advisor/qt_app/resources/"
+        "src/qt_app/theme/",
+        "src/qt_app/resources/"
       ],
       "tests": [
         "TEST-VIS-001"
@@ -211,7 +211,7 @@
         "AC-010"
       ],
       "implementation_paths": [
-        "build_exe.py",
+        "scripts/build_exe.py",
         "requirements/lock"
       ],
       "tests": [
@@ -241,8 +241,8 @@
         "AC-006"
       ],
       "implementation_paths": [
-        "src/stock_advisor/domain/models.py",
-        "src/stock_advisor/data/data_provider.py"
+        "src/domain/models.py",
+        "src/data/data_provider.py"
       ],
       "tests": [
         "TEST-DATA-001"
@@ -274,8 +274,7 @@
         "AC-007"
       ],
       "implementation_paths": [
-        "tests/",
-        "testdata/"
+        "tests/"
       ],
       "tests": [
         "TEST-NUM-001",
@@ -306,8 +305,8 @@
         "AC-006"
       ],
       "implementation_paths": [
-        "src/stock_advisor/ports.py",
-        "src/stock_advisor/qt_app/network/"
+        "src/ports.py",
+        "src/qt_app/network/"
       ],
       "tests": [
         "TEST-NET-001"
@@ -342,8 +341,8 @@
         "AC-006"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/pages/individual_page.py",
-        "src/stock_advisor/qt_app/controllers/analysis_controller.py"
+        "src/qt_app/pages/individual_page.py",
+        "src/qt_app/controllers/analysis_controller.py"
       ],
       "tests": [
         "TEST-QT-AN-001"
@@ -378,8 +377,8 @@
         "AC-031"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/table_models/",
-        "src/stock_advisor/qt_app/widgets/"
+        "src/qt_app/table_models/",
+        "src/qt_app/widgets/"
       ],
       "tests": [
         "TEST-QT-AN-002",
@@ -413,7 +412,7 @@
         "AC-007"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/widgets/position_plan.py"
+        "src/qt_app/widgets/position_plan.py"
       ],
       "tests": [
         "TEST-POS-001",
@@ -447,7 +446,7 @@
         "AC-004"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/pages/screener_page.py"
+        "src/qt_app/pages/screener_page.py"
       ],
       "tests": [
         "TEST-QT-SC-001"
@@ -478,7 +477,7 @@
         "AC-006"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/controllers/screener_controller.py"
+        "src/qt_app/controllers/screener_controller.py"
       ],
       "tests": [
         "TEST-QT-SC-002"
@@ -509,7 +508,7 @@
         "AC-004"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/pages/portfolio_page.py"
+        "src/qt_app/pages/portfolio_page.py"
       ],
       "tests": [
         "TEST-QT-PORT-001"
@@ -539,7 +538,7 @@
         "AC-006"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/pages/alerts_page.py"
+        "src/qt_app/pages/alerts_page.py"
       ],
       "tests": [
         "TEST-QT-ALERT-001"
@@ -568,7 +567,7 @@
         "AC-006"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/pages/evidence_page.py"
+        "src/qt_app/pages/evidence_page.py"
       ],
       "tests": [
         "TEST-QT-FLOW-001"
@@ -601,9 +600,9 @@
         "AC-031"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/dialogs/",
-        "src/stock_advisor/ui/manual.py",
-        "build_exe.py",
+        "src/qt_app/dialogs/",
+        "src/ui/manual.py",
+        "scripts/build_exe.py",
         "tests/test_manual.py"
       ],
       "tests": [
@@ -640,7 +639,7 @@
         "AC-006"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/workers/"
+        "src/qt_app/workers/"
       ],
       "tests": [
         "TEST-RACE-001"
@@ -671,7 +670,7 @@
         "AC-006"
       ],
       "implementation_paths": [
-        "src/stock_advisor/"
+        "src/"
       ],
       "tests": [
         "TEST-NET-002"
@@ -704,7 +703,7 @@
         "AC-005"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/",
+        "src/qt_app/",
         "tests/"
       ],
       "tests": [
@@ -768,7 +767,7 @@
       ],
       "implementation_paths": [
         "main.py",
-        "src/stock_advisor/ui/app.py"
+        "src/ui/app.py"
       ],
       "tests": [
         "TEST-ARCH-002"
@@ -778,7 +777,7 @@
         "EVD-ARCH-002"
       ],
       "size": "M",
-      "definition_of_done": "main.py and src/stock_advisor/ui/app.py are the sole PySide6 entry point, production source no longer imports Tkinter, and all 262 non-Tk baseline contracts still pass (AC-001/AC-002)."
+      "definition_of_done": "main.py and src/ui/app.py are the sole PySide6 entry point, production source no longer imports Tkinter, and all 262 non-Tk baseline contracts still pass (AC-001/AC-002)."
     },
     {
       "id": "WI-024",
@@ -798,7 +797,7 @@
         "AC-009"
       ],
       "implementation_paths": [
-        "build_exe.py",
+        "scripts/build_exe.py",
         "dist/"
       ],
       "tests": [
@@ -861,7 +860,7 @@
         "AC-006"
       ],
       "implementation_paths": [
-        "src/stock_advisor/data/bounded_transport.py"
+        "src/data/bounded_transport.py"
       ],
       "tests": [
         "TEST-NET-001"
@@ -893,7 +892,7 @@
         "AC-004"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/widgets/candlestick_chart.py"
+        "src/qt_app/widgets/candlestick_chart.py"
       ],
       "tests": [
         "TEST-QT-AN-002",
@@ -925,8 +924,8 @@
         "AC-032"
       ],
       "implementation_paths": [
-        "src/stock_advisor/ui/view_format.py",
-        "src/stock_advisor/qt_app/pages/individual_page.py"
+        "src/ui/view_format.py",
+        "src/qt_app/pages/individual_page.py"
       ],
       "tests": [
         "TEST-SEC-001"
@@ -965,9 +964,9 @@
         "AC-011"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/pages/",
-        "src/stock_advisor/qt_app/app.py",
-        "src/stock_advisor/ui/theme.py",
+        "src/qt_app/pages/",
+        "src/qt_app/app.py",
+        "src/ui/theme.py",
         "pyproject.toml"
       ],
       "tests": [
@@ -1004,8 +1003,8 @@
         "AC-004"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/settings.py",
-        "src/stock_advisor/qt_app/pages/"
+        "src/qt_app/settings.py",
+        "src/qt_app/pages/"
       ],
       "tests": [
         "TEST-QT-PORT-001",
@@ -1081,8 +1080,8 @@
         "AC-011"
       ],
       "implementation_paths": [
-        "src/stock_advisor/ui/layout.py",
-        "src/stock_advisor/ui/view_text.py",
+        "src/ui/layout.py",
+        "src/ui/view_text.py",
         "loop/quality/tk-contract-mapping.csv"
       ],
       "tests": [
@@ -1113,8 +1112,8 @@
         "AC-006"
       ],
       "implementation_paths": [
-        "src/stock_advisor/qt_app/controllers/",
-        "src/stock_advisor/services/"
+        "src/qt_app/controllers/",
+        "src/services/"
       ],
       "tests": [
         "TEST-NET-001"
@@ -1125,6 +1124,46 @@
       "scope_out": [
         "QNetworkAccessManager 传输本身——那是 ADR-0003 的终态，另行推进",
         "背景：WI-026 造好并以 28 个离屏用例验完整个故障矩阵，但应用仍走 EastmoneyProvider，因此总 deadline、协作取消与分页完整度这三项目前只在适配器里成立、未惠及用户。切换要改控制器的错误处理形状，属独立工作项。"
+      ]
+    },
+    {
+      "id": "WI-035",
+      "title": "复刻 Tkinter 版 GUI 版式：卡片语言、八列结果表、因子条/光谱/解释三件套",
+      "milestone": "MS-08",
+      "status": "verifying",
+      "priority": "P1",
+      "depends_on": [
+        "WI-023"
+      ],
+      "requirements": [
+        "REQ-004",
+        "REQ-014",
+        "REQ-015",
+        "REQ-016",
+        "REQ-018",
+        "REQ-031"
+      ],
+      "acceptance": [
+        "AC-004"
+      ],
+      "implementation_paths": [
+        "loop/product/tokens.json",
+        "src/qt_app/theme/",
+        "src/qt_app/widgets/",
+        "src/qt_app/pages/"
+      ],
+      "tests": [
+        "TEST-VIS-002"
+      ],
+      "size": "L",
+      "next_action": "实现完成、8 项质量门中 7 项通过；剩余两件需要人：(1) 控制面改动后重录 v2 基线证据（EVD 需要独立 verified_by，不自签）；(2) 五页截图的人工视觉复核对照 docs/ui-concepts。",
+      "definition_of_done": "五个功能页均由 cards.Card + table_utils.Column 构成；结果表恢复老版八列与结论行底色；因子拆解条、决策强度光谱、整篇解释三者可见且随选中行联动；tokens.json 与 UI_DESIGN_SYSTEM.md 数值一致且对比度实测全部达标；test_qt_visual_matrix 零裁剪、全套测试通过。",
+      "scope_out": [
+        "不改信息架构：用户明确要求保留五个标签页，不回退成老版的两模式 + 四个弹窗",
+        "K 线的十字光标与 OHLC 读数沿用 WI-027 既有实现，本项只补 MA10 与配色对齐"
+      ],
+      "evidence_ids": [
+        "EVD-QT-020"
       ]
     }
   ]

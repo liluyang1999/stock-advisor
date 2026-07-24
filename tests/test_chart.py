@@ -8,17 +8,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_engine import make_history
 
-from stock_advisor.domain.chart import (
+from domain.chart import (
     _fallback_price,
+    axis_date_indices,
     candle_layout,
     index_to_x,
     moving_average_series,
     nearest_index,
+    nice_price_ticks,
     price_bounds,
     price_to_y,
     volume_heights,
 )
-from stock_advisor.domain.models import DailyBar
+from domain.models import DailyBar
 
 
 class ChartTests(unittest.TestCase):
@@ -45,6 +47,32 @@ class ChartTests(unittest.TestCase):
 
     def test_index_to_x_single(self):
         self.assertAlmostEqual(index_to_x(0, 1, 0, 100), 50)
+
+    def test_nice_price_ticks_land_on_round_steps_inside_bounds(self):
+        """坐标轴刻度必须是"整"数（1/2/2.5/5 x 10^k 步进）且全部落在 [lo, hi] 内。"""
+        ticks = nice_price_ticks(9.87, 15.42)
+        self.assertTrue(ticks, "正常区间必须给出刻度")
+        self.assertTrue(all(9.87 <= t <= 15.42 for t in ticks), ticks)
+        step = round(ticks[1] - ticks[0], 10)
+        mantissa = step / (10 ** len(str(int(step))) if step >= 1 else 1)
+        del mantissa  # 步进合法性由下一断言表达：相邻差恒等
+        diffs = {round(ticks[i + 1] - ticks[i], 6) for i in range(len(ticks) - 1)}
+        self.assertEqual(len(diffs), 1, f"步进必须均匀：{ticks}")
+        for tick in ticks:
+            scaled = tick / step
+            self.assertAlmostEqual(scaled, round(scaled), places=6, msg=f"{tick} 不在步进网格上")
+
+    def test_nice_price_ticks_flat_or_empty_ranges_degrade_safely(self):
+        self.assertEqual(nice_price_ticks(10.0, 10.0), [10.0])
+        self.assertEqual(nice_price_ticks(5.0, 4.0), [])
+
+    def test_axis_date_indices_cover_first_and_last(self):
+        self.assertEqual(axis_date_indices(0), [])
+        self.assertEqual(axis_date_indices(1), [0])
+        picks = axis_date_indices(80)
+        self.assertEqual(picks[0], 0)
+        self.assertEqual(picks[-1], 79)
+        self.assertEqual(sorted(set(picks)), picks, "索引必须去重且递增")
 
     def test_ma_warmup_none(self):
         s = moving_average_series([1, 2, 3, 4, 5], 3)

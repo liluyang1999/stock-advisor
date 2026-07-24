@@ -14,8 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_engine import make_measurement
 
-from stock_advisor.domain.models import LEVEL_NAMES
-from stock_advisor.services.tier_switch import redecide_all_levels, redecide_at_level
+from domain.models import LEVEL_NAMES
+from services.tier_switch import redecide_all_levels, redecide_at_level
 
 
 class RedecideTests(unittest.TestCase):

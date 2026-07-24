@@ -12,9 +12,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from stock_advisor.data.data_provider import MarketDataError
-from stock_advisor.domain.models import FundFlow
-from stock_advisor.services.fund_flow import fetch_fund_flow_result
+from data.data_provider import MarketDataError
+from domain.models import FundFlow
+from services.fund_flow import fetch_fund_flow_result
 
 
 class _OkProvider:

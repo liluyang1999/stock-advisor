@@ -8,8 +8,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.domain.models import AlertRule, AppConfig, WatchItem
-from stock_advisor.services.store import (
+from domain.models import AlertRule, AppConfig, WatchItem
+from services.store import (
     _positive_or_none,
     config_path,
     config_to_dict,

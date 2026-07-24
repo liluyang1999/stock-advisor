@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from stock_advisor.domain.formatting import (
+from domain.formatting import (
     _fmt_amount,
     _fmt_percent,
     _fmt_plain_number,
@@ -17,8 +17,8 @@ from stock_advisor.domain.formatting import (
     _number_from_cell,
     risk_level,
 )
-from stock_advisor.domain.models import AnalysisResult, IndicatorSnapshot
-from stock_advisor.domain.symbols import normalize_symbol
+from domain.models import AnalysisResult, IndicatorSnapshot
+from domain.symbols import normalize_symbol
 
 
 def _result(confidence, change_pct, score, risks):

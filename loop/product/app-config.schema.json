@@ -3,7 +3,7 @@
   "$id":"app-config.schema.json",
   "schema_version":"1.0.0",
   "title":"股市锦囊 AppConfig 持久化 schema",
-  "description":"产品 AppConfig 的持久化 JSON 契约：对应 src/stock_advisor/domain/models.py::AppConfig（+WatchItem/AlertRule）与 services/store.py::config_to_dict()/parse_config() 的读写形状。config_path() 默认写到 %APPDATA%/股市锦囊/config.json（测试用 STOCK_ADVISOR_CONFIG 覆盖）。schema_version 字段是本次治理新增的前瞻性约定（ADR-0009）：截至本文件编写时 store.py 尚未写出该字段，parse_config() 必须继续把缺失 schema_version 的既有文件当作合法输入解析，见 architecture/PERSISTENCE_AND_CONFIG.md 的迁移/向后兼容说明。",
+  "description":"产品 AppConfig 的持久化 JSON 契约：对应 src/domain/models.py::AppConfig（+WatchItem/AlertRule）与 services/store.py::config_to_dict()/parse_config() 的读写形状。config_path() 默认写到 %APPDATA%/股市锦囊/config.json（测试用 STOCK_ADVISOR_CONFIG 覆盖）。schema_version 字段是本次治理新增的前瞻性约定（ADR-0009）：截至本文件编写时 store.py 尚未写出该字段，parse_config() 必须继续把缺失 schema_version 的既有文件当作合法输入解析，见 architecture/PERSISTENCE_AND_CONFIG.md 的迁移/向后兼容说明。",
   "type":"object",
   "required":["schema_version","watchlist","capital","level","preset","alerts"],
   "properties":{

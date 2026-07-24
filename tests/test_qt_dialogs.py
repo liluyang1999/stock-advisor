@@ -13,14 +13,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from qt_test_helpers import qt_app, requires_qt
 
-from stock_advisor.domain.models import CORE_DISCLAIMER
+from domain.models import CORE_DISCLAIMER
 
 if True:
     try:
         from PySide6 import QtGui
 
-        from stock_advisor.qt_app.dialogs import HelpDialog, SelfCheckDialog, StrategyDialog
-        from stock_advisor.qt_app.main_window import MainWindow
+        from qt_app.dialogs import HelpDialog, SelfCheckDialog, StrategyDialog
+        from qt_app.main_window import MainWindow
     except ImportError:  # pragma: no cover
         QtGui = HelpDialog = SelfCheckDialog = StrategyDialog = MainWindow = None
 

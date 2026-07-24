@@ -7,8 +7,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_policy import make_measurement
 
-from stock_advisor.domain.models import SpectrumCell
-from stock_advisor.domain.policy import flip_hint, spectrum
+from domain.models import SpectrumCell
+from domain.policy import flip_hint, spectrum
 
 _LEVEL_NAMES = ("稳健", "稳进", "标准", "积极", "激进")
 

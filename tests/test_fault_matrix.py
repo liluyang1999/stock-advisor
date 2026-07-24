@@ -22,13 +22,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_engine import fake_quote
 
-from stock_advisor.data.data_provider import MarketDataError
-from stock_advisor.domain.models import FundFlow
-from stock_advisor.domain.presets import apply_tunables, default_values, get_preset
-from stock_advisor.domain.symbols import normalize_symbol
-from stock_advisor.observability import JsonLinesFormatter
-from stock_advisor.services.fund_flow import fetch_fund_flow_result
-from stock_advisor.services.workflow import analyze_symbol, screen_and_recommend
+from data.data_provider import MarketDataError
+from domain.models import FundFlow
+from domain.presets import apply_tunables, default_values, get_preset
+from domain.symbols import normalize_symbol
+from observability import JsonLinesFormatter
+from services.fund_flow import fetch_fund_flow_result
+from services.workflow import analyze_symbol, screen_and_recommend
 
 # 网络类故障：连通/超时/拒绝层面，归 error_class=network（OBSERVABILITY.md 错误分类法）。
 _NETWORK_FAULTS = {

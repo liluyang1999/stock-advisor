@@ -31,22 +31,30 @@
 ## 尺寸
 
 - 间距：8 / 12 / 16 / 24 / 32 DIP。
-- 普通控件最小高度 44 DIP；主按钮固定 48 DIP。
-- 表格标准行高 48 DIP；紧凑模式只能由用户显式开启且不得低于 40 DIP；图标 16/18/20 DIP。
+- 普通控件最小高度 32 DIP；主按钮 36 DIP；按钮最小宽度 88 DIP（短标签不缩成小方块，一排按钮轮廓齐整）。
+- 表格标准行高 30 DIP；图标 16/18/20 DIP。
+- 上述为**桌面鼠标操作**的常规尺寸（对齐 Windows Fluent 32 / macOS 28–32 / Material 36–40）。
+  此前写的 44/48 DIP 是**触摸**目标口径（Apple HIG 44pt、Material 48dp），套在本应用上会让每个
+  按钮变成大色块、一屏放不下几行表格；本应用无触摸形态，故按鼠标口径取值。
 - 内容常规边距 28 DIP，最大宽度 1520 DIP，水平居中。
 - 主窗口最小 1000×680 DIP；窄态通过滚动、折叠和 overflow，不压扁控件。
 
 ## 颜色
 
-- 页面：`#F6F4EF`；面板：`#FFFFFF`。
-- 主墨色：`#122B3D`；交互蓝：`#17456F`。
-- A 股红（`up_red` `#CC0000`）：上涨、买入、正净流入；A 股绿（`down_green` `#00742A`）：下跌、卖出、净流出。
-- 琥珀（`amber` `#8B5A00`）：警告、降级、需要留意。
+配色沿用 WI-023 之前的 Tkinter 版（WI-035 复刻）：暖灰纸面 + 暖白卡片 + 墨蓝指挥带，红涨绿跌为 A 股本土惯例。
+
+- 纸面：`page #F4F2ED`；卡片：`card #FFFDF9`；卡片描边：`card_border #D9D5CC`；分隔线：`border_soft #E7E3DA`。
+- 文字三档：`ink #17212B`（正文）、`ink_soft #344250`（次级/表头）、`muted_ink #626D7A`（说明与提示）。
+- 交互蓝：`interactive #173A5E`；填色按钮上的文字用 `panel #FFFFFF`。
+- A 股红（`up_red #B4232C`）：上涨、买入、正净流入；A 股绿（`down_green #167044`）：下跌、卖出、净流出。
+- 琥珀（`amber #9A4B1F`）：警告、降级、需要留意；其浅底为 `danger_bg #FFF1E8`。
+- 结论行底色：`buy_row #FBEFEF` / `sell_row #EDF7F1` / `hold_row #F5F3EE`；选中行 `selected_row #DBE7EE` 一律压过行底色。
+- 墨蓝指挥带：`command_bg #142B3D`、`command_surface #203B4E`、`command_border #355267`、`command_ink #F7F5EF`、`command_muted_ink #B8C4CF`。
 - 红绿必须同时配 `+/-`、文字、图标或形状。
-- 正文对比度目标 ≥4.5:1；大文本/控件 ≥3:1。以上三色对页面/面板的实测对比度：`up_red` 5.36:1 / 5.89:1，`down_green` 5.41:1 / 5.95:1，`amber` 5.37:1 / 5.90:1（方法与逐色实测见 `tokens.json.contrast`）。
-- 状态 token：`hover #123556`、`pressed #0C253C`（交互蓝按 HSL 明度 -6%/-12% 派生）、`disabled #9AA0A6`（WCAG 对禁用态豁免对比度要求）、`selected_row #E3E9EE`（12% 交互蓝叠加于面板）、`gridline #DBDCDA`（12% 主墨色叠加于页面）、`focus_ring #2472C8`（刻意区别于交互蓝，避免聚焦态按钮的焦点框与自身底色融合；对页面/面板对比度 4.43:1 / 4.87:1）。
+- 正文对比度目标 ≥4.5:1；大文本/控件 ≥3:1。语义色对纸面/卡片的实测对比度：`up_red` 5.83:1 / 6.42:1，`down_green` 5.46:1 / 6.02:1，`amber` 5.52:1 / 6.08:1，`muted_ink` 4.71:1 / 5.18:1（方法与逐对实测见 `tokens.json.contrast`；只测界面真正会出现的前景/背景组合）。
+- 状态 token：`hover #214D76`、`pressed #102D49`（老版 ACCENT_HOVER / ACCENT_PRESSED）、`disabled #89939D`（WCAG 对禁用态豁免对比度要求）、`selected_row #DBE7EE`、`gridline #E7E3DA`（分隔线，非文字）、`focus_ring #2472C8`（刻意区别于交互蓝，避免聚焦态按钮的焦点框与自身底色融合；作为非文字图形按 ≥3:1 判定）。
 - 圆角 token：`border_radius_dip 4`（克制圆角，呼应"禁止过度圆角"不变量）。
-- `tokens.json`（`loop/schemas/tokens.schema.json` 校验）是 WI-005（主题 token、QSS、资源和高 DPI）的机器权威来源；本节数值须与其保持一致，颜色/间距/字号等如有变更以 `tokens.json` 为准。
+- `tokens.json`（`loop/schemas/tokens.schema.json` 校验）是 WI-005/WI-035 的机器权威来源；本节数值须与其保持一致，颜色/间距/字号等如有变更以 `tokens.json` 为准。
 
 ## 组件
 

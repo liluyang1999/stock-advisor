@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from test_engine import make_history
 
-from stock_advisor.domain.backtest import backtest_signals, quote_from_bar
+from domain.backtest import backtest_signals, quote_from_bar
 
 
 class BacktestTests(unittest.TestCase):
@@ -87,8 +87,8 @@ class BacktestTests(unittest.TestCase):
             return SimpleNamespace(action="HOLD")
 
         with (
-            patch("stock_advisor.domain.backtest.measure", fake_measure),
-            patch("stock_advisor.domain.backtest.decide", fake_decide),
+            patch("domain.backtest.measure", fake_measure),
+            patch("domain.backtest.decide", fake_decide),
         ):
             backtest_signals(history, level=3, horizon=5, warmup=30)
 

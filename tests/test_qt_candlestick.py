@@ -23,11 +23,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from qt_test_helpers import QtGui, QtWidgets, qt_app, requires_qt, temp_settings
 
-from stock_advisor.domain import chart as geometry
-from stock_advisor.domain.models import DailyBar
+from domain import chart as geometry
+from domain.models import DailyBar
 
 if QtWidgets is not None:
-    from stock_advisor.qt_app.widgets.candlestick_chart import CandlestickChart
+    from qt_app.widgets.candlestick_chart import CandlestickChart
 
 
 def _bar(date: str, o: str, c: str, h: str, low: str, volume: int = 1000) -> DailyBar:
@@ -129,6 +129,9 @@ class CandlestickHoverTests(unittest.TestCase):
         self.assertIn(bar.date, text)
         for price in (bar.open, bar.high, bar.low, bar.close):
             self.assertIn(f"{price:.2f}", text)
+        # 说明书承诺"开/高/低/收与涨跌幅"——读数必须兑现涨跌那一半。
+        self.assertIn("涨跌", text)
+        self.assertIn(f"{bar.pct_change:+.2f}%", text)
 
     def test_leaving_the_widget_clears_the_readout(self):
         self._hover_at(self.widget._layout()[5]["x"])
@@ -173,6 +176,24 @@ class CandlestickPaintTests(unittest.TestCase):
         pixmap.fill(QtGui.QColor("white"))
         self.widget.render(pixmap)
         return pixmap.toImage()
+
+    def test_price_axis_reserves_a_right_gutter(self):
+        """绘图区右边必须给价格标尺留槽：刻度文字不许压在蜡烛上。"""
+        self.widget.set_bars(_series(30), "SH.600519")
+        _left, right, _top, _height = self.widget._plot_rect()
+        self.assertLessEqual(right, self.widget.width() - 48, "右侧应留出 >=48px 的价格标尺槽")
+        self._render()  # 轴绘制路径真的执行一遍，抛异常即失败
+
+    def test_axes_use_domain_geometry_ticks(self):
+        """轴刻度必须与 domain 纯函数同源——部件不许自算一套。"""
+        from domain.chart import nice_price_ticks, price_bounds
+
+        self.widget.set_bars(_series(30), "SH.600519")
+        lo, hi = price_bounds(self.widget._bars)
+        ticks = nice_price_ticks(lo, hi)
+        self.assertTrue(ticks, "正常序列必须有价格刻度")
+        for tick in ticks:
+            self.assertTrue(lo <= tick <= hi)
 
     def test_painting_a_normal_series_marks_the_canvas(self):
         self.widget.set_bars(_series())
@@ -262,23 +283,23 @@ class IndividualPageChartTests(unittest.TestCase):
         self.app = qt_app()
         from test_engine import FakeProvider
 
-        from stock_advisor.qt_app.controllers.analysis_controller import AnalysisController
-        from stock_advisor.qt_app.pages.individual_page import IndividualPage
+        from qt_app.controllers.analysis_controller import AnalysisController
+        from qt_app.pages.individual_page import IndividualPage
 
         self.controller = AnalysisController(FakeProvider())
         self.addCleanup(self.controller.shutdown)
         self.page = IndividualPage(self.controller, temp_settings(self))
 
     def _make_outcome(self, code: str, bars: list[DailyBar], ok: bool = True):
-        from stock_advisor.domain.symbols import normalize_symbol
-        from stock_advisor.services.workflow import AnalysisOutcome
+        from domain.symbols import normalize_symbol
+        from services.workflow import AnalysisOutcome
 
         symbol = normalize_symbol(code)
         result = None
         if ok:
             from test_engine import FakeProvider
 
-            from stock_advisor.services.workflow import analyze_symbol
+            from services.workflow import analyze_symbol
 
             result = analyze_symbol(symbol, FakeProvider()).result
         return AnalysisOutcome(
@@ -330,7 +351,7 @@ class IndividualPageChartTests(unittest.TestCase):
 
 
 def _quality():
-    from stock_advisor.domain.data_quality import DataQuality
+    from domain.data_quality import DataQuality
 
     return DataQuality(level="ok")
 
