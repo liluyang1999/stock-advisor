@@ -13,7 +13,7 @@
 
 - [x] 核心无 Qt/Tk 依赖。G-CORE 门禁 + TEST-ARCH-002 的 AST 全量扫描。
 - [x] 生产无 Tkinter。WI-023 删除 10 个 Tk 文件；生产源零 `tkinter` import 由 AST 扫描强制。
-- [x] 全门禁 100% 通过，覆盖率达标。`run_gates.py` → `ran=7 failed=0`；语句 96.64% / 分支 92.81%，六条门槛（含 WI-025 启用的 qt_controller_*）全部达标。
+- [x] 全门禁 100% 通过，覆盖率达标。`run_gates.py` → `ran=8 failed=0`；语句 95.82% / 分支 90.96%，六条门槛（含 WI-025 启用的 qt_controller_*）全部达标。
 - [x] Tk 187 行为合同映射 100%（WI-002：156 qt_replaced / 24 pure_preserved / 7 approved_retired）。
 - [x] race/fault/DPI/font/perf 证据完成（EVD-QT-014 / EVD-NET-002 / EVD-QT-016 / EVD-PERF-001）。
 - [x] 需求与变更日志宣称的功能在装配后真的可达（WI-029 / EVD-QT-018）——此前四个部件与回测接不通。

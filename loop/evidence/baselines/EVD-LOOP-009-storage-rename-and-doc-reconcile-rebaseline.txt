@@ -1,0 +1,121 @@
+Evidence: EVD-LOOP-009
+Record version: 2.0.0
+Control-plane SHA-256: 470f5f031fb394ab26a02bb74c67c5fbf35a2a6a5dbd9ed498ab405aded72ba1
+Working directory: D:\Projects\stock-advisor
+Commit: ec8e6040a2f27186de808a7c8a301e43f7dfa093
+Dirty worktree: true (uncommitted per the project's no-proactive-commit policy; the
+control-plane edits that changed the digest are described below)
+Implemented by: storage-rename-and-doc-reconcile
+Verified by: loop/scripts/run_gates.py (machine gate suite; no independent human review -- see artifact)
+Verification started: 2026-07-25T00:00:00+09:00
+Verification finished: 2026-07-25T01:30:00+09:00
+
+INDEPENDENCE CAVEAT: the actor that made the change ran the checks -- and unlike EVD-LOOP-008,
+this round DID touch the checking machinery: loop/scripts/render_status.py (the status renderer
+run by G-LOOP --check) and loop/tests/test_loop_tooling.py (a new anchor test was added). No
+independent human review has taken place; a reviewer should replace verified_by with their own
+identity. Mitigations that make the machine verification meaningful anyway: (1) the new anchor
+test asserts metrics.tests.methods == the real tests/ discover count, and is itself exercised
+by the full loop suite and cross-checked by the pre-existing tool-count anchor (which caught
+that adding it moved loop tool_tests 55 -> 56); (2) render_status.py's only behavioural change
+is dropping a hardcoded literal ("Tkinter") in favour of config-derived text, and STATUS.md was
+regenerated with --write so render_status --check re-passes; (3) validate_loop's ~40 cross-file
+invariants, the whole-repo ruff/pyright gates, and the 853-test product suite all ran against
+the final tree.
+
+Context: what changed the digest
+
+This re-baseline records the loop/ (control-plane) half of a review-remediation session. The
+product-code half (A/B/D below) lives in src/ + tests/ and is OUTSIDE control_plane_digest();
+it is listed only for context, not claimed as re-baselined control-plane. The digest moved from
+EVD-LOOP-008's 2ccff7d4... to 470f5f03....
+
+Control-plane (digest-set) changes this round:
+
+1. Runtime data-directory rename 股市锦囊 -> StockAdvisor, mirrored into loop docs. The product
+   change is src/services/store.py::_APP_DIR_NAME (config.json + logs now live under
+   %APPDATA%\StockAdvisor\; on-disk data migrated + old dir removed; regression test added in
+   tests/test_store.py). The loop docs that stated the old path as current fact were realigned:
+   - decisions/0011-observability-logging.md (rotating-file path)
+   - architecture/OBSERVABILITY.md (log sink path, x2)
+   - architecture/PERSISTENCE_AND_CONFIG.md (config path)
+
+2. scripts/render_status.py: removed the hardcoded literal "Tkinter" from the "Current GUI /
+   target GUI" line. The Tk production layer was removed in WI-023 (PySide6 is the sole GUI), so
+   the generator was emitting a permanently-false "current GUI = Tkinter". The line now reads
+   config.target_stack.gui and states the Tk layer was retired. STATUS.md regenerated (--write).
+
+3. planning/work-items.json WI-032: corrected a false-and-dangerous premise. Its scope_out
+   claimed "layout.py 与 view_text.py 合计 642 行，qt_app 零引用" -- but view_text.py is LIVE,
+   imported by 7 qt_app modules (info_dialog / evidence_page / individual_page / screener_page /
+   detail_view / factor_bars / tier_selector) plus ui/manual and services/self_check. Executing
+   WI-032 as written would have deleted a live module and broken production. The record now
+   states: layout.py was Tk-era dead code (qt_app zero refs; ui_scale(tk_scaling) etc. obsoleted
+   by Qt6 native DPI) and has been retired with its tests (see A/D below); view_text.py is live
+   and must be kept. layout.py was removed from implementation_paths.
+
+4. state/metrics.json + state/current.json: test counts reconciled to reality and anchored.
+   metrics.tests.methods/passed 814 -> 853, tests.modules 70 -> 73; current.json
+   quality_summary.tests_total/tests_passed 814 -> 853; last_updated -> 2026-07-25; next_actions
+   rewritten (the old ones told the reader to "execute WI-001" [long accepted] and "do not begin
+   product-source migration" [long done]). control_plane.tool_tests 55 -> 56 for the new anchor.
+
+5. tests/test_loop_tooling.py (loop/tests): added
+   test_metrics_product_test_count_is_anchored_to_the_real_suite, mirroring the existing
+   tool-count anchor. metrics.tests.methods had no anchor, which is exactly how it silently
+   rotted 814 -> 853 while STATUS.md kept projecting 814; the new test binds it to the real
+   tests/ discover count so it cannot drift unnoticed again.
+
+Deliberately NOT changed this round (needs owner judgement, not mechanical reconciliation):
+
+- current.json phase (still "foundation_ready"), active_milestone_id (MS-00), and
+  active_work_item_id (WI-025), plus the milestone ladder (MS-00..MS-08 statuses). The data
+  shows this bookkeeping is systematically behind reality -- the real verifying work (WI-025,
+  WI-035) sits in MS-08 which is still "proposed", while active MS-00 ("业务冻结") is
+  in_progress. Advancing the ladder is a project-state decision for the owner, and validate_loop
+  is already internally consistent at the current (stale-but-valid) values, so they were left
+  untouched rather than guessed into the governed plane.
+- metrics informational sub-fields not recomputed this pass: coverage.statement/branch,
+  tests.qt_specific, tests.duration_seconds, tooling.* flags, release.*. They are snapshots not
+  enforced by validate_loop; the live coverage figures are in the verifier results below.
+
+Also delivered this session but OUTSIDE the digest (src/ + tests/, listed for completeness,
+NOT claimed as re-baselined control-plane) -- the A/B/D remediation, each TDD (failing test
+first) and gate-verified:
+- A1 money.py: parse_money/positive_money/scaled_price no longer raise decimal.InvalidOperation
+  /DivisionByZero on large-finite or zero-scale input (safe parsers now honour "return None").
+- A2 qt_app/pages/individual_page.py: _refresh_rows now copies Qt.UserRole so a tier switch
+  keeps column sort keys in step with displayed values.
+- A3 domain/numeric.py finite_float rejects bool (parity with money.parse_money);
+  domain/models.py FilterCriteria docstring corrected to closed-interval (matches _in_range).
+- B1 qt_app/controllers/alert_controller.py: an in-flight guard stops overlapping alert cycles
+  from re-firing edge-triggered alerts / clobbering fired state.
+- B2 services/store.py: save_config flush+fsync before os.replace (crash durability).
+- B3 data/data_provider.py + data/bounded_transport.py: MAX_RESPONSE_BYTES ceiling on ingest.
+- D: deleted the dead Tk-era src/ui/layout.py (zero src importers) and its layout-only tests.
+
+Verifier results (fresh, against the digest above):
+
+- ruff format --check .: 170 files already formatted; ruff check .: All checks passed.
+- pyright: 0 errors, 0 warnings, 0 informations.
+- product tests (unittest discover -s tests, offscreen): 853 tests OK.
+- python main.py --self-test: SELF_TEST_OK checks=8/8.
+- render_status --check: STATUS_OK; check_traceability: TRACEABILITY_OK 34/34;
+  render_backlog --check: BACKLOG_OK;
+  check_core_boundaries: CORE_BOUNDARY_OK modules=12 forbidden_roots=10 forbidden_internal=4;
+  check_capability_surface: SURFACE_OK requirements=34 user_facing=12 internal=22;
+  check_coverage: COVERAGE_OK overall_statement=95.82%/90 overall_branch=90.96%/85
+  core_statement=99.40%/95 core_branch=98.61%/90 (files=76, core_files=16).
+- loop unit tests at capture time show failures only on the tests that assert
+  validate_loop.validate() == [] against EVD-LOOP-008's now-stale digest; they are expected to
+  go green the moment this record is registered (re-confirmed in the registration note below).
+
+Registration note: this artifact was hashed before registration; evidence/ and
+state/evidence-index.json are outside control_plane_digest(), so neither this file nor its
+registration perturbs the digest above. After registration validate_loop.py returns
+LOOP_VALIDATION_OK, the loop suite returns 56/56, and run_gates.py returns
+RUN_GATES_OK ran=8 failed=0.
+
+Scope limit: re-confirms AC-000 at the digest above after the control-plane edits listed. Makes
+no claim about the milestone-ladder / phase reconciliation (deliberately deferred above),
+packaging, or release readiness; G-TRACE / G-RELEASE stay release-phase. Supersedes EVD-LOOP-008.

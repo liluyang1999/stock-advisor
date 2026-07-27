@@ -86,6 +86,45 @@ class IndividualPageTests(unittest.TestCase):
         self.assertIn("失败 1 只", page.summary.text())
         self.assertIn(CORE_DISCLAIMER, page.status.text())  # 结果态仍常驻免责声明
 
+    def test_tier_switch_keeps_sort_keys_in_sync_with_displayed_values(self):
+        """切档就地刷新必须同步排序键（Qt.UserRole），否则显示新档数字、排序仍按旧档。
+
+        行在默认档（L3）用 `make_row` 追加，UserRole 存的是当时的排序值；切到别的档后
+        `_refresh_rows` 就地改了显示文本却漏拷 UserRole，于是 `_HeaderSort` 会按陈旧的旧档
+        键排序，点列头得到与屏上数字矛盾的顺序。不变量：任一单元格的排序键恒等于其当前显示
+        文本的排序值。
+        """
+        from PySide6 import QtCore
+
+        from qt_app.widgets.table_utils import cell_sort_value
+
+        page, controller = self._page(FakeProvider())
+        page.input.setPlainText("600519 000001")
+        page._on_analyze()
+        wait_for(controller.batch_finished)
+
+        before = {
+            (r, c): page.model.item(r, c).text()
+            for r in range(page.model.rowCount())
+            for c in range(page.model.columnCount())
+        }
+        page.tier.set_level(1)  # 切到 L1（稳健），触发缓存重判 + 就地刷新
+
+        changed = 0
+        for r in range(page.model.rowCount()):
+            for c in range(page.model.columnCount()):
+                item = page.model.item(r, c)
+                if item is None:
+                    continue
+                if item.text() != before[(r, c)]:
+                    changed += 1
+                self.assertEqual(
+                    item.data(QtCore.Qt.ItemDataRole.UserRole),
+                    cell_sort_value(item.text()),
+                    msg=f"row={r} col={c} text={item.text()!r} 的排序键与显示值脱节",
+                )
+        self.assertGreater(changed, 0, "切档应至少改变一个单元格，否则本测试无法暴露脱节")
+
     # --- 复制 / CSV 导出（WI-018 / TEST-QT-HELP-001）---
 
     def test_export_buttons_enable_only_after_results(self):

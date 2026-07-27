@@ -21,11 +21,11 @@
 - `models.py` 只放数据结构（全部 `@dataclass(frozen=True)`）。
 - `symbols.py` / `screener.py` / `presets.py` / `engine.py` / `policy.py` / `backtest.py` / `chart.py` / `compare.py` / `alerts.py` 是**纯逻辑、无网络、无 GUI**（G-CORE 静态禁止 `urllib` 与 `PySide6`），必须可独立单测。`store.py` 做配置读写（I/O），解析/序列化是纯函数。
 - **条件预警**：`alerts.check_rules` 是**边沿触发纯函数**（条件假→真才触发，回落复位）；周期监控由 `qt_app/controllers/alert_controller.py` 的 `QTimer` 驱动（默认 60000 ms，见 `AlertController.start`），每轮在 worker 线程跑、结果经队列信号回 GUI 线程判定，仅程序开启时生效。
-- **持久化写到 `%APPDATA%\股市锦囊\config.json`**（应用自身运行态：自选股/持仓、本金、档位、预设），非项目产物；读坏/不可写都回退默认且不崩溃。测试经环境变量 `STOCK_ADVISOR_CONFIG` 指向临时文件隔离，**严禁让测试写真实 %APPDATA%**。
+- **持久化写到 `%APPDATA%\StockAdvisor\config.json`**（应用自身运行态：自选股/持仓、本金、档位、预设），非项目产物；读坏/不可写都回退默认且不崩溃。测试经环境变量 `STOCK_ADVISOR_CONFIG` 指向临时文件隔离，**严禁让测试写真实 %APPDATA%**。
 - **测量与决策分离**：`engine.measure()` 产出客观 `Measurement`（与档位无关）；`policy.decide(m, level)` 按 5 档决策强度翻译为买/持/卖与仓位；`engine.analyze_stock(..., level)` 是二者的薄包装，默认 L3「标准」复现既有行为。改档只对缓存的 `Measurement` 重判，不重新联网。
 - `data_provider.py` 是唯一做网络请求的模块；解析函数（`parse_*`）保持纯函数以便单测。
 - `workflow.py` 负责编排（个股分析、全市场选股），通过 Protocol 接收 provider，便于用 FakeProvider 测试；回传 `Measurement` 供界面改档重判。
-- 界面层只负责呈现与编排：`qt_app/pages/` 是薄视图，异步与取消在 `qt_app/controllers/`，业务判断一律留在 `domain`/`services`。可测的几何/格式化逻辑（`chart.py` K 线几何、`ui/layout.py` 居中与内容带、`ui/view_format.py` 格式化）都是模块级纯函数。
+- 界面层只负责呈现与编排：`qt_app/pages/` 是薄视图，异步与取消在 `qt_app/controllers/`，业务判断一律留在 `domain`/`services`。可测的几何/格式化逻辑（`chart.py` K 线几何、`ui/view_format.py` 格式化）都是模块级纯函数。
 - 配色为 A 股本土习惯：红=涨/买/积极，绿=跌/卖/谨慎。**色值真源是 `loop/product/tokens.json`**（带 WCAG 对比度实测），Qt 侧经 `qt_app/theme/tokens.py` 读取生成 QSS；`ui/theme.py` 只留少数非 Qt 路径（说明书 HTML、纯函数格式化）仍在用的色值，新增颜色一律加进 tokens.json。
 
 新增功能优先复用现有引擎与渲染组件，不要重复造轮子。
@@ -34,7 +34,7 @@
 
 - 所有窗体在主窗口（主窗口相对屏幕）**居中**，四边留白**均匀**。
 - 内容限制最大宽度（`MAX_CONTENT_WIDTH`）并水平居中，超宽屏两侧均匀留白，组件不得单边拉伸过长。
-- 居中与内容带计算抽成纯函数（`compute_centered_geometry`、`compute_content_band`）并有单测；改布局时先改/加测试。
+- 窗口居中交给 Qt 原生（Tk 时代的 `ui/layout.py` 几何纯函数已随 Tk 生产层移除）；内容最大宽度在 `qt_app/main_window.py` 以 `theme.MAX_CONTENT_WIDTH` / `CONTENT_MARGIN` 施加，改这些常量或布局时先改/加测试。
 
 ## 测试与验证
 

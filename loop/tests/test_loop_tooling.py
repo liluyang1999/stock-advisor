@@ -319,6 +319,20 @@ class LoopToolingTests(unittest.TestCase):
         metrics = json.loads((LOOP_ROOT / "state/metrics.json").read_text(encoding="utf-8"))
         self.assertEqual(metrics["control_plane"]["tool_tests_total"], count(suite))
 
+    def test_metrics_product_test_count_is_anchored_to_the_real_suite(self) -> None:
+        # 与 tool_tests 同理：metrics.tests.methods 此前无锚点，从 814 悄悄烂到 853 无人察觉
+        # （STATUS.md 原样投影这个数）。此处自锚定到 tests/ 的真实发现数，堵住同一失效模式。
+        tests_dir = LOOP_ROOT.parent / "tests"
+        suite = unittest.TestLoader().discover(str(tests_dir), top_level_dir=str(tests_dir))
+
+        def count(item: object) -> int:
+            if isinstance(item, unittest.TestSuite):
+                return sum(count(child) for child in item)
+            return 1
+
+        metrics = json.loads((LOOP_ROOT / "state/metrics.json").read_text(encoding="utf-8"))
+        self.assertEqual(metrics["tests"]["methods"], count(suite))
+
     def test_every_gate_has_owning_work_item(self) -> None:
         gates = json.loads((LOOP_ROOT / "quality/quality-gates.json").read_text(encoding="utf-8"))[
             "gates"

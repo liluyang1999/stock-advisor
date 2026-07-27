@@ -31,7 +31,7 @@ def render() -> str:
         f"- Selected work item: `{active['id']}` — {active['title']} (`{active['status']}`)",
         f"- Baseline: `{state['baseline_commit']}`",
         f"- Dirty worktree: `{str(state['dirty_worktree']).lower()}`",
-        f"- Current GUI / target GUI: `Tkinter / {config['target_stack']['gui']}`",
+        f"- GUI（现＝目标，Tk 生产层已随 WI-023 移除）: `{config['target_stack']['gui']}`",
         f"- Runtime font target: `{config['target_stack']['runtime_font']}`",
         f"- Tests: `{metrics['tests']['passed']}/{metrics['tests']['methods']}`",
         f"- Loop tooling tests: `{control_plane['tool_tests_passed']}/{control_plane['tool_tests_total']}`",

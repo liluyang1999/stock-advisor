@@ -21,6 +21,18 @@ def quantize_money(value: Decimal) -> Decimal:
     return value.quantize(CENT, rounding=ROUND_HALF_UP)
 
 
+def _safe_quantize(number: Decimal) -> Decimal | None:
+    """量化到 2 位,返回 None 而非抛异常:非有限,或过大以致量化结果的有效位数超出默认十进制
+    上下文(28 位)——量化到 2 位会把有效位推到 (整数位+2),整数位 ≥27(约 ≥1e26)即触发
+    ``InvalidOperation``。安全解析器据此把"读不出合法金额"统一表达为 None,不让调用方吃到异常。"""
+    if not number.is_finite():
+        return None
+    try:
+        return quantize_money(number)
+    except InvalidOperation:
+        return None
+
+
 def to_money(value: Decimal | int | str | float) -> Decimal:
     """把**确知为金额/价格**的值转成 2 位小数 Decimal。
 
@@ -39,7 +51,7 @@ def parse_money(value: object) -> Decimal | None:
     if value is None or isinstance(value, bool):
         return None
     if isinstance(value, Decimal):
-        return quantize_money(value) if value.is_finite() else None
+        return _safe_quantize(value)
     if isinstance(value, float):
         if not math.isfinite(value):
             return None
@@ -51,7 +63,7 @@ def parse_money(value: object) -> Decimal | None:
         number = Decimal(text)
     except InvalidOperation:
         return None
-    return quantize_money(number) if number.is_finite() else None
+    return _safe_quantize(number)
 
 
 def positive_money(value: object) -> Decimal | None:
@@ -73,4 +85,6 @@ def scaled_price(scaled: object, scale: int) -> Decimal | None:
         return None
     if not raw.is_finite():
         return None
-    return quantize_money(raw / Decimal(scale))
+    if not scale:  # scale == 0 会让 raw / Decimal(0) 抛 DivisionByZero
+        return None
+    return _safe_quantize(raw / Decimal(scale))

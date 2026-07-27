@@ -1,0 +1,83 @@
+Evidence: EVD-LOOP-010
+Record version: 2.0.0
+Control-plane SHA-256: 79e81d9e13afe580c3e5d52c3434e0b4b54d248be02abd487661b681c89063bb
+Working directory: D:\Projects\stock-advisor
+Commit: ec8e6040a2f27186de808a7c8a301e43f7dfa093
+Dirty worktree: true (uncommitted per the project's no-proactive-commit policy; the
+control-plane edits that changed the digest are described below)
+Implemented by: milestone-and-phase-reconcile
+Verified by: loop/scripts/run_gates.py (machine gate suite; no independent human review -- see artifact)
+Verification started: 2026-07-25T02:00:00+09:00
+Verification finished: 2026-07-25T02:40:00+09:00
+
+INDEPENDENCE CAVEAT: the actor that made the change ran the checks. This round edited only
+state/planning DATA (planning/milestones.json, state/current.json) + the regenerated STATUS.md;
+no checker, schema, gate, script, or test under loop/ was touched (loop/scripts/ and loop/tests/
+are byte-unchanged from EVD-LOOP-009). The checking machinery is therefore exactly as it stood.
+No independent human review has taken place; a reviewer should replace verified_by with their own
+identity and, in particular, confirm the JUDGEMENT CALLS listed below.
+
+Context: what changed the digest
+
+EVD-LOOP-009 reconciled the mechanical/factual staleness (storage path, test counts, render_status
+Tkinter hardcode, WI-032) but deliberately LEFT the milestone ladder / phase / active pointers
+untouched, flagging them as owner judgement. The owner then authorised advancing them. This round
+does exactly that, deriving every status from the data where possible. The digest moved from
+EVD-LOOP-009's 470f5f03... to 79e81d9e....
+
+Machine-DERIVED changes (a milestone's status follows its work items' statuses):
+
+- MS-00..MS-07 -> "accepted". Every work item owned by each of these milestones is already
+  status=accepted (MS-00: WI-000/001/002; MS-01: WI-003..006; MS-02: WI-007/008/009/026;
+  MS-03: WI-010/011/012/027; MS-04: WI-013/014; MS-05: WI-015..018/028; MS-06: WI-019/020;
+  MS-07: WI-021/022). They had been left at "proposed"/"in_progress" since project start.
+- MS-08 -> "in_progress" (was "proposed"). It owns WI-023/024 (accepted), WI-025/WI-035
+  (verifying), WI-029/030/031 (accepted), WI-032/033 (proposed) -- a mix with work still open,
+  i.e. in_progress, not yet verifying.
+- MS-08.work_items completed from [WI-023,024,025] to the full set that actually declares
+  milestone=MS-08 [WI-023,024,025,029,030,031,032,033,035]. The array had drifted out of sync
+  with the work items' own milestone field (validate_loop checks each direction's referential
+  integrity but not their mutual completeness, so the drift passed unnoticed).
+
+JUDGEMENT CALLS (documented for the reviewer -- data-informed, but a human should confirm):
+
+- state/current.json.active_milestone_id: MS-00 -> MS-08. MS-00 ("基线与规格冻结") is long
+  accepted; the only milestone with open work is MS-08, so it is the active one.
+- state/current.json.active_work_item_id: WI-025 -> WI-035. Both are verifying and both in MS-08.
+  WI-035 ("恢复 Tkinter 视觉基线") is the most recent work -- HEAD commits 4bd8954 / 3061966 /
+  ec8e604 are its -- so it is the genuinely-current focus. WI-025 (license/SBOM/release gate)
+  remains verifying and is captured in next_actions. Either is validate-legal; WI-035 chosen as
+  the more accurate "current" pointer.
+- state/current.json.phase: "foundation_ready" -> "release_prep". phase is a free-form string in
+  state.schema.json (no enum), so this is a descriptive label, not a constrained token. The
+  product milestones MS-00..07 are delivered and MS-08 ("打包发布与回滚") is the active one with
+  the release gates (WI-025) verifying -- "release_prep" states that honestly. Not an overclaim
+  of "released": G-TRACE/G-RELEASE stay release-phase and release.ready is still false.
+
+Not changed (correctly): work-item statuses (unchanged -> completed_ids / in_progress_ids /
+metrics.work_items_accepted all still consistent), run status ("active"), baseline_commit
+(birth anchor, see EVD-LOOP-008), and all EVD-LOOP-009 reconciliations carry forward. No src/ or
+tests/ file changed this round, so the product suite and coverage are exactly as at EVD-LOOP-009.
+
+Verifier results (fresh, against the digest above):
+
+- render_status --check: STATUS_OK (STATUS.md regenerated: it now reads Milestone MS-08,
+  the WI-035 selected work item, Phase release_prep).
+- check_traceability: TRACEABILITY_OK 34/34; render_backlog --check: BACKLOG_OK;
+  check_core_boundaries: CORE_BOUNDARY_OK modules=12 forbidden_roots=10 forbidden_internal=4;
+  check_capability_surface: SURFACE_OK requirements=34 user_facing=12 internal=22.
+- ruff check loop/scripts loop/tests: All checks passed; ruff format --check loop: clean.
+- Product suite + coverage: UNCHANGED from EVD-LOOP-009 (no src/tests edits this round):
+  853 product tests green, self-test SELF_TEST_OK 8/8, coverage overall 95.82%/90.96%,
+  core 99.40%/98.61%. Re-confirmed in the final full-gate run after registration.
+- validate_loop before registration reports only the EVD-LOOP-009 digest staleness this record
+  clears; loop tests' validate()==[] assertions likewise -- both expected green on registration.
+
+Registration note: artifact hashed before registration; evidence/ and state/evidence-index.json
+are outside control_plane_digest(), so neither this file nor its registration perturbs the digest
+above. After registration validate_loop.py returns LOOP_VALIDATION_OK, the loop suite returns
+56/56, and run_gates.py returns RUN_GATES_OK ran=8 failed=0.
+
+Scope limit: re-confirms AC-000 at the digest above after the milestone-ladder / phase / active-
+pointer reconciliation. Makes no claim about packaging or release readiness; G-TRACE / G-RELEASE
+stay release-phase. Supersedes EVD-LOOP-009.

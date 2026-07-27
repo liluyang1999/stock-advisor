@@ -65,6 +65,14 @@ class ParseMoneyTests(unittest.TestCase):
             with self.subTest(raw=raw):
                 self.assertIsNone(parse_money(raw))
 
+    def test_rejects_large_finite_that_overflows_the_decimal_context(self):
+        # 「安全」解析器对任何有限但过大、无法量化到 2 位的输入必须返回 None，绝不抛
+        # decimal.InvalidOperation（其契约是"读不出合法金额→None"，而非崩溃）。量化到 2 位会把
+        # 有效位数推到 (整数位+2)，超过默认 28 位上下文即溢出；整数位 ≥27（约 ≥1e26）触发。
+        for raw in ("1E30", 1e30, "99999999999999999999999999999", Decimal("1E30")):
+            with self.subTest(raw=raw):
+                self.assertIsNone(parse_money(raw))
+
     def test_parses_each_accepted_type_to_two_places(self):
         for raw, expected in (
             ("10.1", "10.10"),
@@ -95,6 +103,11 @@ class PositiveMoneyTests(unittest.TestCase):
     def test_accepts_positive(self):
         self.assertEqual(positive_money(12.5), Decimal("12.50"))
 
+    def test_rejects_large_finite_that_overflows_the_decimal_context(self):
+        for raw in ("1E30", 1e30, "99999999999999999999999999999"):
+            with self.subTest(raw=raw):
+                self.assertIsNone(positive_money(raw))
+
 
 class ScaledPriceTests(unittest.TestCase):
     def test_eastmoney_scaled_int_stays_exact(self):
@@ -113,6 +126,13 @@ class ScaledPriceTests(unittest.TestCase):
     def test_rejects_non_finite(self):
         self.assertIsNone(scaled_price(float("nan"), 100))
         self.assertIsNone(scaled_price(float("inf"), 100))
+
+    def test_rejects_zero_scale_instead_of_raising(self):
+        # scale=0 曾让 raw / Decimal(0) 抛未捕获的 decimal.DivisionByZero；应返回 None。
+        self.assertIsNone(scaled_price(1010, 0))
+
+    def test_rejects_large_scaled_that_overflows_the_decimal_context(self):
+        self.assertIsNone(scaled_price("1" + "0" * 30, 100))
 
 
 if __name__ == "__main__":

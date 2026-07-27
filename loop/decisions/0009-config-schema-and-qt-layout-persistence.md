@@ -12,7 +12,7 @@ REQ-009 要求配置跨会话持久化并兼容现有 JSON。`architecture/PERSI
 ## 决策
 
 1. **schema_version**：`AppConfig` 持久化 JSON 引入字符串字段 `schema_version`（当前基线值 `"1.0.0"`，定义见 `product/app-config.schema.json`）。`parse_config()` 必须把缺失该字段的既有文件隐式当作"1.0.0 之前"的形状继续解析，不得因为字段缺失就拒绝加载或清空其余合法字段；`services/store.py` 一旦开始写出该字段，后续任何破坏性字段变更（改名、改类型、删字段）都必须递增版本号，并配一个逐版本、幂等、可回滚的迁移函数。
-2. **Qt 布局持久化**：窗口 geometry、dock/splitter 状态采用**独立于业务配置的 JSON 文件**（例如 `%APPDATA%\股市锦囊\ui_state.json`，与 `config.json` 同目录，沿用同一套 `config_path()` 风格的路径解析和 `STOCK_ADVISOR_CONFIG` 同族测试覆盖约定），复用与 `config.json` 相同的原子写入流程（同目录临时文件 → flush →`os.replace`），并拥有自己独立的 `schema_version`（不与 `AppConfig.schema_version` 同步递增，两者是不同的版本轴）。默认布局必须始终可从零恢复：该文件缺失或损坏时回退到默认 geometry，不崩溃、不阻塞启动。
+2. **Qt 布局持久化**：窗口 geometry、dock/splitter 状态采用**独立于业务配置的 JSON 文件**（例如 `%APPDATA%\StockAdvisor\ui_state.json`，与 `config.json` 同目录，沿用同一套 `config_path()` 风格的路径解析和 `STOCK_ADVISOR_CONFIG` 同族测试覆盖约定），复用与 `config.json` 相同的原子写入流程（同目录临时文件 → flush →`os.replace`），并拥有自己独立的 `schema_version`（不与 `AppConfig.schema_version` 同步递增，两者是不同的版本轴）。默认布局必须始终可从零恢复：该文件缺失或损坏时回退到默认 geometry，不崩溃、不阻塞启动。
 3. 不采用 QSettings 承载 Qt 布局状态（含 NativeFormat 与 IniFormat 两种变体）。
 
 ## 替代方案

@@ -14,12 +14,12 @@ from domain.symbols import normalize_symbol
 
 _MAX_WATCH = 100
 _MAX_ALERTS = 100
-_APP_DIR_NAME = "股市锦囊"
+_APP_DIR_NAME = "StockAdvisor"
 _CONFIG_FILENAME = "config.json"
 
 
 def config_path() -> Path:
-    """用户配置文件路径：优先环境变量（供测试），否则 %APPDATA%\\股市锦囊\\config.json。"""
+    """用户配置文件路径：优先环境变量（供测试），否则 %APPDATA%\\StockAdvisor\\config.json。"""
     override = os.environ.get("STOCK_ADVISOR_CONFIG")
     if override:
         return Path(override)
@@ -28,7 +28,7 @@ def config_path() -> Path:
 
 
 def log_dir() -> Path:
-    """日志目录 `%APPDATA%\\股市锦囊\\logs\\`（与 config.json 同根、不混放；OBSERVABILITY.md）。
+    """日志目录 `%APPDATA%\\StockAdvisor\\logs\\`（与 config.json 同根、不混放；OBSERVABILITY.md）。
 
     测试沿用 `STOCK_ADVISOR_CONFIG` 覆盖同一基目录的约定，故不会写真实 APPDATA。
     """
@@ -242,6 +242,12 @@ def save_config(path: Path | None, cfg: AppConfig) -> bool:
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
                 handle.write(text)
+                # 先 flush + fsync 把数据真正落盘,再原子改名:否则掉电/崩溃后可能出现"已改名却
+                # 零长/截断"的 config（os.replace 只保证改名对并发读者原子,不保证数据块已落盘）。
+                # 只做文件级 fsync：Windows 是交付平台,目录 fd 的 fsync 在 Windows 上不适用,
+                # 而 os.replace 在 Windows 上是 MoveFileEx 原子替换。
+                handle.flush()
+                os.fsync(handle.fileno())
             os.replace(tmp, target)
         finally:
             if os.path.exists(tmp):

@@ -2,7 +2,7 @@
 
 ## 现有合同
 
-配置继续位于 `%APPDATA%\股市锦囊\config.json`；测试用 `STOCK_ADVISOR_CONFIG` 指向临时路径。
+配置继续位于 `%APPDATA%\StockAdvisor\config.json`；测试用 `STOCK_ADVISOR_CONFIG` 指向临时路径。
 
 ## 目标规则
 

@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -14,6 +15,7 @@ from services.store import (
     config_path,
     config_to_dict,
     load_config,
+    log_dir,
     parse_config,
     save_config,
 )
@@ -128,12 +130,49 @@ class StoreTests(unittest.TestCase):
         save_config(self.path, AppConfig(capital=2.0))
         self.assertEqual(load_config(self.path).capital, 2.0)
 
+    def test_save_config_fsyncs_before_replacing_for_crash_durability(self):
+        # 掉电/崩溃 durability：临时文件的数据必须在 os.replace 之前 fsync 落盘，否则崩溃后可能
+        # 出现"已改名却零长/截断"的 config。durability 无法直接崩溃测，这里断言持久化契约——
+        # fsync 必须先于 replace 被调用。
+        order: list[str] = []
+        real_fsync, real_replace = os.fsync, os.replace
+
+        def spy_fsync(fd):
+            order.append("fsync")
+            return real_fsync(fd)
+
+        def spy_replace(src, dst):
+            order.append("replace")
+            return real_replace(src, dst)
+
+        with mock.patch("os.fsync", spy_fsync), mock.patch("os.replace", spy_replace):
+            self.assertTrue(save_config(self.path, AppConfig(capital=1.0)))
+        self.assertEqual(order, ["fsync", "replace"], "必须先 fsync 落盘再 os.replace")
+        self.assertEqual(load_config(self.path).capital, 1.0)  # 内容仍正确落地
+
     def test_config_path_env_override(self):
         os.environ["STOCK_ADVISOR_CONFIG"] = str(self.path)
         try:
             self.assertEqual(config_path(), self.path)
         finally:
             del os.environ["STOCK_ADVISOR_CONFIG"]
+
+    def test_runtime_data_dir_is_StockAdvisor(self):
+        # 运行时数据目录名固定为 `StockAdvisor`：config.json 与 logs/ 都落在 %APPDATA%\StockAdvisor\。
+        # 用临时 APPDATA 并清掉 STOCK_ADVISOR_CONFIG 覆盖，绝不读写用户真实 %APPDATA%（AGENTS.md 硬性约束）。
+        prev_appdata = os.environ.get("APPDATA")
+        prev_override = os.environ.pop("STOCK_ADVISOR_CONFIG", None)
+        os.environ["APPDATA"] = self.tmp
+        try:
+            self.assertEqual(config_path(), Path(self.tmp) / "StockAdvisor" / "config.json")
+            self.assertEqual(log_dir(), Path(self.tmp) / "StockAdvisor" / "logs")
+        finally:
+            if prev_appdata is None:
+                os.environ.pop("APPDATA", None)
+            else:
+                os.environ["APPDATA"] = prev_appdata
+            if prev_override is not None:
+                os.environ["STOCK_ADVISOR_CONFIG"] = prev_override
 
     def test_config_to_dict_roundtrips(self):
         cfg = AppConfig(watchlist=(WatchItem("sh600519", 10.0, 200),), level=2)

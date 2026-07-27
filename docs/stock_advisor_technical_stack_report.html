@@ -17,12 +17,12 @@
       --amber: #a16207;
       --code-bg: #0f172a;
       --code-ink: #e5edf8;
-      /* A股本土配色：与 src/stock_advisor/theme.py 的 POS_COLOR / NEG_COLOR / FLAT_COLOR
+      /* A股本土配色：与 src/ui/theme.py 的 POS_COLOR / NEG_COLOR / FLAT_COLOR
          完全一致（十六进制值逐一对应）。这里按“语义”命名（pos=积极方向，neg=消极方向），
          不按“颜色”命名，就是为了不再重演本报告曾经出现过的“买入配了绿色类名”式反转错误。 */
       --pos: #b4232c;   /* 涨 / 买入 / 积极 / 正分 */
       --neg: #167044;   /* 跌 / 卖出 / 谨慎 / 负分 */
-      --flat: #5f6b7a;  /* 中性 / 观望 */
+      --flat: #65717d;  /* 中性 / 观望 */
       --pos-bg: #fdeef0;
       --neg-bg: #eafaf2;
       --hold-bg: #f7f9fc;
@@ -274,9 +274,9 @@
       <p class="hero-copy">本报告以教学为目的，系统拆解「股市锦囊」当前实现的全部主要技术栈、源码模块、数据流、指标算法、五档决策强度模型、GUI 设计、测试方法和打包发布机制。内容依据当前项目源码编写，适合用于学习 Python 桌面应用、行情数据处理和规则型策略引擎。</p>
       <div class="hero-meta">
         <span class="pill">本报告对应 2026-07 当前版本</span>
-        <span class="pill">生成日期：2026-07-10</span>
+        <span class="pill">本次修订：2026-07-27（迁移至 PySide6 架构）</span>
         <span class="pill">项目：股市锦囊</span>
-        <span class="pill">交付形式：dist/股市锦囊.exe（单文件）+ 随构建生成的 dist/使用说明.html</span>
+        <span class="pill">交付形式：dist/股市锦囊/（应用目录，含 股市锦囊.exe + Qt 运行时）+ dist/使用说明.html</span>
       </div>
     </div>
   </header>
@@ -301,28 +301,29 @@
       <article>
         <section id="overview">
           <h2>1. 项目总览</h2>
-          <p><strong>股市锦囊</strong>是一个只用 Python 标准库构建的 Windows 桌面程序，最终打包为单文件 EXE（<code>股市锦囊.exe</code>），放在任意位置都能直接运行。它提供两种核心能力：<strong>个股分析</strong>（输入一个或多个 A 股代码，基于实时行情 + 历史日线，用可解释的多因子模型给出当日「买入/持有/卖出」倾向、理由、风险与保守投入参考）与<strong>全市场选股</strong>（从六种策略预设中选择、微调关键参数，从当前全市场实时行情中按证券特征自动挑选股票，并对入选股做与个股分析一致的深度判断）。贯穿两页的核心是<strong>五档决策强度</strong>（稳健·稳进·标准·积极·激进）：客观测量不变，只切换决策策略，点选档位即时重算、不重新联网。</p>
+          <p><strong>股市锦囊</strong>是一个 Windows 桌面程序：界面用 <strong>PySide6</strong>（Qt Widgets），领域内核与其余各层则只用 Python 标准库。它打包为一个免安装的<strong>应用目录</strong>（<code>dist/股市锦囊/</code>，双击其中的 <code>股市锦囊.exe</code> 即可运行，Qt 运行时随目录分发）。它提供两种核心能力：<strong>个股分析</strong>（输入一个或多个 A 股代码，基于实时行情 + 历史日线，用可解释的多因子模型给出当日「买入/持有/卖出」倾向、理由、风险与保守投入参考）与<strong>全市场选股</strong>（从六种策略预设中选择、微调关键参数，从当前全市场实时行情中按证券特征自动挑选股票，并对入选股做与个股分析一致的深度判断）。贯穿两页的核心是<strong>五档决策强度</strong>（稳健·稳进·标准·积极·激进）：客观测量不变，只切换决策策略，点选档位即时重算、不重新联网。</p>
 
           <div class="note risk">
             <strong>重要边界：</strong>模型仅供研究和辅助决策，不构成投资建议；交易前请自行核验行情、公告和风险。程序使用规则型技术分析和行情数据生成辅助判断，不能替代投资者自己的决策；报告中的算法说明用于教学，不能被理解为盈利保证。（本段核心措辞与 <code>dist/使用说明.html</code> 页脚一致，权威来源见 <code>theme.DISCLAIMER</code> / <code>models.CORE_DISCLAIMER</code>。）
           </div>
 
           <div class="note warn">
-            <strong>版本说明：</strong>本报告此前交付的版本存在多处与当前实现不符、部分甚至完全相反的错误，本次已按当前源码全部重写并修正：
+            <strong>版本说明（本次修订）：</strong>本报告上一版本描述的是已被取代的旧架构，本次已按当前源码逐节核对修正。主要结构性变化：
             <ul>
-              <li>产品名统一为「股市锦囊」（此前版本用的是一个已废弃的旧产品名）。</li>
-              <li><strong>买卖配色已改正</strong>：红 = 涨 / 买入 / 积极，绿 = 跌 / 卖出 / 谨慎（此前讲反，且用错了 CSS 类名）。</li>
-              <li>决策模型改为「五档决策强度」，每档各自的买卖线与仓位上限见第 6 节（此前只讲固定 ±25 阈值 + 统一 80% 仓位上限这一种档位）。</li>
-              <li>模块架构补全为当前全部 25 个源码文件（此前仅列约 8 个）。</li>
-              <li>交付路径改为 <code>dist/股市锦囊.exe</code>（此前版本写的是一个已废弃的旧目录和旧文件名）；测试与打包命令路径也一并改回仓库根目录下的真实路径。</li>
-              <li>回测、K 线交互、全市场选股、条件预警、横向对比、自选/持仓等已实现能力，已从「未来扩展」移入正文对应章节。</li>
+              <li><strong>GUI 框架由 Tkinter 迁移到 PySide6</strong>（Qt Widgets，ADR-0001 接受、WI-023 完成迁移并删除整个 Tkinter 生产层）。界面代码现位于 <code>src/qt_app/</code>；<code>src/ui/app.py</code> 只剩一层薄入口，把 <code>run_gui()</code> 委托给 <code>qt_app</code> 装配。</li>
+              <li><strong>源码目录已扁平化</strong>（ADR-0015）：不再有 <code>src/stock_advisor/</code> 包，各架构层直接是 <code>src/</code> 下的顶级包（<code>domain/</code>、<code>data/</code>、<code>services/</code>、<code>qt_app/</code>、<code>ui/</code>、<code>observability/</code>，外加 <code>src/ports.py</code> 与 <code>src/version.py</code>）。导入形如 <code>from domain.engine import ...</code>。</li>
+              <li><strong>交付形态由单文件 EXE 改为 onedir 应用目录</strong>（ADR-0004）：PyInstaller 产出 <code>dist/股市锦囊/</code>（含 <code>股市锦囊.exe</code> 与 Qt 运行时），以 zip 分发。产品名 / EXE 名 / dist 目录名仍为「股市锦囊」。</li>
+              <li><strong>运行期数据目录改名</strong>：配置与日志从 <code>%APPDATA%\股市锦囊\</code> 迁到 <code>%APPDATA%\StockAdvisor\</code>（<em>仅</em>这个存储子目录改名，产品与 EXE 名不变）。</li>
+              <li><strong>金额与价格改用 <code>Decimal</code></strong>（2 位小数、ROUND_HALF_UP，ADR-0013）；数量用 <code>int</code>，比率 / 指标用 <code>float</code>。</li>
+              <li>源码文件数、测试文件数、打包与测试命令路径、构建/运行依赖等，均按当前仓库重新核实（见第 2、4、8、9 节）。</li>
             </ul>
+            五档决策强度、A 股本土配色（红=涨/买、绿=跌/卖）与各项指标算法等领域逻辑本身未变，相关章节沿用。
           </div>
 
           <div class="grid">
-            <div class="metric"><strong>运行形态</strong><span>Windows 桌面应用，Tkinter GUI，PyInstaller 打包为单文件 EXE。</span></div>
+            <div class="metric"><strong>运行形态</strong><span>Windows 桌面应用，PySide6（Qt Widgets）GUI，PyInstaller 打包为 onedir 应用目录。</span></div>
             <div class="metric"><strong>核心任务</strong><span>个股分析 + 全市场选股，五档决策强度，仓位与风险参考。</span></div>
-            <div class="metric"><strong>依赖策略</strong><span>运行时只用 Python 标准库；构建时唯一依赖 PyInstaller。</span></div>
+            <div class="metric"><strong>依赖策略</strong><span>领域内核与各逻辑层纯标准库；运行期唯一第三方依赖 PySide6-Essentials；构建期唯一依赖 PyInstaller。</span></div>
           </div>
 
           <h3>从用户视角看程序做了什么</h3>
@@ -337,34 +338,34 @@
 
         <section id="stack">
           <h2>2. 技术栈清单</h2>
-          <p>本项目的技术栈很克制：桌面界面、网络请求、数据解析、策略计算、持久化、测试和打包几乎都基于 Python 标准库完成。这样做的好处是 EXE 更轻、部署简单、运行环境更可控。</p>
+          <p>本项目的技术栈很克制：桌面界面用 PySide6（Qt Widgets），而网络请求、数据解析、策略计算、持久化、测试和构建脚本仍全部基于 Python 标准库完成。领域内核（<code>domain/</code>）不允许出现 <code>PySide6</code> 或 <code>urllib</code> 的 import，这一点由静态门禁（G-CORE）机器强制。这样做的好处是内核可解释、可独立测试，换界面框架也不必动内核。</p>
           <div class="table-scroll">
           <table>
             <thead>
               <tr><th>层次</th><th>技术/模块</th><th>项目中的用途</th><th>相关概念</th></tr>
             </thead>
             <tbody>
-              <tr><td>语言</td><td>Python 3（开发使用 3.14，要求 3.12+）</td><td>全部业务逻辑、GUI、测试和构建脚本。</td><td>解释型语言、标准库、类型标注、模块化。</td></tr>
-              <tr><td>桌面 UI</td><td><code>tkinter</code>、<code>ttk</code>、<code>scrolledtext</code></td><td>窗口、自绘分段选项卡、决策强度分段按钮、K 线/光谱 Canvas、表格、弹窗、文件选择。</td><td>事件循环、控件树、布局管理、样式主题。</td></tr>
-              <tr><td>并发</td><td><code>threading</code>、<code>queue</code></td><td>个股分析、全市场选股、条件预警轮询、资金流查询均在后台线程执行；主线程用 <code>root.after()</code> 定时轮询队列取结果。</td><td>主线程 UI 安全、生产者消费者模型。</td></tr>
+              <tr><td>语言</td><td>Python 3（要求 3.14+）</td><td>全部业务逻辑、GUI、测试和构建脚本。</td><td>解释型语言、标准库、类型标注、模块化。</td></tr>
+              <tr><td>桌面 UI</td><td><code>PySide6-Essentials</code>（<code>QtWidgets</code>/<code>QtGui</code>/<code>QtCore</code>）</td><td>QMainWindow 外壳、QTabWidget 一级导航、QTableView + QAbstractTableModel 表格、QPainter 自绘 K 线/光谱/因子条、对话框与文件选择。</td><td>信号槽、模型/视图、QSS 主题、原生高 DPI。</td></tr>
+              <tr><td>并发</td><td><code>QThreadPool</code> / <code>QRunnable</code> + Qt 信号</td><td>个股分析、全市场选股、条件预警轮询、资金流查询均在有界线程池（并发上限 4）的 worker 里执行，结果经跨线程 queued 信号回主线程；「世代守卫」丢弃迟到/被取代的结果，取消用协作式 cancel token。</td><td>主线程 UI 安全、异步信号、协作取消、世代守卫。</td></tr>
               <tr><td>网络</td><td><code>urllib.request</code>、<code>urllib.error</code>、<code>http.client</code></td><td>请求东方财富/新浪/腾讯公开行情接口，设置请求头、超时、重试。</td><td>HTTP、Header、Referer、超时、连接异常。</td></tr>
               <tr><td>数据解析</td><td><code>json</code>、字符串解析</td><td>解析实时行情、历史日线、全市场快照、个股资金流。</td><td>JSON、类 JSONP、编码、字段映射。</td></tr>
               <tr><td>数据模型</td><td><code>dataclasses</code>、<code>typing</code>、<code>Protocol</code></td><td>定义行情、指标、测量、决策、仓位、回测、配置等全部结构；用 Protocol 解耦数据源。</td><td>不可变数据对象、类型提示、依赖倒置。</td></tr>
               <tr><td>计算</td><td><code>statistics.mean</code>、<code>statistics.pstdev</code>、<code>math</code></td><td>均线、标准差、ATR、5 日胜率、最大回撤、仓位与止损止盈计算。</td><td>移动窗口、总体标准差、边界收敛（clamp）。</td></tr>
               <tr><td>持久化</td><td><code>json</code>、<code>pathlib</code>、<code>tempfile</code>、<code>os.replace</code></td><td>自选/持仓、本金、决策强度档位、选股预设、预警规则跨会话保存到 <code>%APPDATA%</code>；临时文件 + 原子替换写入。</td><td>原子写、故障安全回退、配置读写。</td></tr>
-              <tr><td>Windows 集成</td><td><code>ctypes</code></td><td>启动时请求系统按原生 DPI 渲染窗口，避免高分屏下界面模糊或错位。</td><td>Win32 API 调用、DPI 感知。</td></tr>
+              <tr><td>可观测性</td><td><code>logging</code>（NDJSON）</td><td>结构化日志写入 <code>%APPDATA%\StockAdvisor\logs\</code>；无控制台的打包程序里，滚动日志文件是用户唯一的持久诊断入口。只记录声明过的字段，原始报文不入日志。</td><td>结构化日志、rotating file、字段白名单。</td></tr>
               <tr><td>导出</td><td><code>csv</code>、<code>io.StringIO</code></td><td>复制表格文本和导出 CSV 文件。</td><td>制表符文本、UTF-8 BOM、CSV 转义。</td></tr>
-              <tr><td>测试</td><td><code>unittest</code>、<code>unittest.mock</code></td><td>23 个测试文件覆盖指标、决策强度、行情解析、选股、持久化、UI 辅助函数等。</td><td>单元测试、模拟对象、确定性测试、FakeProvider。</td></tr>
-              <tr><td>打包</td><td>PyInstaller（<code>&gt;=6.15</code>）</td><td>把 Python 程序、解释器和 Tk 运行库打成单个 Windows EXE。</td><td>onefile、windowed、入口脚本、构建目录。</td></tr>
+              <tr><td>测试</td><td><code>unittest</code>、<code>unittest.mock</code>（Qt 层用 <code>pytest-qt</code>）</td><td><code>tests/</code> 下 73 个 <code>test_*.py</code>（含 27 个 <code>test_qt_*</code> 界面测试）覆盖指标、决策强度、行情解析、选股、持久化、Qt 页面/控制器/表格模型等；界面测试在 <code>QT_QPA_PLATFORM=offscreen</code> 下跑真实 QWidget。</td><td>单元测试、模拟对象、headless GUI 测试、FakeProvider。</td></tr>
+              <tr><td>打包</td><td>PyInstaller（<code>==6.21.0</code>）</td><td>把 Python 程序、解释器、标准库和 Qt 运行库打成一个应用目录 <code>dist/股市锦囊/</code>。</td><td>onedir、windowed、入口脚本、构建目录。</td></tr>
             </tbody>
           </table>
           </div>
           <h3>标准库优先的工程取舍</h3>
-          <p>项目没有引入 pandas、numpy、requests、matplotlib、PyQt 等常见第三方库，运行期完全用标准库完成主要工作（构建期唯一依赖 PyInstaller）。这会让代码更“手写”，但也带来三个直接收益：</p>
+          <p>项目没有引入 pandas、numpy、requests、matplotlib 等常见第三方库：运行期唯一的第三方依赖是界面框架 <strong>PySide6-Essentials</strong>，其余（网络、解析、指标、策略、持久化）全部用标准库手写；领域内核更是被门禁锁死为纯标准库。构建期唯一依赖是 PyInstaller。这会让代码更“手写”，但也带来三个直接收益：</p>
           <ul>
-            <li><strong>轻便：</strong>打包体积更小，依赖冲突更少。</li>
+            <li><strong>内核轻且封闭：</strong>领域逻辑零第三方依赖，依赖冲突面小，换 GUI 框架不影响算法。</li>
             <li><strong>可解释：</strong>算法和数据结构都在源码中，学习者能直接看到每一步。</li>
-            <li><strong>部署简单：</strong>用户拿到一个 EXE 就能运行，不需要安装 Python 和依赖包。</li>
+            <li><strong>部署简单：</strong>用户拿到一个应用目录、双击其中的 <code>股市锦囊.exe</code> 就能运行，不需要安装 Python、Qt 或任何依赖包（Qt 运行时已随目录分发）。</li>
           </ul>
         </section>
 
@@ -376,15 +377,15 @@
             <div><b>数据层</b>请求实时行情、历史日线或全市场快照，多源回退。</div>
             <div><b>测量层</b><code>engine.measure()</code> 算出与档位无关的客观 <code>Measurement</code>。</div>
             <div><b>决策层</b><code>policy.decide()</code> 按当前决策强度档位算出买/持/卖、仓位与止损止盈。</div>
-            <div><b>展示/交付层</b>Tkinter 表格、K 线/光谱 Canvas、CSV/剪贴板、跨会话持久化、PyInstaller 单文件 EXE。</div>
+            <div><b>展示/交付层</b>PySide6 表格（QTableView）、QPainter K 线/光谱、CSV/剪贴板、跨会话持久化、PyInstaller onedir 应用目录。</div>
           </div>
 
           <h3>关键思想</h3>
           <ul>
             <li><strong>测量与决策分离：</strong><code>engine.measure()</code> 产出客观 <code>Measurement</code>，与决策档位无关；<code>policy.decide(m, level)</code> 按 5 档决策强度翻译为买/持/卖、仓位与止损止盈；<code>engine.analyze_stock(..., level)</code> 是二者的薄包装，默认 L3「标准」复现历史上「单一 ±25 阈值」的行为。切换档位只对已缓存的 <code>Measurement</code> 重新 <code>decide()</code>，不重新联网。</li>
-            <li><strong>业务模型与 UI 分离：</strong><code>models.py</code>、<code>engine.py</code>、<code>policy.py</code>、<code>backtest.py</code>、<code>chart.py</code>、<code>screener.py</code>、<code>presets.py</code>、<code>compare.py</code>、<code>alerts.py</code>、<code>input_validate.py</code>、<code>layout.py</code>、<code>formatting.py</code> 均不依赖 Tkinter，可独立单测。</li>
-            <li><strong>数据源与分析流程分离：</strong><code>workflow.py</code> 通过 <code>MarketDataProvider</code> / <code>ScreeningProvider</code> 两个 <code>Protocol</code> 调用数据源，测试中可以替换为 <code>FakeProvider</code>；分析结果连同底层 <code>Measurement</code> 一起回传，供界面改档即时重判。</li>
-            <li><strong>GUI 主线程不做耗时任务：</strong>个股分析、全市场选股、条件预警轮询、个股资金流查询这四类后台任务都在各自线程执行，结果经 <code>queue.Queue</code> 回传，主线程统一用 <code>root.after()</code> 定时轮询消费，避免窗口卡死。</li>
+            <li><strong>业务模型与 UI 分离：</strong><code>domain/</code> 包下的 <code>models.py</code>、<code>money.py</code>、<code>numeric.py</code>、<code>symbols.py</code>、<code>engine.py</code>、<code>policy.py</code>、<code>backtest.py</code>、<code>chart.py</code>、<code>screener.py</code>、<code>presets.py</code>、<code>compare.py</code>、<code>alerts.py</code>、<code>input_validate.py</code>、<code>data_quality.py</code>、<code>formatting.py</code> 均不依赖 PySide6/Qt（由 G-CORE 静态门禁强制，核心里禁止出现 <code>PySide6</code>/<code>urllib</code> 导入），可独立单测。</li>
+            <li><strong>数据源与分析流程分离：</strong><code>services/workflow.py</code> 通过 <code>MarketDataProvider</code> / <code>ScreeningProvider</code> 两个 <code>Protocol</code> 调用数据源，测试中可以替换为 <code>FakeProvider</code>；分析结果连同底层 <code>Measurement</code> 一起回传，供界面改档即时重判。</li>
+            <li><strong>GUI 主线程不做耗时任务：</strong>个股分析、全市场选股、条件预警轮询、个股资金流查询这四类后台任务都在有界 <code>QThreadPool</code>（并发上限 4）的 worker 里执行，结果经跨线程 queued 信号回到 GUI 线程更新界面；「世代守卫」丢弃被取代的迟到结果，避免窗口卡死或旧结果覆盖新结果。</li>
             <li><strong>异常分级处理：</strong>实时行情失败会导致该股票失败；历史行情失败会降级为保守判断并提示用户；资金流失败只影响资金流面板本身；配置文件读写失败一律回退默认值，绝不崩溃。</li>
           </ul>
 
@@ -395,7 +396,7 @@
   -&gt; engine.measure()                       得到与档位无关的 Measurement
   -&gt; policy.decide(measurement, level)      按当前决策强度档位得到 Decision
   -&gt; engine.build_analysis_result()         组装 AnalysisResult
-  -&gt; 分段选项卡表格 + K 线/光谱 Canvas + 详情文字 + CSV/剪贴板
+  -&gt; QTableView 结果表 + QPainter K 线/光谱 + 详情文字 + CSV/剪贴板
 
 （切换决策强度档位时：直接对已缓存的 measurement 重新 decide()，不重新请求网络）</code></pre>
 
@@ -410,73 +411,116 @@
 
         <section id="modules">
           <h2>4. 源码模块讲解</h2>
-          <p>当前 <code>src/stock_advisor/</code> 下共 23 个源码文件（另有仓库根目录的 <code>main.py</code> 入口与 <code>build_exe.py</code> 打包脚本），按职责分五组。<code>src/stock_advisor/__init__.py</code> 只声明包版本号 <code>__version__</code>，不含业务逻辑，未单列。</p>
+          <p>源码目录已扁平化（ADR-0015）：<strong>不再有 <code>src/stock_advisor/</code> 包</strong>，各架构层直接是 <code>src/</code> 下的顶级包。当前 <code>src/</code> 下共 <strong>76 个 <code>.py</code> 文件</strong>（本节按层分组讲解，纯工具化的 <code>__init__.py</code> 不单列），另有仓库根目录的 <code>main.py</code> 入口与 <code>scripts/build_exe.py</code> 打包脚本。层与层之间的<strong>允许依赖方向</strong>是 <code>qt_app/ → ui/ → services/ → data/ → domain/</code>（<code>observability/</code> 为横切，各层可用），反向依赖会被门禁拒绝。</p>
+          <p>导入形如 <code>from domain.engine import ...</code>，不再带 <code>stock_advisor.</code> 前缀；产品版本号的单一真源是 <code>src/version.py</code> 的 <code>__version__</code>（原 <code>stock_advisor/__init__.py</code>）。<span class="muted">注：产品在日志里的命名空间仍叫 <code>stock_advisor</code>（<code>observability/log.py</code>），那是产品身份，与目录结构无关。</span></p>
 
-          <h3>4.1 领域模型与常量</h3>
+          <h3>4.1 领域核心 <code>domain/</code>（纯逻辑，无网络、无 GUI、无磁盘）</h3>
           <div class="table-scroll">
           <table>
             <thead><tr><th>文件</th><th>主要职责</th><th>教学重点</th></tr></thead>
             <tbody>
               <tr><td><code>models.py</code></td><td>全部核心数据结构：<code>StockSymbol</code>/<code>Quote</code>/<code>DailyBar</code>/<code>IndicatorSnapshot</code>/<code>FactorScore</code>/<code>MarketSnapshot</code>/<code>FilterCriteria</code>/<code>TunableParam</code>/<code>ScreenPreset</code>/<code>Recommendation</code>/<code>AnalysisResult</code>/<code>LevelSpec</code>/<code>Measurement</code>/<code>Decision</code>/<code>PositionPlan</code>/<code>BacktestStat</code>/<code>BacktestReport</code>/<code>SpectrumCell</code>/<code>FundFlow</code>/<code>WatchItem</code>/<code>AlertRule</code>/<code>AppConfig</code>/<code>ComparisonRow</code>，均为 <code>@dataclass(frozen=True)</code>；还定义 <code>CORE_DISCLAIMER</code>、<code>STANDARD_LEVEL</code>、<code>LEVEL_NAMES</code> 等权威常量。</td><td>不可变数据对象、领域建模、单一权威来源。</td></tr>
-              <tr><td><code>theme.py</code></td><td>UI 常量单一真源：配色（含 <code>POS_COLOR</code>/<code>NEG_COLOR</code>/<code>FLAT_COLOR</code> 及对应行底色）、窗口尺寸、表列、排序序、免责声明全文、样例输入；仅依赖标准库。</td><td>把“魔法数字/魔法颜色”集中管理，一处改全局生效。</td></tr>
-            </tbody>
-          </table>
-          </div>
-
-          <h3>4.2 纯逻辑层（无网络、无 Tkinter，可独立单测）</h3>
-          <div class="table-scroll">
-          <table>
-            <thead><tr><th>文件</th><th>主要职责</th><th>教学重点</th></tr></thead>
-            <tbody>
-              <tr><td><code>symbols.py</code></td><td>股票代码解析、交易所前缀推断（含北交所新代码段 <code>920xxx</code> 与老代码段）、用户输入去重与数量限制。</td><td>正则表达式、输入验证、防御性边界。</td></tr>
+              <tr><td><code>money.py</code></td><td>金额与价格的 <strong>Decimal</strong> 表示：量化到 2 位小数、<code>ROUND_HALF_UP</code>（ADR-0013）；<code>to_money</code>/<code>parse_money</code>/<code>positive_money</code>/<code>scaled_price</code>/<code>quantize_money</code> 是金额换算的唯一权威入口。</td><td>精确十进制、金额舍入、边界转换。</td></tr>
+              <tr><td><code>numeric.py</code></td><td>比率／百分比／评分／统计指标等 <code>float</code> 的安全解析入口（<code>finite_float</code> 等）；与 <code>money.py</code> 划清“金额用 Decimal、比率用 float”的边界。</td><td>数值边界、防 NaN/Inf、类型分工。</td></tr>
+              <tr><td><code>symbols.py</code></td><td>股票代码解析、交易所前缀推断（含北交所新代码段 <code>920xxx</code> 与老代码段）、用户输入去重与数量限制；全市场场景改用权威市场号而非前缀猜测。</td><td>正则表达式、输入验证、防御性边界。</td></tr>
               <tr><td><code>engine.py</code></td><td>技术指标计算 + <code>measure()</code>：8 因子评分、风控扣分、客观综合分与置信度；<code>analyze_stock()</code> 是 measure+decide 的薄包装。</td><td>规则型策略引擎、纯函数、可测试计算。</td></tr>
               <tr><td><code>policy.py</code></td><td><code>decide()</code>：五档决策强度，把客观测量翻译为买/持/卖；<code>position_plan()</code> 仓位与止损止盈；<code>spectrum()</code>/<code>flip_hint()</code> 决策强度光谱与翻转提示。</td><td>测量与决策分离、参数化策略。</td></tr>
               <tr><td><code>backtest.py</code></td><td><code>backtest_signals()</code>：同股历史信号事后复盘，逐日回放、无未来泄漏。</td><td>时间序列回测方法论、前视偏差（look-ahead bias）防范。</td></tr>
-              <tr><td><code>chart.py</code></td><td>K 线蜡烛图的坐标几何映射、均线/成交量转像素、hover 最近点命中。</td><td>纯数学绘图、坐标系变换。</td></tr>
               <tr><td><code>screener.py</code></td><td>全市场选股的过滤（<code>passes</code>/<code>apply_filters</code>）与打分排序（<code>score_for</code>/<code>rank</code>/<code>recommend</code>）。</td><td>条件筛选、目标导向加权打分。</td></tr>
               <tr><td><code>presets.py</code></td><td>六个策略预设、可调参数应用（<code>apply_tunables</code>），并对成对边界做交叉校验。</td><td>参数化配置、输入健壮性。</td></tr>
-              <tr><td><code>compare.py</code></td><td>横向对比行组装（含持仓盈亏计算）。</td><td>数据整形、纯函数。</td></tr>
+              <tr><td><code>chart.py</code></td><td>K 线蜡烛图的坐标几何映射、均线/成交量转像素、hover 最近点命中（纯函数，供 <code>QPainter</code> 绘制）。</td><td>纯数学绘图、坐标系变换。</td></tr>
+              <tr><td><code>compare.py</code></td><td>横向对比行组装（含持仓盈亏计算，走 Decimal）。</td><td>数据整形、纯函数。</td></tr>
               <tr><td><code>alerts.py</code></td><td>条件预警规则求值（<code>evaluate_rule</code>）与边沿触发判定（<code>check_rules</code>）；字段中英文双向映射（<code>FIELD_LABELS</code>）。</td><td>边沿触发（非电平触发）状态机。</td></tr>
               <tr><td><code>input_validate.py</code></td><td>用户输入文本解析与选股可调项校验。</td><td>输入健壮性、错误消息设计。</td></tr>
-              <tr><td><code>layout.py</code></td><td>窗口居中、工作区归一、内容带几何计算。</td><td>纯数学、零依赖、DPI 适配基础。</td></tr>
+              <tr><td><code>data_quality.py</code></td><td>行情数据的可信度判定（样本是否充足、关键字段是否完整等）。</td><td>数据质量分级、降级判定。</td></tr>
               <tr><td><code>formatting.py</code></td><td>数值强制转换、低层格式化、风险分级与文本谓词，供 <code>view_text</code>/<code>view_format</code> 复用。</td><td>格式化与业务逻辑解耦。</td></tr>
             </tbody>
           </table>
           </div>
 
-          <h3>4.3 I/O 与编排</h3>
+          <h3>4.2 数据接入 <code>data/</code></h3>
           <div class="table-scroll">
           <table>
             <thead><tr><th>文件</th><th>主要职责</th><th>教学重点</th></tr></thead>
             <tbody>
               <tr><td><code>data_provider.py</code></td><td>项目中唯一做网络请求的模块：实时行情、历史日线、全市场快照、个股资金流；多源回退与重试。</td><td>HTTP、JSON、异常处理、数据清洗。</td></tr>
-              <tr><td><code>store.py</code></td><td>用户配置持久化到 <code>%APPDATA%\股市锦囊\config.json</code>；原子写（临时文件 + <code>os.replace</code>）；解析/序列化为纯函数。</td><td>配置持久化、故障安全（读写失败一律回退默认）。</td></tr>
-              <tr><td><code>workflow.py</code></td><td>个股分析（<code>analyze_symbol</code>）与全市场选股（<code>screen_and_recommend</code>）编排；通过 Protocol 注入 provider；回传 <code>Measurement</code> 供界面改档重判。</td><td>应用服务层、依赖倒置、可测试编排。</td></tr>
-            </tbody>
-          </table>
-          </div>
-
-          <h3>4.4 界面层</h3>
-          <div class="table-scroll">
-          <table>
-            <thead><tr><th>文件</th><th>主要职责</th><th>教学重点</th></tr></thead>
-            <tbody>
-              <tr><td><code>app.py</code></td><td>Tkinter 主程序（约 3000 行）：自绘分段选项卡（「个股分析」/「全市场选股」）、决策强度分段按钮、K 线/光谱 Canvas、自选股/持仓/横向对比/条件预警/资金流窗口、四类后台线程与队列轮询。</td><td>事件驱动 UI、状态管理、线程安全的 UI 更新。</td></tr>
-              <tr><td><code>view_text.py</code></td><td>面向用户的文本构建（怎么看结果、计算步骤、风险控制等说明文案），界面详情面板与 <code>manual.py</code> 共用同一份文案源。</td><td>文案与逻辑解耦、单一文案来源。</td></tr>
-              <tr><td><code>view_format.py</code></td><td>行/表/剪贴板/CSV 格式化，以及按分数正负、动作类型着色（<code>_score_color</code>/<code>_action_color</code>，正分或买入=<code>POS_COLOR</code>，负分或卖出=<code>NEG_COLOR</code>）。</td><td>展示层格式化、配色规则集中实现、单一来源。</td></tr>
+              <tr><td><code>bounded_transport.py</code></td><td>有界 HTTP 传输：设置超时与响应体大小上限，防止请求挂死或超大响应拖垮程序。</td><td>超时、大小上限、资源边界。</td></tr>
               <tr><td><code>sample_data.py</code></td><td>离线样例行情/分析/推荐构造，供 <code>--self-test</code> 与结果表为空时的占位展示复用。</td><td>测试替身、演示数据。</td></tr>
-              <tr><td><code>manual.py</code></td><td>生成 <code>dist/使用说明.html</code>：从 <code>app.py</code>/<code>theme.py</code>/<code>presets.py</code>/<code>screener.py</code> 等运行代码里的真实常量和文案动态拼出用户手册。</td><td>文档与代码同源，见 §9 关于“为什么手册不会讲反”的说明。</td></tr>
             </tbody>
           </table>
           </div>
 
-          <h3>4.5 入口与构建</h3>
+          <h3>4.3 编排与持久化 <code>services/</code></h3>
           <div class="table-scroll">
           <table>
             <thead><tr><th>文件</th><th>主要职责</th><th>教学重点</th></tr></thead>
             <tbody>
-              <tr><td><code>main.py</code></td><td>程序入口：请求 DPI 感知、<code>--self-test</code> 离线自检（覆盖个股分析、五档决策、仓位、回测、持久化、横向对比、条件预警、全市场选股全链路）、默认启动 GUI。</td><td>入口脚本、命令行参数、冒烟自检（smoke test）。</td></tr>
-              <tr><td><code>build_exe.py</code></td><td>调用 PyInstaller 构建单文件 EXE 到 <code>dist/股市锦囊.exe</code>，并生成 <code>dist/使用说明.html</code>；删除目录前校验路径必须在项目内。</td><td>构建脚本、路径安全、发布产物。</td></tr>
+              <tr><td><code>workflow.py</code></td><td>个股分析（<code>analyze_symbol</code>）与全市场选股（<code>screen_and_recommend</code>）编排；通过 <code>MarketDataProvider</code>/<code>ScreeningProvider</code> 两个 <code>Protocol</code> 注入 provider；回传 <code>Measurement</code> 供界面改档重判。</td><td>应用服务层、依赖倒置、可测试编排。</td></tr>
+              <tr><td><code>store.py</code></td><td>用户配置持久化到 <code>%APPDATA%\StockAdvisor\config.json</code>；原子写（临时文件 + <code>os.replace</code> + fsync）；金额以 JSON 字符串写出、读回用 <code>parse_money</code>；读写失败一律回退默认。</td><td>配置持久化、原子写、故障安全。</td></tr>
+              <tr><td><code>screener_run.py</code> / <code>batch.py</code></td><td>选股批次执行与批处理调度：对入选股逐个复用个股分析管线，带并发上限与协作取消。</td><td>批处理、有界并发、取消。</td></tr>
+              <tr><td><code>alert_monitor.py</code></td><td>条件预警的轮询与触发编排（配合 <code>domain/alerts.py</code> 的边沿触发判定）。</td><td>轮询编排、边沿触发。</td></tr>
+              <tr><td><code>tier_switch.py</code></td><td>决策强度档位切换：对已缓存的 <code>Measurement</code> 重新 <code>decide()</code>，不重新联网。</td><td>缓存复用、纯重算。</td></tr>
+              <tr><td><code>fund_flow.py</code></td><td>个股资金流取数编排（按需、独立、降级安全）。</td><td>按需查询、降级安全。</td></tr>
+              <tr><td><code>self_check.py</code></td><td>端到端离线自检（<code>main.py --self-test</code> 与 Qt 自检对话框共用同一份逻辑，避免漂移）。</td><td>冒烟自检、单一逻辑源。</td></tr>
+            </tbody>
+          </table>
+          </div>
+
+          <h3>4.4 可观测性 <code>observability/</code></h3>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>文件</th><th>主要职责</th><th>教学重点</th></tr></thead>
+            <tbody>
+              <tr><td><code>log.py</code></td><td>结构化 NDJSON 日志：写到 <code>%APPDATA%\StockAdvisor\logs\</code>，只记录声明过的字段（原始报文不入日志）；日志命名空间仍为 <code>stock_advisor</code>（产品身份，与目录无关）。横切各层可用。</td><td>结构化日志、字段白名单、命名空间与目录解耦。</td></tr>
+            </tbody>
+          </table>
+          </div>
+
+          <h3>4.5 框架无关的展示逻辑 <code>ui/</code></h3>
+          <p class="muted"><code>ui/</code> 这个名字是 Tkinter 时代的遗产；迁移完成后它已不含任何 Tk 代码，职责变成“与 GUI 框架无关的展示逻辑”，被 <code>qt_app/</code> 复用，与 <code>qt_app/</code> 并列而非上下层。</p>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>文件</th><th>主要职责</th><th>教学重点</th></tr></thead>
+            <tbody>
+              <tr><td><code>view_text.py</code></td><td>面向用户的文本构建（怎么看结果、计算步骤、风险控制等说明文案），界面详情面板与 <code>manual.py</code> 共用同一份文案源。</td><td>文案与逻辑解耦、单一文案来源。</td></tr>
+              <tr><td><code>view_format.py</code></td><td>行/表/剪贴板/CSV 格式化，以及按分数正负、动作类型着色（<code>_score_color</code>/<code>_action_color</code>，正分或买入=<code>POS_COLOR</code>，负分或卖出=<code>NEG_COLOR</code>）；CSV 导出做公式注入中和并附免责声明页脚。</td><td>展示层格式化、配色规则集中、导出安全。</td></tr>
+              <tr><td><code>theme.py</code></td><td>与框架无关的展示常量：应用身份、窗口尺寸、结果表列与排序序、免责声明。颜色的<strong>权威真源是 <code>loop/product/tokens.json</code></strong>（带 WCAG 对比度实测），这里只保留少数被非 Qt 路径（说明书 HTML、纯函数格式化）用到的镜像色值（含 <code>POS_COLOR</code>/<code>NEG_COLOR</code>/<code>FLAT_COLOR</code>）。</td><td>单一真源、颜色令牌、非 Qt 路径镜像。</td></tr>
+              <tr><td><code>manual.py</code></td><td>生成 <code>dist/使用说明.html</code>：从运行代码里的真实常量和文案动态拼出用户手册。</td><td>文档与代码同源，见 §9 关于“为什么手册不会讲反”的说明。</td></tr>
+              <tr><td><code>assets.py</code></td><td>打包/仓库两态的资源路径解析（图标、<code>tokens.json</code> 等）。</td><td>冻结态 vs 源码态、资源定位。</td></tr>
+              <tr><td><code>app.py</code></td><td><strong>薄入口</strong>：保留 <code>run_gui()</code> 的名字与签名，把它委托给 <code>qt_app</code> 装配；不含任何业务或界面代码，也不再依赖 Tk。</td><td>入口契约不变、框架可替换。</td></tr>
+            </tbody>
+          </table>
+          </div>
+
+          <h3>4.6 PySide6 界面层 <code>qt_app/</code>（出货界面，共 36 个模块）</h3>
+          <p>这是当前生产 GUI，<code>python main.py</code> 与打包后的 <code>股市锦囊.exe</code> 跑的都是它。下表按子包讲解，不逐一列举单个文件。</p>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>模块 / 子包</th><th>主要职责</th><th>教学重点</th></tr></thead>
+            <tbody>
+              <tr><td><code>app.py</code></td><td>装配点：真实行情 provider → 5 个异步控制器 → 5 个功能页 → <code>QTabWidget</code> → 主窗；跨页联动（预警横幅、自选载入分析输入框、结果查资金流）、全局快捷键（Ctrl+Enter/F5 按当前页派发）、关闭时依次排空线程池。</td><td>依赖装配、跨页联动、生命周期。</td></tr>
+              <tr><td><code>main_window.py</code></td><td><code>QMainWindow</code> 外壳：原生标题栏身份、状态栏、免责声明常驻、页面挂载。</td><td>主窗骨架、状态栏。</td></tr>
+              <tr><td><code>settings.py</code></td><td>五项持久化设置（本金、档位、预设、自选/持仓、预警）的进程内单一归属，各页共用避免互相覆盖。</td><td>单一配置持有者。</td></tr>
+              <tr><td><code>pages/</code></td><td>五个功能页：个股分析 / 全市场选股 / 自选持仓 / 条件预警 / 个股资金流。</td><td>页面即视图组合。</td></tr>
+              <tr><td><code>controllers/</code></td><td>异步控制器：<code>QThreadPool</code> + queued 信号，世代守卫丢弃迟到/被取代的结果，协作取消，关闭时排空线程池（<code>base.py</code> 抽出共同生命周期骨架）。</td><td>异步编排、世代守卫、取消。</td></tr>
+              <tr><td><code>workers/</code></td><td>后台任务体（<code>QRunnable</code>）与世代守卫（<code>generation_guard.py</code>）。</td><td>后台执行、迟到丢弃。</td></tr>
+              <tr><td><code>table_models/</code></td><td><code>QAbstractTableModel</code> + 排序代理：排序键用原始数值而非格式化字符串，缺失值显示 <code>—</code>、底层保持 <code>None</code>。</td><td>模型/视图、数值排序。</td></tr>
+              <tr><td><code>widgets/</code></td><td>自绘控件：K 线图、因子条、决策强度光谱条、卡片、预设网格、档位选择器等（<code>QPainter</code> 绘制）。</td><td>自绘控件、paintEvent。</td></tr>
+              <tr><td><code>dialogs/</code></td><td>模态对话框（信息、离线自检等）。</td><td>模态交互。</td></tr>
+              <tr><td><code>theme/</code></td><td>QSS 与设计令牌：<code>tokens.py</code> 读 <code>loop/product/tokens.json</code> 生成 QSS；<code>fonts.py</code> 字体契约（<code>QFontInfo</code> 如实报告实际字体，禁止静默回退）。</td><td>QSS 主题、设计令牌、字体契约。</td></tr>
+            </tbody>
+          </table>
+          </div>
+
+          <h3>4.7 版本、端口、入口与构建</h3>
+          <div class="table-scroll">
+          <table>
+            <thead><tr><th>文件</th><th>主要职责</th><th>教学重点</th></tr></thead>
+            <tbody>
+              <tr><td><code>src/version.py</code></td><td>产品版本号单一真源（<code>__version__</code>，两段式 MAJOR.MINOR），供说明书、发布清单与版本单源测试引用（原 <code>stock_advisor/__init__.py</code>）。</td><td>单一真源、运行期可取版本。</td></tr>
+              <tr><td><code>src/ports.py</code></td><td>网络传输的 port/envelope 合同（框架无关、纯 stdlib）：<code>TransportOutcome</code>（成功才带 data，<strong>失败结构上不带 data</strong>——零伪造回退）、总 <code>Deadline</code>（一个预算覆盖所有重试与备用源）、协作取消 <code>CancelToken</code>/<code>ManualCancel</code>。</td><td>合同边界、零伪造回退、总 deadline。</td></tr>
+              <tr><td><code>main.py</code></td><td>程序入口：<code>--self-test</code> 离线自检（委托 <code>services.self_check</code>，覆盖个股分析、五档决策、仓位、回测、持久化、横向对比、条件预警、全市场选股全链路）、配置结构化日志、默认启动 GUI。高 DPI 由 Qt6 原生处理（Per-Monitor-V2），不再手动置进程 DPI 感知。</td><td>入口脚本、命令行参数、冒烟自检（smoke test）。</td></tr>
+              <tr><td><code>scripts/build_exe.py</code></td><td>调用 PyInstaller 构建 <strong>onedir 应用目录</strong>到 <code>dist/股市锦囊/</code>（含 <code>股市锦囊.exe</code> + Qt 运行时），并生成 <code>dist/使用说明.html</code>；删除 <code>build/</code>/<code>dist/</code> 前校验路径必须在项目内。</td><td>构建脚本、路径安全、onedir 交付。</td></tr>
             </tbody>
           </table>
           </div>
@@ -493,7 +537,7 @@
 
         <section id="data">
           <h2>5. 行情数据层</h2>
-          <p>数据层位于 <code>data_provider.py</code>，是项目中唯一做网络请求的模块，负责把外部行情接口转换为内部统一的 <code>Quote</code>、<code>DailyBar</code>、<code>MarketSnapshot</code>、<code>FundFlow</code>。这是程序可靠性的关键。</p>
+          <p>数据层位于 <code>data/</code> 包，核心是 <code>data_provider.py</code>——项目中唯一做网络请求的模块，负责把外部行情接口转换为内部统一的 <code>Quote</code>、<code>DailyBar</code>、<code>MarketSnapshot</code>、<code>FundFlow</code>；底层的 HTTP 收发走 <code>bounded_transport.py</code>（统一施加超时与响应体大小上限）。这是程序可靠性的关键。</p>
 
           <h3>5.1 股票代码和市场编码</h3>
           <p>A 股代码本身只有 6 位数字，但不同数据接口需要不同的市场前缀。用户手工输入的场景由 <code>symbols.py</code> 按代码前缀推断交易所；<strong>全市场快照场景则不靠推断</strong>——直接使用东方财富接口返回的权威市场号字段 <code>f13</code>（<code>symbols.symbol_from_market()</code>），因为批量场景下前缀猜测更容易出错。</p>
@@ -518,7 +562,7 @@
             <li><code>last</code>：最新价；<code>open</code>：开盘价；<code>high</code> / <code>low</code>：当日最高和最低；<code>previous_close</code>：昨收价。</li>
             <li><code>volume</code> / <code>amount</code>：成交量和成交额；<code>turnover_rate</code>：换手率；<code>change_pct</code>：涨跌幅。</li>
           </ul>
-          <p>东方财富部分价格字段是放大后的整数，代码用 <code>_scaled_price()</code> 除以 100 还原；百分比字段用 <code>_scaled_percent()</code> 做同类处理。</p>
+          <p>东方财富部分价格字段是放大后的整数（如价格×100），入口处用 <code>money.scaled_price()</code> 以 <strong>Decimal 除法</strong>还原成精确两位小数——整数标度价本是精确值，不经 float、精度一路保留到存储与计算（ADR-0013）；涨跌幅等百分比字段则走 <code>numeric</code> 的 float 解析。</p>
 
           <h3>5.3 历史日线多源回退</h3>
           <p>历史数据是指标计算的基础。项目按以下顺序获取日线：</p>
@@ -672,16 +716,16 @@ frac      = clamp(0, position_cap, (risk_budget / stop_pct) × strength × conf)
 
         <section id="ui">
           <h2>7. 图形界面技术</h2>
-          <p>界面层位于 <code>app.py</code>，使用 Tkinter 构建。Tkinter 是 Python 标准库自带的桌面 GUI 工具包，底层依赖 Tcl/Tk。它适合构建轻量级、无需额外安装依赖的 Windows 桌面工具。</p>
+          <p>界面层是 <code>src/qt_app/</code> 包，使用 <strong>PySide6</strong>（Qt for Python 官方绑定，封装 Qt Widgets）构建。<code>qt_app/app.py</code> 负责装配：把行情 provider 注入控制器，控制器驱动功能页，五个功能页装进 <code>QTabWidget</code> 挂到 <code>QMainWindow</code> 外壳上。领域内核与展示逻辑（<code>domain/</code>、<code>ui/</code>）都与 Qt 无关，换界面框架不必动它们。</p>
 
           <h3>7.1 配色约定（本次重点修正）</h3>
-          <p>程序统一采用 <strong>A 股本土配色习惯</strong>：红 = 涨 / 买入 / 积极 / 正分；绿 = 跌 / 卖出 / 谨慎 / 负分。权威定义在 <code>theme.py</code>：</p>
+          <p>程序统一采用 <strong>A 股本土配色习惯</strong>：红 = 涨 / 买入 / 积极 / 正分；绿 = 跌 / 卖出 / 谨慎 / 负分。颜色的权威真源是 <code>loop/product/tokens.json</code>（带 WCAG 对比度实测，Qt 侧据此生成 QSS），<code>ui/theme.py</code> 保留与之一致的镜像色值供非 Qt 路径（说明书 HTML、纯函数格式化）使用：</p>
           <div class="swatch-row">
             <span class="chip chip-buy">买入 / 加仓（红字 + 淡红底）</span>
             <span class="chip chip-sell">卖出 / 减仓（绿字 + 淡绿底）</span>
             <span class="chip chip-hold">继续持有 / 观望（中性灰 + 淡灰底）</span>
           </div>
-          <p class="muted">以上三个色块直接取自 <code>theme.POS_COLOR</code>/<code>POS_BG</code>、<code>NEG_COLOR</code>/<code>NEG_BG</code>、<code>FLAT_COLOR</code>/<code>HOLD_BG</code>，与运行中的程序表格行底色、详情文字颜色完全一致；本报告的 CSS 变量 <code>--pos</code>/<code>--neg</code>/<code>--flat</code> 逐一取相同的十六进制值。</p>
+          <p class="muted">以上三个色块的字色直接取自 <code>ui/theme.py</code> 的 <code>POS_COLOR</code>/<code>NEG_COLOR</code>/<code>FLAT_COLOR</code>（行底色由 <code>tokens.json</code> 驱动的 QSS 提供），与运行中的程序详情文字、表格着色完全一致；本报告的 CSS 变量 <code>--pos</code>/<code>--neg</code>/<code>--flat</code> 逐一取相同的十六进制值。</p>
           <div class="note warn">
             <strong>容易搞混的地方：</strong>国际软件的通用习惯是“红色=危险/警告”（本报告的风险提示框也用了近似的红色边框，语义是“重要/危险”，跟本节讨论的涨跌颜色是两套独立语境）；但 A 股行情软件里红/绿的含义相反于西方股市（美股通常红跌绿涨）。这份报告此前的版本就是把“危险色该谨慎卖出、安全色才可以买入”这套直觉误套到了 A 股配色上——买入配了偏安全感的颜色、卖出配了偏警示感的颜色，正好和 A 股习惯相反，而且给买入文字包了一个按颜色字面命名的 CSS 工具类（类名本身就是颜色单词）。按颜色命名的工具类，在语义相反的场景下极易被写反。这也是本次修正把 CSS 类名改成 <code>.pos</code>/<code>.neg</code>（按“积极/消极”语义命名而非按颜色命名）的原因，用 <code>theme.py</code> 的 <code>POS_COLOR</code>/<code>NEG_COLOR</code> 命名方式对齐，从命名上直接消除再次讲反的空间。
           </div>
@@ -691,16 +735,16 @@ frac      = clamp(0, position_cap, (risk_budget / stop_pct) × strength × conf)
           <table>
             <thead><tr><th>控件/技术</th><th>用途</th><th>教学概念</th></tr></thead>
             <tbody>
-              <tr><td><code>Tk</code></td><td>主窗口。</td><td>应用生命周期、事件循环。</td></tr>
-              <tr><td><code>ttk.Frame</code></td><td>组织布局。</td><td>容器、分区、响应式填充。</td></tr>
-              <tr><td>自绘分段胶囊（<code>Canvas</code>/<code>Frame</code> 组合）</td><td>顶部「个股分析 / 全市场选股」选项卡与五档决策强度分段按钮，不使用 <code>ttk.Notebook</code>。</td><td>自绘控件、命中测试、悬停/选中态。</td></tr>
-              <tr><td><code>ScrolledText</code></td><td>股票代码输入、说明窗口、解释文本。</td><td>多行文本、滚动条、标签样式。</td></tr>
-              <tr><td><code>ttk.Treeview</code></td><td>结果表格、自选股/持仓表、横向对比表。</td><td>列定义、行标签、排序、选中事件。</td></tr>
-              <tr><td><code>Canvas</code>（K 线）</td><td>专业 K 线图：蜡烛 + MA5/10/20 + 成交量副图，支持 hover 十字光标显示当根 OHLC。</td><td>即时绘图、坐标系映射（<code>chart.py</code>）、命中测试。</td></tr>
-              <tr><td><code>Canvas</code>（光谱/指标条）</td><td>决策强度光谱、综合判断/投入比例/把握程度指标条、因子正负分条。</td><td>坐标系、颜色编码、数据可视化。</td></tr>
-              <tr><td><code>StringVar</code></td><td>状态、组合概览、摘要文本、本金输入。</td><td>UI 状态绑定。</td></tr>
-              <tr><td><code>messagebox</code></td><td>输入错误和提示。</td><td>用户反馈。</td></tr>
-              <tr><td><code>filedialog</code></td><td>CSV 保存路径选择。</td><td>系统文件对话框。</td></tr>
+              <tr><td><code>QMainWindow</code></td><td>主窗口外壳：标题栏身份、状态栏、免责声明常驻。</td><td>应用生命周期、主窗骨架。</td></tr>
+              <tr><td><code>QTabWidget</code></td><td>顶部「个股分析 / 全市场选股 / 自选持仓 / 条件预警 / 个股资金流」一级导航。</td><td>页面导航、视图组合。</td></tr>
+              <tr><td>自绘档位选择器（<code>QButtonGroup</code> + 自绘控件）</td><td>五档决策强度分段按钮（exclusive 单选、等宽居中）。</td><td>自绘控件、互斥选择、选中态。</td></tr>
+              <tr><td><code>QPlainTextEdit</code> / <code>QLineEdit</code></td><td>股票代码多行输入、本金输入、解释文本展示。</td><td>多行/单行输入、只读展示。</td></tr>
+              <tr><td><code>QTableView</code> + <code>QAbstractTableModel</code></td><td>结果表格、自选股/持仓表、横向对比表；配 <code>QSortFilterProxyModel</code> 排序。</td><td>模型/视图分离、角色（Display/Alignment/Foreground）、数值排序。</td></tr>
+              <tr><td><code>QWidget.paintEvent</code> + <code>QPainter</code>（K 线）</td><td>专业 K 线图：蜡烛 + MA5/10/20 + 成交量副图，hover 十字光标显示当根 OHLC。</td><td>自绘、坐标系映射（<code>domain/chart.py</code>）、命中测试。</td></tr>
+              <tr><td><code>QPainter</code>（光谱/指标条）</td><td>决策强度光谱、综合判断/投入比例/把握程度指标条、因子正负分条。</td><td>坐标系、颜色编码、数据可视化。</td></tr>
+              <tr><td>Qt 信号槽</td><td>状态、组合概览、摘要文本随数据变化更新界面。</td><td>信号/槽、UI 状态更新。</td></tr>
+              <tr><td><code>QMessageBox</code></td><td>输入错误和提示。</td><td>用户反馈。</td></tr>
+              <tr><td><code>QFileDialog</code></td><td>CSV 保存路径选择。</td><td>系统文件对话框。</td></tr>
             </tbody>
           </table>
           </div>
@@ -712,47 +756,51 @@ frac      = clamp(0, position_cap, (risk_budget / stop_pct) × strength × conf)
             <li><strong>快捷键：</strong><code>Ctrl+Enter</code> 或 <code>F5</code> 运行当前选项卡的主操作（个股分析或全市场选股），<code>Ctrl+L</code> 清空，<code>Ctrl+Shift+C</code> 复制当前详情。</li>
             <li><strong>组合概览：</strong>显示买入、持有、卖出数量、平均把握、高风险数量和优先查看股票。</li>
             <li><strong>数值排序：</strong>综合分、把握、涨跌幅、风险按数值排序，不按字符串排序。</li>
-            <li><strong>自选股 / 持仓：</strong>可填持仓成本与股数，分析后显示浮动盈亏；随本金、决策强度档位、选股预设、预警规则一起持久化到 <code>%APPDATA%\股市锦囊\config.json</code>，下次启动自动恢复。</li>
+            <li><strong>自选股 / 持仓：</strong>可填持仓成本与股数，分析后显示浮动盈亏；随本金、决策强度档位、选股预设、预警规则一起持久化到 <code>%APPDATA%\StockAdvisor\config.json</code>，下次启动自动恢复。</li>
             <li><strong>横向对比：</strong>把已分析的股票放进一张表，比较综合分、把握、风险、建议仓位、持仓盈亏与「各档买卖翻转点」提示。</li>
-            <li><strong>条件预警：</strong>为某股设价格/涨跌幅/综合分规则，开启「实时预警」后每 <code>MONITOR_INTERVAL_MS</code>（60 秒）检查一次，越线即顶部横幅 + 提示音提醒；边沿触发（条件由不满足变为满足才提醒，回落后可再次触发），仅程序开启期间生效。</li>
-            <li><strong>个股资金流：</strong>选中已分析股票后按需查询主力净流入（今日 + 近 5 日），走独立线程 + 队列，取不到只提示稍后重试。</li>
+            <li><strong>条件预警：</strong>为某股设价格/涨跌幅/综合分规则，开启「实时预警」后由 <code>QTimer</code> 每 60 秒检查一次，越线即顶部横幅 + 提示音（<code>QApplication.beep()</code>）提醒；边沿触发（条件由不满足变为满足才提醒，回落后可再次触发），仅程序开启期间生效。</li>
+            <li><strong>个股资金流：</strong>选中已分析股票后按需查询主力净流入（今日 + 近 5 日），走独立控制器 + 后台 worker，取不到只提示稍后重试。</li>
           </ul>
 
-          <h3>7.4 后台线程和队列</h3>
-          <p>GUI 程序最重要的工程原则之一是：不要在主线程做耗时任务。主线程负责重绘窗口和响应用户事件，如果它去等待网络请求，窗口就会卡住。项目对个股分析、全市场选股、条件预警轮询、资金流查询这四类耗时操作，统一采用如下模式：</p>
-          <pre><code>触发操作（点击按钮 / 定时轮询）
-  -&gt; 创建/复用后台线程
-  -&gt; 后台线程请求行情并调用 measure()/decide()
-  -&gt; 通过 queue.put() 投递结果
-  -&gt; 主线程 root.after(间隔, _poll_xxx) 定时取结果并更新 UI</code></pre>
-          <p>这种模式叫“生产者消费者”。后台线程是生产者，负责生产结果；GUI 主线程是消费者，负责安全更新控件——四类任务各自有独立的队列和轮询方法，互不阻塞。</p>
+          <h3>7.4 后台线程池与信号</h3>
+          <p>GUI 程序最重要的工程原则之一是：不要在主线程做耗时任务。主线程负责重绘窗口和响应用户事件，如果它去等待网络请求，窗口就会卡住。项目对个股分析、全市场选股、条件预警轮询、资金流查询这四类耗时操作，统一采用「控制器 + 有界线程池 + 信号」模式：</p>
+          <pre><code>触发操作（点击按钮 / QTimer 轮询）
+  -&gt; 控制器 _begin()：新建取消 token、递增世代、置运行中
+  -&gt; QThreadPool 提交一个 QRunnable worker（并发上限 4）
+  -&gt; worker 在后台线程请求行情并调用 measure()/decide()
+  -&gt; worker 把（世代号, 结果）作为参数发一个 typed 信号
+  -&gt; 信号跨线程 queued 投递回 GUI 线程的槽
+  -&gt; 槽先判断世代是否仍是当前世代，是才更新 UI（丢弃迟到/被取代的结果）</code></pre>
+          <p>这仍是“生产者—消费者”，只是消费端从 Tk 的 <code>root.after()</code> 轮询队列换成了 Qt 的跨线程 queued 信号槽。关键的正确性保证是<strong>世代守卫</strong>（<code>GenerationGuard</code>）：每次重启/重复启动都会递增世代，旧世代仍在途的结果抵达时被直接丢弃，避免旧结果覆盖新结果；取消是协作式的（worker 在可中断点查询 cancel token）。关闭窗口时控制器依次 <code>shutdown()</code>，在限时内排空线程池，避免带着在途 worker 析构。</p>
 
           <h3>7.5 K 线与光谱可视化</h3>
-          <p>程序没有使用 matplotlib，而是用 <code>Canvas</code> 直接绘图，配合 <code>chart.py</code> 的纯函数几何映射（价格/成交量转像素坐标、最近点命中）：</p>
+          <p>程序没有使用 Qt Charts 或 matplotlib，而是在 <code>QWidget.paintEvent</code> 里用 <code>QPainter</code> 直接绘图，配合 <code>domain/chart.py</code> 的纯函数几何映射（价格/成交量转像素坐标、最近点命中）；静态背景层可缓存，鼠标移动时只重绘十字光标与提示：</p>
           <ul>
             <li>K 线：蜡烛图 + MA5/10/20 均线 + 成交量副图，鼠标移动时显示十字光标与当根 OHLC。</li>
             <li>决策强度光谱：同一只股票五档结论横向对照。</li>
             <li>动作徽章、综合判断/投入比例/把握程度指标条、近期价格走势小图、判断拆解因子条（正负分以方向和颜色区分）。</li>
           </ul>
-          <p>这种方式轻量、无依赖，比早期版本的简易因子条更进一步做到了专业 K 线的观感，但仍不是通用图表组件，交互能力（缩放、多周期切换等）有限。</p>
+          <p>这种方式不额外依赖任何图表库、绘制完全可控，做到了专业 K 线的观感，但仍不是通用图表组件，交互能力（缩放、多周期切换等）有限。</p>
         </section>
 
         <section id="testing">
           <h2>8. 测试体系</h2>
-          <p>项目使用 Python 标准库 <code>unittest</code>，测试文件位于仓库根目录 <code>tests/</code> 下，共 23 个文件。测试不是只验证“能跑”，而是覆盖各层关键行为：输入解析、行情解析、指标计算、五档决策强度、仓位计算、回测、选股、持久化、工作台交互、GUI 辅助函数和打包自检。</p>
+          <p>项目以 Python 标准库 <code>unittest</code> 为权威门禁运行器（Qt 层测试借助 <code>pytest-qt</code>），测试位于 <code>tests/</code> 下，共 <strong>73 个 <code>test_*.py</code> 文件</strong>（含 27 个 <code>test_qt_*</code> 界面测试，合计约 853 个测试用例；另有 <code>tests/performance/</code> 性能基准与 <code>tests/fixtures/</code> 手算黄金样本）。测试不是只验证“能跑”，而是覆盖各层关键行为：输入解析、行情解析、Decimal 金额、指标计算、五档决策强度、仓位计算、回测、选股、持久化、Qt 页面/控制器/表格模型和打包自检。界面测试在 <code>QT_QPA_PLATFORM=offscreen</code> 下跑真实 QWidget，无需显示器。</p>
           <div class="table-scroll">
           <table>
             <thead><tr><th>分组</th><th>测试文件</th><th>覆盖内容</th></tr></thead>
             <tbody>
-              <tr><td>输入与数据层</td><td><code>test_symbols.py</code>、<code>test_provider.py</code></td><td>股票代码识别、前缀推断、去重；东方财富/新浪/腾讯行情解析、历史源回退、网络重试、全市场快照解析。</td></tr>
-              <tr><td>指标与客观测量</td><td><code>test_engine.py</code>、<code>test_measure.py</code></td><td>均线、RSI、MACD、布林、ATR、支撑压力等指标；<code>measure()</code> 的 8 因子评分、风控扣分与置信度。</td></tr>
+              <tr><td>输入与数据层</td><td><code>test_symbols.py</code>、<code>test_provider.py</code>、<code>test_bounded_transport.py</code>、<code>test_transport_contract.py</code>、<code>test_data_quality.py</code></td><td>股票代码识别、前缀推断、去重；东方财富/新浪/腾讯行情解析、历史源回退、网络重试、全市场快照解析；有界传输的超时/大小上限、传输合同（总 deadline、零伪造回退）、行情数据可信度判定。</td></tr>
+              <tr><td>指标与客观测量</td><td><code>test_engine.py</code>、<code>test_measure.py</code>、<code>test_engine_guards.py</code></td><td>均线、RSI、MACD、布林、ATR、支撑压力等指标；<code>measure()</code> 的 8 因子评分、风控扣分与置信度；小样本等边界守卫。</td></tr>
+              <tr><td>金额与数值</td><td><code>test_money.py</code>、<code>test_numeric.py</code>、<code>test_numeric_golden.py</code></td><td>金额/价格的 Decimal 量化与 ROUND_HALF_UP、float 安全解析、手算黄金样本对拍（golden 由人手笔算，绝不由被测代码生成）。</td></tr>
               <tr><td>决策强度与仓位</td><td><code>test_policy.py</code>、<code>test_sizing.py</code>、<code>test_spectrum.py</code></td><td><code>decide()</code> 五档买卖阈值与置信度门槛、<code>position_plan()</code> 股数/止损/止盈计算、<code>spectrum()</code>/<code>flip_hint()</code> 光谱与翻转提示、免责声明一致性。</td></tr>
               <tr><td>可信度回测</td><td><code>test_backtest.py</code></td><td><code>backtest_signals()</code> 的无未来泄漏逐日回放与胜率/超额收益统计。</td></tr>
               <tr><td>选股与预设</td><td><code>test_screener.py</code>、<code>test_presets.py</code></td><td>过滤条件 <code>passes()</code>/<code>apply_filters()</code>、打分排序 <code>rank()</code>、六个预设的可调参数应用与交叉边界校验。</td></tr>
               <tr><td>K 线几何</td><td><code>test_chart.py</code></td><td>蜡烛/均线/成交量的坐标映射与 hover 最近点命中。</td></tr>
               <tr><td>工作台与持久化</td><td><code>test_store.py</code>、<code>test_compare.py</code>、<code>test_alerts.py</code>、<code>test_fund_flow.py</code></td><td>配置读写与原子写、横向对比行组装、预警边沿触发、资金流解析与降级安全。</td></tr>
-              <tr><td>编排与自检</td><td><code>test_workflow.py</code>、<code>test_main.py</code>、<code>test_build_config.py</code></td><td>个股分析/全市场选股编排（<code>FakeProvider</code> 注入）、<code>--self-test</code> 离线自检、打包脚本参数与路径安全。</td></tr>
-              <tr><td>界面与文案</td><td><code>test_app_helpers.py</code>、<code>test_gui_layout.py</code>、<code>test_ui_polish.py</code>、<code>test_manual.py</code></td><td>格式化输出、组合概览、窗口/内容带几何、视觉细节、使用说明书文案生成。</td></tr>
+              <tr><td>编排与自检</td><td><code>test_workflow.py</code>、<code>test_self_check.py</code>、<code>test_screener_run.py</code>、<code>test_main.py</code>、<code>test_build_config.py</code>、<code>test_release_manifest.py</code></td><td>个股分析/全市场选股编排（<code>FakeProvider</code> 注入）、端到端离线自检、选股批次执行、<code>--self-test</code> 入口、打包脚本参数与路径安全、发布清单。</td></tr>
+              <tr><td>展示逻辑与文案</td><td><code>test_app_helpers.py</code>、<code>test_ui_pure_helpers.py</code>、<code>test_formatting.py</code>、<code>test_manual.py</code>、<code>test_export_security.py</code></td><td>格式化输出、组合概览、纯展示辅助、使用说明书文案生成、CSV 导出的公式注入中和。</td></tr>
+              <tr><td>Qt 界面（headless）</td><td><code>test_qt_shell.py</code>、<code>test_qt_individual_page.py</code>、<code>test_qt_screener_page.py</code>、<code>test_qt_result_model.py</code>、<code>test_qt_table_sorting.py</code>、<code>test_qt_theme.py</code>、<code>test_qt_accessibility.py</code>、<code>test_qt_race.py</code> 等（共 27 个 <code>test_qt_*</code>）</td><td>主窗装配与功能页、表格模型与数值排序、QSS 主题与字体契约、可访问性名称、异步控制器的世代守卫与竞态（迟到结果丢弃）。</td></tr>
               <tr><td>模型</td><td><code>test_models_new.py</code></td><td>决策强度相关数据结构（<code>LevelSpec</code>/<code>Measurement</code>/<code>Decision</code> 等）的构造与不可变性。</td></tr>
             </tbody>
           </table>
@@ -763,46 +811,48 @@ frac      = clamp(0, position_cap, (risk_budget / stop_pct) × strength × conf)
 with patch.object(provider, "_request", fake_request):
     rows = provider.fetch_history(normalize_symbol("600519"), limit=1)</code></pre>
           <h3>常用验证命令（在仓库根目录执行）</h3>
-          <pre><code>python -m unittest discover -s tests
-python -m py_compile main.py build_exe.py src/stock_advisor/*.py
-python main.py --self-test</code></pre>
+          <pre><code>QT_QPA_PLATFORM=offscreen python -m unittest discover -s tests   # 全量测试（含 Qt 界面测试，无需显示器）
+python main.py --self-test                                        # 离线自检（不触网）</code></pre>
         </section>
 
         <section id="packaging">
           <h2>9. 打包发布</h2>
-          <p>打包由仓库根目录的 <code>build_exe.py</code> 完成，构建依赖写在 <code>requirements-build.txt</code>，当前只有 <code>pyinstaller&gt;=6.15</code>。运行时程序本身只依赖标准库。也可以直接用一键脚本：</p>
+          <p>打包由 <code>scripts/build_exe.py</code> 完成。构建依赖钉在 <code>pyproject.toml</code> 的 <code>[dependency-groups].build</code>，当前是 <code>pyinstaller==6.21.0</code>（精确钉版，保证同一提交构建出同一产物）。运行期程序本身只依赖标准库加界面框架 <code>PySide6-Essentials==6.11.1</code>（LGPL）。也可以直接用一键脚本：</p>
           <pre><code>build.bat            # Windows（cmd / PowerShell）
 ./build.sh           # Git Bash / WSL
 # 或手动：
-python -m pip install -r requirements-build.txt
-python build_exe.py</code></pre>
+python -m pip install --group build   # 唯一构建期依赖 PyInstaller（版本已钉）
+python scripts/build_exe.py</code></pre>
           <h3>PyInstaller 的角色</h3>
-          <p>PyInstaller 会分析入口脚本依赖，把 Python 解释器、字节码、标准库、Tk 运行资源和项目源码打包成可执行文件。项目使用了几个关键参数：</p>
+          <p>PyInstaller 会分析入口脚本依赖，把 Python 解释器、字节码、标准库、<strong>Qt 运行库</strong>和项目源码打包成一个应用目录。项目使用了几个关键参数：</p>
           <div class="table-scroll">
           <table>
             <thead><tr><th>参数</th><th>作用</th></tr></thead>
             <tbody>
-              <tr><td><code>--onefile</code></td><td>生成单个 EXE，便于交付。</td></tr>
+              <tr><td><code>--onedir</code></td><td>生成应用目录（EXE 与 Qt 运行时并列），而非单文件（ADR-0004，见下）。</td></tr>
               <tr><td><code>--windowed</code></td><td>启动时不弹出控制台窗口，适合 GUI 程序。</td></tr>
               <tr><td><code>--disable-windowed-traceback</code></td><td>窗口模式下未捕获异常不弹出系统级 traceback 对话框。</td></tr>
-              <tr><td><code>--icon</code> / <code>--add-data</code></td><td>指定应用图标，并把图标文件一并打进 <code>assets/</code> 目录供运行时读取。</td></tr>
+              <tr><td><code>--icon</code> / <code>--add-data</code></td><td>指定应用图标，并把图标与设计令牌 <code>tokens.json</code> 一并打进 <code>assets/</code> 供运行时读取（打包后仓库路径不存在，Qt 主题只能从 <code>assets/</code> 取色）。</td></tr>
               <tr><td><code>--clean</code></td><td>清理 PyInstaller 缓存，降低旧构建影响。</td></tr>
               <tr><td><code>--optimize 2</code></td><td>启用字节码优化。</td></tr>
               <tr><td><code>--exclude-module unittest/pydoc/doctest/pdb/idlelib</code></td><td>排除运行时不需要的模块，减少体积。</td></tr>
-              <tr><td><code>--paths src</code></td><td>让 PyInstaller 能找到 <code>stock_advisor</code> 包。</td></tr>
+              <tr><td><code>--paths src</code></td><td>让 PyInstaller 能找到 <code>src/</code> 下的层包（<code>domain</code>/<code>services</code>/<code>qt_app</code>…）。</td></tr>
               <tr><td><code>--distpath</code> / <code>--workpath</code> / <code>--specpath</code></td><td>全部指向 <code>build/</code> 内部，PyInstaller 自身产物不会污染 <code>dist/</code>。</td></tr>
             </tbody>
           </table>
           </div>
+          <div class="note">
+            <strong>为什么是 onedir 而不是单文件（ADR-0004）：</strong>两条独立理由都指向 onedir。其一，启动时间——onefile 每次启动都要把约 100&nbsp;MB 运行时解压到临时目录，实测热启动 2.9s 超出 2.5s 预算，而 onedir 仅 0.69s；其二，许可证——Qt 以 LGPL-3.0 分发，其第 4(d) 条要求用户能用自己的 Qt 版本重新链接，Qt DLL 作为独立文件放在应用目录才做得到，压进单文件就做不到。代价是用户拿到的是一个目录而非孤立 EXE，因此发布物打成 zip，解压后双击 <code>股市锦囊.exe</code> 即用、无需安装。
+          </div>
           <h3>构建目录约定与安全设计</h3>
           <p><code>build/</code> 只放构建中间产物（含 PyInstaller 原始输出）；<code>dist/</code> 只放最终交付物。<code>build_exe.py</code> 在删除 <code>build/</code>/<code>dist/</code> 前会检查路径是否位于项目目录内，避免误删项目外路径。构建完成后：</p>
           <ul>
-            <li>PyInstaller 产物从 <code>build/pyinstaller/AStockIntradayAdvisor.exe</code> 复制为最终交付名 <code>dist/股市锦囊.exe</code>。</li>
+            <li>PyInstaller 产出的整个应用目录 <code>build/pyinstaller/AStockIntradayAdvisor/</code> 复制到 <code>dist/股市锦囊/</code>，其中的 <code>AStockIntradayAdvisor.exe</code> 改名为最终交付名 <code>股市锦囊.exe</code>（其余 Qt DLL 等运行时文件原样并列）。</li>
             <li><code>manual.build_manual_html()</code> 动态生成 <code>dist/使用说明.html</code>，写入 <code>dist/</code>。</li>
           </ul>
-          <p>自检模式 <code>--self-test</code>（<code>dist\股市锦囊.exe --self-test</code>）用于验证 EXE 的基础可执行性：它构造离线样例，跑一遍个股分析、五档决策、仓位、回测、持久化、横向对比、条件预警和全市场选股全链路，成功时打印 <code>SELF_TEST_OK ...</code> 并以退出码 0 结束，不依赖网络和窗口交互。</p>
+          <p>自检模式 <code>--self-test</code>（<code>dist\股市锦囊\股市锦囊.exe --self-test</code>）用于验证打包程序的基础可执行性：它构造离线样例，跑一遍个股分析、五档决策、仓位、回测、持久化、横向对比、条件预警和全市场选股全链路，成功时打印 <code>SELF_TEST_OK ...</code> 并以退出码 0 结束，不依赖网络和窗口交互。</p>
           <div class="note">
-            <strong>为什么 <code>dist/使用说明.html</code> 不会像本报告曾经那样“讲反”：</strong>用户手册由 <code>manual.build_manual_html()</code> 在每次打包时，直接从 <code>app.py</code>/<code>theme.py</code>/<code>presets.py</code>/<code>screener.py</code> 等运行代码里的真实常量和文案动态拼出，不存在人工誊抄环节，源码一变手册自动跟着变。而本技术报告（<code>docs/stock_advisor_technical_stack_report.html</code>）是人工撰写的静态文档，与源码没有强制同步机制，需要在每次架构或配色变更后人工复核更新——这正是它此前会与实现脱节甚至讲反的根本原因。
+            <strong>为什么 <code>dist/使用说明.html</code> 不会像本报告曾经那样“讲反”：</strong>用户手册由 <code>manual.build_manual_html()</code> 在每次打包时，直接从 <code>ui/theme.py</code>、<code>ui/view_text.py</code>、<code>domain/presets.py</code>、<code>domain/screener.py</code> 等运行代码里的真实常量和文案动态拼出，不存在人工誊抄环节，源码一变手册自动跟着变。而本技术报告（<code>docs/stock_advisor_technical_stack_report.html</code>）是人工撰写的静态文档，与源码没有强制同步机制，需要在每次架构或配色变更后人工复核更新——这正是它此前会与实现脱节甚至讲反的根本原因。
           </div>
         </section>
 
@@ -813,19 +863,19 @@ python build_exe.py</code></pre>
           <table>
             <thead><tr><th>风险点</th><th>处理方式</th><th>文件位置</th></tr></thead>
             <tbody>
-              <tr><td>用户输入格式混乱</td><td>用正则拆分逗号、空格、换行、中英文分号；自动推断交易所；去重；限制最多 30 只。</td><td><code>symbols.py</code>、<code>input_validate.py</code>、<code>app.py</code></td></tr>
+              <tr><td>用户输入格式混乱</td><td>用正则拆分逗号、空格、换行、中英文分号；自动推断交易所；去重；限制最多 30 只。</td><td><code>symbols.py</code>、<code>input_validate.py</code>、<code>qt_app/pages/</code></td></tr>
               <tr><td>行情接口断开</td><td>设置超时、重试、请求头；实时行情和历史行情均有备用源。</td><td><code>data_provider.py</code></td></tr>
               <tr><td>返回数据缺字段</td><td>解析函数跳过无效 K 线/快照行，安全转换数字，必要字段无效时抛出业务异常。</td><td><code>data_provider.py</code></td></tr>
               <tr><td>历史数据拿不到</td><td>降级为实时行情保守判断，给用户友好提示，不暴露底层连接错误。</td><td><code>workflow.py</code></td></tr>
               <tr><td>样本不足</td><td>指标返回 <code>None</code>，客观分按 0.75 折降权，风险列表提示样本不足。</td><td><code>engine.py</code></td></tr>
               <tr><td>选股参数上下限交叉</td><td><code>apply_tunables()</code> 对成对边界（如涨跌幅下限/上限、换手率下限/上限）做协同校验，交叉时抛出可展示的 <code>ValueError</code>，而不是静默返回“无结果”。</td><td><code>presets.py</code></td></tr>
               <tr><td>配置文件损坏/不可写</td><td>读取失败一律回退默认 <code>AppConfig</code>；写入用临时文件 + <code>os.replace</code> 原子替换，测试用环境变量隔离，绝不写真实 <code>%APPDATA%</code>。</td><td><code>store.py</code></td></tr>
-              <tr><td>资金流接口偶发限流</td><td>按需查询、独立线程 + 队列，取不到只提示稍后重试，不影响个股分析/选股主流程。</td><td><code>data_provider.py</code>、<code>app.py</code></td></tr>
+              <tr><td>资金流接口偶发限流</td><td>按需查询、独立控制器 + 后台 worker，取不到只提示稍后重试，不影响个股分析/选股主流程。</td><td><code>data/data_provider.py</code>、<code>services/fund_flow.py</code></td></tr>
               <tr><td>条件预警重复提醒</td><td>边沿触发（条件由不满足变为满足才提醒），回落后才能再次触发，避免持续越线时反复告警。</td><td><code>alerts.py</code></td></tr>
-              <tr><td>GUI 卡死</td><td>个股分析、全市场选股、预警轮询、资金流查询均在后台线程执行，主线程只消费队列并刷新界面。</td><td><code>app.py</code></td></tr>
-              <tr><td>高 DPI 显示器界面模糊/错位</td><td>启动时请求系统按原生 DPI 渲染（<code>SetProcessDpiAwareness</code>/<code>SetProcessDPIAware</code>）。</td><td><code>main.py</code></td></tr>
-              <tr><td>导出中文乱码</td><td>CSV 使用 UTF-8 BOM，便于 Excel 打开。</td><td><code>view_format.py</code></td></tr>
-              <tr><td>误删构建外文件</td><td>删除 <code>build/</code>/<code>dist/</code> 前校验路径必须在项目内。</td><td><code>build_exe.py</code></td></tr>
+              <tr><td>GUI 卡死</td><td>个股分析、全市场选股、预警轮询、资金流查询均在后台线程池的 worker 执行，主线程只处理 queued 信号并刷新界面。</td><td><code>qt_app/controllers/</code></td></tr>
+              <tr><td>高 DPI 显示器界面模糊/错位</td><td>由 Qt6 原生按 Per-Monitor-V2 处理高 DPI；不再手动置进程 DPI 感知（那是 Tk 时代的 <code>ctypes</code> 补丁，已随 Tk 层移除）。</td><td>Qt6 运行时（说明见 <code>main.py</code>）</td></tr>
+              <tr><td>导出中文乱码 / 公式注入</td><td>CSV 使用 UTF-8 BOM 便于 Excel 打开；对以 <code>= + - @</code> 开头的字段做注入中和。</td><td><code>ui/view_format.py</code></td></tr>
+              <tr><td>误删构建外文件</td><td>删除 <code>build/</code>/<code>dist/</code> 前校验路径必须在项目内。</td><td><code>scripts/build_exe.py</code></td></tr>
             </tbody>
           </table>
           </div>
@@ -850,16 +900,17 @@ python build_exe.py</code></pre>
             <li><strong>输入验证：</strong>正则表达式、错误消息、边界限制。</li>
             <li><strong>HTTP 和数据解析：</strong>请求头、超时、编码、JSON、接口字段映射，含全市场快照与资金流。</li>
             <li><strong>技术指标：</strong>均线、EMA、MACD、RSI、布林、ATR、回撤和成交量比。</li>
+            <li><strong>金额与数值精度：</strong>金额/价格用 Decimal（2 位、ROUND_HALF_UP），数量用 int，比率/指标用 float，以及三者之间的边界转换。</li>
             <li><strong>规则型策略：</strong>测量与决策分离、五档决策强度、仓位与止损止盈计算。</li>
             <li><strong>选股：</strong>过滤条件、目标导向打分排序、预设与可调参数的交叉边界校验。</li>
             <li><strong>回测方法论：</strong>无未来泄漏的历史信号逐日复盘。</li>
-            <li><strong>Tkinter GUI：</strong>自绘选项卡、Canvas 绘图（K 线/光谱）、事件、表格、线程队列。</li>
+            <li><strong>PySide6 GUI：</strong>QMainWindow/QTabWidget、模型/视图（QAbstractTableModel + 排序代理）、QPainter 自绘（K 线/光谱）、信号槽、QThreadPool 后台任务与世代守卫。</li>
             <li><strong>持久化与工作台：</strong>配置原子写、自选/持仓、横向对比、条件预警的边沿触发。</li>
             <li><strong>测试：</strong>用 <code>unittest</code> 覆盖纯函数、异常路径、模拟网络、headless GUI 测试。</li>
-            <li><strong>打包：</strong>理解 PyInstaller 如何分析依赖、生成 EXE，以及说明书如何与源码同源生成。</li>
+            <li><strong>打包：</strong>理解 PyInstaller 如何分析依赖、生成 onedir 应用目录（含 Qt 运行时），以及说明书如何与源码同源生成。</li>
           </ol>
           <div class="note">
-            <strong>实践建议：</strong>先从 <code>models.py</code> 读起，再读 <code>engine.py</code> 的客观测量与 <code>policy.py</code> 的五档决策，然后是 <code>screener.py</code>/<code>presets.py</code> 的选股链路，最后读 <code>app.py</code>。这样能先掌握数据和算法，再理解界面如何调用它们。
+            <strong>实践建议：</strong>先从 <code>domain/models.py</code>、<code>domain/money.py</code> 读起，再读 <code>domain/engine.py</code> 的客观测量与 <code>domain/policy.py</code> 的五档决策，然后是 <code>domain/screener.py</code>/<code>domain/presets.py</code> 的选股链路与 <code>services/workflow.py</code> 编排，最后读 <code>qt_app/app.py</code> 的装配与各功能页。这样能先掌握数据和算法，再理解界面如何调用它们。
           </div>
           <h3>可以继续探索的方向（均为尚未实现，非本报告此前误列的那些）</h3>
           <ul>
@@ -869,7 +920,7 @@ python build_exe.py</code></pre>
             <li>分时图、集合竞价等更多图表维度（目前 K 线只做日线）。</li>
             <li>把「可信度回测」从单只股票汇总到预设/策略维度的历史命中率统计。</li>
           </ul>
-          <p class="muted">本报告随源码维护，用于教学、代码理解和维护交接；如与运行中的程序出现不一致，以源码（尤其是 <code>theme.py</code>、<code>policy.py</code>）为准。</p>
+          <p class="muted">本报告随源码维护，用于教学、代码理解和维护交接；如与运行中的程序出现不一致，以源码（尤其是 <code>ui/theme.py</code>、<code>loop/product/tokens.json</code>、<code>domain/policy.py</code>）与相关 ADR 为准。</p>
         </section>
       </article>
     </div>

@@ -5,14 +5,14 @@
 
 ## 背景
 
-REQ-023 要求所有结果携带数据来源、获取时间、完整度、新鲜度和降级状态；这类状态既要在 UI 呈现，也需要落盘可诊断。`architecture/OBSERVABILITY.md`（Task 1 产出）已经把日志 sink（stderr + `%APPDATA%\股市锦囊\logs\` 下的 rotating file）、结构化 NDJSON 格式、字段集合、轮转策略（`RotatingFileHandler(maxBytes=5_242_880, backupCount=5)`）、日志级别阈值和 7 类 `error_class` 分类法都写清楚了，但这些都还只是架构规范文字，没有一份 ADR 把"这是不是本项目正式采用的可观测性方案"作为决策记录下来——尤其是"只用标准库 logging、不引入第三方结构化日志库"这一条本身就是一个需要被记录、可被重访的架构取舍，而不只是实现细节。
+REQ-023 要求所有结果携带数据来源、获取时间、完整度、新鲜度和降级状态；这类状态既要在 UI 呈现，也需要落盘可诊断。`architecture/OBSERVABILITY.md`（Task 1 产出）已经把日志 sink（stderr + `%APPDATA%\StockAdvisor\logs\` 下的 rotating file）、结构化 NDJSON 格式、字段集合、轮转策略（`RotatingFileHandler(maxBytes=5_242_880, backupCount=5)`）、日志级别阈值和 7 类 `error_class` 分类法都写清楚了，但这些都还只是架构规范文字，没有一份 ADR 把"这是不是本项目正式采用的可观测性方案"作为决策记录下来——尤其是"只用标准库 logging、不引入第三方结构化日志库"这一条本身就是一个需要被记录、可被重访的架构取舍，而不只是实现细节。
 
 项目打包为无控制台窗口的 GUI EXE 后用户看不到 stderr（`OBSERVABILITY.md` 已指出这点），rotating file 因此是生产环境唯一对用户可诊断的持久 sink；这个"两个 sink 但只有一个在生产环境真正有效"的事实本身就是需要被显式决策并写入回滚/重访条件的架构约束。
 
 ## 决策
 
 - 采用标准库 `logging`（含 `logging.handlers.RotatingFileHandler`）作为唯一日志实现，不引入第三方结构化日志库（例如 structlog、loguru）。
-- 两个 sink：stderr（阈值 WARNING，交互式运行可见）+ `%APPDATA%\股市锦囊\logs\stock_advisor.log` 的 rotating file（阈值 INFO，`maxBytes=5_242_880`、`backupCount=5`，尺寸驱动轮转），共享同一个自定义 `Formatter`，产出单行 NDJSON。
+- 两个 sink：stderr（阈值 WARNING，交互式运行可见）+ `%APPDATA%\StockAdvisor\logs\stock_advisor.log` 的 rotating file（阈值 INFO，`maxBytes=5_242_880`、`backupCount=5`，尺寸驱动轮转），共享同一个自定义 `Formatter`，产出单行 NDJSON。
 - 日志字段集合固定为：标准字段（`timestamp`/`level`/`logger`/`message`）+ 任务字段（`correlation_id`/`task_id`/`generation`/`operation`/`source`/`attempt`/`duration_ms`/`outcome`/`error_class`/`degraded`/`cancelled`）；禁止记录原始敏感 payload、完整自选/持仓或凭据。
 - `error_class` 固定为 7 类互斥枚举（`network`/`parse`/`validation`/`persistence`/`gui`/`packaging`/`unknown`），作为 `architecture/NETWORK_RESILIENCE.md` 和 `architecture/DATA_QUALITY.md` 引用的唯一权威分类来源；`degraded`/`cancelled` 是独立于 `error_class` 的正交布尔字段。
 

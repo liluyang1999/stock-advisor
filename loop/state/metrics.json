@@ -1,7 +1,7 @@
 {
   "$schema": "../schemas/metrics.schema.json",
   "schema_version": "1.0.0",
-  "updated_at": "2026-07-16T09:30:00+09:00",
+  "updated_at": "2026-07-25T00:00:00+09:00",
   "engineering": {
     "requirements_total": 34,
     "requirements_verified": 0,
@@ -13,8 +13,8 @@
     "defects_open": 0
   },
   "control_plane": {
-    "tool_tests_total": 55,
-    "tool_tests_passed": 55,
+    "tool_tests_total": 56,
+    "tool_tests_passed": 56,
     "schema_documents_validated": 23,
     "requirements_traced": 34,
     "operational_json_schema_coverage": 1.0,
@@ -22,9 +22,9 @@
     "independent_verification": true
   },
   "tests": {
-    "modules": 70,
-    "methods": 814,
-    "passed": 814,
+    "modules": 73,
+    "methods": 853,
+    "passed": 853,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
@@ -33,8 +33,8 @@
     "qt_specific": 211
   },
   "coverage": {
-    "statement": 0.9648,
-    "branch": 0.9239
+    "statement": 0.9582,
+    "branch": 0.9096
   },
   "tooling": {
     "ci": false,

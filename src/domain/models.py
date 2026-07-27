@@ -118,7 +118,7 @@ class MarketSnapshot:
 
 @dataclass(frozen=True)
 class FilterCriteria:
-    """选股硬性范围。所有数值区间为开区间端点，None 表示该端不限制。"""
+    """选股硬性范围。所有数值区间为闭区间端点（含端点，与 screener._in_range 的 < / > 判定一致），None 表示该端不限制。"""
 
     boards: frozenset[str] = frozenset()  # 空集表示不限板块
     exclude_st: bool = True

@@ -1080,7 +1080,6 @@
         "AC-011"
       ],
       "implementation_paths": [
-        "src/ui/layout.py",
         "src/ui/view_text.py",
         "loop/quality/tk-contract-mapping.csv"
       ],
@@ -1092,7 +1091,7 @@
       "definition_of_done": "每一条 pure_preserved 合同要么有活的生产调用方，要么改判为 approved_retired 并连同其代码与测试一并移除；tk-contract-mapping 的 disposition 与代码现状一致。",
       "scope_out": [
         "G-SURFACE 覆盖的面向用户能力——那些已由门禁保证可达",
-        "背景：实测：layout.py 与 view_text.py 合计 642 行，qt_app 零引用；ui_scale(tk_scaling) 直接换算 Tk 的 scaling 因子，而 Qt6 原生处理 DPI，该函数在当前架构下无意义。WI-002 当初判为 pure_preserved 时 Tk 仍在出货，前提已变。这不是「遗留垃圾」而是一个已接受分类，改判需人工裁定，故不擅自删除。"
+        "背景：layout.py 是 Tk 时代死代码（qt_app 零引用，ui_scale(tk_scaling) 等窗口几何/DPI 数学已被 Qt6 原生取代），已改判 approved_retired 并连同其专属测试一并移除。view_text.py 恰相反——被 7 个 qt_app 模块（info_dialog/evidence_page/individual_page/screener_page/detail_view/factor_bars/tier_selector）以及 ui/manual、services/self_check 引用，是存活的共享展示逻辑，必须保留，绝不可按原先「两者皆死」的错误口径一并删除。其余 pure_preserved 合同仍需逐条人工裁定。"
       ]
     },
     {

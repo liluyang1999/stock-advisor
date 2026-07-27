@@ -960,6 +960,90 @@
       "finished_at": "2026-07-22T05:40:00+09:00",
       "summary": "Closure of the 881099806 dangling reference (first-audit pre-formal-history commit, object lost; current baseline is root 61b3cde; keep original value as faithful history) documented in governance/HISTORY_REWRITE.md -- the only digest-set change. 870 product tests, self-test, full checker set green. Also delivered outside the digest: scripts/capture_ui.py screenshot tool + anti-rot tests, manual rewrite matching the 5-page UI, fund-flow degrade banner, failure-row readability, chart axes. Supersedes EVD-LOOP-007.",
       "implemented_by": "dangling-ref-closure",
+      "verified_by": "loop/scripts/run_gates.py (machine gate suite; no independent human review -- see artifact)",
+      "superseded_by": "EVD-LOOP-009"
+    },
+    {
+      "id": "EVD-LOOP-009",
+      "record_version": "2.0.0",
+      "requirement_ids": [
+        "REQ-027",
+        "REQ-028"
+      ],
+      "acceptance_ids": [
+        "AC-000"
+      ],
+      "work_item_id": "WI-000",
+      "type": "control_plane_rebaseline_after_storage_rename_and_doc_reconcile",
+      "command": "ruff + pyright + product regression (853, unittest discover -s tests) + self-test + full checker set (traceability/status/backlog/core/surface/coverage)",
+      "cwd": "D:/Projects/stock-advisor",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-LOOP-009-storage-rename-and-doc-reconcile-rebaseline.txt",
+      "sha256": "8ccbfb66a77619b56e285809d379afee3bfe892fd52989a81075231f2f4255a3",
+      "control_plane_sha256": "470f5f031fb394ab26a02bb74c67c5fbf35a2a6a5dbd9ed498ab405aded72ba1",
+      "commit": "ec8e6040a2f27186de808a7c8a301e43f7dfa093",
+      "dirty_worktree": true,
+      "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",
+      "started_at": "2026-07-25T00:00:00+09:00",
+      "finished_at": "2026-07-25T01:30:00+09:00",
+      "summary": "Runtime data-dir rename 股市锦囊 -> StockAdvisor mirrored into loop docs (decisions/0011, architecture/OBSERVABILITY + PERSISTENCE_AND_CONFIG); render_status.py de-hardcoded the permanently-false 'current GUI = Tkinter' (Tk production layer removed in WI-023) and STATUS.md regenerated; work-items WI-032 false-and-dangerous premise corrected (view_text.py is live -- imported by 7 qt_app modules -- not dead; retired layout.py dropped from its paths); test counts reconciled 814 -> 853 in metrics + current.json and anchored by a new loop test (closing the unanchored gap that let 814 silently rot). Milestone-ladder / phase / active-work-item deliberately left for owner judgement (see artifact). Product-code A/B/D remediation delivered outside the digest. Supersedes EVD-LOOP-008.",
+      "implemented_by": "storage-rename-and-doc-reconcile",
+      "verified_by": "loop/scripts/run_gates.py (machine gate suite; no independent human review -- see artifact)",
+      "superseded_by": "EVD-LOOP-010"
+    },
+    {
+      "id": "EVD-LOOP-010",
+      "record_version": "2.0.0",
+      "requirement_ids": [
+        "REQ-027",
+        "REQ-028"
+      ],
+      "acceptance_ids": [
+        "AC-000"
+      ],
+      "work_item_id": "WI-000",
+      "type": "control_plane_rebaseline_after_milestone_and_phase_reconcile",
+      "command": "render_status --check + full checker set (traceability/backlog/core/surface) + ruff; product suite unchanged from EVD-LOOP-009 (853 green)",
+      "cwd": "D:/Projects/stock-advisor",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-LOOP-010-milestone-and-phase-reconcile-rebaseline.txt",
+      "sha256": "5d430f2c99ae0e67f9ffc0c48bf3f6670ea6f31ec7b3e673513b34b419c8431a",
+      "control_plane_sha256": "79e81d9e13afe580c3e5d52c3434e0b4b54d248be02abd487661b681c89063bb",
+      "commit": "ec8e6040a2f27186de808a7c8a301e43f7dfa093",
+      "dirty_worktree": true,
+      "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",
+      "started_at": "2026-07-25T02:00:00+09:00",
+      "finished_at": "2026-07-25T02:40:00+09:00",
+      "summary": "Advanced the milestone ladder + phase + active pointers that EVD-LOOP-009 deliberately deferred, now owner-authorised. Machine-derived: MS-00..07 -> accepted (all their work items are accepted), MS-08 -> in_progress (still has verifying/proposed work), MS-08.work_items completed to the full set that declares milestone=MS-08. Judgement (documented in artifact): current.json active_milestone_id MS-00 -> MS-08, active_work_item_id WI-025 -> WI-035 (most-recent verifying work; both legal), phase foundation_ready -> release_prep (free-string label; not an overclaim -- release.ready stays false). STATUS.md regenerated. No src/tests changed; product suite/coverage unchanged from EVD-LOOP-009. Supersedes EVD-LOOP-009.",
+      "implemented_by": "milestone-and-phase-reconcile",
+      "verified_by": "loop/scripts/run_gates.py (machine gate suite; no independent human review -- see artifact)",
+      "superseded_by": "EVD-LOOP-011"
+    },
+    {
+      "id": "EVD-LOOP-011",
+      "record_version": "2.0.0",
+      "requirement_ids": [
+        "REQ-027",
+        "REQ-028"
+      ],
+      "acceptance_ids": [
+        "AC-000"
+      ],
+      "work_item_id": "WI-000",
+      "type": "control_plane_rebaseline_after_storage_sweep_and_coverage_reconcile",
+      "command": "render_status --check + full checker set (traceability/backlog/core/surface) + ruff; product suite + coverage re-measured (853 green, 95.82%/90.96%)",
+      "cwd": "D:/Projects/stock-advisor",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-LOOP-011-storage-sweep-and-coverage-reconcile-rebaseline.txt",
+      "sha256": "b3acf0ab9dd73d4329f442946a8b373396c4d328130b741c47953ce3d4622d5c",
+      "control_plane_sha256": "4c9afc6e3022ee9f4f957e07be556867246c3c8b146116a19cccfe3c11705a22",
+      "commit": "ec8e6040a2f27186de808a7c8a301e43f7dfa093",
+      "dirty_worktree": true,
+      "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",
+      "started_at": "2026-07-25T03:00:00+09:00",
+      "finished_at": "2026-07-25T03:30:00+09:00",
+      "summary": "Full-re-review cleanup closing two gaps left by EVD-LOOP-009/010. (1) Completed the 股市锦囊->StockAdvisor storage-path sweep that EVD-LOOP-009's grep missed: decisions/0011 line 8 (its line 15 was already fixed, so the file was internally inconsistent), decisions/0009 (ui_state.json path), product/app-config.schema.json (config_path description). (2) Reconciled coverage snapshots to the freshly-measured actuals after the A/B/D code changes: metrics.json + current.json 0.9648/0.9239 -> 0.9582/0.9096, RELEASE_READINESS.md 96.64/92.81 -> 95.82/90.96 and ran=7 -> ran=8. STATUS.md regenerated. Outside the digest: README/AGENTS layout.py + count fixes, and the technical_stack_report.html rewrite. Supersedes EVD-LOOP-010.",
+      "implemented_by": "storage-sweep-and-coverage-reconcile",
       "verified_by": "loop/scripts/run_gates.py (machine gate suite; no independent human review -- see artifact)"
     }
   ]

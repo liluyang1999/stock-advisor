@@ -1,0 +1,81 @@
+Evidence: EVD-LOOP-011
+Record version: 2.0.0
+Control-plane SHA-256: 4c9afc6e3022ee9f4f957e07be556867246c3c8b146116a19cccfe3c11705a22
+Working directory: D:\Projects\stock-advisor
+Commit: ec8e6040a2f27186de808a7c8a301e43f7dfa093
+Dirty worktree: true (uncommitted per the project's no-proactive-commit policy; the
+control-plane edits that changed the digest are described below)
+Implemented by: storage-sweep-and-coverage-reconcile
+Verified by: loop/scripts/run_gates.py (machine gate suite; no independent human review -- see artifact)
+Verification started: 2026-07-25T03:00:00+09:00
+Verification finished: 2026-07-25T03:30:00+09:00
+
+INDEPENDENCE CAVEAT: the actor that made the change ran the checks. This round edited only
+DATA / prose files (two ADRs, one schema description, metrics.json, current.json, RELEASE_READINESS.md,
+and the regenerated STATUS.md); no checker, schema validator, gate, script, or test under loop/ was
+touched (loop/scripts/ and loop/tests/ are byte-unchanged from EVD-LOOP-010). No independent human
+review has taken place; a reviewer should replace verified_by with their own identity.
+
+Context: what changed the digest
+
+This is a cleanup round from a full re-review (查漏补缺) after EVD-LOOP-009/010. It closes two gaps
+those rounds left, both discovered by re-sweeping the tree. The digest moved from EVD-LOOP-010's
+79e81d9e... to 4c9afc6e....
+
+1. Storage-path sweep COMPLETION. EVD-LOOP-009 renamed the runtime data dir 股市锦囊 -> StockAdvisor
+   in three loop docs but its grep missed three more occurrences that also state the path as
+   current/planned fact. Now fixed for consistency with src/services/store.py (_APP_DIR_NAME =
+   "StockAdvisor"):
+   - decisions/0011-observability-logging.md line 8 (the context paragraph -- line 15 was already
+     fixed in EVD-LOOP-009, so this file was internally inconsistent until now).
+   - decisions/0009-config-schema-and-qt-layout-persistence.md (the planned ui_state.json path).
+   - product/app-config.schema.json (the description of config_path()'s default path).
+   (The one remaining 股市锦囊 storage-path mention, in docs/...technical_stack_report.html, is
+   correct -- it is the migration changelog note describing the rename itself, and docs/ is outside
+   the digest anyway.)
+
+2. Coverage figures reconciled to reality. The A/B/D product-code changes (money robustness, tier
+   sort, alert guard, store fsync, ingest cap, numeric bool guard, layout.py deletion) shifted
+   measured coverage. The freshly-measured values are overall_statement 95.82% / overall_branch
+   90.96% (core 99.40% / 98.61%), from the G-COVERAGE sequence. Updated the stale snapshots to match:
+   - state/metrics.json coverage.statement 0.9648 -> 0.9582, branch 0.9239 -> 0.9096.
+   - state/current.json quality_summary.coverage 0.9648 -> 0.9582 (STATUS.md's Coverage line follows).
+   - quality/RELEASE_READINESS.md: 语句 96.64% / 分支 92.81% -> 95.82% / 90.96%, and a stale
+     "run_gates.py ran=7" -> "ran=8" (there are 8 gates: G-SURFACE was added).
+   (metrics coverage is informational -- validate_loop does not enforce it; check_coverage enforces
+   the thresholds against convergence.json separately, which stay green. This is accuracy, not a gate.)
+
+Also delivered this session but OUTSIDE the digest (root docs + docs/, listed for completeness):
+- README.md: removed the deleted ui/layout.py entry, ui/ module count 8 -> 7, test-file count
+  70 (26 qt + 44 logic) -> 73 (27 qt + 46 logic) to match the real tree.
+- AGENTS.md: dropped ui/layout.py from the pure-module list; corrected the "UI 布局约定" bullet that
+  cited the removed compute_centered_geometry / compute_content_band pure functions -- window
+  centering is now Qt-native, while content max-width is still enforced in qt_app/main_window.py via
+  theme.MAX_CONTENT_WIDTH / CONTENT_MARGIN (verified still live).
+- docs/stock_advisor_technical_stack_report.html: comprehensively rewritten from the superseded
+  Tkinter / single-file-EXE / src/stock_advisor description to the current PySide6 / onedir /
+  flattened-src reality (independently re-reviewed).
+
+Not changed (correctly): work-item / milestone statuses (EVD-LOOP-010 state carries forward),
+baseline_commit, and all scripts/tests/schemas under loop/. Pre-existing RELEASE_READINESS drift
+NOT touched by this session (e.g. the 204-vs-203 shipped-file count, perf RSS snapshot) is left for
+a separate release-manifest audit -- it is out of this session's change scope.
+
+Verifier results (fresh, against the digest above):
+- render_status --check: STATUS_OK (Coverage line now 0.9582).
+- check_traceability: TRACEABILITY_OK 34/34; render_backlog --check: BACKLOG_OK;
+  check_core_boundaries: CORE_BOUNDARY_OK modules=12; check_capability_surface: SURFACE_OK
+  requirements=34; ruff check loop: All checks passed; ruff format --check loop: clean.
+- Product suite + coverage: 853 product tests green, self-test SELF_TEST_OK 8/8, coverage
+  overall 95.82%/90.96% (the figures written above), all six thresholds pass.
+- validate_loop before registration reports only the EVD-LOOP-010 digest staleness this record
+  clears; loop tests' validate()==[] assertions likewise -- both expected green on registration.
+
+Registration note: artifact hashed before registration; evidence/ and state/evidence-index.json are
+outside control_plane_digest(), so neither this file nor its registration perturbs the digest above.
+After registration validate_loop.py returns LOOP_VALIDATION_OK, the loop suite returns 56/56, and
+run_gates.py returns RUN_GATES_OK ran=8 failed=0.
+
+Scope limit: re-confirms AC-000 at the digest above after the storage-path sweep completion and
+coverage reconciliation. Makes no claim about packaging or release readiness; G-TRACE / G-RELEASE
+stay release-phase. Supersedes EVD-LOOP-010.

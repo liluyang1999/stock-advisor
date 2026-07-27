@@ -54,6 +54,10 @@ class AlertController(QtCore.QObject):
         self._fired: set = set()
         self._guard = GenerationGuard()  # RISK-005：与 WorkerControllerBase 共用同一世代守卫原语
         self._running = False
+        # 在途守卫：一轮跑得比 interval 久时，后续 tick 会重叠。若不拦，多个重叠周期共用同一份
+        # 旧 fired 快照——边沿触发的预警会每轮重复触发，且 fired 被后完成的那轮覆盖。同一时刻只允
+        # 许一轮在途。
+        self._in_flight = False
 
     def is_running(self) -> bool:
         return self._running
@@ -69,6 +73,7 @@ class AlertController(QtCore.QObject):
         self._guard.bump()
         self._fired = set()
         self._running = True
+        self._in_flight = False  # 新一轮监控从"无在途"开始，不被上一次遗留的标志挡住
         self._timer.start(interval_ms)
         self._tick()  # 立即跑一轮，不等第一个 interval
 
@@ -83,6 +88,10 @@ class AlertController(QtCore.QObject):
         self._pool.waitForDone(5000)
 
     def _tick(self) -> None:
+        if self._in_flight:
+            # 上一轮还没跑完：跳过这一拍，避免重叠周期基于同一份旧 fired 重复触发。
+            return
+        self._in_flight = True
         signals = _CycleSignals()
         signals.done.connect(self._on_cycle_done)
         worker = _CycleWorker(
@@ -91,9 +100,12 @@ class AlertController(QtCore.QObject):
         self._pool.start(worker)
 
     def _on_cycle_done(self, generation: int, newly: list, fired: set) -> None:
-        # 迟到结果丢弃：generation 不匹配说明这轮属于已停止/已重启的上一代（RISK-005）。
+        # 迟到结果丢弃：generation 不匹配说明这轮属于已停止/已重启的上一代（RISK-005）。此时不清
+        # in_flight——它属于当前代那一轮在途 worker（stop→start 已在 start 里重置过），迟到的旧代
+        # worker 无权放行下一拍。
         if not self._guard.is_current(generation) or not self._running:
             return
+        self._in_flight = False  # 当前代这一轮已结束，放行下一拍
         self._fired = fired
         if newly:
             self.alerts_triggered.emit(newly)

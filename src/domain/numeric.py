@@ -12,7 +12,13 @@ import math
 
 
 def finite_float(value: object) -> float | None:
-    """转 float;非数 / 非有限(inf/nan)/ 溢出 → None。"""
+    """转 float;bool / 非数 / 非有限(inf/nan)/ 溢出 → None。
+
+    显式拒绝 bool:它是 int 的子类,``float(True) == 1.0``,少了这道防御 True/False 会被静默当成
+    1.0/0.0 混进评分/阈值/涨跌幅——与 [money.py](money.py) 的 ``parse_money`` 同源约定。
+    """
+    if isinstance(value, bool):
+        return None
     try:
         number = float(value)  # type: ignore[arg-type]
     except TypeError, ValueError, OverflowError:

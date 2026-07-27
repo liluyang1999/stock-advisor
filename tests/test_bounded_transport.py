@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from data.bounded_transport import (
     BoundedUrllibProvider,
+    _urlopen,
     classify_exception,
 )
 from domain.symbols import normalize_symbol
@@ -479,6 +480,40 @@ class HistoryContractTests(unittest.TestCase):
         self.assertFalse(outcome.succeeded)
         self.assertEqual(outcome.error_class, "parse")
         self.assertEqual(outcome.attempts, ("eastmoney",))
+
+
+class UrlopenByteCeilingTests(unittest.TestCase):
+    """默认 opener（`_urlopen`）也有字节墙：测试注入假 opener 绕过它，所以这里直接测。"""
+
+    def test_urlopen_rejects_response_over_the_byte_ceiling(self):
+        from unittest.mock import patch
+
+        import data.bounded_transport as bt
+        from data.data_provider import MarketDataError
+
+        class FakeHeaders:
+            def get_content_charset(self):
+                return "utf-8"
+
+        class HugeResponse:
+            headers = FakeHeaders()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self, amt=-1):
+                return b"x" * (amt if amt is not None and amt >= 0 else 999)
+
+        request = urllib.request.Request("https://example.test")
+        with (
+            patch.object(bt, "MAX_RESPONSE_BYTES", 10),
+            patch("urllib.request.urlopen", lambda _r, timeout: HugeResponse()),
+        ):
+            with self.assertRaises(MarketDataError):
+                _urlopen(request, 1.0, None)
 
 
 if __name__ == "__main__":

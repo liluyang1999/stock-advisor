@@ -254,5 +254,20 @@ class ScreenerGuardTests(unittest.TestCase):
         self.assertEqual(_top_limit("abc"), 0)
 
 
+class FilterBoundaryTests(unittest.TestCase):
+    """区间端点为闭区间（含端点）：models.FilterCriteria 的文档口径与 _in_range 的 < / > 判定在此对齐。"""
+
+    def test_range_endpoints_are_inclusive(self):
+        from domain.screener import passes
+
+        s = snap(price=10.0, change_pct=7.0)
+        # 恰落在端点上：闭区间应通过
+        self.assertTrue(passes(s, FilterCriteria(price_min=10.0, price_max=10.0)))
+        self.assertTrue(passes(s, FilterCriteria(change_pct_max=7.0)))
+        # 越过端点才排除
+        self.assertFalse(passes(s, FilterCriteria(price_min=10.01)))
+        self.assertFalse(passes(s, FilterCriteria(change_pct_max=6.99)))
+
+
 if __name__ == "__main__":
     unittest.main()

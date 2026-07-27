@@ -13,19 +13,12 @@ from data.sample_data import (
     make_sample_measurement,
     make_sample_recommendation,
 )
-from ui.layout import (
-    compute_centered_geometry,
-    compute_content_band,
-    compute_window_position,
-)
 from ui.theme import (
     ACTION_BUTTON_LABELS,
     APP_ICON_FILENAME,
     APP_TITLE,
-    CONTENT_MARGIN,
     INFO_WINDOW_SIZE,
     MAIN_MIN_SIZE,
-    MAX_CONTENT_WIDTH,
     WINDOW_MAX_SIZE,
     WINDOW_WORKAREA_MARGIN,
 )
@@ -431,57 +424,6 @@ class AppHelperTests(unittest.TestCase):
         self.assertIn("方向不明", text)
         self.assertNotIn("nan", text)
         self.assertNotIn("inf", text)
-
-
-class CenteringLayoutTests(unittest.TestCase):
-    def test_centered_geometry_leaves_even_margins_on_all_four_sides(self):
-        x, y = compute_centered_geometry(1000, 800, 400, 300)
-        self.assertEqual((x, y), (300, 250))
-        # 左右留白相等，上下留白相等（均匀居中）
-        self.assertEqual(1000 - 400 - x, x)
-        self.assertEqual(800 - 300 - y, y)
-
-    def test_centered_geometry_never_returns_negative_offsets(self):
-        x, y = compute_centered_geometry(300, 200, 400, 300)
-        self.assertEqual((x, y), (0, 0))
-
-    def test_window_position_centers_inside_work_area_excluding_taskbar(self):
-        # 工作区 1536x824（屏幕 1536x864，底部任务栏 40px），窗口 1200x760
-        x, y = compute_window_position(0, 0, 1536, 824, 1200, 760)
-        self.assertEqual((x, y), (168, 32))
-        # 工作区上下留白均匀（在工作区内，而非整屏）
-        self.assertEqual(824 - 760 - y, y)
-
-    def test_window_position_respects_work_area_origin_offset(self):
-        # 任务栏在顶部时工作区原点下移，窗口随之下移保持均匀
-        x, y = compute_window_position(0, 48, 1536, 816, 1200, 760)
-        self.assertEqual(x, 168)
-        self.assertEqual(y, 48 + (816 - 760) // 2)
-
-    def test_content_band_caps_width_and_centers_on_wide_viewports(self):
-        wide = MAX_CONTENT_WIDTH + 400  # 明显宽于上限，触发收窄+居中
-        x_offset, content_w = compute_content_band(wide, MAX_CONTENT_WIDTH, CONTENT_MARGIN)
-        self.assertEqual(content_w, MAX_CONTENT_WIDTH)
-        # 内容居中，左右留白相等
-        self.assertEqual(x_offset, (wide - MAX_CONTENT_WIDTH) // 2)
-        self.assertEqual(wide - content_w - x_offset, x_offset)
-
-    def test_content_band_fills_typical_window_with_even_margins(self):
-        # 常规窗口（窄于上限）：内容填满，仅留两侧等宽外边距
-        x_offset, content_w = compute_content_band(1300, MAX_CONTENT_WIDTH, CONTENT_MARGIN)
-        self.assertEqual(content_w, 1300 - 2 * CONTENT_MARGIN)
-        self.assertEqual(x_offset, CONTENT_MARGIN)
-
-    def test_content_band_shrinks_with_even_margins_on_narrow_viewports(self):
-        x_offset, content_w = compute_content_band(900, MAX_CONTENT_WIDTH, CONTENT_MARGIN)
-        self.assertEqual(content_w, 900 - 2 * CONTENT_MARGIN)
-        self.assertEqual(x_offset, CONTENT_MARGIN)
-
-    def test_max_content_width_prevents_overly_long_components(self):
-        # 任何视口下内容宽度都不超过上限，避免组件单边过长
-        for viewport in (1200, 1920, 2560, 3840):
-            _x, content_w = compute_content_band(viewport, MAX_CONTENT_WIDTH, CONTENT_MARGIN)
-            self.assertLessEqual(content_w, MAX_CONTENT_WIDTH)
 
 
 class RecommendationRowTests(unittest.TestCase):

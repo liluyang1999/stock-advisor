@@ -2,14 +2,14 @@
   "$schema":"../schemas/milestones.schema.json",
   "schema_version":"1.0.0",
   "milestones":[
-    {"id":"MS-00","title":"基线与规格冻结","status":"in_progress","depends_on":[],"work_items":["WI-000","WI-001","WI-002"],"exit_criteria":["loop validation passes","baseline evidence recorded","architecture decisions explicit"]},
-    {"id":"MS-01","title":"PySide6 基础与打包 spike","status":"proposed","depends_on":["MS-00"],"work_items":["WI-003","WI-004","WI-005","WI-006"],"exit_criteria":["minimal Qt app works","font verified","packaging evidence reviewed"]},
-    {"id":"MS-02","title":"科学与数据合同加固","status":"proposed","depends_on":["MS-00","MS-01"],"work_items":["WI-007","WI-008","WI-009","WI-026"],"exit_criteria":["data envelope","golden vectors","research protocol gates"]},
-    {"id":"MS-03","title":"个股工作台迁移","status":"proposed","depends_on":["MS-01","MS-02"],"work_items":["WI-010","WI-011","WI-012","WI-027"],"exit_criteria":["individual feature parity","Qt tests","visual states"]},
-    {"id":"MS-04","title":"全市场筛选迁移","status":"proposed","depends_on":["MS-03"],"work_items":["WI-013","WI-014"],"exit_criteria":["six presets","complete snapshot semantics","deep analysis"]},
-    {"id":"MS-05","title":"组合预警与深度工具迁移","status":"proposed","depends_on":["MS-03"],"work_items":["WI-015","WI-016","WI-017","WI-018","WI-028"],"exit_criteria":["watchlist/compare","alerts","fund flow/help"]},
-    {"id":"MS-06","title":"网络并发收敛","status":"proposed","depends_on":["MS-04","MS-05"],"work_items":["WI-019","WI-020"],"exit_criteria":["fault matrix","cancellation/late results","observability"]},
-    {"id":"MS-07","title":"UI可访问性与性能收敛","status":"proposed","depends_on":["MS-06"],"work_items":["WI-021","WI-022"],"exit_criteria":["DPI matrix","font/accessibility","performance budgets"]},
-    {"id":"MS-08","title":"打包发布与回滚","status":"proposed","depends_on":["MS-07"],"work_items":["WI-023","WI-024","WI-025"],"exit_criteria":["clean EXE","license/SBOM","five green runs","human release gate"]}
+    {"id":"MS-00","title":"基线与规格冻结","status":"accepted","depends_on":[],"work_items":["WI-000","WI-001","WI-002"],"exit_criteria":["loop validation passes","baseline evidence recorded","architecture decisions explicit"]},
+    {"id":"MS-01","title":"PySide6 基础与打包 spike","status":"accepted","depends_on":["MS-00"],"work_items":["WI-003","WI-004","WI-005","WI-006"],"exit_criteria":["minimal Qt app works","font verified","packaging evidence reviewed"]},
+    {"id":"MS-02","title":"科学与数据合同加固","status":"accepted","depends_on":["MS-00","MS-01"],"work_items":["WI-007","WI-008","WI-009","WI-026"],"exit_criteria":["data envelope","golden vectors","research protocol gates"]},
+    {"id":"MS-03","title":"个股工作台迁移","status":"accepted","depends_on":["MS-01","MS-02"],"work_items":["WI-010","WI-011","WI-012","WI-027"],"exit_criteria":["individual feature parity","Qt tests","visual states"]},
+    {"id":"MS-04","title":"全市场筛选迁移","status":"accepted","depends_on":["MS-03"],"work_items":["WI-013","WI-014"],"exit_criteria":["six presets","complete snapshot semantics","deep analysis"]},
+    {"id":"MS-05","title":"组合预警与深度工具迁移","status":"accepted","depends_on":["MS-03"],"work_items":["WI-015","WI-016","WI-017","WI-018","WI-028"],"exit_criteria":["watchlist/compare","alerts","fund flow/help"]},
+    {"id":"MS-06","title":"网络并发收敛","status":"accepted","depends_on":["MS-04","MS-05"],"work_items":["WI-019","WI-020"],"exit_criteria":["fault matrix","cancellation/late results","observability"]},
+    {"id":"MS-07","title":"UI可访问性与性能收敛","status":"accepted","depends_on":["MS-06"],"work_items":["WI-021","WI-022"],"exit_criteria":["DPI matrix","font/accessibility","performance budgets"]},
+    {"id":"MS-08","title":"打包发布与回滚","status":"in_progress","depends_on":["MS-07"],"work_items":["WI-023","WI-024","WI-025","WI-029","WI-030","WI-031","WI-032","WI-033","WI-035"],"exit_criteria":["clean EXE","license/SBOM","five green runs","human release gate"]}
   ]
 }

@@ -549,6 +549,12 @@ class IndividualPage(QtWidgets.QWidget):
                 target.setText(source.text())
                 target.setBackground(source.background())
                 target.setForeground(source.foreground())
+                # 排序键随显示文本一起更新：漏了这行，切档后表格按旧档的 UserRole 排序，
+                # 点列头会得到与屏上数字矛盾的顺序（_HeaderSort 优先读 UserRole）。
+                target.setData(
+                    source.data(QtCore.Qt.ItemDataRole.UserRole),
+                    QtCore.Qt.ItemDataRole.UserRole,
+                )
 
     def _capital(self) -> Decimal:
         """本金：优先用输入框里的当前值，回落到配置，再回落到默认。非法输入不改动已有值。"""

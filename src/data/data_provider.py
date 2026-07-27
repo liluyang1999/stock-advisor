@@ -17,6 +17,11 @@ BROWSER_USER_AGENT = (
     "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 )
 
+# 单次响应字节上限：read(MAX+1) 后若超限即拒。socket 超时只挡"无数据"，挡不住慢速/巨大响应，
+# 少了这道字节墙，一个被中间人替换或行为异常的源可以把任意大的响应整包读进内存。真实行情响应
+# 远小于此，此值仅作 DoS / 内存上界。
+MAX_RESPONSE_BYTES = 16 * 1024 * 1024  # 16 MiB
+
 # 全市场快照：一次分页调用即可覆盖全 A 股；fs 选取沪深主板/创业板/科创板/北交所。
 CLIST_FS = "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:81+s:2048"
 CLIST_FIELDS = "f12,f13,f14,f2,f3,f4,f5,f6,f7,f8,f9,f10,f20,f21,f22,f23,f24,f25"
@@ -223,7 +228,10 @@ class EastmoneyProvider:
             try:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
                     charset = encoding or response.headers.get_content_charset() or "utf-8"
-                    return response.read().decode(charset, errors="replace")
+                    raw = response.read(MAX_RESPONSE_BYTES + 1)
+                    if len(raw) > MAX_RESPONSE_BYTES:
+                        raise MarketDataError(f"行情响应超过 {MAX_RESPONSE_BYTES} 字节上限")
+                    return raw.decode(charset, errors="replace")
             except (
                 urllib.error.URLError,
                 TimeoutError,

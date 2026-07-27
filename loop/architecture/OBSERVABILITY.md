@@ -3,7 +3,7 @@
 ## 日志 sink
 
 - 标准错误（stderr）：始终附加，从控制台/终端运行时（开发环境、`main.py --self-test`）可见。
-- 可选的 rotating file：`%APPDATA%\股市锦囊\logs\stock_advisor.log`（与 `services/store.py::config_path()` 的 `%APPDATA%\股市锦囊\` 同根，新增 `logs\` 子目录，不与 `config.json` 混放）；测试环境沿用 `STOCK_ADVISOR_CONFIG` 覆盖同一基目录的约定，不写真实 APPDATA。
+- 可选的 rotating file：`%APPDATA%\StockAdvisor\logs\stock_advisor.log`（与 `services/store.py::config_path()` 的 `%APPDATA%\StockAdvisor\` 同根，新增 `logs\` 子目录，不与 `config.json` 混放）；测试环境沿用 `STOCK_ADVISOR_CONFIG` 覆盖同一基目录的约定，不写真实 APPDATA。
 - 打包为无控制台窗口的 GUI EXE（`PACKAGING_AND_DEPLOYMENT.md`）时用户看不到 stderr，因此 rotating file 是生产环境唯一对用户可诊断的持久 sink；两个 sink 共享同一 Formatter，内容一致，只是可见性不同。
 - 只使用标准库 `logging`（含 `logging.handlers.RotatingFileHandler`）与 `json`，不引入第三方结构化日志依赖。
 

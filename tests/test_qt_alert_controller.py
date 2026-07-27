@@ -86,6 +86,55 @@ class AlertControllerTests(unittest.TestCase):
         codes = {r.code for r in fired[0][0]}
         self.assertIn("sz000001", codes)  # 未失败的仍触发；监控未停
 
+    def test_overlapping_ticks_while_in_flight_start_no_extra_cycle(self):
+        # 慢周期（一轮跑得比 interval 久）时，定时器后续的 tick 必须被在途守卫跳过：否则多个
+        # 重叠周期共用同一份旧 fired 快照，边沿触发的预警每轮重复触发、fired 被后完成者覆盖。
+        # done 是跨线程 queued 信号，未派发事件循环前不会清 in_flight，故 start() 后同步再 _tick()
+        # 时该轮仍在途——用 _CycleWorker 构造计数确定性地断言"没有开启第二轮"。
+        import qt_app.controllers.alert_controller as ac
+
+        created: list = []
+        original = ac._CycleWorker
+
+        def _counting(*args, **kwargs):
+            created.append(1)
+            return original(*args, **kwargs)
+
+        ac._CycleWorker = _counting
+        self.addCleanup(lambda: setattr(ac, "_CycleWorker", original))
+
+        controller = self._controller()
+        controller.set_rules([_rule("sh600519")])
+        controller.start(
+            interval_ms=10_000
+        )  # 立即跑一轮(cycle A)；大 interval 避免定时器自动再 tick
+        controller._tick()  # 模拟在途期间的定时器 tick
+        controller._tick()
+        self.assertEqual(len(created), 1, "在途一轮期间的额外 tick 必须被跳过，不得开启重叠周期")
+
+    def test_guard_releases_after_a_cycle_completes(self):
+        # 守卫不能过度阻塞：一轮完成（_on_cycle_done 派发、清 in_flight）后，后续 tick 必须能开新周期，
+        # 否则监控会在第一轮后永久卡死。
+        import qt_app.controllers.alert_controller as ac
+
+        controller = self._controller()
+        controller.set_rules([_rule("sh600519")])
+        controller.start(interval_ms=10_000)
+        wait_for(controller.alerts_triggered)  # 等 A 完成并派发 _on_cycle_done → in_flight 应已清
+
+        created: list = []
+        original = ac._CycleWorker
+
+        def _counting(*args, **kwargs):
+            created.append(1)
+            return original(*args, **kwargs)
+
+        ac._CycleWorker = _counting
+        self.addCleanup(lambda: setattr(ac, "_CycleWorker", original))
+
+        controller._tick()
+        self.assertEqual(len(created), 1, "一轮完成后守卫必须放行，后续 tick 能开启新周期")
+
 
 if __name__ == "__main__":
     unittest.main()

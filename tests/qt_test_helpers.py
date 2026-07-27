@@ -51,7 +51,7 @@ def temp_settings(case):
     r"""给测试一份指向临时文件的 `Settings`，随用例自动清理。
 
     存在的理由很具体：页面需要 `Settings`，而 `Settings` 的 path 是必填的——因为曾经它可选、
-    缺省读用户真实的 `%APPDATA%\股市锦囊\config.json`，于是测试真的把 `level` 写进了用户配置。
+    缺省读用户真实的 `%APPDATA%\StockAdvisor\config.json`，于是测试真的把 `level` 写进了用户配置。
     每个用例各写一遍临时目录样板迟早有人图省事跳过，所以在这里给一条最省事的正确路径。
     """
     import tempfile

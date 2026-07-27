@@ -1,24 +1,24 @@
 # Loop 状态（机器渲染）
 
 - Objective: `OBJ-001`
-- Phase: `foundation_ready`
+- Phase: `release_prep`
 - Status: `active`
-- Milestone: `MS-00`
-- Selected work item: `WI-025` — 许可证/SBOM/连续全绿/发布门禁 (`verifying`)
+- Milestone: `MS-08`
+- Selected work item: `WI-035` — 复刻 Tkinter 版 GUI 版式：卡片语言、八列结果表、因子条/光谱/解释三件套 (`verifying`)
 - Baseline: `881099806deca77a7bf7e784d6786f9bccdf0ce6`
 - Dirty worktree: `true`
-- Current GUI / target GUI: `Tkinter / PySide6`
+- GUI（现＝目标，Tk 生产层已随 WI-023 移除）: `PySide6`
 - Runtime font target: `Microsoft YaHei`
-- Tests: `814/814`
-- Loop tooling tests: `55/55`
+- Tests: `853/853`
+- Loop tooling tests: `56/56`
 - Loop schemas: `23`
 - Traceability: `34/34`
-- Coverage: `0.9648`
+- Coverage: `0.9582`
 - Release candidate: `false`
 - Latest gate run: `LOOP-20260711-003`
 
 ## Next actions
 
-- execute WI-001 to align repository-level rules and metadata with the accepted PySide6 target
-- run WI-003 in an isolated environment to pin dependencies and review licenses
-- do not begin product-source migration before the dependency and license gates
+- complete WI-035 verification (Tk 视觉基线回归的最终核验)
+- close out WI-025 release readiness: 许可证/SBOM/连续全绿/发布门禁
+- adjudicate WI-032 (pure_preserved 合同：layout.py 已退役，view_text.py 保留) 与 WI-033 (BoundedUrllibProvider 接入)

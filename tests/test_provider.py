@@ -767,7 +767,7 @@ class ProviderParsingTests(unittest.TestCase):
             def __exit__(self, *_args):
                 return False
 
-            def read(self):
+            def read(self, amt=-1):
                 return b'{"data":{}}'
 
         calls = {"count": 0}
@@ -1101,7 +1101,7 @@ class RequestBehaviorTests(unittest.TestCase):
             def __exit__(self, *_args):
                 return False
 
-            def read(self):
+            def read(self, amt=-1):
                 return "中文".encode("gb18030")
 
         def fake_urlopen(request, timeout):
@@ -1141,6 +1141,34 @@ class RequestBehaviorTests(unittest.TestCase):
         self.assertEqual(calls["count"], 2)
         self.assertEqual(sleeps, [0.35])  # 每次重试间隔 0.35*(attempt+1)，最后一次失败不再等待
         self.assertIn("行情接口请求失败", str(ctx.exception))
+
+    def test_request_rejects_response_over_the_byte_ceiling(self):
+        # 巨大/恶意/被中间人替换的响应必须被字节上限拦下，不能整包读进内存。
+        # 把上限 patch 成很小的值，避免测试真的分配 16 MiB。
+        class FakeHeaders:
+            def get_content_charset(self):
+                return "utf-8"
+
+        class HugeResponse:
+            headers = FakeHeaders()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self, amt=-1):
+                # read(cap+1) 时给回 cap+1 字节；无参调用（未加上限时）给回一大坨。
+                return b"x" * (amt if amt is not None and amt >= 0 else 999)
+
+        provider = EastmoneyProvider(timeout=0.1, max_retries=1)
+        with (
+            patch("data.data_provider.MAX_RESPONSE_BYTES", 10),
+            patch("urllib.request.urlopen", lambda _r, timeout: HugeResponse()),
+        ):
+            with self.assertRaises(MarketDataError):
+                provider._request("https://example.test")
 
 
 class PayloadEdgeCaseTests(unittest.TestCase):

@@ -48,6 +48,7 @@ from .data_provider import (
     FUND_FLOW_HOSTS,
     FUND_FLOW_URL,
     HISTORY_URL,
+    MAX_RESPONSE_BYTES,
     QUOTE_URL,
     SINA_HISTORY_URL,
     SINA_QUOTE_URL,
@@ -391,4 +392,8 @@ def _require_rows(rows: list[DailyBar], message: str) -> list[DailyBar]:
 def _urlopen(request: urllib.request.Request, timeout: float, encoding: str | None) -> str:
     with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
         charset = encoding or response.headers.get_content_charset() or "utf-8"
-        return response.read().decode(charset, errors="replace")
+        # 字节墙：read(MAX+1) 后超限即拒，防止巨大/恶意响应把内存读爆（socket 超时挡不住慢速大响应）。
+        raw = response.read(MAX_RESPONSE_BYTES + 1)
+        if len(raw) > MAX_RESPONSE_BYTES:
+            raise MarketDataError(f"响应超过 {MAX_RESPONSE_BYTES} 字节上限")
+        return raw.decode(charset, errors="replace")
