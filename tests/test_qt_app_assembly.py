@@ -59,6 +59,26 @@ class AppAssemblyTests(unittest.TestCase):
             labels, ["个股分析", "全市场选股", "自选 / 持仓", "条件预警", "个股资金流"]
         )
 
+    def test_the_shipped_provider_is_bounded_and_reports_completeness(self):
+        """出货 provider 必须是有界传输，并能如实报告全市场分页完整度（REQ-025/026 · WI-033）。
+
+        老 `EastmoneyProvider` 没有 `market_completeness`，而 `workflow._provider_completeness`
+        取不到它就默认「完整」——于是后续页失败时，半个市场被当作完整市场拿去排序，REQ-026
+        那条「非全市场结果」的警告在出货版里永远不会触发。这条断言把出货合同钉死。
+        """
+        from ports import Completeness
+        from qt_app.app import default_provider
+
+        provider = default_provider()
+        for method in ("fetch_quote", "fetch_history", "fetch_market_snapshot", "fetch_fund_flow"):
+            self.assertTrue(callable(getattr(provider, method, None)), f"缺少 {method}")
+        self.assertTrue(
+            callable(getattr(provider, "market_completeness", None)),
+            "出货 provider 不报告完整度：REQ-026 的警告将永远不会触发",
+        )
+        self.assertIsInstance(provider.market_completeness(), Completeness)
+        self.assertTrue(callable(getattr(provider, "set_cancel_token", None)), "无法协作取消")
+
     def test_every_page_has_its_controller_wired(self):
         window = self._window()
         self.assertEqual(len(window.controllers()), len(set(window.controllers())))

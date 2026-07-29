@@ -13,8 +13,8 @@
     "defects_open": 0
   },
   "control_plane": {
-    "tool_tests_total": 56,
-    "tool_tests_passed": 56,
+    "tool_tests_total": 59,
+    "tool_tests_passed": 59,
     "schema_documents_validated": 23,
     "requirements_traced": 34,
     "operational_json_schema_coverage": 1.0,
@@ -23,12 +23,12 @@
   },
   "tests": {
     "modules": 73,
-    "methods": 853,
-    "passed": 853,
+    "methods": 868,
+    "passed": 868,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
-    "duration_seconds": 18.018,
+    "duration_seconds": 52.6,
     "tk_specific": 0,
     "qt_specific": 211
   },

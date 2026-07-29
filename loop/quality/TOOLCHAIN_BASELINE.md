@@ -30,6 +30,10 @@ Owner: the **dev-tooling work item** (see the `G-FORMAT`/`G-LINT`/`G-TYPE`/`G-CO
 `loop/quality/quality-gates.json`). Those four gates waited on the debt below; it is now paid and
 they are `enabled:true`, so this table is enforced by CI rather than aspirational.
 
+> **CI 必须用 `run_gates.py --strict`。** 门禁运行器把「工具没装成」降级为 `SKIP` 并仍然退出 0——
+> 那是给新检出的人留的便利，放在 CI 里却是**毫无根据的绿**：一个装不上的 pyright 会让 `G-TYPE`
+> 悄悄消失而流水线照常通过。`--strict` 把 SKIP 计为失败，确保这张表里的每一项在 CI 里都真的跑过。
+
 | Check | Command | Baseline (2026-07-13) | Now (2026-07-16) |
 |---|---|---|---|
 | ruff lint | `python -m ruff check .` | **68** findings (F401, I, UP, B; incl. 7 E402) | **0** — enforced by `G-LINT` |
@@ -55,17 +59,17 @@ they are `enabled:true`, so this table is enforced by CI rather than aspirationa
 
 ## Test-runner note (refines ADR-0010)
 
-pytest is adopted as the framework and runs the domain/data/service suites + the 33 loop tests
-cleanly. The **legacy Tkinter GUI suite** (`tests/test_gui_layout.py`, 116 tests) is **flaky under
-pytest** — intermittent `_tkinter.TclError: Can't find a usable init.tcl` from rapid `tk.Tk()`
-create/destroy cycles under pytest's execution model (the tests have correct `tearDown` and pass
-deterministically under `unittest discover`). Therefore:
+pytest runs the domain/data/service **and Qt** suites + the loop tooling tests cleanly (Qt tests
+need a platform plugin — run them with `QT_QPA_PLATFORM=offscreen`). The reason `unittest discover`
+stays authoritative is now **historical**: the legacy Tkinter GUI suite (`tests/test_gui_layout.py`)
+was flaky under pytest (intermittent `_tkinter.TclError` from rapid `tk.Tk()` create/destroy) and
+was **deleted together with the Tk production layer (WI-023)**, so that flakiness no longer exists.
+Therefore:
 
 - `unittest discover -s tests` remains the **authoritative gate runner** (`G-CORE`); coverage runs
-  via `coverage run -m unittest discover -s tests` (`G-COVERAGE`), not `-m pytest`.
-- **Fast-follow:** add a pytest `conftest.py` Tk-lifecycle fixture (forced root destruction + GC, or
-  a session-scoped root) so the GUI suite runs green under pytest, then complete the ADR-0010 runner
-  migration. Until then pytest is for new/non-GUI tests.
+  via `coverage run -m unittest discover -s tests` (`G-COVERAGE`), not `-m pytest`. This is now a
+  deliberate choice — `run_gates.py` and CI are written against the unittest runner — not a
+  workaround for the (removed) Tk suite.
 
 ## Environment note
 

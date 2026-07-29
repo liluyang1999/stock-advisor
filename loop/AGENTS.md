@@ -23,7 +23,7 @@
 
 唯一权威列表是 `governance/CHARTER.md`"不可妥协原则（INVARIANTS）"（9 条）；本节不独立维护，只做摘要式引用——修改前先改 CHARTER.md，再同步这里的摘要：
 
-- 生产 GUI 目标是 PySide6；当前实现仍是 Tkinter，勿混淆状态；核心领域不得导入 Qt。
+- 生产 GUI 是 PySide6（ADR-0001 迁移由 WI-023 完成，Tkinter 生产层已删除）；核心领域不得导入 Qt。
 - 所有可见字体目标是 Microsoft YaHei。
 - 网络/长计算不得运行在 GUI 主线程。
 - 不伪造行情、收益、测试、覆盖率或完成状态；完成声明必须先有证据。

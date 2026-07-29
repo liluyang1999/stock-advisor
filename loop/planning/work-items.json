@@ -1098,7 +1098,7 @@
       "id": "WI-033",
       "title": "把应用切到 BoundedUrllibProvider 的 envelope 传输",
       "milestone": "MS-08",
-      "status": "proposed",
+      "status": "verifying",
       "priority": "P2",
       "depends_on": [
         "WI-026"
@@ -1117,7 +1117,7 @@
       "tests": [
         "TEST-NET-001"
       ],
-      "next_action": "设计控制器如何消费 TransportOutcome（成功/失败/取消/完整度）而非异常",
+      "next_action": "已交付：BoundedMarketDataProvider 适配器让出货路径拿到总 deadline / 字节上限 / 真实分页完整度（REQ-026 的「非全市场结果」警告现在真的会触发）。剩余：编排与五个控制器改为直接消费 TransportOutcome，以及按控制器各持一个 provider 实例后接上在途取消（共享实例下单一取消令牌会跨控制器误伤）。见 EVD-NET-004。",
       "size": "L",
       "definition_of_done": "控制器与编排消费 TransportOutcome 而非捕获异常，分页完整度对用户可见（残缺的全市场会在界面上自报），且既有降级行为不回退。",
       "scope_out": [

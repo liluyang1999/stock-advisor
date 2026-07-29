@@ -95,10 +95,20 @@ class ChangelogTests(unittest.TestCase):
     """治理文档要求面向用户的变更日志存在且与版本号对得上。"""
 
     def setUp(self):
-        self.path = PROJECT_ROOT / "CHANGELOG.md"
+        # 变更日志与其余工程治理文档一同收拢在 loop/ 下；根目录不再保留副本。
+        self.path = PROJECT_ROOT / "loop" / "CHANGELOG.md"
 
     def test_changelog_exists(self):
-        self.assertTrue(self.path.is_file(), "VERSION_AND_CHANGE_CONTROL.md 要求 CHANGELOG.md 存在")
+        self.assertTrue(
+            self.path.is_file(), "VERSION_AND_CHANGE_CONTROL.md 要求 loop/CHANGELOG.md 存在"
+        )
+
+    def test_no_stray_changelog_at_repository_root(self):
+        """根目录不得再出现第二份变更日志——两份并存正是此前漂移的来源。"""
+        self.assertFalse(
+            (PROJECT_ROOT / "CHANGELOG.md").exists(),
+            "变更日志的唯一位置是 loop/CHANGELOG.md，根目录不应再有副本",
+        )
 
     def test_changelog_documents_the_current_version(self):
         text = self.path.read_text(encoding="utf-8")

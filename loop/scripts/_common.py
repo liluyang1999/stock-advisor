@@ -16,27 +16,30 @@ def load_json(relative: str) -> Any:
 
 
 def dump_json(payload: Any) -> str:
-    """按控制面的排版约定序列化：顶层键每行一条，值用紧凑 JSON（冒号后无空格）。
+    """按控制面的排版约定序列化：`indent=2` 缩进，末尾换行。
 
-    这不是审美偏好：`state/*.json` 全部手写成这个形状，而 `--check` 是解析后语义比对，
-    格式差异它一律看不见。若生成器写 `indent=2`，任何一次 `--write` 都会把整个文件重排，
-    两行语义改动产生几十行 diff，且校验器永远不会报警——生成器必须与文件约定一致。
+    **生成器必须与它所写文件的排版一致**——`--check` 是解析后语义比对，看不见排版差异，所以
+    一旦两者不一致，任何一次 `--write` 都会把整个文件重排：两行语义改动淹没在几十行 diff 里，
+    而校验器全程不报警。`test_generator_written_json_round_trips_byte_for_byte` 机器守住这一点。
+
+    此前这里写的是「顶层键每行一条 + 值紧凑」，理由是"`state/*.json` 全部手写成这个形状"。
+    那个前提已不成立：`atomic_write_json` 实际只写 `state/backlog.json` 与 `state/current.json`，
+    而 `current.json` 连同全部大型人审文件（`work-items.json`、`quality-gates.json`、
+    `capability-surface.json`、`tokens.json`…）都是缩进格式；紧凑形状只剩 schemas/templates 这类
+    静态小文件在用，而它们根本不经本函数。改缩进后 `current.json` 不再被压平，且嵌套结构（数组、
+    子对象）的 diff 回到逐行粒度——紧凑形状会把整个数组塞进一行，任何一次追加都重写那一整行。
     """
 
-    if not isinstance(payload, dict):
-        return json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n"
-    lines = [
-        f"  {json.dumps(key, ensure_ascii=False)}:"
-        f"{json.dumps(value, ensure_ascii=False, separators=(',', ':'))}"
-        for key, value in payload.items()
-    ]
-    return "{\n" + ",\n".join(lines) + "\n}\n"
+    return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
 
 
 def atomic_write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_name(f".{path.name}.tmp")
-    temp.write_text(dump_json(payload), encoding="utf-8")
+    # newline="\n" 是**必须**的，不是风格问题：control_plane_digest() 按字节哈希，而
+    # .gitattributes 声明 `loop/** text eol=lf`。文本模式默认会在 Windows 把 \n 写成 \r\n，
+    # 于是本地算出的 digest 与干净检出（CI）上算出的不同，G-LOOP 会凭空变红。
+    temp.write_text(dump_json(payload), encoding="utf-8", newline="\n")
     temp.replace(path)
 
 

@@ -91,7 +91,7 @@ PySide6、pytest-qt、Ruff、pyright、覆盖率、Qt GUI 与打包门在工具�
 
 唯一权威列表见 `governance/CHARTER.md`"不可妥协原则"一节（9 条，编号固定）；本节不重复独立维护，只给首次阅读者一个不需要跳转就能看到的摘要，措辞、条目增减与编号均以 CHARTER.md 为准：
 
-- 生产 GUI 目标为 **PySide6 Qt Widgets**，当前 Tkinter 仅是迁移基线；核心领域保持无 Qt、无网络、无文件系统依赖。
+- 生产 GUI 是 **PySide6 Qt Widgets**（ADR-0001 迁移由 WI-023 完成，Tkinter 生产层已删除）；核心领域保持无 Qt、无网络、无文件系统依赖。
 - 所有应用可控制文字统一 **Microsoft YaHei（微软雅黑）**；原生 Windows 标题栏是系统控制的唯一例外。
 - 科学计算必须可复现、可解释、防前视、显式处理缺失/极值，并区分工程正确性与策略有效性。
 - 网络和长计算不得阻塞 GUI；请求有总 deadline、有限重试、取消、来源、完整度与降级状态。

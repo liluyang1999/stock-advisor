@@ -12,6 +12,9 @@ Design notes:
   recorded deliberately at close-out, not by this runner.
 * Missing dev tools **degrade to SKIP**, not a crash: a gate whose command needs an uninstalled
   module/executable is skipped with a clear message so the runner is usable on a fresh checkout.
+  That leniency is for humans on a fresh clone — **CI must pass ``--strict``**, which counts a SKIP
+  as a failure. Without it a tool that failed to install makes its gate vanish silently and the
+  pipeline still goes green, which is the one failure mode a gate runner must never have.
 * Release-phase gates (``G-TRACE`` runs release traceability, ``G-RELEASE`` is the human release
   gate) are **excluded by default** and included with ``--release``. Release traceability is
   intentionally red until release, so running it by default would make every dev/CI run fail.
@@ -144,6 +147,11 @@ def main(argv: list[str] | None = None) -> int:
         metavar="ID",
         help="run only these gate id(s), bypassing the enabled/release filters; may be repeated",
     )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="treat SKIP as failure — for CI, where every declared tool must really be installed",
+    )
     args = parser.parse_args(argv)
 
     gates = select_gates(
@@ -162,10 +170,15 @@ def main(argv: list[str] | None = None) -> int:
         suffix = f" ({detail})" if detail else ""
         marker = "" if enabled else " [disabled]"
         print(f"[{gate['id']:<11}] {status}{marker}{suffix}")
-        if status == "FAIL" and (enabled or args.include_disabled):
+        counts_against_us = enabled or args.include_disabled
+        if status == "FAIL" and counts_against_us:
             failed += 1
         elif status == "SKIP":
             skipped += 1
+            # --strict：SKIP 意味着这一关根本没跑（工具没装成）。本地那是便利，CI 里那是
+            # 「毫无根据的绿」——一个装不上的 pyright 会让 G-TYPE 悄悄消失而流水线照样通过。
+            if args.strict and counts_against_us:
+                failed += 1
 
     summary = f"ran={ran} failed={failed} skipped={skipped}"
     if failed and not args.report_only:

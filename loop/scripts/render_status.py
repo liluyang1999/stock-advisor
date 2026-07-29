@@ -66,7 +66,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.write:
         path = LOOP_ROOT / "STATUS.md"
         temp = path.with_name(".STATUS.md.tmp")
-        temp.write_text(content, encoding="utf-8")
+        # newline="\n"：STATUS.md 在 control_plane_digest 覆盖范围内，写出 CRLF 会让干净检出
+        # （CI）上的 digest 与记录值不符。见 _common.atomic_write_json 同款注释。
+        temp.write_text(content, encoding="utf-8", newline="\n")
         temp.replace(path)
         print(f"STATUS_WRITTEN {path}")
     else:

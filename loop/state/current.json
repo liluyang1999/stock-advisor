@@ -47,6 +47,7 @@
   ],
   "in_progress_ids": [
     "WI-025",
+    "WI-033",
     "WI-035"
   ],
   "next_actions": [
@@ -70,8 +71,8 @@
   "pending_decision_ids": [],
   "latest_gate_run_id": "LOOP-20260711-003",
   "quality_summary": {
-    "tests_total": 853,
-    "tests_passed": 853,
+    "tests_total": 868,
+    "tests_passed": 868,
     "tests_failed": 0,
     "tests_skipped": 0,
     "coverage": 0.9582,

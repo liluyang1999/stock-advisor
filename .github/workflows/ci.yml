@@ -1,17 +1,22 @@
 name: CI
 
-# Dev-toolchain CI for the loop control plane + product (ADR-0008 / WS-8). There is no git remote
-# yet; this workflow activates the moment the repository is pushed to GitHub. It runs on
-# windows-latest because Windows is the shipping target.
+# Dev-toolchain CI for the loop control plane + product (ADR-0008 / WS-8). It runs on
+# windows-latest because Windows is the shipping target, and under QT_QPA_PLATFORM=offscreen
+# (job-wide env below): the Qt tests construct real QWidgets and need a platform plugin, and
+# offscreen is the one that needs no display.
 #
 # The GUI is PySide6 as of WI-023, so PySide6 must be installed here or every Qt test fails on a
-# fresh runner. Qt runs under QT_QPA_PLATFORM=offscreen (job-wide env below): the tests construct
-# real QWidgets and need a working platform plugin, and offscreen is the one that needs no display.
+# fresh runner. There is no [build-system], so the project is never pip-installed and `--group dev`
+# alone would not pull [project].dependencies — the Qt runtime is therefore installed by group.
 #
-# Everything here is enforced. The whole-repo ruff + pyright steps were informational
-# (continue-on-error) while the product-code adoption debt was outstanding; that debt is cleared
-# (loop/quality/TOOLCHAIN_BASELINE.md), so G-FORMAT/G-LINT/G-TYPE/G-COVERAGE are now enabled gates
-# and `run_gates.py` runs them for real — no continue-on-error anywhere.
+# Everything here is enforced: no continue-on-error anywhere. G-FORMAT/G-LINT/G-TYPE/G-COVERAGE
+# were informational while the product-code adoption debt was outstanding; that debt is cleared
+# (loop/quality/TOOLCHAIN_BASELINE.md), so `run_gates.py` runs them for real.
+#
+# `run_gates.py --strict` is the authoritative step. --strict is REQUIRED in CI: without it a gate
+# whose tool failed to install degrades to SKIP and the runner still exits 0 — a green pipeline that
+# never ran the check. Locally that leniency is wanted (fresh clone, no pyright yet); in CI every
+# declared tool must really be there.
 
 on:
   push:
@@ -19,9 +24,22 @@ on:
   pull_request:
   workflow_dispatch:
 
+# A newer push to the same branch makes the in-flight run obsolete — cancel it instead of paying
+# for two runners to race to the same answer.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: this workflow only ever reads the repository.
+permissions:
+  contents: read
+
 jobs:
   gates:
     runs-on: windows-latest
+    # The full suite is ~3 min; 30 gives generous headroom while still killing a hung job instead of
+    # letting it burn the account's runner minutes to the 6-hour default.
+    timeout-minutes: 30
     env:
       QT_QPA_PLATFORM: offscreen
     steps:
@@ -30,21 +48,29 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Install dev toolchain + Qt runtime
-        # There is no [build-system], so the project is never pip-installed and `--group dev` alone
-        # would not pull [project].dependencies. The Qt runtime is therefore installed by group.
         run: |
           python -m pip install --upgrade pip
           python -m pip install --group dev --group gui
 
-      # --- Enforced: the control-plane Python is held clean ---
+      # --- Fast-fail: lint the control plane before paying for the full suite -------------------
+      # Subsumed by G-FORMAT/G-LINT (whole repo) below, but it costs seconds and turns a stray
+      # formatting slip into a 30-second red instead of a 3-minute one.
       - name: Ruff format (control plane)
         run: python -m ruff format --check loop/scripts loop/tests
       - name: Ruff lint (control plane)
         run: python -m ruff check loop/scripts loop/tests
 
-      # --- Enforced: tests (unittest is the authoritative runner) + self-test ---
+      # --- Tests, run explicitly for readable failure output -----------------------------------
+      # These DELIBERATELY duplicate what G-CORE and G-LOOP run. run_gates.py reports only the last
+      # three lines of a failing command, which is enough to know *that* a gate failed but not why;
+      # these steps surface the full unittest traceback in the CI log. Do not "optimise" them away
+      # without replacing that diagnostic — the duplicate cost is about one minute.
+      # unittest (not pytest) is the authoritative runner here, matching run_gates.py and
+      # loop/quality/TOOLCHAIN_BASELINE.md.
       - name: Product tests
         run: python -m unittest discover -s tests
       - name: Loop tests
@@ -52,10 +78,8 @@ jobs:
       - name: Self-test
         run: python main.py --self-test
 
-      # --- Enforced: the loop quality gates. G-FORMAT/G-LINT/G-TYPE run whole-repo ruff+pyright and
-      # G-COVERAGE asserts each coverage dimension against quality/convergence.json, so the former
-      # informational steps and the blended `coverage report --fail-under=85` are covered here. That
-      # flag only floored coverage.py's combined statement+branch total and asserted none of the four
-      # documented thresholds; check_coverage.py replaces it.
+      # --- Authoritative: the full loop quality gate set ----------------------------------------
+      # G-LOOP/FORMAT/LINT/TYPE/CORE/COVERAGE/SECURITY/SURFACE. Release-phase gates (G-TRACE,
+      # G-RELEASE) are excluded by default and stay red until release by design.
       - name: Loop quality gates
-        run: python loop/scripts/run_gates.py
+        run: python loop/scripts/run_gates.py --strict

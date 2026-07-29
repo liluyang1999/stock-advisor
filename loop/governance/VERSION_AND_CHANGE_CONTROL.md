@@ -23,9 +23,9 @@
 
 ## 应用版本号（大版本.小版本）
 
-- `src/__init__.py::__version__` 是应用对外版本号的唯一权威字段，采用**两段式 `MAJOR.MINOR`（大版本.小版本）**，不使用三段式 PATCH 位（当前 `1.0`，见 `CHANGELOG.md`）。这是从 SemVer 裁剪出的两段方案：保留"破坏性=大版本、兼容变更=小版本"的判据，把原 PATCH 级改动并入小版本。
+- `src/version.py::__version__` 是应用对外版本号的唯一权威字段（ADR-0015 扫平 `src/` 包根后，原 `stock_advisor/__init__.py` 迁至此；无顶层 `src/__init__.py`），采用**两段式 `MAJOR.MINOR`（大版本.小版本）**，不使用三段式 PATCH 位（当前 `1.0`，见 `CHANGELOG.md`）。这是从 SemVer 裁剪出的两段方案：保留"破坏性=大版本、兼容变更=小版本"的判据，把原 PATCH 级改动并入小版本。
 - **为什么真源是包而不是 `pyproject.toml`。** PEP 621 的 `[project].version` 是通行做法，前提是这个项目会被安装——运行期靠 `importlib.metadata.version()` 读回来。本项目没有 `[build-system]`，从不被 pip 安装，因此没有 dist-info，该调用在开发期和冻结后的 EXE 里都抛 `PackageNotFoundError`（实测）。运行期唯一取得到的版本号只能来自被 import 的模块，所以真源必须是模块。`pyproject.toml` 用 PEP 621 的 `dynamic = ["version"]` 声明"版本不静态写在这里"——这是标准里专为此准备的表达，而不是再抄一份字面量。
-- **不允许出现第二处版本号字面量。** `tests/test_version_single_source.py` 机器强制：`pyproject.toml` 不得有静态 `[project].version`、`src/` 下 `__version__` 只能被赋值一次、发布清单与 SBOM 报告的版本必须等于运行期的值、`CHANGELOG.md` 必须存在且其发布标题同样是两段式。曾经的写法是 `pyproject.toml` 抄一份并在注释里写 "mirrors ..."，靠人手同步——那种约定不会报错，只会某天悄悄对不上。
+- **不允许出现第二处版本号字面量。** `tests/test_version_single_source.py` 机器强制：`pyproject.toml` 不得有静态 `[project].version`、`src/` 下 `__version__` 只能被赋值一次、发布清单与 SBOM 报告的版本必须等于运行期的值、`loop/CHANGELOG.md` 必须存在（且根目录不得再有第二份副本）且其发布标题同样是两段式。曾经的写法是 `pyproject.toml` 抄一份并在注释里写 "mirrors ..."，靠人手同步——那种约定不会报错，只会某天悄悄对不上。
 - **MAJOR（大版本）**：破坏用户可观察的行为合同或持久化兼容性——例如移除/重命名一个现有功能页面、`AppConfig.schema_version`（`ADR-0009`）发生不兼容跃迁且旧配置文件无法被 `parse_config()` 隐式兼容解析、或 EXE 命令行/`--self-test` 合同发生不兼容变化。
 - **MINOR（小版本）**：其余所有面向用户的发布——新增向后兼容的用户可见能力（新增一个 `REQ-*`、新增一个筛选预设、新增一个工作台模块），以及缺陷修复、用户可感知的性能/可观测性改进，均不破坏任何既有行为。三段式里原属 PATCH 的修复类改动，在两段式下并入小版本。
 - 纯内部、用户不可观察的改动（行为保持的重构、不改变任何用户合同的内部优化）**不单独触发**应用版本变化，随下一个小版本一并发布，仅记录在 `registers/changes.jsonl`。
@@ -34,10 +34,11 @@
 
 ## 变更日志义务
 
-- 任何改变 `src/` 用户可观察行为的已接受工作项，在标记 `accepted` 前必须在 `../CHANGELOG.md` 追加一条对应条目（`[Unreleased]` 或对应版本号下），采用 Added/Changed/Fixed/Deprecated/Removed/Security 分节，并引用触发它的 `REQ-*`/`WI-*`/`ADR-*` id。
+- 变更日志的唯一位置是 `CHANGELOG.md`（与本文件同在 `loop/` 下）。它原先位于仓库根目录，为把工程治理文档收拢到 `loop/` 而迁入，根目录不再保留副本——两份并存正是此前口径漂移的来源，`tests/test_version_single_source.py` 现同时强制"新位置存在"与"根目录无残留"。
+- 任何改变 `src/` 用户可观察行为的已接受工作项，在标记 `accepted` 前必须在 `CHANGELOG.md` 追加一条对应条目（`[Unreleased]` 或对应版本号下），采用 Added/Changed/Fixed/Deprecated/Removed/Security 分节，并引用触发它的 `REQ-*`/`WI-*`/`ADR-*` id。
 - 缺少 `CHANGELOG.md` 条目的行为性变更视为 `DEFINITION_OF_DONE.md`"设计与代码"一节的缺口，工作项状态最多停在 `verifying`。
 - `CHANGELOG.md` 是面向人类的发布说明；`registers/changes.jsonl` 是机器可读、逐次追加、带 `evidence_ids` 的变更账本。两者记录同一类事实的不同粒度——一次"breaking": true 的 `changes.jsonl` 行必须对应 `CHANGELOG.md` 里同一变更的一条 Changed/Removed 记录且版本号符合上面的 MAJOR 规则；反之，`loop/` 内部文档加固可以只出现在 `changes.jsonl`（如需要）而不出现在面向用户的 `CHANGELOG.md`。
 
 ## 关联
 
-`ENGINEERING_RULES.md`（提交与跳过规则的落地参照）、`DEFINITION_OF_DONE.md`（变更日志作为完成条件的一部分）、`ADR-0009`（schema_version 版本轴）、`registers/changes.jsonl`、`../CHANGELOG.md`。
+`ENGINEERING_RULES.md`（提交与跳过规则的落地参照）、`DEFINITION_OF_DONE.md`（变更日志作为完成条件的一部分）、`ADR-0009`（schema_version 版本轴）、`registers/changes.jsonl`、`CHANGELOG.md`（本目录下）。

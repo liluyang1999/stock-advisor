@@ -21,7 +21,7 @@ import render_status  # noqa: E402
 import run_gates  # noqa: E402
 import update_state  # noqa: E402
 import validate_loop  # noqa: E402
-from _common import validate_against_schema  # noqa: E402
+from _common import dump_json, validate_against_schema  # noqa: E402
 
 
 class LoopToolingTests(unittest.TestCase):
@@ -463,6 +463,73 @@ class LoopToolingTests(unittest.TestCase):
         # a command needing a module that cannot exist degrades to SKIP, not a crash
         status, _ = run_gates.run_gate({"commands": [["python", "-m", "no_such_module_xyz"]]})
         self.assertEqual(status, "SKIP")
+
+    def test_generator_written_json_round_trips_byte_for_byte(self) -> None:
+        """`dump_json` 的排版必须与它所写文件的既有排版一致，否则任一次 `--write` 都会整文件重排。
+
+        这正是 `dump_json` 自己 docstring 主张的原则（生成器必须与文件约定一致），但此前无人
+        机器校验它：`--check` 是解析后语义比对，看不见排版。于是 `state/current.json` 长期以缩进
+        格式提交，而 `update_state.py` 一旦运行就会把它压成紧凑格式——83 行变 25 行的重排，两行
+        语义改动淹没其中，校验器还全程不报警。这条断言把「生成器 ↔ 文件」的一致性钉死。
+        """
+        for relative in ("state/backlog.json", "state/current.json"):
+            with self.subTest(relative=relative):
+                path = LOOP_ROOT / relative
+                text = path.read_text(encoding="utf-8")
+                self.assertEqual(
+                    dump_json(json.loads(text)),
+                    text,
+                    f"{relative} 的排版与 dump_json 的输出不一致：下一次 --write 会重排整个文件",
+                )
+
+    def test_control_plane_files_are_lf_so_the_digest_survives_a_fresh_checkout(self) -> None:
+        """摘要按**字节**哈希工作区文件，因此 loop/ 下不得出现 CRLF。
+
+        `.gitattributes` 已声明 `loop/** text eol=lf`：提交时归一为 LF，检出（含 CI 的干净检出）
+        也写 LF。可本项目自己的写入代码若用文本模式写文件，在 Windows 上会写出 CRLF——于是
+        「本地算出的 digest」与「CI 检出后算出的 digest」不同，G-LOOP 会在一次干净 CI 上凭空变红，
+        原因与代码质量毫无关系。这条断言把那份可复现性钉死在机器上，而不是靠人记得。
+        """
+        # 覆盖 loop/ 下**每一个**文件，包括 evidence/：digest 排除了 evidence，但每份 artifact 的
+        # sha256 同样是按字节校验的，CRLF 一样会让它在干净检出上对不上。
+        offenders = []
+        for path in sorted(LOOP_ROOT.rglob("*")):
+            if not path.is_file():
+                continue
+            relative = path.relative_to(LOOP_ROOT)
+            if "__pycache__" in relative.parts or path.suffix == ".pyc":
+                continue
+            if b"\r\n" in path.read_bytes():
+                offenders.append(relative.as_posix())
+        self.assertEqual(
+            offenders,
+            [],
+            "这些 loop/ 文件是 CRLF，会让干净检出上的 control_plane_digest 与记录值不符",
+        )
+
+    def test_run_gates_strict_treats_a_skipped_gate_as_failure(self) -> None:
+        """CI 必须用 `--strict`：工具没装成时门禁只会 SKIP，默认仍退出 0——那是**毫无根据的绿**。
+
+        本地跑（新检出、未装 pyright 之类）SKIP 是便利；CI 里每个声明过的工具都该真装上，
+        SKIP 意味着这一关根本没跑，必须让流水线红。
+        """
+        fake = {
+            "gates": [
+                {
+                    "id": "G-FAKE",
+                    "order": 1,
+                    "enabled": True,
+                    "commands": [["python", "-m", "no_such_module_xyz"]],
+                }
+            ]
+        }
+        original = run_gates.load_json
+        run_gates.load_json = lambda *args, **kwargs: fake
+        try:
+            self.assertEqual(run_gates.main([]), 0, "默认模式下 SKIP 不算失败（本地便利）")
+            self.assertEqual(run_gates.main(["--strict"]), 1, "strict 模式下 SKIP 必须让进程失败")
+        finally:
+            run_gates.load_json = original
 
     def test_run_gates_reports_pass_and_fail(self) -> None:
         ok, _ = run_gates.run_gate({"commands": [["python", "-c", "pass"]]})

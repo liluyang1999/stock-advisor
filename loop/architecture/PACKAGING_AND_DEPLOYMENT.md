@@ -38,7 +38,7 @@ PySide6 迁移是否继续 onefile 由 ADR-0004 和 HG-PACKAGING 决定；未批
 
 ## 分发安全（代码签名 / SmartScreen / Qt LGPL 归属）
 
-本节记录 Windows EXE 对外分发前必须解决的两类供应链/合规义务的**计划与归属**，不代表已经实现——当前产品仍是 Tkinter/标准库基线，尚未捆绑 Qt 二进制，提前编造签名证书细节或 NOTICE 正文内容会违反"不伪造证据"原则，因此这里只锁定目标形态、决策路径和责任工作项。
+本节记录 Windows EXE 对外分发前必须解决的两类供应链/合规义务的**计划与归属**，不代表已经实现——产品已是 PySide6 onedir 交付并捆绑 Qt 二进制（WI-024），但代码签名证书与 NOTICE 正文仍待人工发布门禁（HG-LICENSE/HG-PACKAGING/HG-RELEASE）落定；提前编造签名证书细节或 NOTICE 正文内容会违反"不伪造证据"原则，因此这里只锁定目标形态、决策路径和责任工作项。
 
 ### 代码签名与 SmartScreen 来源信誉
 

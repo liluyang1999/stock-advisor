@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from PySide6 import QtGui, QtWidgets
 
-from data.data_provider import EastmoneyProvider
+from data.bounded_adapter import BoundedMarketDataProvider
 from domain.alerts import rule_summary
 
 from .controllers.alert_controller import AlertController
@@ -123,13 +123,24 @@ class AppWindow(MainWindow):
         super().closeEvent(event)
 
 
+def default_provider() -> BoundedMarketDataProvider:
+    """出货用的行情 provider（WI-033）。
+
+    有界传输 + 老合同的适配器：整条路径由此拿到总 deadline、协作取消、响应字节上限，以及**真实的
+    分页完整度**——老 `EastmoneyProvider` 没有 `market_completeness`，`workflow._provider_completeness`
+    便默认「完整」，后续页失败时半个市场会被当作完整市场拿去排序，REQ-026 的警告永不触发。
+    """
+
+    return BoundedMarketDataProvider()
+
+
 def build_app(
     argv: list[str] | None = None, provider=None, settings=None
 ) -> tuple[QtWidgets.QApplication, AppWindow]:
     """构造完整应用（QApplication + 装好五页的主窗）。返回二元组，便于测试不进事件循环。"""
     app, shell = build_application(argv)
     shell.deleteLater()  # build_application 造的是空壳；这里换成装好页的 AppWindow
-    window = AppWindow(provider if provider is not None else EastmoneyProvider(), settings=settings)
+    window = AppWindow(provider if provider is not None else default_provider(), settings=settings)
     return app, window
 
 
