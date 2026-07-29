@@ -1,0 +1,47 @@
+EVD-LOOP-012 — control-plane re-baseline after Loop guidance-drift reconcile
+
+Base commit: 25134c6 (prior A/B/C/D/E batch committed) + dirty worktree.
+Old baseline: EVD-LOOP-011 (control_plane_sha256 4c9afc6e3022ee9f4f957e07be556867246c3c8b146116a19cccfe3c11705a22)
+              — superseded by this record.
+New control_plane_sha256: 2d8a7ccddfd24d51b4cf1892e7a8cb3523a8f7712edf2beb5f56b9529361604a
+
+SCOPE: Loop Engineering *guidance* docs only — factual staleness reconciled to the current
+PySide6 / flattened-src state. No requirement/acceptance/work-item/milestone/gate/metric structure
+was touched, so this is a digest-only re-baseline (all seven edits are Markdown prose the digest
+covers; none change any counted invariant validate_loop checks).
+
+WHAT CHANGED:
+ - governance/VERSION_AND_CHANGE_CONTROL.md: version single source `src/__init__.py` -> `src/version.py`
+   (ADR-0015 flattened the src package root; there is no top-level src/__init__.py).
+ - governance/CHARTER.md #4, loop/AGENTS.md, loop/README.md: "current implementation is still Tkinter"
+   -> PySide6 is THE production GUI (ADR-0001 migration completed by WI-023; the Tk production layer
+   was deleted; production source has zero tkinter imports, statically enforced).
+ - governance/SCOPE_AND_AUTHORITY.md item 3: the migration-transition rule ("describe as Tkinter until
+   the change lands") is marked complete — WI-023 landed it; the item is now a historical record.
+ - architecture/PACKAGING_AND_DEPLOYMENT.md: "product is still Tkinter/stdlib, Qt not yet bundled"
+   -> the product is PySide6 onedir and bundles Qt (WI-024); only code-signing + the NOTICE body still
+   await the human release gates (HG-LICENSE/HG-PACKAGING/HG-RELEASE).
+ - quality/TOOLCHAIN_BASELINE.md: the Test-runner note is refreshed — the legacy Tk GUI suite
+   (tests/test_gui_layout.py) was deleted together with the Tk layer (WI-023), so its pytest flakiness
+   no longer exists; the now-moot "add a pytest conftest Tk-lifecycle fixture" fast-follow was removed;
+   unittest stays the authoritative gate runner because run_gates.py and CI are written against it.
+
+NOT CHANGED (verified deliberately):
+ - loop/CHANGELOG.md left as-is: its [1.0]-2026-07-11 entry correctly records the then-current
+   Tkinter / onefile-EXE / src/stock_advisor baseline; editing a dated history entry would falsify it.
+   It is redundant with the authoritative root ../CHANGELOG.md and is flagged to the owner for a
+   consolidation/removal decision rather than half-edited here.
+ - Correct historical / target-framing references were left untouched: the history-rewrite sha-map,
+   the "replicate the pre-WI-023 Tkinter visual baseline" notes (WI-035, tokens.json, UI_DESIGN_SYSTEM),
+   forbidden_import_roots including "tkinter" (a guard, not a claim), and AC-001 "production no longer
+   imports Tkinter" (a satisfied target).
+
+VERIFICATION (this session, machine):
+ - python loop/scripts/validate_loop.py            -> LOOP_VALIDATION_OK
+ - QT_QPA_PLATFORM=offscreen python loop/scripts/run_gates.py -> RUN_GATES_OK ran=8 failed=0
+ - product suite + coverage unchanged from EVD-LOOP-011 (853 green, stmt 95.82% / branch 90.96%);
+   no src/ or tests/ files changed by this re-baseline.
+
+INDEPENDENCE CAVEAT: implemented and machine-verified within the same session; verified_by is the
+machine gate suite (run_gates.py), not an independent human reviewer. Human sign-off is still required
+to close WI-025 / WI-035 at release (see RELEASE_READINESS.md human gates).

@@ -1,0 +1,78 @@
+EVD-NET-004 — the shipping app now runs on the bounded transport (WI-033)
+
+WHAT THIS CLOSES
+----------------
+WI-026 built and proved `BoundedUrllibProvider` (28 offline fault cases, EVD-NET-003), but the app
+kept injecting the legacy `EastmoneyProvider`: the total deadline, the response byte cap and the
+paging-completeness report existed only inside the adapter and reached no user. This record covers
+the cutover.
+
+The user-facing defect that motivated it: `workflow._provider_completeness` duck-types
+`market_completeness()` off the provider and treats "method absent" as fully complete.
+`EastmoneyProvider` has no such method and `_fetch_clist_all_pages` `break`s on any later-page
+failure, returning the partial rows. So on a flaky network the screener ranked a TRUNCATED market
+while `ScreenReport.completeness.is_complete` stayed True — REQ-026's "非全市场结果" warning could
+never fire in a shipped build. Users believed they were screening the whole market.
+
+WHAT CHANGED
+------------
+- NEW `src/data/bounded_adapter.py::BoundedMarketDataProvider` — wraps `BoundedUrllibProvider` and
+  re-exposes the contract the orchestration already speaks (return data, or raise `MarketDataError`).
+  It records the completeness of the last SUCCESSFUL market snapshot and answers
+  `market_completeness()`, which is exactly the hook `workflow._provider_completeness` looks for.
+  Failure envelopes are translated to raises — never to empty lists or zero values, so REQ-024's
+  zero-fabrication property is preserved by construction (a failed envelope structurally has no data).
+- `src/qt_app/app.py` — new `default_provider()` returns the bounded provider; `build_app` uses it
+  instead of `EastmoneyProvider()`. Extracted as a named function so the shipped contract is
+  assertable without poking controller internals.
+- `EastmoneyProvider` is NOT deleted: it remains the home of the `parse_*` pure functions that
+  `bounded_transport` itself imports, and keeps its own test suite. It is simply no longer shipped.
+
+WHAT THE USER GETS
+------------------
+- Partial market is now reported as partial: missing page numbers, received vs expected.
+- One total deadline (20 s) covers all retries and fallback sources. Previously each source got a
+  fresh budget: a history fetch could walk 4 sources x 3 retries x 8 s ~= 100 s, which is why
+  cancelling or closing the window could leave the UI unresponsive for a minute or more.
+- Response bodies are read under a byte ceiling.
+
+TDD
+---
+13 new tests in `tests/test_bounded_adapter.py`, written before the module existed (the first run
+failed with ModuleNotFoundError):
+  * envelope unwrapping returns the payload, not the envelope;
+  * every fetch_* raises `MarketDataError` when all sources fail — quote / history / fund-flow /
+    snapshot, plus the message surviving into the exception (no silent empty results);
+  * completeness: default-complete before any snapshot, complete on a full pull, INCOMPLETE with
+    `missing_pages=(2,)`, `expected=4`, `received=2` on a truncated pull, and a later full pull
+    clearing the stale incomplete state;
+  * a cancelled token makes the fetch raise instead of returning data, and clearing it restores
+    normal fetching.
+Plus 1 assembly test (`tests/test_qt_app_assembly.py`) asserting the SHIPPED provider exposes the
+four fetch ports, `market_completeness()` returning a `Completeness`, and `set_cancel_token`. That
+test failed with ImportError before `default_provider` existed.
+
+DELIBERATELY NOT DONE (and why)
+-------------------------------
+1. Controllers still consume raise/return, not `TransportOutcome` directly. WI-033's DoD asks for
+   envelope consumption in the orchestration; this record delivers the DoD's user-visible OUTCOME
+   (completeness visible, bounded transport live, behaviour otherwise unchanged) through an adapter
+   instead. The remaining half is a refactor of five controllers plus `services.workflow`, and is
+   left tracked rather than silently claimed.
+2. In-flight cancellation is NOT wired into the app, although the adapter supports and tests
+   `set_cancel_token`. One `BoundedMarketDataProvider` instance is shared by all five controllers,
+   so a single mutable cancel token would let the analysis page's cancel abort the alert monitor's
+   in-flight poll — worse than not having it. Doing it correctly needs a provider instance per
+   controller, i.e. a change to `AppWindow`'s injection contract. The 20 s total deadline already
+   bounds the teardown case that motivated it (~100 s -> <=20 s).
+
+VERIFICATION
+------------
+  python -m unittest discover -s tests        -> Ran 868 tests, OK   (was 854; +14)
+  python -m unittest discover -s loop/tests   -> Ran 59 tests, OK
+  python loop/scripts/run_gates.py --strict   -> RUN_GATES_OK ran=8 failed=0 skipped=0
+  python main.py --self-test                  -> SELF_TEST_OK checks=8/8, exit 0
+  Offline throughout: the adapter tests inject a scripted opener (no real network), reusing the
+  fixtures WI-026 built for the fault matrix.
+
+Environment: Windows 11 AMD64 / CPython 3.14.4 / PySide6-Essentials 6.11.1 / dirty worktree.

@@ -1,0 +1,139 @@
+EVD-LOOP-013 — control-plane re-baseline after CHANGELOG consolidation + CI strict-mode fix
+
+Base commit: 25134c6 (prior batch committed) + dirty worktree.
+Old baseline: EVD-LOOP-012 (control_plane_sha256 2d8a7ccddfd24d51b4cf1892e7a8cb3523a8f7712edf2beb5f56b9529361604a)
+              — superseded by this record.
+New control_plane_sha256: 5a12cb17ca28e029177035e9d82ea973d77d79928d7c28a377b78bea00547534
+
+SCOPE: two owner-requested changes plus the machine enforcement each one needs.
+  (1) The user-facing changelog is consolidated into loop/ and the root copy is removed.
+  (2) The GitHub CI workflow is audited and corrected — including one real defect that would have
+      let the pipeline go green without running a gate.
+
+WHAT CHANGED
+------------
+1. CHANGELOG consolidation (owner decision)
+   - loop/CHANGELOG.md is now the single user-facing changelog. It merges the (richer, current)
+     root CHANGELOG.md into the (older, thinner) loop copy: the full 1.0 Added/Changed/Fixed/Security
+     body, the [Unreleased] entries from this session, plus the loop copy's unique "基线追溯注记"
+     about how 1.0 was retro-recorded. Stale paths fixed in the merge: `src/stock_advisor/` -> `src/`,
+     `build_exe.py` -> `scripts/build_exe.py`, version source -> `src/version.py`.
+   - Root CHANGELOG.md DELETED (git rm). Two copies of the same changelog is exactly the drift
+     source this consolidation removes.
+   - Machine enforcement MOVED, not dropped — this is the part that makes the deletion safe:
+     tests/test_version_single_source.py::ChangelogTests now points at loop/CHANGELOG.md, and a new
+     test_no_stray_changelog_at_repository_root asserts the root copy does NOT come back. Watched
+     both directions: after `git rm` the old assertions failed (FileNotFoundError on the root path),
+     after re-pointing they pass. 10 tests in that module (was 9).
+   - governance/VERSION_AND_CHANGE_CONTROL.md updated: the changelog obligation now names
+     `CHANGELOG.md` in this directory (was `../CHANGELOG.md`), states the single-location rule and
+     that both "new location exists" and "no root remnant" are machine-enforced.
+   - Deliberately NOT touched: decisions/0015 line 45 and governance/HISTORY_REWRITE.md line 44
+     mention CHANGELOG as a *historical* record of what a past rewrite touched. Rewriting history
+     records to match today's layout would falsify them.
+
+2. CI logic audit and fix (.github/workflows/ci.yml — outside loop/, so not in this digest, but
+   recorded here because the gate-runner change it depends on IS in the digest)
+   - REAL DEFECT FIXED: run_gates.py degrades a missing tool to SKIP and still exits 0. In CI that
+     is an unearned green — a pyright that failed to install makes G-TYPE silently vanish while the
+     pipeline passes. Added `--strict`, which counts SKIP as failure; CI now runs
+     `run_gates.py --strict`. TDD: the new loop test asserted main([]) == 0 and main(["--strict"])
+     == 1 on a synthetic always-SKIP gate; it failed with "unrecognized arguments: --strict" and the
+     telling stdout `RUN_GATES_OK ran=1 failed=0 skipped=1` before the flag existed.
+   - Stale comment removed: the header claimed "There is no git remote yet; this workflow activates
+     the moment the repository is pushed to GitHub." The remote now exists
+     (github.com/liluyang1999/stock-advisor) and main is pushed, so CI runs for real.
+   - timeout-minutes: 30 added — a hung job otherwise burns to the 6-hour default.
+   - concurrency group with cancel-in-progress — a newer push obsoletes the in-flight run.
+   - permissions: contents: read — least privilege for GITHUB_TOKEN.
+   - pip caching via setup-python (cache-dependency-path: pyproject.toml).
+   - The duplicated test steps (Product tests / Loop tests / Self-test also run inside G-CORE and
+     G-LOOP) are KEPT ON PURPOSE and now say so in a comment: run_gates.py reports only the last
+     three lines of a failing command, so the explicit steps are what put a full traceback in the CI
+     log. The comment warns future readers not to "optimise" them away without replacing that
+     diagnostic. Cost is about one minute per run.
+   - quality/TOOLCHAIN_BASELINE.md documents the --strict requirement next to the enforced-gates
+     table.
+
+3. loop/scripts/run_gates.py — `--strict` flag + docstring note (see above).
+4. loop/tests/test_loop_tooling.py — the new strict-mode test (57 tests, was 56).
+
+NOT CHANGED (verified deliberately)
+-----------------------------------
+- No requirement / acceptance / work-item / milestone / gate-definition / metric structure touched.
+  This is a digest re-baseline over prose + one additive CLI flag; validate_loop's counted
+  invariants are unchanged (json=55, schemas=23, jsonl=86, requirements=34, acceptance=16,
+  work_items=35).
+- Release readiness NOT advanced: the three human gates (HG-LICENSE / HG-PACKAGING / HG-RELEASE)
+  remain unsigned and release.ready stays false. A CI improvement is not a release decision.
+- Storage-path sweep re-checked, not assumed: a fresh grep over loop/ finds NO stale
+  `%APPDATA%\股市锦囊` path left. The only occurrence is loop/CHANGELOG.md's own entry describing
+  the rename ("由 %APPDATA%\股市锦囊\ 改为 %APPDATA%\StockAdvisor\"), which must name the old path
+  to be intelligible. The sweep was completed by EVD-LOOP-009/011; nothing new was needed here.
+  (An earlier draft of this artifact claimed 3 stale mentions remained — that was wrong and is
+  corrected here rather than left to mislead a future reader.)
+
+VERIFICATION
+------------
+Before re-baselining, the gate runner correctly refused the edited tree:
+  G-LOOP FAIL — "EVD-LOOP-012 control-plane digest differs from the current tree" +
+  "no live v2 baseline evidence matches the current control plane"; the other 7 gates PASS.
+  loop unittest: 11 failures, all digest-derived.
+That is the control plane working as designed, and it is why this record exists.
+
+After this record is registered (see the run recorded alongside it):
+  validate_loop -> LOOP_VALIDATION_OK
+  run_gates.py --strict -> RUN_GATES_OK ran=8 failed=0 skipped=0
+  product unittest -> 854 tests OK   (was 853; +1 = the no-stray-changelog test)
+  loop unittest    -> 59 tests OK    (was 56; +3 = strict-mode, LF-invariant, json-format tests)
+  main.py --self-test -> SELF_TEST_OK checks=8/8, exit 0
+  CI command sequence simulated locally step by step, in the workflow's own order.
+
+COUNT RECONCILE (same batch)
+---------------------------
+The two tests added here moved the real suites to 854 product / 57 loop-tooling, so
+state/metrics.json was updated to match (tests.methods/passed 853->854, control_plane
+tool_tests_total/passed 56->57, duration_seconds refreshed to the measured value). This is the
+count anchors in loop/tests/test_loop_tooling.py doing their job -- they were added earlier
+precisely so a recorded count could never drift silently again (it once sat at 814 while the
+suite had grown well past it). metrics.json is inside the digest, so the
+control_plane_sha256 recorded above is the value computed AFTER this reconcile.
+state/current.json's quality_summary carries the same counts and validate_loop cross-checks
+the two, so both were moved together (tests_total/tests_passed 853->854).
+
+LINE-ENDING NORMALISATION (CI-breaking defect found and fixed here)
+-------------------------------------------------------------------
+.gitattributes declares `loop/** text eol=lf` precisely so control_plane_digest() is
+reproducible across checkouts, but loop/scripts/_common.py::atomic_write_json and
+render_status.py --write used text mode, which on Windows writes CRLF. Every hash recorded
+from this worktree therefore encoded CRLF while git stores LF, so a clean checkout (i.e.
+the first real CI run) would have failed twice over:
+  * control_plane_digest over LF bytes = 4d58c4ff... vs the CRLF value recorded, and
+  * 33 evidence artifacts failing their recorded sha256.
+Proven, not assumed: `git show HEAD:<artifact>` bytes hash to a different value than the
+worktree bytes, and the recorded sha256 matched the worktree (CRLF) one.
+Fixed by (a) passing newline="\n" in both writers, (b) normalising every loop/ file to LF
+so the worktree equals git's canonical form, (c) recomputing the affected hashes, and
+(d) a new loop test that fails if any loop/ file ever contains CRLF again. Artifact content
+is unchanged — only line endings, which git normalises anyway — so this corrects a recording
+error rather than rewriting evidence.
+
+JSON FORMAT UNIFIED (generator now matches the files it writes)
+---------------------------------------------------------------
+`dump_json` wrote "one line per top-level key, compact values" and justified it with "state/*.json
+are all hand-written in that shape". That premise was false: `atomic_write_json` only ever writes
+state/backlog.json and state/current.json, and current.json — like every large human-reviewed
+control file (work-items.json 1169 lines, quality-gates.json 363, capability-surface.json 202,
+tokens.json 317) — is indented. So the next `update_state.py --write` would have flattened
+current.json 83 -> 25 lines, burying a two-line semantic change, and `--check` (semantic compare)
+would never have warned. The compact shape also puts a whole array on one line, so appending one
+evidence record rewrites that entire line — the worst possible diff granularity.
+
+Fixed by making `dump_json` emit `indent=2` + trailing newline (the majority convention) and
+reformatting state/backlog.json once (9 -> 51 lines, nested arrays now expand). The schemas/ and
+templates/ files keep their compact shape — they are static and never pass through this function.
+`test_generator_written_json_round_trips_byte_for_byte` now asserts, for every file the generator
+writes, that re-serialising its content reproduces it byte for byte; it failed on current.json
+before the change and passes after, so generator/file agreement can no longer drift unnoticed.
+
+Environment: Windows 11 AMD64 / CPython 3.14.4 / PySide6-Essentials 6.11.1 / dirty worktree.
