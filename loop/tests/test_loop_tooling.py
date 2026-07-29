@@ -21,7 +21,7 @@ import render_status  # noqa: E402
 import run_gates  # noqa: E402
 import update_state  # noqa: E402
 import validate_loop  # noqa: E402
-from _common import dump_json, validate_against_schema  # noqa: E402
+from _common import canonical_hash_bytes, dump_json, validate_against_schema  # noqa: E402
 
 
 class LoopToolingTests(unittest.TestCase):
@@ -506,6 +506,24 @@ class LoopToolingTests(unittest.TestCase):
             [],
             "这些 loop/ 文件是 CRLF，会让干净检出上的 control_plane_digest 与记录值不符",
         )
+
+        with tempfile.TemporaryDirectory() as directory:
+            text_path = Path(directory) / "artifact.txt"
+            text_path.write_bytes(b"line-1\r\nline-2\r\n")
+            self.assertEqual(canonical_hash_bytes(text_path), b"line-1\nline-2\n")
+            text_path.write_bytes(b"line-1\nline-2\n")
+            self.assertEqual(canonical_hash_bytes(text_path), b"line-1\nline-2\n")
+            text_path.write_bytes(b"line-1\r\nline-2\nline-3\r\n")
+            self.assertEqual(canonical_hash_bytes(text_path), b"line-1\nline-2\nline-3\n")
+            text_path.write_bytes(b"line-1\rline-2\r")
+            self.assertEqual(canonical_hash_bytes(text_path), b"line-1\nline-2\n")
+            text_path.write_bytes(b"a\r\n\rb")
+            self.assertEqual(canonical_hash_bytes(text_path), b"a\n\nb")
+
+            binary_path = Path(directory) / "artifact.bin"
+            binary_bytes = b"\x00PNG\r\n\x1a\n"
+            binary_path.write_bytes(binary_bytes)
+            self.assertEqual(canonical_hash_bytes(binary_path), binary_bytes)
 
     def test_run_gates_strict_treats_a_skipped_gate_as_failure(self) -> None:
         """CI 必须用 `--strict`：工具没装成时门禁只会 SKIP，默认仍退出 0——那是**毫无根据的绿**。

@@ -8,6 +8,7 @@ from typing import Any
 
 LOOP_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = LOOP_ROOT.parent
+_TEXT_HASH_SUFFIXES = {".csv", ".json", ".jsonl", ".md", ".py", ".txt", ".yml", ".yaml"}
 
 
 def load_json(relative: str) -> Any:
@@ -57,6 +58,19 @@ def parse_jsonl(path: Path) -> list[dict[str, Any]]:
     return records
 
 
+def canonical_hash_bytes(path: Path) -> bytes:
+    """Return bytes normalized for deterministic text hashing across platforms.
+
+    Text-like suffixes are normalized to LF so a clean Windows checkout hashes the same bytes as
+    Linux/macOS. Other suffixes are treated as binary and their original bytes are returned
+    unmodified.
+    """
+    data = path.read_bytes()
+    if path.suffix.lower() in _TEXT_HASH_SUFFIXES:
+        return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return data
+
+
 def control_plane_digest() -> str:
     """Hash authoritative control files while excluding self-referential evidence storage."""
 
@@ -73,7 +87,7 @@ def control_plane_digest() -> str:
             continue
         digest.update(relative.as_posix().encode("utf-8"))
         digest.update(b"\0")
-        digest.update(path.read_bytes())
+        digest.update(canonical_hash_bytes(path))
         digest.update(b"\0")
     return digest.hexdigest()
 

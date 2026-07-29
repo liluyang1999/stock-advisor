@@ -64,7 +64,7 @@ def _tool_available(tool: tuple[str, str]) -> bool:
     if kind == "module":
         try:
             return importlib.util.find_spec(name) is not None
-        except ImportError, ValueError:
+        except (ImportError, ValueError):
             return False
     return shutil.which(name) is not None
 

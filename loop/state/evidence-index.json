@@ -1092,7 +1092,7 @@
       "exit_code": 0,
       "artifact_path": "evidence/baselines/EVD-LOOP-013-changelog-consolidation-and-ci-strict-rebaseline.txt",
       "sha256": "10edbabdab91291fb08b9e3ed47cda07a9b64600c832113ffd62f0e418c7eeee",
-      "control_plane_sha256": "5a12cb17ca28e029177035e9d82ea973d77d79928d7c28a377b78bea00547534",
+      "control_plane_sha256": "b6c897592105c570f2eafc299f7d216bdcec2328c999e0c2f293e0147a70cf9e",
       "commit": "25134c6235718cc859554253530b78bfe9847d22",
       "dirty_worktree": true,
       "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",

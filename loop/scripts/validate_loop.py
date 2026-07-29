@@ -7,7 +7,14 @@ import re
 import sys
 from typing import Any
 
-from _common import LOOP_ROOT, control_plane_digest, load_json, parse_jsonl, validate_against_schema
+from _common import (
+    LOOP_ROOT,
+    canonical_hash_bytes,
+    control_plane_digest,
+    load_json,
+    parse_jsonl,
+    validate_against_schema,
+)
 
 REQUIRED_FILES = (
     "AGENTS.md",
@@ -331,7 +338,7 @@ def validate() -> list[str]:
             continue
         try:
             payload = load_json(relative)
-        except OSError, json.JSONDecodeError:
+        except (OSError, json.JSONDecodeError):
             continue
         if not isinstance(payload, dict):
             errors.append(f"{relative} must contain an object")
@@ -525,7 +532,7 @@ def validate() -> list[str]:
         if not artifact.is_file():
             errors.append(f"{record.get('id')} artifact missing: {record.get('artifact_path')}")
         elif record.get("sha256"):
-            actual_hash = hashlib.sha256(artifact.read_bytes()).hexdigest()
+            actual_hash = hashlib.sha256(canonical_hash_bytes(artifact)).hexdigest()
             if actual_hash.lower() != str(record["sha256"]).lower():
                 errors.append(f"{record.get('id')} artifact hash mismatch")
         if record.get("work_item_id") not in work_items:
