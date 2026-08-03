@@ -16,8 +16,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 
-from domain.input_validate import is_partial_number, validate_tunable
-from domain.presets import get_preset
 from ui.theme import (  # noqa: E402
     ACCENT,
     CARD_BG,
@@ -109,62 +107,6 @@ class FactorColorTests(unittest.TestCase):
     def test_section_title_and_headline_keep_their_styles(self):
         self.assertEqual(detail_line_tags("判断拆解", False), ("section",))
         self.assertEqual(detail_line_tags("SH.600519 离线样例", True), ("headline",))
-
-
-class PartialNumberValidationTests(unittest.TestCase):
-    def test_allows_building_a_positive_decimal(self):
-        for text in ("", "1", "12", "12.", "12.5", ".5"):
-            self.assertTrue(is_partial_number(text, allow_negative=False), text)
-
-    def test_allows_negative_when_permitted(self):
-        for text in ("-", "-1", "-1.5"):
-            self.assertTrue(is_partial_number(text, allow_negative=True), text)
-
-    def test_rejects_negative_when_not_permitted(self):
-        self.assertFalse(is_partial_number("-1", allow_negative=False))
-        self.assertFalse(is_partial_number("-", allow_negative=False))
-
-    def test_rejects_non_numeric_and_malformed(self):
-        for text in ("abc", "1a", "1.2.3", "+1", "1,2", "1 2"):
-            self.assertFalse(is_partial_number(text, allow_negative=True), text)
-
-
-class ValidateTunableTests(unittest.TestCase):
-    def test_accepts_value_inside_range(self):
-        self.assertEqual(validate_tunable("推荐数量", "20", 5, 30), 20.0)
-
-    def test_rejects_blank_with_helpful_message(self):
-        with self.assertRaises(ValueError) as ctx:
-            validate_tunable("推荐数量", "   ", 5, 30)
-        self.assertIn("不能为空", str(ctx.exception))
-        self.assertIn("5", str(ctx.exception))
-        self.assertIn("30", str(ctx.exception))
-
-    def test_rejects_non_numeric(self):
-        with self.assertRaises(ValueError) as ctx:
-            validate_tunable("量比下限", "abc", 0.5, 5.0)
-        self.assertIn("数字", str(ctx.exception))
-
-    def test_rejects_non_finite_numeric_text(self):
-        for raw in ("NaN", "Infinity", "-Infinity"):
-            with self.subTest(raw=raw):
-                with self.assertRaises(ValueError) as ctx:
-                    validate_tunable("推荐数量", raw, 5, 30)
-                self.assertIn("数字", str(ctx.exception))
-
-    def test_rejects_below_minimum(self):
-        with self.assertRaises(ValueError) as ctx:
-            validate_tunable("推荐数量", "4", 5, 30)
-        self.assertIn("5", str(ctx.exception))
-
-    def test_rejects_above_maximum(self):
-        with self.assertRaises(ValueError) as ctx:
-            validate_tunable("推荐数量", "31", 5, 30)
-        self.assertIn("30", str(ctx.exception))
-
-    def test_recommendation_count_bounds_are_five_to_thirty(self):
-        top_n = next(p for p in get_preset("momentum_strong").tunables if p.key == "top_n")
-        self.assertEqual((top_n.minimum, top_n.maximum), (5, 30))
 
 
 if __name__ == "__main__":

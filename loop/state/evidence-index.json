@@ -1091,8 +1091,8 @@
       "cwd": "D:/Projects/stock-advisor",
       "exit_code": 0,
       "artifact_path": "evidence/baselines/EVD-LOOP-013-changelog-consolidation-and-ci-strict-rebaseline.txt",
-      "sha256": "10edbabdab91291fb08b9e3ed47cda07a9b64600c832113ffd62f0e418c7eeee",
-      "control_plane_sha256": "5a12cb17ca28e029177035e9d82ea973d77d79928d7c28a377b78bea00547534",
+      "sha256": "7bdf691002956f0a5a8fa844331e6a072408fdd719402c9976db34c340ba5c91",
+      "control_plane_sha256": "9e4e2ce174ce0edf366aeae77ad745272c052fa68de237324a167950ccd23abd",
       "commit": "25134c6235718cc859554253530b78bfe9847d22",
       "dirty_worktree": true,
       "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",
@@ -1124,6 +1124,100 @@
       "summary": "WI-033: the shipping app now injects BoundedMarketDataProvider (adapter over BoundedUrllibProvider) instead of the legacy EastmoneyProvider, so the total deadline, response byte cap and real paging completeness finally reach users. The motivating defect: workflow._provider_completeness duck-types market_completeness() and treats 'absent' as complete, while EastmoneyProvider has no such method and breaks out of paging on any later-page failure -- so a flaky network made the screener rank a TRUNCATED market while reporting it complete, and REQ-026's warning could never fire in a shipped build. 13 adapter tests written first (initial run: ModuleNotFoundError) cover envelope unwrapping, raise-on-failure for all four ports (zero fabrication), completeness incl. missing_pages=(2,) expected=4 received=2 on a truncated pull and stale-state clearing, and cancellation; 1 assembly test pins the shipped provider's contract (failed with ImportError before default_provider existed). NOT done and left tracked rather than claimed: controllers still consume raise/return rather than TransportOutcome, and in-flight cancellation is unwired because one shared provider instance would let one controller's cancel abort another's poll -- the 20s total deadline already bounds the ~100s teardown that motivated it. 868 product tests OK, 59 loop, gates 8/8 strict, self-test 8/8.",
       "implemented_by": "wi-033-bounded-transport-cutover",
       "verified_by": "python -m unittest discover -s tests + run_gates.py --strict (machine gate suite; no independent human review -- see artifact)"
+    },
+    {
+      "id": "EVD-NET-005",
+      "requirement_ids": [
+        "REQ-013",
+        "REQ-025"
+      ],
+      "acceptance_ids": [
+        "AC-006"
+      ],
+      "work_item_id": "WI-033",
+      "type": "network",
+      "command": "python -m unittest discover -s tests && python loop/scripts/run_gates.py --strict",
+      "artifact_path": "evidence/baselines/EVD-NET-005-inflight-cancellation.txt",
+      "finished_at": "2026-07-30T19:20:00+09:00",
+      "summary": "在途取消接线完成 WI-033 的一半残余。EVD-NET-004 装上了有界 provider 但没人调用 set_cancel_token，取消仍只在两次取数之间被检查；直接接上又会踩到 AppWindow 把同一个 provider 实例交给五个控制器的问题——provider 的取消令牌是单一可变状态，个股页按「停止」会连带翻掉预警轮询与选股在途请求的令牌。故连同所有权一起改：AppWindow 改用 provider_factory，出货路径下每控制器各持一份自己的 provider；WorkerControllerBase._begin() 把本轮 ManualCancel 绑到自己的 provider；AlertController 不是该基类子类，单独接同一件事，否则关窗时 waitForDone 要等在途轮询跑满总 deadline。四条断言先红后绿（含「出货装配下五个控制器各有独立 provider」由 1 != 5 转绿）。残余如实记账：控制器仍未直接消费 TransportOutcome（WI-033 保持 verifying），supersede 时旧请求不保证被打断（由世代守卫与 20 s 总 deadline 兜底，不比改动前差；「停止」与关窗两个真实场景都能打断）。",
+      "verified_by": "root",
+      "sha256": "0f144c247a3fc2c366b8f11c4946052ac7bb720d487ffe62c6b896b6f9d802dd",
+      "cwd": "D:/Projects/stock-advisor",
+      "exit_code": 0,
+      "commit": "bbd31cbb5881b966d354de13ce5cebea7bd6bf94",
+      "environment": "Windows 11 AMD64 / CPython 3.14.4 / PySide6-Essentials 6.11.1",
+      "started_at": null
+    },
+    {
+      "id": "EVD-TRACE-002",
+      "requirement_ids": [
+        "REQ-020",
+        "REQ-027"
+      ],
+      "acceptance_ids": [
+        "AC-008"
+      ],
+      "work_item_id": "WI-032",
+      "type": "traceability",
+      "command": "grep 逐条核查支撑函数的生产调用方 && python -m unittest discover -s tests",
+      "artifact_path": "evidence/baselines/EVD-TRACE-002-tk-contract-adjudication.txt",
+      "finished_at": "2026-07-30T19:25:00+09:00",
+      "summary": "WI-032 的 24 条 pure_preserved 契约逐条按「src/ 里还有没有活的调用方」机器核查后裁定：formatting 6 条维持 pure_preserved（detail_line_tags 仍被 detail_view/screener_page 调用）；layout 5 条转 approved_retired（支撑函数随 ui/layout.py 删除，零引用）；mode-dispatch 2 条转 qt_replaced（行为仍在 AppWindow.run_active_tab 且有 Qt 用例）；input-validation 11 条转 qt_replaced。裁定过程发现这 11 条的支撑函数无人调用**不是因为过时**，而是 Qt 页面各写了一份更弱的本地副本，并因此揪出两个真实缺陷：portfolio_page._optional_int 漏捕 OverflowError，持仓股数填 inf 抛未捕获异常（实测复现）；alerts_page._optional_float 少 isfinite 检查，阈值填 inf 会建出一条静默永不触发的规则。故正解是把页面接到域实现（两缺陷消失、重复消失、input_validate 由死模块变回活模块，核心清单仍 12 模块），三个解析器转为公开 API；真正被 QDoubleSpinBox 取代的 is_partial_number/validate_tunable 连同其 11 条单测删除，并补上 Qt 侧替代断言（范围钳制、top_n 5..30），否则改标签只是换个说法。mapping 现为 169/12/6。",
+      "verified_by": "root",
+      "sha256": "bb7326be8b3812f10059450038ea9431583cd90fca69f92680219f5b440baaab",
+      "cwd": "D:/Projects/stock-advisor",
+      "exit_code": 0,
+      "commit": "bbd31cbb5881b966d354de13ce5cebea7bd6bf94",
+      "environment": "Windows 11 AMD64 / CPython 3.14.4 / PySide6-Essentials 6.11.1",
+      "started_at": null
+    },
+    {
+      "id": "EVD-REL-003",
+      "requirement_ids": [
+        "REQ-029",
+        "REQ-030"
+      ],
+      "acceptance_ids": [
+        "AC-009",
+        "AC-010"
+      ],
+      "work_item_id": "WI-025",
+      "type": "release",
+      "command": "python scripts/build_exe.py && dist/股市锦囊/股市锦囊.exe --self-test && python scripts/make_release_manifest.py && python scripts/make_release_manifest.py --verify",
+      "artifact_path": "evidence/baselines/EVD-REL-003-build-and-delivery-verification.txt",
+      "finished_at": "2026-07-30T19:30:00+09:00",
+      "summary": "真实打包与交付物验证，五步全部退出 0：干净构建产出 dist/股市锦囊/股市锦囊.exe 2.4 MiB + 应用目录 100.7 MiB（onedir，ADR-0004）与使用说明.html；打包后的 EXE --self-test 打印 SELF_TEST_OK checks=8/8；无参启动存活满 8 s，证明出货件能真正开窗而不是只有自检能跑；make_release_manifest 产出 SBOM(2 组件)/NOTICES/licenses(2)/204 文件清单并 RELEASE_MANIFEST_OK；--verify 得 RELEASE_VERIFY_OK files=204 version=1.0。EVD-REL-001 当初故意以退出码 1 收尾只因 licenses/GPL-3.0.txt 缺失，该文件现已存在，这一步不再被卡住。仍未完成的是三个人工门禁签署（HG-LICENSE/PACKAGING/RELEASE），release.ready 保持 false——自行翻这些标志等于伪造发布批准，故不做；五连绿证据 EVD-REL-002 记的是 ran=7 旧门禁集，重记属发布流程动作。",
+      "verified_by": "root",
+      "sha256": "db9cdab67ae9488d40714f2dd39fc6c1ca2e4951edb057be66360bc8ab972a49",
+      "cwd": "D:/Projects/stock-advisor",
+      "exit_code": 0,
+      "commit": "bbd31cbb5881b966d354de13ce5cebea7bd6bf94",
+      "environment": "Windows 11 AMD64 / CPython 3.14.4 / PySide6-Essentials 6.11.1",
+      "started_at": null
+    },
+    {
+      "id": "EVD-NET-006",
+      "requirement_ids": [
+        "REQ-024",
+        "REQ-025",
+        "REQ-026"
+      ],
+      "acceptance_ids": [
+        "AC-006"
+      ],
+      "work_item_id": "WI-033",
+      "type": "network",
+      "command": "python -m unittest discover -s tests && python loop/scripts/run_gates.py --strict",
+      "cwd": "D:/Projects/stock-advisor",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-NET-006-envelope-native-orchestration.txt",
+      "sha256": "27854e9bbbac9d51eff084c384042cc44d2e8005533f811c943b5771c5c7659c",
+      "commit": "bbd31cbb5881b966d354de13ce5cebea7bd6bf94",
+      "environment": "Windows 11 AMD64 / CPython 3.14.4 / PySide6-Essentials 6.11.1",
+      "started_at": null,
+      "finished_at": "2026-07-30T20:10:00+09:00",
+      "summary": "WI-033 的 DoD 收尾：编排层原生消费 TransportOutcome。新增 _fetch_outcome 作为唯一路径——provider 有 <name>_outcome 就用其 envelope，老式 provider/测试替身按异常包成等价失败信封，因此不改 Protocol、不动任何 FakeProvider。收益可断言：error_class 不再靠 isinstance(exc, MarketDataError) 二选一反推（parse 记 parse、network 记 network）；取消与失败可区分，ScreenReport.cancelled 此前恒为 False，现在取消的全市场抓取如实标记；完整度优先取 envelope 自带的那份，老式 provider 退回 duck-typed 取法以保持向后兼容。六条断言先红后绿。过程中既有契约测试抓到我一处行为削弱并已纠正：最初的 data is not None 兜底会把「取数成功却返回 None」这种 provider 违约静默降级，而既有契约要求它冒泡成分析计算失败——改回只在 envelope 失败时降级。Qt 控制器仍消费编排层结果对象（分层刻意如此），services/fund_flow.py 仍按异常处理（它本就把成败收敛成可展示结果，且是降级安全的旁路）。",
+      "verified_by": "root"
     }
   ]
 }

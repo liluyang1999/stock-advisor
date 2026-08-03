@@ -1,0 +1,45 @@
+EVD-NET-005 — 在途取消接线（WI-033 的剩余项之一）
+
+命令: python -m unittest discover -s tests  (868 OK)
+      python -m pytest tests/test_qt_cancel_propagation.py   (4 OK)
+      python loop/scripts/run_gates.py --strict
+环境: Windows 11 AMD64 / CPython 3.14.4 / PySide6-Essentials 6.11.1
+
+问题
+----
+EVD-NET-004 把出货 provider 换成有界传输后，`set_cancel_token` 已经存在，但没有任何地方调用它：
+取消依旧只在编排层的两次取数**之间**被检查，一条最坏 20 s 的取数链（多源重试共用总 deadline）
+无论如何都要跑完，用户按「停止」或关窗时界面看起来没有反应。
+
+当时没有顺手接上，是因为一接就会踩到另一个问题：`AppWindow` 把**同一个 provider 实例**交给五个
+控制器，而 provider 的取消令牌是单一可变状态。个股页按「停止」会把预警轮询与选股在途请求的令牌
+一起翻掉——比不接更糟。所以这一步必须连同 provider 的所有权一起改。
+
+做法
+----
+1. `WorkerControllerBase._begin()` 新增 `_bind_cancel_to_provider()`：开一轮时把本轮的 `ManualCancel`
+   交给自己的 provider。provider 没有 `set_cancel_token` 就静默跳过（测试替身与老 provider 不受影响）。
+2. `AlertController` 不是 `WorkerControllerBase` 的子类，单独接同一件事：`start()` 建令牌并绑定，
+   `stop()` 翻它。少了这一步，关窗时 `shutdown()` 的 `waitForDone(5000)` 要等在途那一轮跑满
+   总 deadline 才排空得掉。
+3. `AppWindow` 改为按 **provider_factory** 装配：出货路径下每个控制器各拿一份自己的 provider 实例。
+   传入 provider 实例时（测试替身）仍共用——替身没有取消状态，共用无害，且用例能用一个实例断言。
+
+TDD
+---
+先写四条断言再改代码，四条全红：
+  - 开跑要把本轮令牌交给传输层            -> 红（provider.token is None）
+  - cancel() 要翻掉 provider 手上的令牌    -> 红
+  - 一页的取消不得碰另一页的 provider      -> 红
+  - 出货装配下五个控制器各有独立 provider  -> 红（`1 != 5`，五个控制器共用一个实例）
+改完四条全绿；预警的那条同样先红后绿。
+
+残余（如实记账，未改 DoD 迎合实现）
+-----------------------------------
+* 控制器/编排层仍是「拿到数据或抛 MarketDataError」的老合同，没有直接消费 `TransportOutcome`。
+  WI-033 的 DoD 点名了这一条，故其状态保持 verifying，未标 accepted。
+* supersede（跑着一轮又发起新一轮）时，旧 worker 的在途请求不保证被打断：`_begin()` 先取消旧令牌
+  再把新令牌绑上 provider，旧请求若在换绑之后才查询取消，会看到未取消的新令牌。其结果仍由世代守卫
+  丢弃，且 20 s 总 deadline 兜底，因此不比改动前更差；真正要根治需把令牌按调用传参（改 Protocol
+  与全部 FakeProvider），留作后续。
+  用户最在意的两个场景——按「停止」、关窗——都不发生换绑，因此都能真正打断在途请求。

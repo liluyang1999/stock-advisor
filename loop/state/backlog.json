@@ -3,9 +3,9 @@
   "schema_version": "1.0.0",
   "source": "../planning/work-items.json",
   "summary": {
-    "verifying": 3,
+    "verifying": 4,
     "ready": 0,
-    "proposed": 1,
+    "proposed": 0,
     "accepted": 31,
     "blocked": 0
   },

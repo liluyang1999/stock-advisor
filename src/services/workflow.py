@@ -24,7 +24,7 @@ from domain.policy import decide
 from domain.screener import apply_filters, board_of, rank
 from domain.symbols import symbol_from_market
 from observability import get_logger, task_extra
-from ports import Completeness
+from ports import Completeness, TransportOutcome
 
 # 结构化日志（OBSERVABILITY.md）：编排层记任务/降级/失败，不记具体代码或原始 payload。
 _log = get_logger("workflow")
@@ -56,6 +56,32 @@ class CancelToken(Protocol):
 ProgressCallback = Callable[[int, int, Recommendation], None]
 
 
+def _fetch_outcome(provider: object, name: str, *args: object) -> TransportOutcome:
+    """把一次取数收敛成 envelope，让编排层只有**一条**路径（WI-033）。
+
+    provider 提供 `<name>_outcome` 就直接用它：传输层自己算出的 `error_class`（network/parse/
+    validation）与 `cancelled` 由此原样抵达编排层。此前这里只看得见异常，分类只能靠
+    `isinstance(exc, MarketDataError)` 二选一地猜，取消更是与失败无从区分。
+
+    老式 provider 与测试替身仍然抛异常，这里按同一口径包成等价的失败信封——因此**不必改
+    `MarketDataProvider` Protocol，也不必动任何既有 provider**，两边共用同一段下游逻辑。
+    """
+
+    envelope = getattr(provider, f"{name}_outcome", None)
+    if callable(envelope):
+        outcome = envelope(*args)
+        if isinstance(outcome, TransportOutcome):
+            return outcome
+    try:
+        return TransportOutcome.ok(getattr(provider, name)(*args))
+    except MarketDataError as exc:
+        return TransportOutcome.failed("network", str(exc))
+    except ValueError as exc:
+        return TransportOutcome.failed("parse", str(exc))
+    except Exception as exc:  # noqa: BLE001 - 兜底为可读失败信封，避免后台线程里裸异常
+        return TransportOutcome.failed("unknown", str(exc))
+
+
 @dataclass(frozen=True)
 class AnalysisOutcome:
     symbol: StockSymbol
@@ -77,76 +103,46 @@ def analyze_symbol(
     symbol: StockSymbol, provider: MarketDataProvider, level: int = STANDARD_LEVEL
 ) -> AnalysisOutcome:
     fetched_at = datetime.now(UTC)
-    try:
-        quote = provider.fetch_quote(symbol)
-    except MarketDataError as exc:
+    quote_outcome = _fetch_outcome(provider, "fetch_quote", symbol)
+    if not quote_outcome.succeeded or quote_outcome.data is None:
         # 实时行情取不到：返回不可分析（error，非伪造零价）——REQ-024 零伪造。
+        # 分类与「是否被取消」都取自 envelope，不再由异常类型反推。
+        error_class = quote_outcome.error_class or "unknown"
         _log.warning(
             "个股实时行情获取失败",
             extra=task_extra(
                 operation="analyze_symbol.quote",
-                error_class="network",
+                error_class=error_class,
                 degraded=True,
-                outcome="unavailable",
+                outcome="cancelled" if quote_outcome.cancelled else "unavailable",
             ),
         )
-        return AnalysisOutcome(symbol=symbol, error=str(exc), quality=DataQuality(level="invalid"))
-    except ValueError as exc:
-        _log.warning(
-            "个股实时行情不满足契约",
-            extra=task_extra(
-                operation="analyze_symbol.quote",
-                error_class="parse",
-                degraded=True,
-                outcome="malformed",
-            ),
-        )
-        return AnalysisOutcome(symbol=symbol, error=str(exc), quality=DataQuality(level="invalid"))
-    except Exception as exc:
-        _log.error(
-            "个股实时行情意外失败",
-            extra=task_extra(
-                operation="analyze_symbol.quote",
-                error_class="unknown",
-                degraded=True,
-                outcome="error",
-            ),
-            exc_info=True,
-        )
-        return AnalysisOutcome(
-            symbol=symbol, error=f"实时行情获取失败：{exc}", quality=DataQuality(level="invalid")
-        )
+        # unknown 保留前缀（老式 provider 的兜底路径的既有文案），其余直接用传输层给的原因。
+        message = quote_outcome.message
+        if error_class == "unknown":
+            message = f"实时行情获取失败：{message}"
+        return AnalysisOutcome(symbol=symbol, error=message, quality=DataQuality(level="invalid"))
+    quote = quote_outcome.data
 
     degraded = False
     history_error = ""
-    try:
-        history = provider.fetch_history(symbol)
-    except (MarketDataError, ValueError) as exc:
+    history: list[DailyBar] = []
+    history_outcome = _fetch_outcome(provider, "fetch_history", symbol)
+    if history_outcome.succeeded:
+        # 注意这里**不**做 `data is not None` 的兜底：取数成功却给回 None 是 provider 违约，
+        # 交给下面的 `measure` 抛出来变成"分析计算失败"，而不是静默降级把违约盖掉
+        # （既有契约 test_malformed_history_returns_failure_outcome_instead_of_raising）。
+        history = history_outcome.data  # type: ignore[assignment] - 故意放行违约的 None
+    else:
         # 历史取不到不致命：降级为实时价格做保守判断（真实降级，非伪造历史）——degraded=True。
         _log.warning(
             "历史日线取不到，降级为实时价格保守判断",
             extra=task_extra(
                 operation="analyze_symbol.history",
-                error_class="network" if isinstance(exc, MarketDataError) else "parse",
+                error_class=history_outcome.error_class or "unknown",
                 degraded=True,
                 outcome="degraded_history",
             ),
-        )
-        degraded = True
-        history = []
-        history_error = (
-            "历史数据暂时取不到，系统已改用实时价格做保守判断。建议稍后重试或降低投入比例。"
-        )
-    except Exception:
-        _log.error(
-            "历史日线意外失败，降级为实时价格保守判断",
-            extra=task_extra(
-                operation="analyze_symbol.history",
-                error_class="unknown",
-                degraded=True,
-                outcome="degraded_history",
-            ),
-            exc_info=True,
         )
         degraded = True
         history = []
@@ -213,31 +209,35 @@ def screen_and_recommend(
     if top_limit is None:
         return ScreenReport(total=0, matched=0, recommendations=[], error="推荐数量参数无效")
 
-    try:
-        snapshots = provider.fetch_market_snapshot()
-    except (MarketDataError, ValueError) as exc:
+    snapshot_outcome = _fetch_outcome(provider, "fetch_market_snapshot")
+    if not snapshot_outcome.succeeded or snapshot_outcome.data is None:
         # 全市场拉取失败：明确报错，不伪造结果（REQ-024）。首段失败即整轮失败（无部分可用数据）。
+        if snapshot_outcome.cancelled:
+            # 取消不是失败：`ScreenReport.cancelled` 此前永远是 False，因为取消经异常传上来时
+            # 与超时长得一模一样，界面只能笼统说"获取失败"。
+            _log.info(
+                "全市场快照已取消",
+                extra=task_extra(
+                    operation="screen.snapshot", error_class="network", outcome="cancelled"
+                ),
+            )
+            return ScreenReport(total=0, matched=0, recommendations=[], cancelled=True)
+        error_class = snapshot_outcome.error_class or "unknown"
         _log.warning(
             "全市场快照获取失败",
             extra=task_extra(
                 operation="screen.snapshot",
-                error_class="network" if isinstance(exc, MarketDataError) else "parse",
+                error_class=error_class,
                 degraded=True,
                 outcome="unavailable",
             ),
         )
-        return ScreenReport(total=0, matched=0, recommendations=[], error=str(exc))
-    except Exception as exc:  # noqa: BLE001 - 兜底为可读错误，避免线程里裸异常
-        _log.error(
-            "全市场快照意外失败",
-            extra=task_extra(
-                operation="screen.snapshot", error_class="unknown", degraded=True, outcome="error"
-            ),
-            exc_info=True,
-        )
-        return ScreenReport(
-            total=0, matched=0, recommendations=[], error=f"全市场行情获取失败：{exc}"
-        )
+        # unknown 保留前缀（老式 provider 兜底路径的既有文案），其余直接用传输层给的原因。
+        message = snapshot_outcome.message
+        if error_class == "unknown":
+            message = f"全市场行情获取失败：{message}"
+        return ScreenReport(total=0, matched=0, recommendations=[], error=message)
+    snapshots = snapshot_outcome.data
 
     filtered = apply_filters(snapshots, criteria)
     ranked = rank(filtered, objective)
@@ -268,8 +268,20 @@ def screen_and_recommend(
         total=len(snapshots),
         matched=len(filtered),
         recommendations=recommendations,
-        completeness=_provider_completeness(provider),
+        completeness=_completeness_of(provider, snapshot_outcome),
     )
+
+
+def _completeness_of(provider: ScreeningProvider, outcome: TransportOutcome) -> Completeness:
+    """完整度优先取 envelope 自带的那份——它就是传输层分页时算出来的，最权威。
+
+    老式 provider 走 `_fetch_outcome` 的异常包装路径，其 envelope 只有默认完整度，故退回
+    duck-typed 的 `market_completeness()` 取法（旧 provider 与 FakeProvider 因此行为不变）。
+    """
+
+    if callable(getattr(provider, "fetch_market_snapshot_outcome", None)):
+        return outcome.completeness
+    return _provider_completeness(provider)
 
 
 def _provider_completeness(provider: ScreeningProvider) -> Completeness:

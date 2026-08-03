@@ -1,0 +1,48 @@
+EVD-TRACE-002 — WI-032：24 条 pure_preserved Tk 契约的裁定
+
+命令: grep 逐条核查支撑函数的生产调用方 + python -m unittest discover -s tests (868 OK)
+      python -m pytest tests/test_qt_input_validation.py (6 OK)
+环境: Windows 11 AMD64 / CPython 3.14.4
+
+裁定口径
+--------
+WI-032 的 DoD：每条 pure_preserved 契约**要么有活的生产调用方，要么退役并把契约连同其测试移除**，
+且 tk-contract-mapping 的 disposition 与实际形状一致。判据是可机器核查的——「`src/` 里还有没有调用
+方」——而不是凭印象，所以逐条 grep 支撑函数。
+
+结果（24 条）
+-------------
+* formatting 6 条 -> 维持 `pure_preserved`。支撑函数 `ui.view_format.detail_line_tags` 仍被
+  `qt_app/widgets/detail_view.py` 与 `qt_app/pages/screener_page.py` 调用，是活的。
+* layout 5 条 -> `approved_retired`。支撑函数 `compute_workspace_columns` / `stacked_text_y` 随
+  `ui/layout.py`（Tk 时代的窗口几何数学，Qt 原生承担）一并删除，`src/` 与 `tests/` 均零引用。
+* mode-dispatch 2 条 -> `qt_replaced`（replacement: test_qt_actions_and_shortcuts）。纯函数
+  `active_mode_action` 已随 layout.py 消失，但**行为仍在**：`AppWindow.run_active_tab()` 按当前页
+  派发「开始分析 / 开始选股」，且已有 Qt 用例断言。行为没消失，所以不是退役而是被取代。
+* input-validation 11 条 -> `qt_replaced`（replacement: test_qt_input_validation）。见下。
+
+裁定中发现并修好的两个真实缺陷
+------------------------------
+这 11 条的支撑函数（`is_partial_number` / `validate_tunable` 以及三个解析器）在 `src/` 里零调用。
+但**不是因为它们过时**——是 Qt 页面各自又写了一份本地副本，而副本比域里那份弱：
+
+1. `portfolio_page._optional_int`：`except (TypeError, ValueError)` 漏了 `OverflowError`，而
+   `int(float("inf"))` 正是抛它。**持仓股数填 `inf` 会抛出未捕获异常**（实测复现）。
+2. `alerts_page._optional_float`：少了 `math.isfinite` 检查。阈值填 `inf` 会建出一条规则，而
+   `alerts.evaluate_rule` 用 `finite_float` 把它读成 None——那条规则**静默地永不触发**，用户既没被
+   拒绝也等不到提醒。
+
+因此正解不是删掉那份被测过的域代码，而是**把页面接到域实现上**：两个缺陷随之消失，重复也消失，
+`domain/input_validate.py` 由「死模块」变回活模块（核心清单仍是 12 个模块，不必改）。
+三个解析器随之转为公开 API（`parse_optional_positive` / `parse_optional_positive_int` /
+`parse_alert_threshold`），先写红测试（inf/-inf 崩溃、inf/nan 被当成合法阈值）再接线。
+
+`is_partial_number` 与 `validate_tunable` 则是真的被部件取代：`QDoubleSpinBox` 用 `setRange` 钳死
+范围、自带 validator 挡非法字符。两个函数与其 11 条单测已删除，同时**补上 Qt 侧的替代断言**
+（每个微调框的范围等于预设声明的边界、越界写入被钳回边界、top_n 边界仍是 5..30）——没有这条断言，
+「改成 qt_replaced」只是换了个标签。
+
+现状
+----
+tk-contract-mapping.csv：qt_replaced 169 / approved_retired 12 / pure_preserved 6（合计 187）。
+WI-032 置 verifying（裁定结论待人工复核），未自行标 accepted。

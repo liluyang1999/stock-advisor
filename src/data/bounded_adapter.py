@@ -68,7 +68,35 @@ class BoundedMarketDataProvider:
 
         return self._completeness
 
-    # --- 四个取数 port ---
+    # --- envelope 版取数口（编排层优先用这组，WI-033）---
+    #
+    # `services.workflow._fetch_outcome` 按 `<name>_outcome` 探测这组方法。走这条路时，传输层算出的
+    # `error_class`（network/parse/validation）、`cancelled` 与分页完整度**原样**抵达编排层；走下面
+    # 那组老合同则要先压成异常，分类只能靠 `isinstance(exc, MarketDataError)` 反推，取消更是与超时
+    # 无从区分。两组共存是刻意的：老式 provider 与测试替身不必因此改动。
+
+    def fetch_quote_outcome(self, symbol: StockSymbol) -> TransportOutcome[Quote]:
+        return self._inner.fetch_quote(symbol, cancel_token=self._cancel)
+
+    def fetch_history_outcome(
+        self, symbol: StockSymbol, limit: int = 120
+    ) -> TransportOutcome[list[DailyBar]]:
+        return self._inner.fetch_history(symbol, limit, cancel_token=self._cancel)
+
+    def fetch_fund_flow_outcome(
+        self, symbol: StockSymbol, limit: int = 6
+    ) -> TransportOutcome[FundFlow]:
+        return self._inner.fetch_fund_flow(symbol, limit, cancel_token=self._cancel)
+
+    def fetch_market_snapshot_outcome(
+        self, page_size: int = 500, max_pages: int = 20
+    ) -> TransportOutcome[list[MarketSnapshot]]:
+        outcome = self._inner.fetch_market_snapshot(page_size, max_pages, cancel_token=self._cancel)
+        if outcome.succeeded:
+            self._completeness = outcome.completeness
+        return outcome
+
+    # --- 老合同版取数口（拿到数据，或抛 MarketDataError）---
 
     def fetch_quote(self, symbol: StockSymbol) -> Quote:
         return _unwrap(self._inner.fetch_quote(symbol, cancel_token=self._cancel), "实时行情获取")

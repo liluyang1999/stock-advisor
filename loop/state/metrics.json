@@ -22,9 +22,9 @@
     "independent_verification": true
   },
   "tests": {
-    "modules": 73,
-    "methods": 868,
-    "passed": 868,
+    "modules": 77,
+    "methods": 874,
+    "passed": 874,
     "failed": 0,
     "errors": 0,
     "skipped": 0,

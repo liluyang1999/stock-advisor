@@ -27,6 +27,7 @@ from PySide6 import QtCore, QtWidgets
 from domain import money
 from domain.compare import build_comparison_rows
 from domain.formatting import risk_level
+from domain.input_validate import parse_optional_positive_int
 from domain.models import CORE_DISCLAIMER, ComparisonRow
 from domain.symbols import normalize_symbol
 from services import store
@@ -237,7 +238,7 @@ class PortfolioPage(QtWidgets.QWidget):
         item = store.WatchItem(
             code=normalized,
             cost=money.positive_money(self.cost_input.text()),
-            shares=_optional_int(self.shares_input.text()),
+            shares=parse_optional_positive_int(self.shares_input.text()),
         )
         # 同一只票再次加入视为更新成本/股数，而不是产生第二行。
         kept = [w for w in self._config.watchlist if w.code.lower() != normalized.lower()]
@@ -259,7 +260,7 @@ class PortfolioPage(QtWidgets.QWidget):
         items[index.row()] = store.WatchItem(
             code=watch.code,
             cost=money.positive_money(self.cost_input.text()),
-            shares=_optional_int(self.shares_input.text()),
+            shares=parse_optional_positive_int(self.shares_input.text()),
         )
         self._persist(items)
         self._reload_table()
@@ -439,9 +440,7 @@ def _normalized_code(text: str) -> str | None:
         return None
 
 
-def _optional_int(text: str) -> int | None:
-    try:
-        value = int(float(text.strip()))
-    except TypeError, ValueError:
-        return None
-    return value if value > 0 else None
+# 股数解析用域里那份（`domain.input_validate.parse_optional_positive_int`），不再在页面里另写。
+# 曾经的本地副本 `except (TypeError, ValueError)` 漏了 `OverflowError`，而 `int(float("inf"))`
+# 正是抛它——持仓股数填 `inf` 会抛出未捕获异常。域实现先判 `is_integer()` 再转 int，非有限值
+# 一律 None（WI-032）。

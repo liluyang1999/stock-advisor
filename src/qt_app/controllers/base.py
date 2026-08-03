@@ -64,8 +64,24 @@ class WorkerControllerBase(QtCore.QObject):
         if self._cancel is not None:
             self._cancel.cancel()  # 上一轮 worker 下次查询取消即协作退出，其结果由世代守卫丢弃
         self._cancel = ManualCancel()
+        self._bind_cancel_to_provider(self._cancel)
         self._running = True
         return self._cancel, self._guard.bump()
+
+    def _bind_cancel_to_provider(self, cancel: ManualCancel) -> None:
+        """把本轮取消原语交给传输层，让**在途请求**也能被打断。
+
+        没有这一步，取消只在编排层的两次取数**之间**被检查：一条最坏可达 20 s 的取数链（多源
+        重试共用总 deadline）无论如何都要跑完，「停止」与关窗在用户看来就是没反应。
+
+        provider 不支持 `set_cancel_token` 就静默跳过——测试替身与老 provider 没有这个方法，
+        接线不该为此变复杂。**前提是每个控制器持有各自的 provider 实例**（见 `qt_app.app`），
+        否则一页的取消会翻掉别页在途请求的令牌。
+        """
+
+        binder = getattr(getattr(self, "_provider", None), "set_cancel_token", None)
+        if callable(binder):
+            binder(cancel)
 
     def _end(self) -> None:
         """结束一轮：清运行中标志（在 GUI 线程的完成槽里调用）。"""

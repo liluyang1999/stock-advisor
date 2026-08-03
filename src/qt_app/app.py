@@ -31,14 +31,30 @@ from .settings import Settings
 class AppWindow(MainWindow):
     """主窗 + 五页导航。持有控制器，关闭时负责把它们排空。"""
 
-    def __init__(self, provider, parent: QtWidgets.QWidget | None = None, settings=None) -> None:
+    def __init__(
+        self,
+        provider=None,
+        parent: QtWidgets.QWidget | None = None,
+        settings=None,
+        *,
+        provider_factory=None,
+    ) -> None:
         super().__init__(parent)
-        self.analysis = AnalysisController(provider, self)
-        self.screener = ScreenerController(provider, self)
-        self.alerts = AlertController(provider, self)
-        self.fund_flow = FundFlowController(provider, self)
+        # **每个控制器一份自己的 provider**：有界 provider 持有可变的协作取消令牌，控制器开跑时
+        # 把本轮令牌绑上去（`WorkerControllerBase._bind_cancel_to_provider`），取消才能打断在途
+        # 请求。五个控制器共用一个实例的话，个股页按「停止」会连带翻掉预警轮询与选股在途请求的
+        # 令牌——与下面 portfolio 自带一份控制器完全同源的理由。
+        #
+        # 传入 provider **实例**时（测试替身）各控制器共用它：替身没有取消状态，共用无害，且能让
+        # 用例继续用一个实例断言调用。出货路径不传实例，走 provider_factory，因此每控制器独立。
+        if provider_factory is None:
+            provider_factory = (lambda: provider) if provider is not None else default_provider
+        self.analysis = AnalysisController(provider_factory(), self)
+        self.screener = ScreenerController(provider_factory(), self)
+        self.alerts = AlertController(provider_factory(), self)
+        self.fund_flow = FundFlowController(provider_factory(), self)
         # 自选页自带一份分析控制器：与个股页共用会让两页的信号互相串扰，一页的取消也会打断另一页。
-        self.portfolio = AnalysisController(provider, self)
+        self.portfolio = AnalysisController(provider_factory(), self)
         # 进程内唯一的配置持有者：各页共用，避免各存各的互相覆盖（REQ-009）。
         self.settings = settings if settings is not None else Settings.for_user()
 
@@ -140,7 +156,8 @@ def build_app(
     """构造完整应用（QApplication + 装好五页的主窗）。返回二元组，便于测试不进事件循环。"""
     app, shell = build_application(argv)
     shell.deleteLater()  # build_application 造的是空壳；这里换成装好页的 AppWindow
-    window = AppWindow(provider if provider is not None else default_provider(), settings=settings)
+    # 不传 provider 时把**工厂**交下去（而不是先造一个实例），各控制器才能各拿一份自己的。
+    window = AppWindow(provider, settings=settings)
     return app, window
 
 

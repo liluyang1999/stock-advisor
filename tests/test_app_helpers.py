@@ -283,25 +283,25 @@ class AppHelperTests(unittest.TestCase):
         self.assertNotIn("参考止损价", text)
 
     def test_share_count_parser_rejects_fractional_input(self):
-        from domain.input_validate import _parse_optional_positive_int
+        from domain.input_validate import parse_optional_positive_int
 
-        self.assertIsNone(_parse_optional_positive_int("100.5"))
-        self.assertEqual(_parse_optional_positive_int("200.0"), 200)
+        self.assertIsNone(parse_optional_positive_int("100.5"))
+        self.assertEqual(parse_optional_positive_int("200.0"), 200)
 
     def test_positive_float_parser_rejects_non_finite_input(self):
-        from domain.input_validate import _parse_optional_positive
+        from domain.input_validate import parse_optional_positive
 
-        self.assertIsNone(_parse_optional_positive("NaN"))
-        self.assertIsNone(_parse_optional_positive("Infinity"))
-        self.assertIsNone(_parse_optional_positive("-Infinity"))
+        self.assertIsNone(parse_optional_positive("NaN"))
+        self.assertIsNone(parse_optional_positive("Infinity"))
+        self.assertIsNone(parse_optional_positive("-Infinity"))
 
     def test_alert_threshold_parser_rejects_non_finite_input(self):
-        from domain.input_validate import _parse_alert_threshold
+        from domain.input_validate import parse_alert_threshold
 
-        self.assertEqual(_parse_alert_threshold("12.5"), 12.5)
-        self.assertIsNone(_parse_alert_threshold("NaN"))
-        self.assertIsNone(_parse_alert_threshold("Infinity"))
-        self.assertIsNone(_parse_alert_threshold("-Infinity"))
+        self.assertEqual(parse_alert_threshold("12.5"), 12.5)
+        self.assertIsNone(parse_alert_threshold("NaN"))
+        self.assertIsNone(parse_alert_threshold("Infinity"))
+        self.assertIsNone(parse_alert_threshold("-Infinity"))
 
     def test_backtest_text_has_winrate_and_honest_caveat(self):
         from domain.backtest import backtest_signals

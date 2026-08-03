@@ -14,6 +14,7 @@ from __future__ import annotations
 from PySide6 import QtCore
 
 from domain.models import AlertRule
+from ports import ManualCancel
 from services.alert_monitor import run_alert_cycle
 from services.workflow import MarketDataProvider
 
@@ -58,6 +59,9 @@ class AlertController(QtCore.QObject):
         # 旧 fired 快照——边沿触发的预警会每轮重复触发，且 fired 被后完成的那轮覆盖。同一时刻只允
         # 许一轮在途。
         self._in_flight = False
+        # 协作取消令牌：交给传输层，`stop()` 一翻就能打断**在途**那一轮轮询。少了它，关窗时
+        # `shutdown()` 的 waitForDone 要一直等到该轮跑满总 deadline 才排空得掉。
+        self._cancel: ManualCancel | None = None
 
     def is_running(self) -> bool:
         return self._running
@@ -74,6 +78,10 @@ class AlertController(QtCore.QObject):
         self._fired = set()
         self._running = True
         self._in_flight = False  # 新一轮监控从"无在途"开始，不被上一次遗留的标志挡住
+        self._cancel = ManualCancel()
+        binder = getattr(self._provider, "set_cancel_token", None)
+        if callable(binder):
+            binder(self._cancel)
         self._timer.start(interval_ms)
         self._tick()  # 立即跑一轮，不等第一个 interval
 
@@ -82,6 +90,8 @@ class AlertController(QtCore.QObject):
         self._guard.bump()
         self._running = False
         self._timer.stop()
+        if self._cancel is not None:
+            self._cancel.cancel()  # 打断在途那一轮，让 shutdown 能按时排空
 
     def shutdown(self) -> None:
         self.stop()

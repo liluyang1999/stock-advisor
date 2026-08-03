@@ -27,6 +27,7 @@ from domain.alerts import (
     rule_key,
     rule_summary,
 )
+from domain.input_validate import parse_alert_threshold
 from domain.models import CORE_DISCLAIMER, AlertRule
 from domain.symbols import normalize_symbol
 
@@ -191,7 +192,7 @@ class AlertsPage(QtWidgets.QWidget):
     def add_current_rule(self) -> None:
         """新建一条规则并落盘。代码或阈值不合法就明说，不静默吞掉用户的输入。"""
         code = _normalized_code(self.rule_code.text())
-        threshold = _optional_float(self.rule_threshold.text())
+        threshold = parse_alert_threshold(self.rule_threshold.text())
         if code is None or threshold is None:
             self.status.setText(f"请填写有效的股票代码与数字阈值　|　{CORE_DISCLAIMER}")
             return
@@ -293,8 +294,7 @@ def _normalized_code(text: str) -> str | None:
         return None
 
 
-def _optional_float(text: str) -> float | None:
-    try:
-        return float(text.strip())
-    except TypeError, ValueError:
-        return None
+# 阈值解析用域里那份（`domain.input_validate.parse_alert_threshold`），不再在页面里另写。
+# 曾经的本地副本少了 `math.isfinite` 检查：阈值填 `inf` 会被当成合法值建出一条规则，而
+# `alerts.evaluate_rule` 又用 `finite_float` 把它读成 None——于是那条规则**静默地永不触发**，
+# 用户既没被拒绝也等不到提醒（WI-032）。

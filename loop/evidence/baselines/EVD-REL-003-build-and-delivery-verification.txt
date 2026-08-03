@@ -1,0 +1,38 @@
+EVD-REL-003 — 真实打包 + 交付物验证（WI-025 的非人工部分）
+
+命令与结果（全部实跑，退出码均为 0）
+------------------------------------
+  python scripts/build_exe.py
+      -> dist/股市锦囊/股市锦囊.exe 2.4 MiB；应用目录合计 100.7 MiB；dist/使用说明.html
+      -> BUILD_INFO.json commit bbd31cbb5881b966d354de13ce5cebea7bd6bf94
+  dist/股市锦囊/股市锦囊.exe --self-test
+      -> SELF_TEST_OK symbol=SH.600519 action=BUY score=47 confidence=84 L1=BUY L5=BUY
+         plan_shares=1300 backtest_ok=True self_check=True checks=8/8 screen_candidates=3 top=600000
+      -> 退出码 0
+  dist/股市锦囊/股市锦囊.exe            （无参，windowed）
+      -> 存活满 8 s 未退出（timeout 杀），即打包后的 GUI 能真正开窗，不是只有 --self-test 能跑
+  python scripts/make_release_manifest.py
+      -> RELEASE_MANIFEST_OK；SBOM.json（2 个组件）、THIRD_PARTY_NOTICES.md、licenses/（2 个）、
+         RELEASE_MANIFEST.json（204 个文件 / 100.8 MiB）
+      -> 应用目录 SHA-256(合并) 6e051f565f4a8306a704e2168bf89bfb234cd432219d6bfc1895e46407c2ee8f
+  python scripts/make_release_manifest.py --verify
+      -> RELEASE_VERIFY_OK files=204 version=1.0
+
+意义
+----
+`EVD-REL-001` 当初**故意以退出码 1 收尾**，原因只有一个：`licenses/GPL-3.0.txt` 当时不在仓库里
+（那台机器没有到该 URL 的网络路径）。该文件现已存在（35 KB 全文，LGPL-3.0.txt 亦在），所以清单
+这一步不再被卡住——本记录就是它转绿后的实跑结果。
+
+工具链与 pyproject 的 `[dependency-groups].build` 钉版一致：PyInstaller 6.21.0。交付形态是 onedir
+（ADR-0004：onefile 热启动 2.903 s 超 2.5 s 预算，且 LGPL-3.0 第 4(d) 条的重链接义务只有 onedir
+履行得了），本次构建产出的正是应用目录形态。
+
+仍未完成的（人工，非我可代劳）
+------------------------------
+HG-LICENSE / HG-PACKAGING / HG-RELEASE 三个人工门禁仍未签署，`release.ready` 保持 false。
+自行翻这三个标志等于伪造发布批准，因此不做。到此为止，发布前**除人工签署以外**的机器可验证项
+（干净构建、交付物自检、GUI 冒烟、SBOM/通知/逐文件哈希、清单校验）都已实跑通过并留证。
+
+另需人工的一项：`RELEASE_READINESS.md` 里「五连绿」的证据 `EVD-REL-002` 记录的是 ran=7 的旧门禁集，
+当前是 8 道门禁（且带 --strict）。重记五连绿属于发布流程动作，留待发布时按流程执行。

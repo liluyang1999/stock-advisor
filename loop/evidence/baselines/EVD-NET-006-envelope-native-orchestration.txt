@@ -1,0 +1,57 @@
+EVD-NET-006 — 编排层原生消费 TransportOutcome（WI-033 的 DoD 收尾）
+
+命令: python -m unittest discover -s tests   (874 OK)
+      python -m pytest tests/test_workflow_envelope.py  (6 OK)
+      python loop/scripts/run_gates.py --strict
+环境: Windows 11 AMD64 / CPython 3.14.4 / PySide6-Essentials 6.11.1
+
+问题
+----
+WI-033 的 DoD 点名"控制器/编排层消费 TransportOutcome，而不是接异常"。EVD-NET-004/005 把有界传输
+接进出货路径并接上了在途取消，但编排层仍只看得见异常，于是传输层算出来的两样东西被压扁：
+
+* **error_class**：`run_with_contract` 按 network / parse / validation 分类，经异常传上来后
+  `analyze_symbol` 只能靠 `isinstance(exc, MarketDataError)` 二选一地反推——是它就记 network，
+  否则记 parse。传输层判定的 validation、以及"内容不满足契约"的 parse，都可能被记成错的类别，
+  日志里的 error_class 因此未必是真实原因。
+* **cancelled**：取消与超时抛的是同一种异常。`ScreenReport` 明明有 `cancelled` 字段，实际上
+  **永远是 False**，用户取消一次全市场筛选，看到的是一条泛化的"获取失败"。
+
+做法
+----
+`services/workflow.py` 新增 `_fetch_outcome(provider, name, *args) -> TransportOutcome`：
+
+  - provider 提供 `<name>_outcome` 就直接用它的 envelope；
+  - 老式 provider / 测试替身仍抛异常，按同一口径包成等价失败信封
+    （MarketDataError→network、ValueError→parse、其余→unknown）。
+
+于是编排层**只有一条路径**，且既不改 `MarketDataProvider` Protocol，也不动任何既有 FakeProvider。
+`BoundedMarketDataProvider` 相应增加 envelope 版取数口（`fetch_*_outcome`），与老合同版并存——
+老合同版继续服务于任何仍按异常写的调用方。
+
+行为改进（可断言）
+------------------
+1. parse 失败记为 parse、network 记为 network（不再由异常类型反推）。
+2. 取消的行情取数：错误文案是"已取消"而非泛化失败；日志 outcome=cancelled。
+3. 取消的全市场抓取：`ScreenReport.cancelled` 现在真的为 True（此前恒 False）。
+4. 完整度优先取 envelope 自带的那份（传输层分页时算出的），老式 provider 退回 duck-typed
+   `market_completeness()`——`test_screener_completeness` 的向后兼容断言因此原样通过。
+
+TDD 与既有契约
+--------------
+六条断言先写先红（error_class 两条、取消两条 + 两条老式 provider 兼容作为回归护栏），改完全绿。
+
+过程中既有测试抓到我一处**行为削弱**并已纠正：我最初写的是
+`if history_outcome.succeeded and history_outcome.data is not None`，这会把"取数成功却返回 None"
+这种 **provider 违约**静默降级成"历史取不到"。而既有契约
+（`test_malformed_history_returns_failure_outcome_instead_of_raising`）要求它冒泡成"分析计算失败"，
+不能被掩盖。改回只在 envelope **失败**时降级，违约值照旧交给 `measure` 暴露，并在代码里注明原因，
+免得以后有人再"顺手兜底"一次。
+
+范围外（未做，如实记账）
+------------------------
+Qt 控制器本身仍消费编排层的结果对象（`AnalysisOutcome` / `ScreenReport` / `FundFlowResult`），
+没有直接接触 envelope——这是刻意的分层：控制器的职责是线程分发与信号，业务语义留在 services。
+envelope 的信息已经通过上述结果对象抵达 UI，因此 DoD 的意图（成功/失败/取消/完整度对用户可见）
+已经达成。`services/fund_flow.py` 仍按异常处理：它本就把成功与失败都收敛成一个可展示的
+`FundFlowResult`，且资金流是按需、降级安全的旁路，改动收益不足以抵消风险。

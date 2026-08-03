@@ -3,7 +3,7 @@ EVD-LOOP-013 — control-plane re-baseline after CHANGELOG consolidation + CI st
 Base commit: 25134c6 (prior batch committed) + dirty worktree.
 Old baseline: EVD-LOOP-012 (control_plane_sha256 2d8a7ccddfd24d51b4cf1892e7a8cb3523a8f7712edf2beb5f56b9529361604a)
               — superseded by this record.
-New control_plane_sha256: 5a12cb17ca28e029177035e9d82ea973d77d79928d7c28a377b78bea00547534
+New control_plane_sha256: 9e4e2ce174ce0edf366aeae77ad745272c052fa68de237324a167950ccd23abd
 
 SCOPE: two owner-requested changes plus the machine enforcement each one needs.
   (1) The user-facing changelog is consolidated into loop/ and the root copy is removed.

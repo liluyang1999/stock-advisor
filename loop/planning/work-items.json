@@ -1068,7 +1068,7 @@
       "id": "WI-032",
       "title": "重新裁定 WI-002 的 24 项 pure_preserved 合同",
       "milestone": "MS-08",
-      "status": "proposed",
+      "status": "verifying",
       "priority": "P2",
       "depends_on": [
         "WI-031"
@@ -1086,7 +1086,7 @@
       "tests": [
         "TEST-ARCH-002"
       ],
-      "next_action": "human decision: 逐条判定保留还是退役，并更新 tk-contract-mapping 的 disposition",
+      "next_action": "已裁定完 24 条：6 条 formatting 有活调用方（detail_line_tags 仍被 detail_view / screener_page 调用）故保留 pure_preserved；5 条 layout 随 ui/layout.py 退役转 approved_retired；2 条 mode-dispatch 行为仍在（AppWindow.run_active_tab）转 qt_replaced；11 条 input-validation 的纯函数已被 QDoubleSpinBox 原生取代，函数与其测试已删除、Qt 侧替代断言已补（test_qt_input_validation），转 qt_replaced。裁定过程发现并修好两个真实缺陷（见 EVD-TRACE-002）。待人工复核裁定结论。",
       "size": "S",
       "definition_of_done": "每一条 pure_preserved 合同要么有活的生产调用方，要么改判为 approved_retired 并连同其代码与测试一并移除；tk-contract-mapping 的 disposition 与代码现状一致。",
       "scope_out": [
@@ -1117,7 +1117,7 @@
       "tests": [
         "TEST-NET-001"
       ],
-      "next_action": "已交付：BoundedMarketDataProvider 适配器让出货路径拿到总 deadline / 字节上限 / 真实分页完整度（REQ-026 的「非全市场结果」警告现在真的会触发）。剩余：编排与五个控制器改为直接消费 TransportOutcome，以及按控制器各持一个 provider 实例后接上在途取消（共享实例下单一取消令牌会跨控制器误伤）。见 EVD-NET-004。",
+      "next_action": "DoD 三项均已落地：出货 provider 换为有界传输（EVD-NET-004）、在途取消接线（EVD-NET-005）、编排层原生消费 TransportOutcome（EVD-NET-006）。待人工复核后可转 accepted。",
       "size": "L",
       "definition_of_done": "控制器与编排消费 TransportOutcome 而非捕获异常，分页完整度对用户可见（残缺的全市场会在界面上自报），且既有降级行为不回退。",
       "scope_out": [
