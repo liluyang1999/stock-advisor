@@ -1155,7 +1155,7 @@
         "TEST-VIS-002"
       ],
       "size": "L",
-      "next_action": "实现完成、8 项质量门中 7 项通过；剩余两件需要人：(1) 控制面改动后重录 v2 基线证据（EVD 需要独立 verified_by，不自签）；(2) 五页截图的人工视觉复核对照 docs/ui-concepts。",
+      "next_action": "实现完成、8 项质量门中 7 项通过；剩余两件需要人：(1) 控制面改动后重录 v2 基线证据（EVD 需要独立 verified_by，不自签）；(2) 五页截图的人工视觉复核对照 knowledge/ui-concepts。",
       "definition_of_done": "五个功能页均由 cards.Card + table_utils.Column 构成；结果表恢复老版八列与结论行底色；因子拆解条、决策强度光谱、整篇解释三者可见且随选中行联动；tokens.json 与 UI_DESIGN_SYSTEM.md 数值一致且对比度实测全部达标；test_qt_visual_matrix 零裁剪、全套测试通过。",
       "scope_out": [
         "不改信息架构：用户明确要求保留五个标签页，不回退成老版的两模式 + 四个弹窗",

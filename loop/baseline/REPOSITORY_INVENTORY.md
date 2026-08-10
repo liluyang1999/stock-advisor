@@ -29,9 +29,9 @@
 
 ## 文档与设计资产
 
-- `../docs/superpowers/specs/`：历史规格。
-- `../docs/superpowers/plans/`：历史实施计划。
-- `../docs/ui-concepts/`：UI 效果图；属于设计参考，不是运行完成证据。
+- `planning/archive/specs/`：历史规格。
+- `planning/archive/plans/`：历史实施计划。
+- `../knowledge/ui-concepts/`：UI 效果图；属于设计参考，不是运行完成证据。
 - `../README.md`：当前 Tkinter/标准库运行合同。
 
 ## 工作树状态

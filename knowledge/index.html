@@ -47,32 +47,38 @@
     <p>MA/RSI/MACD/布林/ATR 怎么算，五档决策强度如何把客观测量翻译成建议，仓位与回测的数学。</p>
   </a>
 
-  <a class="tile" href="03-qt-ui.html">
-    <div class="tag">03 · 界面</div>
-    <h3>PySide6 桌面界面</h3>
-    <p>模型/视图、QSS 与设计 token、K 线自绘、空态与失败态、可访问性——附真实渲染截图。</p>
+  <a class="tile" href="03-pyside6-framework.html">
+    <div class="tag">03 · 框架</div>
+    <h3>PySide6 框架基础</h3>
+    <p>Qt 为什么这样设计：对象树与内存、信号槽与连接类型、事件循环、模型/视图、QSS、打包要点。</p>
   </a>
 
-  <a class="tile" href="04-concurrency.html">
-    <div class="tag">04 · 并发</div>
+  <a class="tile" href="04-qt-ui.html">
+    <div class="tag">04 · 界面</div>
+    <h3>本项目的界面实现</h3>
+    <p>五页导航、模型/视图的实际选型与偏离理由、设计 token、K 线自绘、空态与失败态、可访问性。</p>
+  </a>
+
+  <a class="tile" href="05-concurrency.html">
+    <div class="tag">05 · 并发</div>
     <h3>线程、取消与世代守卫</h3>
     <p>GUI 线程为什么不能碰网络、迟到结果如何丢弃、协作取消与总 deadline 的合同。</p>
   </a>
 
-  <a class="tile" href="05-data-quality.html">
-    <div class="tag">05 · 数据</div>
+  <a class="tile" href="06-data-quality.html">
+    <div class="tag">06 · 数据</div>
     <h3>行情数据与数值纪律</h3>
     <p>多源回退、解析鲁棒性、分页完整度、零伪造原则，以及 Decimal / int / float 的三分法。</p>
   </a>
 
-  <a class="tile" href="06-engineering.html">
-    <div class="tag">06 · 工程</div>
+  <a class="tile" href="07-engineering.html">
+    <div class="tag">07 · 工程</div>
     <h3>测试、门禁与交付</h3>
     <p>TDD 的真实用法、八道质量门禁、loop 控制平面、CI 的坑、PyInstaller 打包与发布元数据。</p>
   </a>
 
-  <a class="tile" href="07-technical-stack-report.html">
-    <div class="tag">07 · 附录</div>
+  <a class="tile" href="08-technical-stack-report.html">
+    <div class="tag">08 · 附录</div>
     <h3>技术栈整体报告</h3>
     <p>早先编写的「技术栈、原理与实现」长篇教学报告，按模块逐一拆解，可作为通读材料。</p>
   </a>
@@ -121,7 +127,7 @@
   <tr><td><code>knowledge/</code>（本目录）</td><td><strong>教学材料</strong>：讲原理、讲取舍、讲踩过的坑。面向想读懂这个项目的人。</td></tr>
   <tr><td><code>loop/</code></td><td><strong>工程控制平面</strong>，也是当前状态的唯一真源：需求、验收标准、架构决策（ADR）、工作项、风险、质量门禁、验证证据。文档与 <code>loop/</code> 冲突时以 <code>loop/</code> 为准。</td></tr>
   <tr><td><code>README.md</code></td><td>面向使用者与贡献者的入口：怎么跑、怎么打包、目录结构。</td></tr>
-  <tr><td><code>docs/ui-concepts/</code></td><td>界面概念稿（设计过程的历史记录）。</td></tr>
+  <tr><td><code>knowledge/ui-concepts/</code></td><td>界面概念稿（四轮设计参考，本知识库的一部分）。</td></tr>
 </table>
 
 <div class="disclaimer">

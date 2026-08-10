@@ -34,7 +34,7 @@ preset + validated tunables
 
 ## 行情字段合同与筛选预设参数表（东方财富 clist）
 
-以下内容提取自已归档/删除的遗留设计 `docs/superpowers/specs/2026-06-22-market-screener-and-ui-design.md`（2026-06-22，可从 git 历史恢复），2026-07-13 已逐项对照 `src/data/data_provider.py` 与 `src/domain/presets.py` 核对仍然准确。市场号 `f13`（1=沪，0=深/北）、`secid` 不靠代码前缀猜测、`920xxx` 北交所新代码段这三点的权威定义已在根 `AGENTS.md`"行情数据约定"给出，此处不重复；下表只补充该文档未覆盖的字段级契约与预设参数。
+以下内容提取自已归档/删除的遗留设计 `loop/planning/archive/specs/2026-06-22-market-screener-and-ui-design.md`（2026-06-22，可从 git 历史恢复），2026-07-13 已逐项对照 `src/data/data_provider.py` 与 `src/domain/presets.py` 核对仍然准确。市场号 `f13`（1=沪，0=深/北）、`secid` 不靠代码前缀猜测、`920xxx` 北交所新代码段这三点的权威定义已在根 `AGENTS.md`"行情数据约定"给出，此处不重复；下表只补充该文档未覆盖的字段级契约与预设参数。
 
 ### 全市场快照字段契约
 

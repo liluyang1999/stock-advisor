@@ -267,6 +267,10 @@
   </style>
 </head>
 <body>
+  <div style="max-width:1100px;margin:0 auto;padding:12px 24px 0;font:14px/1.7 system-ui,'Microsoft YaHei',sans-serif">
+    <a href="index.html" style="color:#1B3A5B;text-decoration:none">← 返回知识库首页</a>
+    <span style="color:#8A8578"> · 本篇是知识库第 08 篇（附录 · 通读材料）</span>
+  </div>
   <header>
     <div class="wrap">
       <p class="hero-kicker">Technical Teaching Report</p>
@@ -852,7 +856,7 @@ python scripts/build_exe.py</code></pre>
           </ul>
           <p>自检模式 <code>--self-test</code>（<code>dist\股市锦囊\股市锦囊.exe --self-test</code>）用于验证打包程序的基础可执行性：它构造离线样例，跑一遍个股分析、五档决策、仓位、回测、持久化、横向对比、条件预警和全市场选股全链路，成功时打印 <code>SELF_TEST_OK ...</code> 并以退出码 0 结束，不依赖网络和窗口交互。</p>
           <div class="note">
-            <strong>为什么 <code>dist/使用说明.html</code> 不会像本报告曾经那样“讲反”：</strong>用户手册由 <code>manual.build_manual_html()</code> 在每次打包时，直接从 <code>ui/theme.py</code>、<code>ui/view_text.py</code>、<code>domain/presets.py</code>、<code>domain/screener.py</code> 等运行代码里的真实常量和文案动态拼出，不存在人工誊抄环节，源码一变手册自动跟着变。而本技术报告（<code>docs/stock_advisor_technical_stack_report.html</code>）是人工撰写的静态文档，与源码没有强制同步机制，需要在每次架构或配色变更后人工复核更新——这正是它此前会与实现脱节甚至讲反的根本原因。
+            <strong>为什么 <code>dist/使用说明.html</code> 不会像本报告曾经那样“讲反”：</strong>用户手册由 <code>manual.build_manual_html()</code> 在每次打包时，直接从 <code>ui/theme.py</code>、<code>ui/view_text.py</code>、<code>domain/presets.py</code>、<code>domain/screener.py</code> 等运行代码里的真实常量和文案动态拼出，不存在人工誊抄环节，源码一变手册自动跟着变。而本技术报告（<code>knowledge/08-technical-stack-report.html</code>）是人工撰写的静态文档，与源码没有强制同步机制，需要在每次架构或配色变更后人工复核更新——这正是它此前会与实现脱节甚至讲反的根本原因。
           </div>
         </section>
 

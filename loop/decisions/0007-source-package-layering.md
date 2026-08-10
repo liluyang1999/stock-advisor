@@ -7,7 +7,7 @@
 
 `src/stock_advisor/` 此前是 22 个模块的扁平包，全部直接位于 `stock_advisor/` 下，纯核心（domain）与非纯层（网络、编排、界面）之间只靠命名习惯和 `AGENTS.md`/`core-module-manifest.json` 的文字与逐模块清单来约定边界，没有物理目录边界：`import` 层面并不能阻止某个未来新增的纯逻辑模块误 `import` 网络或界面模块，`check_core_boundaries.py` 的把关能力完全取决于清单是否被人工同步维护到最新。随着 PySide6 迁移临近（REQ-011；`TARGET_ARCHITECTURE.md` 中的 `qt_app/` 目标子包)，继续在一个扁平包里叠加界面/编排代码，会让"哪些模块必须保持纯、哪些可以被替换"越来越难只凭清单人工把关。
 
-`docs/superpowers/plans/2026-07-12-02-src-package-restructure.md`（Plan 2）先以行为保持的方式（Task 1）把 22 个模块按职责搬进 4 个功能子包（`git mv`，449 个产品测试与 `--self-test` 作为行为不变的 oracle）；本 ADR 记录这一分层决策本身及其权衡。Task 2 把 loop 控制面（`core-module-manifest.json`、边界文档、基线清单、`README.md` 目录结构）同步到新路径，本 ADR 与该同步一并提交。
+`loop/planning/archive/plans/2026-07-12-02-src-package-restructure.md`（Plan 2）先以行为保持的方式（Task 1）把 22 个模块按职责搬进 4 个功能子包（`git mv`，449 个产品测试与 `--self-test` 作为行为不变的 oracle）；本 ADR 记录这一分层决策本身及其权衡。Task 2 把 loop 控制面（`core-module-manifest.json`、边界文档、基线清单、`README.md` 目录结构）同步到新路径，本 ADR 与该同步一并提交。
 
 ## 决策
 

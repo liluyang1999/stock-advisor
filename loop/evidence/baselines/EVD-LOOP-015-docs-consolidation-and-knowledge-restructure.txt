@@ -1,0 +1,55 @@
+EVD-LOOP-015 — 文档归位：过程性记录并入 loop/，知识库补 PySide6 框架篇并重排
+
+Base commit: 5a12997 + dirty worktree.
+Old baseline: EVD-LOOP-014 — superseded by this record.
+New control_plane_sha256: 9a6fa8bd15895c2dd31c6a4aa0a917fea68af7b0ee13070065a049ff7fc446d4
+
+一、docs/ 逐项评估与处置
+-------------------------
+按「Loop Engineering 的指导性内容与过程性记录统一收拢到 loop/」这一要求，对 docs/ 三类内容
+逐项判断，而不是一刀切搬家：
+
+1. docs/superpowers/（7 个设计规格与实施计划）-> **迁入 loop/planning/archive/**
+   它们正是把 loop/ 控制面建成今天样子的过程性记录，被 7 份 loop/ 文档引用。迁入后：
+   - 全仓 9 处引用同步改写（loop/ 内用 planning/archive 相对路径，仓库外用 loop/planning/archive）；
+   - 1 个文件是 CRLF，迁入前归一化为 LF——loop/** 受 .gitattributes 强制 eol=lf，
+     且 LF 不变量测试覆盖 loop/ 全部文件；
+   - 新增 archive/README.md 说明「它们回答当初为什么这么做，不回答现在是什么」，
+     并明确与 loop/ 现行文档冲突时以现行为准。
+   保留而非删除的理由：这批文件记录了被否决方案及其否决理由，ADR 只留结论，删掉就再也答不出
+   「当时为什么不选另一条路」。文件内的旧路径（src/stock_advisor/、根 CHANGELOG.md）照原样保留——
+   改写历史记录去迎合今天的布局等于伪造现场。
+
+2. docs/ui-concepts/（34 张概念稿）-> **迁入 knowledge/ui-concepts/**，docs/ 随之解散
+   它们仍在用：WI-035 待办的人工视觉复核就是拿五页截图对照这批图，loop/baseline/
+   REPOSITORY_INVENTORY.md 也引用它们。**不能放进 loop/**，有硬性技术原因：
+   .gitattributes 对 loop/** 强制 text eol=lf，二进制 PNG 会被当文本处理而损坏；
+   且控制面摘要与 LF 不变量测试都建立在「loop/ 全是文本」这个前提上（PNG 字节流中出现
+   \r\n 序列会直接让该测试失败）。docs/README.md 已重写，把这条约束写明。
+
+3. docs/stock_advisor_technical_stack_report.html -> 上一轮已 git mv 进 knowledge/。
+
+处置后 docs/ 目录不复存在。三个目录的分工写在 DOCUMENTATION_HYGIENE.md 与根 README.md：
+loop/ 是唯一权威控制面（含过程性记录），knowledge/ 是教学材料（含界面概念稿），根 README 是入口。
+
+二、knowledge/ 补 PySide6 框架篇并整体重排
+-------------------------------------------
+新增 03-pyside6-framework.html：讲**框架本身**（离开本项目也成立的知识），与讲本项目具体落地的
+04 篇分工明确，不重复。内容：PySide6 与 PyQt6 的许可证/维护方差异及本项目选它的决定性理由、
+三个包名（Essentials/Addons/合集）的体积取舍、QObject 对象树与 Python GC 的两个镜像坑、
+信号槽与三种连接类型（为何默认 Auto 已覆盖跨线程、以及连 lambda 会丢线程亲和）、事件循环与
+QTimer、信号 vs 事件的判断法则、布局与尺寸策略、模型/视图五个角色与 ItemDataRole（含
+DisplayRole/UserRole 分离才能「显示 +9.50% 而按 9.5 排序」）、QSS 属性选择器与两个必踩的坑
+（WA_StyledBackground、改 property 后要 unpolish/polish）、QPainter 自绘与「几何计算与绘制分离」、
+并发三件套、打包必须带 platforms 插件与 offscreen 的字体副作用、以及一张「新手最容易犯的错」速查表。
+
+重排：03 让位给框架篇，其后各篇顺延（原 03→04、04→05、05→06、06→07、07→08）。
+git mv 保留历史；页内标号、标题、上下篇导航、首页卡片一并改写；
+给迁入的 08 附录补上返回首页的导航，使其融入目录而不再是孤立长文。
+校验：9 页、0 断链、0 孤儿页、无异常字符（脚本逐个 href/src 落地检查）。
+
+三、验证
+--------
+LF 不变量：loop/ 下无 CRLF。
+其余门禁与测试见本次运行记录（8 门禁 --strict、产品与 loop 全量、自检）。
+发布就绪未推进：三个人工门禁仍未签署，release.ready 保持 false。

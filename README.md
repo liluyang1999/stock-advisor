@@ -190,7 +190,7 @@ pyproject.toml              项目元数据 + ruff/pyright/pytest/coverage 配�
 .github/workflows/ci.yml    CI（windows-latest，门禁全量强制）
 assets/ licenses/           应用图标 · Qt 的 LGPL/GPL 许可证文本（随交付物分发）
 knowledge/                  知识库：本项目全部知识点的图文教学材料（knowledge/index.html 是入口）
-docs/                       过程性记录：设计规格、实施计划、界面概念稿（docs/README.md 是索引）
+  ui-concepts/              界面概念稿（四轮设计参考，随知识库同处一地）
 ```
 
 > **两条命名与布局的既有说明**

@@ -1247,7 +1247,35 @@
       "finished_at": "2026-08-10T14:30:00+09:00",
       "implemented_by": "knowledge-base-and-model-reality-reconcile",
       "verified_by": "loop/scripts/run_gates.py --strict (machine gate suite; no independent human review -- see artifact)",
-      "summary": "全项目复核后的收尾。最实质的一处：REQ-012 的追溯证据指向 ResultTableModel，而该类从未被任何页面实例化——出货结果表是 make_readonly_table 的 QStandardItemModel；架构文档描述的QAbstractTableModel+QSortFilterProxyModel 是一套被放弃的设计。选择「文档跟随实现」而非「实现迁就文档」：不用代理排序有充分理由（代理会真的搬行，而各页拿 index.row() 当数据下标），故改文档如实描述出货形态并记录偏离理由、改 REQ-012 追溯注记、删除遗留的 ResultTableModel及其 8 条测试、同步改写 TEST-MODEL-001 口径。顺带补两处缺口：4 条 Tk 契约的替代测试记成的test_qt_result_model 从未测过表高（契约实际无人接管），已补 table_height 真实断言并重指；免责声明守卫清单漏了 portfolio_page.py，已补入，并把与死代码无关的「声明内容」断言移出保全。界面以真实字体重渲五页三态逐张复核，未发现需修缺陷（两处疑似经查证为刻意设计）。新建 knowledge/ 知识库（8 页图文教学 + 7 张真实截图，0 断链），docs/ 的教学长文经 git mv 迁入。计数对账 874->870、模块 77->76、覆盖率实测 0.9487/0.9099。发布就绪未推进，三个人工门禁仍未签署。"
+      "summary": "全项目复核后的收尾。最实质的一处：REQ-012 的追溯证据指向 ResultTableModel，而该类从未被任何页面实例化——出货结果表是 make_readonly_table 的 QStandardItemModel；架构文档描述的QAbstractTableModel+QSortFilterProxyModel 是一套被放弃的设计。选择「文档跟随实现」而非「实现迁就文档」：不用代理排序有充分理由（代理会真的搬行，而各页拿 index.row() 当数据下标），故改文档如实描述出货形态并记录偏离理由、改 REQ-012 追溯注记、删除遗留的 ResultTableModel及其 8 条测试、同步改写 TEST-MODEL-001 口径。顺带补两处缺口：4 条 Tk 契约的替代测试记成的test_qt_result_model 从未测过表高（契约实际无人接管），已补 table_height 真实断言并重指；免责声明守卫清单漏了 portfolio_page.py，已补入，并把与死代码无关的「声明内容」断言移出保全。界面以真实字体重渲五页三态逐张复核，未发现需修缺陷（两处疑似经查证为刻意设计）。新建 knowledge/ 知识库（8 页图文教学 + 7 张真实截图，0 断链），docs/ 的教学长文经 git mv 迁入。计数对账 874->870、模块 77->76、覆盖率实测 0.9487/0.9099。发布就绪未推进，三个人工门禁仍未签署。",
+      "superseded_by": "EVD-LOOP-015"
+    },
+    {
+      "id": "EVD-LOOP-015",
+      "record_version": "2.0.0",
+      "requirement_ids": [
+        "REQ-027",
+        "REQ-028"
+      ],
+      "acceptance_ids": [
+        "AC-000"
+      ],
+      "work_item_id": "WI-000",
+      "type": "control_plane_rebaseline_after_docs_consolidation",
+      "command": "git mv docs/superpowers loop/planning/archive + 引用改写 + knowledge 重排 + validate_loop + run_gates --strict",
+      "cwd": "D:/Projects/stock-advisor",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-LOOP-015-docs-consolidation-and-knowledge-restructure.txt",
+      "sha256": "49c37b7b830d64ae4dce11d5f10e58e52c4285d02f230fe81f30580ae8975ff5",
+      "control_plane_sha256": "9a6fa8bd15895c2dd31c6a4aa0a917fea68af7b0ee13070065a049ff7fc446d4",
+      "commit": "5a12997",
+      "dirty_worktree": true,
+      "environment": "Windows 11 AMD64 / CPython 3.14.4 / PySide6-Essentials 6.11.1",
+      "started_at": "2026-08-10T13:00:00+09:00",
+      "finished_at": "2026-08-10T14:00:00+09:00",
+      "implemented_by": "docs-consolidation-and-knowledge-restructure",
+      "verified_by": "loop/scripts/run_gates.py --strict (machine gate suite; no independent human review -- see artifact)",
+      "summary": "文档归位：docs/superpowers 的 7 份设计规格与实施计划（Loop Engineering 的过程性记录）迁入 loop/planning/archive/，9 处引用同步改写，1 个 CRLF 文件按 loop/** eol=lf 归一化，并补 archive/README 说明其「只回答当初为什么、不回答现在是什么」。34 张概念稿迁入 knowledge/ui-concepts/（不能进 loop/：.gitattributes 对 loop/** 强制 text eol=lf 会损坏二进制 PNG，控制面摘要与 LF 不变量测试都以「loop/ 全是文本」为前提；knowledge/ 无此约束），docs/ 目录整体解散不再存在，DOCUMENTATION_HYGIENE 重写为 loop/ / knowledge/ / 根 README 三者分工。knowledge/ 新增 03-pyside6-framework 讲框架本身（对象树与 GC、连接类型与线程亲和、ItemDataRole 分离、QSS 两个坑、打包插件与 offscreen 字体副作用、新手错误速查），与讲本项目落地的 04 篇分工不重复；其后各篇顺延重排，git mv 保历史，标号/导航/首页卡片一并改写，附录补返回导航；校验 9 页 0 断链 0 孤儿。"
     }
   ]
 }

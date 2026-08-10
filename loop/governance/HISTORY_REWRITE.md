@@ -41,7 +41,7 @@ GitHub 的 contributor 归属同时采纳提交的作者字段**与** `Co-Author
   40 位）。涉及 `state/progress.jsonl`、`state/evidence-index.json`、`quality/quality-gates.json`、
   `quality/convergence.json`、`quality/RELEASE_READINESS.md`、`baseline/module-map.json`、
   `governance/VERSION_AND_CHANGE_CONTROL.md`、`governance/DOCUMENTATION_HYGIENE.md`、
-  `CHANGELOG.md`、`README.md`，以及 `docs/` 下 3 个文件。
+  `CHANGELOG.md`、`README.md`，以及当时 `docs/` 下的 3 个文件（该目录其后已解散，内容分别迁入 `loop/planning/archive/` 与 `knowledge/`）。
 - **已封存的证据留档（`evidence/baselines/` 下 8 个文件，11 处）一律不改**。它们在
   `state/evidence-index.json` 中登记了 `sha256`，由 `validate_loop.py` 校验，是按防篡改设计的
   时点快照；改写它们再重新盖章，等于让防篡改机制形同虚设。这些留档中的旧 SHA 通过本文附带的

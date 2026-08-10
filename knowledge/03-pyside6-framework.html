@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 PySide6 框架基础 · 股市锦囊知识库</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="band">
+  <div class="wrap">
+    <h1>03 · PySide6 框架基础</h1>
+    <p>Qt 为什么这样设计：对象树、信号槽、事件循环、模型/视图、样式与部署</p>
+  </div>
+</header>
+
+<div class="wrap">
+<nav class="crumbs"><a href="index.html">← 首页</a> · <a href="02-domain-algorithms.html">← 上一篇：指标与决策</a></nav>
+
+<p class="lead">
+本篇讲<strong>框架本身</strong>——离开这个项目也成立的 Qt/PySide6 概念。
+下一篇（<a href="04-qt-ui.html">04 · PySide6 桌面界面</a>）讲这些概念在本项目里具体怎么落地。
+</p>
+
+<h2>PySide6 是什么</h2>
+
+<p>
+PySide6 是 <strong>Qt 官方</strong>的 Python 绑定（项目名 <em>Qt for Python</em>），把 C++ 写的 Qt 6
+暴露给 Python。绑定代码由 <code>shiboken6</code> 自动生成——所以安装 PySide6 一定会带上它。
+</p>
+
+<table>
+  <thead><tr><th>对比项</th><th>PySide6</th><th>PyQt6</th></tr></thead>
+  <tbody>
+    <tr><td>维护方</td><td>Qt 公司官方</td><td>第三方 Riverbank</td></tr>
+    <tr><td>许可证</td><td><strong>LGPL-3.0</strong>（可闭源分发，须履行重链接义务）</td><td>GPL-3.0 或商业授权</td></tr>
+    <tr><td>API</td><td colspan="2">几乎一致，改个 import 大多能跑；信号定义写法略有差别</td></tr>
+  </tbody>
+</table>
+
+<p>
+本项目选 PySide6 的决定性理由就是<strong>许可证</strong>：LGPL 允许我们不开源自己的代码，
+代价是要让用户能用自己编译的 Qt 替换我们分发的那份（见
+<a href="07-engineering.html">07 · 测试、门禁与交付</a> 里的 onedir 与重链接义务）。
+</p>
+
+<h3>三个包名别搞混</h3>
+<ul>
+  <li><code>PySide6-Essentials</code> —— 核心模块：QtCore / QtGui / QtWidgets / QtNetwork…（约 200 MB）</li>
+  <li><code>PySide6-Addons</code> —— 附加模块：QtWebEngine、Qt3D、QtMultimedia、QtCharts…（约 430 MB）</li>
+  <li><code>PySide6</code> —— 上面两个的合集（约 634 MB）</li>
+</ul>
+<p>
+本项目<strong>只装 Essentials 并钉死 6.11.1</strong>。K 线是用 <code>QPainter</code> 自绘的，
+不需要 QtCharts；省下的 430 MB 直接反映在交付体积上。
+</p>
+
+<h2>QObject：对象树与内存</h2>
+
+<p>
+Qt 的基类是 <code>QObject</code>。它给了三样东西：<strong>对象树</strong>、<strong>信号槽</strong>、
+<strong>元对象系统</strong>（属性、类型内省）。
+</p>
+
+<p>
+对象树解决的是「谁负责销毁谁」：给对象指定 <code>parent</code>，父对象析构时会自动删掉所有子对象。
+布局里 <code>addWidget()</code> 会自动认亲，所以界面代码通常不需要手动释放。
+</p>
+
+<div class="warn">
+<strong>Python 开发者最常踩的坑：对象被 GC 掉。</strong>
+如果一个 QObject <em>没有 parent</em>，又只被一个临时变量引用，函数返回后 Python 就回收了它——
+界面上那个部件会莫名消失，或者信号连了却永远不触发。<br>
+反过来还有一个镜像坑：C++ 侧对象已删除，Python 侧包装还在，再访问就抛
+<code>RuntimeError: Internal C++ object already deleted</code>。
+</div>
+
+<h2>信号与槽：Qt 的解耦方式</h2>
+
+<p>
+信号槽是「发生了什么」与「谁来处理」之间的<strong>松耦合连接</strong>。发信号的一方不知道谁在听，
+也不关心有几个人听。
+</p>
+
+<pre><code>class Worker(QtCore.QObject):
+    finished = QtCore.Signal(int, object)   # 声明信号及其参数类型
+
+worker.finished.connect(self.on_finished)   # 连接
+worker.finished.emit(3, payload)            # 发射</code></pre>
+
+<h3>连接类型：跨线程安全的关键</h3>
+
+<table>
+  <thead><tr><th>类型</th><th>行为</th><th>什么时候用</th></tr></thead>
+  <tbody>
+    <tr><td><code>AutoConnection</code>（默认）</td><td>同线程→直连；跨线程→排队</td><td>绝大多数情况</td></tr>
+    <tr><td><code>DirectConnection</code></td><td>立即在<strong>发射方</strong>线程执行槽</td><td>确知同线程且要求同步</td></tr>
+    <tr><td><code>QueuedConnection</code></td><td>投递到<strong>接收方</strong>线程的事件队列，稍后执行</td><td>工作线程 → GUI 线程</td></tr>
+  </tbody>
+</table>
+
+<p>
+默认的 Auto 已经覆盖了跨线程：只要接收方是<strong>有线程亲和的 QObject</strong>，Qt 会自动排队。
+这就是为什么工作线程可以直接 <code>emit</code>，而槽函数在 GUI 线程里安全执行。
+</p>
+
+<div class="warn">
+<strong>前提是「绑定方法槽」。</strong>连到临时 lambda 或闭包会丢失线程亲和，退化成直连——
+于是工作线程直接碰了控件，行为不可预测。本项目为此明确规定：跨线程信号一律连到
+<code>self.xxx</code> 这样的绑定方法。
+</div>
+
+<h2>事件循环</h2>
+
+<p>
+<code>app.exec()</code> 启动事件循环：不断从队列里取事件（鼠标、键盘、重绘、定时器、排队的槽调用）
+并分发。<strong>它是单线程的</strong>——所以在槽里做耗时工作，整个界面就卡住。
+</p>
+
+<p>
+<code>QTimer</code> 也是事件循环的一部分：<code>timer.timeout.connect(fn)</code> 之后
+<code>start(60000)</code>，每 60 秒把一次调用投进队列。本项目的条件预警轮询就是这么驱动的。
+</p>
+
+<h3>信号 vs 事件</h3>
+<ul>
+  <li><strong>事件</strong>（event）是 Qt 发给部件的通知，用重写 <code>xxxEvent()</code> 处理，
+      比如 <code>paintEvent</code>、<code>closeEvent</code>、<code>mouseMoveEvent</code>。</li>
+  <li><strong>信号</strong>（signal）是对象主动广播的「发生了什么」，用 connect 处理。</li>
+</ul>
+<p>经验法则：想改变<strong>部件自身的行为</strong>用事件；想让<strong>别人知道</strong>用信号。</p>
+
+<h2>部件与布局</h2>
+
+<p>
+不要用绝对坐标摆控件——换字体、换 DPI、换语言，版式立刻散架。用<strong>布局管理器</strong>：
+</p>
+
+<ul>
+  <li><code>QVBoxLayout</code> / <code>QHBoxLayout</code> —— 垂直、水平排列</li>
+  <li><code>QGridLayout</code> —— 网格</li>
+  <li><code>QStackedWidget</code> —— 同一位置切换多页（本项目的五页导航用 <code>QTabWidget</code>）</li>
+</ul>
+
+<p>
+布局里每个部件有<strong>尺寸策略</strong>（size policy）与<strong>拉伸因子</strong>（stretch），
+决定空间不够或有余时谁让步、谁伸展。<code>addWidget(w, 3)</code> 里的 3 就是拉伸因子。
+</p>
+
+<h2>模型 / 视图</h2>
+
+<p>
+Qt 把「数据」和「怎么显示」拆开，好处是同一份数据可以有多个视图，而且大数据量时只渲染可见行。
+</p>
+
+<table>
+  <thead><tr><th>角色</th><th>常用类</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>模型</td><td><code>QAbstractTableModel</code></td><td>自己实现 <code>rowCount</code>/<code>columnCount</code>/<code>data</code>，适合大数据或数据本就存在别处</td></tr>
+    <tr><td>模型（现成）</td><td><code>QStandardItemModel</code></td><td>Qt 自带的通用容器，逐格塞 <code>QStandardItem</code>，写起来快</td></tr>
+    <tr><td>视图</td><td><code>QTableView</code> / <code>QTreeView</code></td><td>负责渲染与交互</td></tr>
+    <tr><td>代理模型</td><td><code>QSortFilterProxyModel</code></td><td>夹在中间做排序/过滤，<strong>会改变行号映射</strong></td></tr>
+    <tr><td>委托</td><td><code>QStyledItemDelegate</code></td><td>定制单元格的绘制与编辑</td></tr>
+  </tbody>
+</table>
+
+<h3>数据角色（ItemDataRole）</h3>
+<p>
+同一个单元格可以按不同「角色」存多份数据，这是 Qt 模型的核心设计：
+</p>
+<ul>
+  <li><code>DisplayRole</code> —— 显示出来的文本</li>
+  <li><code>UserRole</code> —— 自定义数据，常用来存<strong>排序键</strong>或原始对象</li>
+  <li><code>BackgroundRole</code> / <code>ForegroundRole</code> —— 背景色 / 前景色</li>
+  <li><code>ToolTipRole</code> —— 悬停提示</li>
+</ul>
+<p>
+「显示 <code>+9.50%</code>、排序按 <code>9.5</code>」正是靠 DisplayRole 与 UserRole 分离实现的——
+按文本排序会得出「+9.50% &lt; -1.20%」这种字面序。
+</p>
+
+<h2>QSS 样式表</h2>
+
+<p>语法像 CSS，选择器按类名、对象名或<strong>自定义属性</strong>：</p>
+
+<pre><code>QPushButton { background: #F4F1EA; border-radius: 4px; }
+QPushButton[role="primary"] { background: #1B3A5B; color: white; }
+#mainToolbar { border-bottom: 1px solid #DDD; }</code></pre>
+
+<p>
+属性选择器 <code>[role="primary"]</code> 配合 <code>widget.setProperty("role", "primary")</code>，
+就能给同一种部件做出多种外观，而不必派生子类。
+</p>
+
+<div class="warn">
+<strong>两个必踩的坑：</strong><br>
+1. 改了 property 之后样式不会自动刷新，要
+<code>style().unpolish(w); style().polish(w)</code> 手动重算。<br>
+2. 给 <code>QWidget</code> 直接子类设背景色<strong>不生效</strong>，除非置
+<code>WA_StyledBackground</code> 属性——Qt 默认只为 QFrame 这类自带绘制的部件画样式表背景。
+</div>
+
+<h2>自绘：QPainter</h2>
+
+<p>
+现成部件满足不了时（比如 K 线图），重写 <code>paintEvent</code> 自己画：
+</p>
+
+<pre><code>def paintEvent(self, event):
+    p = QtGui.QPainter(self)
+    p.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+    p.fillRect(rect, brush)
+    p.drawLine(x1, y1, x2, y2)</code></pre>
+
+<p>
+关键在于把<strong>几何计算</strong>与<strong>绘制</strong>分开：算坐标的部分是纯函数，可以脱离 Qt 单测；
+<code>paintEvent</code> 只负责把算好的坐标画出来。本项目的 K 线就是这么组织的。
+</p>
+
+<h2>并发：不要碰跨线程的控件</h2>
+
+<p>Qt 的铁律只有一条：<strong>只有 GUI 线程能触碰控件</strong>。常用工具：</p>
+
+<ul>
+  <li><code>QThreadPool</code> + <code>QRunnable</code> —— 提交一次性任务，池子自动复用线程（本项目用它）</li>
+  <li><code>QThread</code> —— 需要长期存活、自带事件循环的工作线程</li>
+  <li>结果回传一律走<strong>信号</strong>，靠排队连接自动切回 GUI 线程</li>
+</ul>
+
+<p>展开讲见 <a href="05-concurrency.html">05 · 线程、取消与世代守卫</a>。</p>
+
+<h2>打包与部署</h2>
+
+<ul>
+  <li>PyInstaller 打包时必须带上 <strong>Qt 插件目录</strong>：<code>platforms/</code>（缺了就
+      「could not load the Qt platform plugin」直接启动失败）、<code>styles/</code>、
+      <code>imageformats/</code>。</li>
+  <li><code>QT_QPA_PLATFORM=offscreen</code> 让 Qt 在无显示器环境跑（CI 测试靠它）。
+      副作用是字体回退成默认族，中文会显示成方块——所以<strong>看版式效果必须用真实平台渲染</strong>。</li>
+  <li>LGPL 要求用户能替换 Qt 库 → 交付必须是 <strong>onedir</strong>（Qt DLL 是可替换的独立文件），
+      不能是把一切压进一个 exe 的 onefile。</li>
+</ul>
+
+<h2>速查：新手最容易犯的错</h2>
+
+<table>
+  <thead><tr><th>症状</th><th>原因</th><th>解法</th></tr></thead>
+  <tbody>
+    <tr><td>部件闪一下就没了</td><td>没有 parent，被 Python GC</td><td>指定 parent，或用成员变量持有</td></tr>
+    <tr><td><code>C++ object already deleted</code></td><td>C++ 侧已析构，Python 包装还在用</td><td>理清所有权，别在 parent 析构后再访问</td></tr>
+    <tr><td>循环里连信号，点谁都触发最后一个</td><td>lambda 捕获的是循环变量本身</td><td><code>lambda _, x=item: fn(x)</code> 用默认参数捕获</td></tr>
+    <tr><td>界面卡死</td><td>在槽里做了耗时工作</td><td>丢进 QThreadPool，结果走信号回来</td></tr>
+    <tr><td>QSS 写了不生效</td><td>QWidget 子类未置 WA_StyledBackground；或 property 改后没重算样式</td><td>见上面「两个必踩的坑」</td></tr>
+    <tr><td>打包后启动即崩</td><td>缺 Qt platform 插件</td><td>确认 <code>platforms/</code> 被收进产物</td></tr>
+  </tbody>
+</table>
+
+<nav class="crumbs bottom">
+  <a href="02-domain-algorithms.html">← 上一篇：指标与决策</a> ·
+  <a href="index.html">首页</a> ·
+  <a href="04-qt-ui.html">下一篇：本项目的界面实现 →</a>
+</nav>
+</div>
+
+</body>
+</html>

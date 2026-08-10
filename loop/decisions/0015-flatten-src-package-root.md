@@ -43,7 +43,7 @@ ADR-0007 把 22 个模块按层拆进 `src/stock_advisor/{domain,data,services,u
   日志行为因此完全不变。
 - 一次性改写量：src 21 行绝对导入 + 145 行跨层相对导入、tests 239 行、`main.py`/`scripts/` 若干、
   `loop/` 活文档与机器配置约 60 处路径。历史文档（ADR、CHANGELOG、progress.jsonl、封存证据、
-  基线快照、docs/superpowers）一律不改写，行文所述为当时事实。
+  基线快照、loop/planning/archive）一律不改写，行文所述为当时事实。
 
 ## 替代方案
 
