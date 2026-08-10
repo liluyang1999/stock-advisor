@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 测试、门禁与交付 · 股市锦囊知识库</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="band">
+  <div class="wrap">
+    <h1>06 · 测试、门禁与交付</h1>
+    <p>TDD 的真实用法、八道质量门禁、loop 控制平面、CI 的坑、打包与发布元数据</p>
+  </div>
+</header>
+
+<div class="wrap">
+<nav class="crumbs"><a href="index.html">← 首页</a> · <a href="05-data-quality.html">← 上一篇：数据与数值纪律</a></nav>
+
+<h2>一、TDD：先写会失败的测试</h2>
+
+<pre><code>RED    写一个测试，运行，确认它<strong>因为正确的原因</strong>失败
+GREEN  写最少的代码让它通过
+REFACTOR  在保持绿的前提下整理</code></pre>
+
+<div class="key">
+  <strong>「确认它因为正确的原因失败」是最容易被跳过、也最关键的一步。</strong>
+  没看过测试变红，你就不知道它到底测没测到东西——很多"测试后补"的用例其实永远是绿的，
+  把实现删掉它照样通过。
+</div>
+
+<h3>一个真实例子</h3>
+<p>给门禁运行器加 <code>--strict</code> 参数时，先写的测试是：</p>
+<pre><code>self.assertEqual(run_gates.main([]), 0)            # 默认：SKIP 不算失败
+self.assertEqual(run_gates.main(["--strict"]), 1)  # strict：SKIP 即失败</code></pre>
+<p>运行后它红了，报错是 <code>unrecognized arguments: --strict</code>，同时 stdout 打出：</p>
+<pre><code>[G-FAKE     ] SKIP (no_such_module_xyz not installed)
+RUN_GATES_OK ran=1 failed=0 skipped=1</code></pre>
+<p>
+这行输出本身就是<strong>缺陷的证据</strong>：一个根本没跑的门禁，进程却退出 0。
+先看到这一幕，再去实现，心里就非常清楚在修什么。
+</p>
+
+<h3>好测试 vs 坏测试</h3>
+<table>
+  <tr><th>坏</th><th>好</th></tr>
+  <tr><td>断言 mock 被调用时传了测试自己传进去的参数</td><td>断言<strong>真实行为</strong>：给定输入，输出符合预期</td></tr>
+  <tr><td><code>sleep(1)</code> 然后断言</td><td>注入假时钟 / 等待信号 / 断言可观察状态</td></tr>
+  <tr><td>测试名叫 <code>test_1</code></td><td>测试名说清<strong>被保护的性质</strong>，如 <code>test_cancelled_snapshot_marks_the_report_cancelled_not_errored</code></td></tr>
+  <tr><td>把实现删掉测试照样过</td><td>删掉实现必红（可以真的试一次，叫<strong>变异验证</strong>）</td></tr>
+</table>
+
+<h2>二、八道质量门禁</h2>
+
+<p>本项目用一个门禁运行器把所有检查串起来，任何一道红就整体失败。</p>
+
+<table>
+  <tr><th>门禁</th><th>检查什么</th></tr>
+  <tr><td><code>G-LOOP</code></td><td>控制平面自身一致性：schema 校验、追溯完整、状态文件与工作项状态相符、核心边界、loop 工具测试</td></tr>
+  <tr><td><code>G-FORMAT</code></td><td><code>ruff format --check</code> 全仓</td></tr>
+  <tr><td><code>G-LINT</code></td><td><code>ruff check</code> 全仓</td></tr>
+  <tr><td><code>G-TYPE</code></td><td><code>pyright</code> 静态类型</td></tr>
+  <tr><td><code>G-CORE</code></td><td>产品测试全绿 + 离线自检；<strong>并用 AST 强制领域内核的纯度</strong></td></tr>
+  <tr><td><code>G-COVERAGE</code></td><td>逐维度断言覆盖率下限（整体语句/分支、核心语句/分支各有阈值）</td></tr>
+  <tr><td><code>G-SECURITY</code></td><td>导出注入中和等安全用例</td></tr>
+  <tr><td><code>G-SURFACE</code></td><td><strong>每个声明已交付的能力都必须能从装好的主窗找到对应部件</strong></td></tr>
+</table>
+
+<div class="warn">
+  <strong>G-SURFACE 存在的原因值得记住。</strong>这个项目发生过两轮「宣称已交付却接不通」：
+  决策强度切换、证据视图、仓位计算器、横向对比、可信度回测——实现与单测<strong>全都齐备</strong>，
+  但相应部件<strong>从未被挂进任何页面</strong>，用户根本点不到。
+  <br><br>
+  <strong>单元测试结构上抓不到这类问题</strong>：它直接构造部件来测，而恰恰"把部件装进页面"这一步被跳过了。
+  所以需要一道从<strong>装配好的主窗口</strong>往下找的门禁。
+</div>
+
+<h3>覆盖率的正确用法</h3>
+<div class="note">
+  <code>coverage report --fail-under=85</code> 比较的是<strong>语句+分支的合并值</strong>，
+  它并不断言你文档里写的那四个阈值中的任何一个。本项目改用自己的检查脚本，
+  <strong>逐维度</strong>断言：整体语句 ≥ 90%、整体分支 ≥ 85%、核心语句 ≥ 95%、核心分支 ≥ 90%。
+  <br><br>
+  另外：<strong>高覆盖率不等于测得好</strong>。死代码被它自己的测试覆盖到 100%，
+  覆盖率报告一片绿——本项目就删掉过两个这样的模块。
+</div>
+
+<h2>三、loop 控制平面：让文档不能说谎</h2>
+
+<p>
+<code>loop/</code> 目录是这个项目最独特的部分：它把「当前状态」做成<strong>机器可校验的数据</strong>，
+而不是一堆会过期的散文。
+</p>
+
+<table>
+  <tr><th>目录</th><th>内容</th></tr>
+  <tr><td><code>product/</code></td><td>需求（REQ-*）、验收标准（AC-*）、能力面、设计 token</td></tr>
+  <tr><td><code>decisions/</code></td><td>架构决策记录（ADR），16 份，每份含背景/决策/后果</td></tr>
+  <tr><td><code>architecture/</code></td><td>模块边界、数据流、并发、安全威胁模型、打包……</td></tr>
+  <tr><td><code>quality/</code></td><td>门禁定义、测试目录、追溯矩阵、发布就绪清单</td></tr>
+  <tr><td><code>planning/</code></td><td>工作项（WI-*）、里程碑、依赖图</td></tr>
+  <tr><td><code>state/</code></td><td>当前状态、度量、证据索引（机器渲染，不手写）</td></tr>
+  <tr><td><code>evidence/</code></td><td>每条结论背后的实跑证据文件</td></tr>
+</table>
+
+<h3>摘要锚定（digest anchoring）</h3>
+<pre><code>control_plane_digest() = sha256(loop/ 下所有受管文件的字节)</code></pre>
+<p>
+这个摘要被记录在「基线证据」里。任何人改动 <code>loop/</code> 的任何一个字节，摘要就变，
+<code>G-LOOP</code> 立刻失败——除非同时走<strong>再基线协议</strong>：写一份说明改了什么、为什么改的证据文件，
+并把新摘要登记进去。
+</p>
+<div class="key">
+  这条机制的价值在于：<strong>它让「悄悄改文档」变得不可能</strong>。
+  你可以改，但必须留下一份说明。工程治理最难的不是写规则，而是让规则无法被绕过。
+</div>
+
+<h3>计数锚点：防止数字悄悄烂掉</h3>
+<p>
+状态文件里记着「测试总数」。这个数字会随着开发不断变化，如果没人管，它就会慢慢和现实脱节——
+本项目里它曾经长期停在 <strong>814</strong>，而真实套件早已远超那个数。
+</p>
+<pre><code>def test_metrics_product_test_count_is_anchored_to_the_real_suite():
+    suite = unittest.defaultTestLoader.discover("tests")
+    assert metrics["tests"]["methods"] == count(suite)   # 记录必须跟着真实套件走</code></pre>
+<p>加上这条测试后，每次新增测试都会让它变红，逼你顺手把记录改对。<strong>无锚点的数字必然烂掉。</strong></p>
+
+<h2>四、CI 的两个真实坑</h2>
+
+<h3>坑一：门禁"跳过"却算成功</h3>
+<p>
+门禁运行器为了在新检出的机器上可用，把「工具没装」降级成 <code>SKIP</code> 而不是崩溃。
+这在本地是便利，在 CI 里是<strong>毫无根据的绿</strong>——一个装不上的 pyright 会让类型门禁<strong>悄悄消失</strong>，
+流水线照样通过。
+</p>
+<pre><code>CI 必须用：run_gates.py --strict     # SKIP 计为失败</code></pre>
+
+<h3>坑二：换行符让摘要在 CI 上必然不匹配</h3>
+<div class="warn">
+  摘要按<strong>字节</strong>计算。<code>.gitattributes</code> 声明 <code>loop/** text eol=lf</code>，
+  所以 git 存 LF、CI 检出也是 LF。但如果本地的写文件代码用<strong>文本模式</strong>，
+  Windows 上会写出 CRLF——于是「本地算出的摘要」与「CI 检出后算出的摘要」<strong>永远不同</strong>，
+  第一次真实 CI 运行就会因为换行符而失败，且原因与代码质量毫无关系。
+  <br><br>
+  <strong>解法：</strong>写文件时显式 <code>newline="\n"</code>，并加一条测试断言
+  <code>loop/</code> 下任何文件都不含 CRLF。
+</div>
+
+<h3>CI 里的其它要点</h3>
+<table>
+  <tr><th>配置</th><th>为什么</th></tr>
+  <tr><td><code>timeout-minutes</code></td><td>不设的话，一个卡住的任务会烧到 6 小时默认上限</td></tr>
+  <tr><td><code>concurrency</code> + cancel-in-progress</td><td>新推送让在途运行作废，不用两个 runner 抢答同一个问题</td></tr>
+  <tr><td><code>permissions: contents: read</code></td><td>最小权限：这个流水线只需要读仓库</td></tr>
+  <tr><td><code>QT_QPA_PLATFORM=offscreen</code></td><td>Qt 测试要构造真实 QWidget，offscreen 是唯一不需要显示器的平台插件</td></tr>
+</table>
+
+<h2>五、打包与交付</h2>
+
+<h3>onedir 而不是 onefile</h3>
+<table>
+  <tr><th>形态</th><th>热启动</th><th>LGPL 重链接义务</th></tr>
+  <tr><td>onefile（单个 exe）</td><td><strong>2.903 秒</strong>（每次启动重新解压约 100 MB）</td><td>做不到</td></tr>
+  <tr><td>onedir（应用目录）</td><td><strong>0.685 秒</strong></td><td>可以</td></tr>
+</table>
+<div class="note">
+  <strong>两条独立理由都指向 onedir：</strong>
+  ① 单文件热启动超出 2.5 秒的性能预算；
+  ② PySide6 以 <strong>LGPL-3.0</strong> 分发，其第 4(d) 条要求用户能用自己编译的 Qt 重新链接——
+  只有当 Qt 动态库是<strong>可替换的独立文件</strong>时这条义务才履行得了。
+  <br><br>
+  <strong>许可证是真实的工程约束，不是法务的事后审批。</strong>
+</div>
+
+<h3>为什么用 PySide6-Essentials 而不是 PySide6</h3>
+<pre><code>PySide6（元包）= Essentials + Addons = 634.1 MB
+PySide6-Essentials              = 202.2 MB
+其中 Qt6WebEngineCore.dll 一个文件就 195.3 MB —— 而这个产品根本不用浏览器内核</code></pre>
+
+<h3>发布元数据</h3>
+<table>
+  <tr><th>产物</th><th>作用</th></tr>
+  <tr><td><code>SBOM.json</code>（CycloneDX 1.5）</td><td>软件物料清单：交付物里到底有哪些组件、什么许可证</td></tr>
+  <tr><td><code>THIRD_PARTY_NOTICES.md</code></td><td>第三方许可通知</td></tr>
+  <tr><td><code>RELEASE_MANIFEST.json</code></td><td>逐文件 SHA-256（204 个文件）</td></tr>
+  <tr><td><code>--verify</code></td><td>校验一份交付目录是否与清单完全一致（防篡改/防传输损坏）</td></tr>
+</table>
+
+<h3>交付物自检</h3>
+<pre><code>dist\股市锦囊\股市锦囊.exe --self-test
+→ SELF_TEST_OK ... checks=8/8   退出码 0</code></pre>
+<p>
+打包成功<strong>不等于</strong>能跑。自检用内置样例数据把个股分析、五档决策、仓位、回测、持久化、
+横向对比、条件预警、全市场选股整条链路跑一遍，不联网、不开窗。这是发布前的可复现合同。
+</p>
+
+<h2>六、可复现构建</h2>
+<pre><code>[project].dependencies      PySide6-Essentials==6.11.1   ← 运行期唯一第三方依赖
+[dependency-groups].build   pyinstaller==6.21.0          ← 构建期唯一依赖，钉死版本
+[dependency-groups].dev     ruff / pyright / pytest / coverage / pre-commit</code></pre>
+<div class="key">
+  <strong>构建依赖必须钉死版本</strong>：交付物的可复现性取决于它。浮动版本会让「同一个提交构建出不同产物」成为可能，
+  而那时你连 bug 是自己引入的还是工具链变的都分不清。
+</div>
+
+<h2>本篇要点回顾</h2>
+<ul>
+  <li>TDD 的关键是<strong>亲眼看到红</strong>，且红的原因正确。</li>
+  <li>门禁要覆盖到<strong>装配层</strong>——单元测试抓不到「部件没被挂进页面」。</li>
+  <li>覆盖率要<strong>逐维度断言</strong>；高覆盖率不等于测得好，死代码也能 100% 覆盖。</li>
+  <li>让文档不能说谎的办法是<strong>摘要锚定 + 计数锚点</strong>：无锚点的数字必然烂掉。</li>
+  <li>CI 里 <strong>SKIP 必须算失败</strong>；<strong>换行符</strong>能让字节级校验在 CI 上必然失败。</li>
+  <li>打包选型受<strong>性能预算与许可证义务</strong>双重约束；构建依赖钉死版本。</li>
+</ul>
+
+<nav class="crumbs" style="margin-top:32px">
+  <a href="05-data-quality.html">← 上一篇</a> · <a href="index.html">回到首页</a>
+</nav>
+
+<div class="disclaimer">本文用于讲解程序实现与工程方法，<strong>不构成投资建议</strong>。</div>
+<footer class="foot">股市锦囊 · knowledge · 06 测试、门禁与交付</footer>
+
+</div>
+</body>
+</html>

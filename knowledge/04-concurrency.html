@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 线程、取消与世代守卫 · 股市锦囊知识库</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="band">
+  <div class="wrap">
+    <h1>04 · 线程、取消与世代守卫</h1>
+    <p>GUI 线程为什么碰不得网络、迟到结果如何丢弃、协作取消与总 deadline</p>
+  </div>
+</header>
+
+<div class="wrap">
+<nav class="crumbs"><a href="index.html">← 首页</a> · <a href="03-qt-ui.html">← 上一篇：桌面界面</a></nav>
+
+<h2>一条铁律：QWidget 只能在 GUI 线程碰</h2>
+
+<div class="key">
+  Qt 的控件<strong>不是线程安全的</strong>。在工作线程里直接 <code>label.setText(...)</code>
+  可能当场崩溃，也可能"看起来能跑"然后在用户机器上偶发崩溃——后者更糟，因为它不可复现。
+</div>
+
+<p>所以本项目的并发边界是死的：</p>
+
+<pre><code>GUI 线程          │  工作线程（QThreadPool）
+──────────────────┼──────────────────────────
+页面、控件、模型   │  取数、解析、算分
+控制器（QObject） │  纯 Python 对象，不碰任何 QWidget
+        ▲         │
+        └── queued signal ──┘   ← 结果只能这样回来</code></pre>
+
+<h3>为什么信号能安全跨线程</h3>
+<p>
+Qt 的信号槽在跨线程连接时默认是 <strong>queued connection</strong>：信号携带的参数被放进目标对象所在线程的
+事件队列，由那个线程<strong>在自己的事件循环里</strong>调用槽函数。于是槽函数体内的代码天然运行在 GUI 线程，
+可以安全操作控件。
+</p>
+
+<div class="warn">
+  <strong>一个容易踩的坑：</strong>把槽连接到<strong>临时闭包</strong>（lambda）上，
+  会丢失 QObject 的线程亲和性，可能退化成直连（在工作线程里执行），甚至因为没有引用而被垃圾回收。
+  本项目一律把槽写成 <strong>QObject 的绑定方法</strong>，不用闭包接跨线程信号。
+</div>
+
+<h2>问题一：迟到的结果会覆盖新状态</h2>
+
+<h3>症状</h3>
+<p>
+用户分析股票 A，等得不耐烦，改成分析股票 B。A 的请求还在路上，B 先返回并渲染。
+接着 A 姗姗来迟，把界面覆盖成 A 的数据——<strong>用户看到的是 B 的股票名配 A 的数据</strong>。
+</p>
+
+<h3>解法：世代守卫（Generation Guard）</h3>
+
+<pre><code>class GenerationGuard:
+    current: int            # 只在 GUI 线程递增
+    def bump(self) -> int   # 开新一轮：世代 +1，返回新世代号
+    def is_current(self, g) -> bool</code></pre>
+
+<pre><code>控制器 start():
+    cancel, gen = self._begin()      # 世代 +1，拿到本轮世代号
+    worker = Worker(..., gen, ...)   # 世代号随 worker 走
+
+worker 完成 → 信号回 GUI 线程 → 槽里第一件事：
+    if not self._is_current(gen): return   # 上一代的结果，直接丢弃</code></pre>
+
+<div class="note">
+  <strong>为什么这个方案是线程安全的：</strong>世代计数器<strong>只在 GUI 线程</strong>读写，
+  worker 只持有一个 <code>int</code> 快照。整个机制不需要锁——把可变状态限制在单线程内，
+  比加锁更简单也更不容易出错。
+</div>
+
+<h3>取消 ≠ 重启</h3>
+<table>
+  <tr><th>动作</th><th>世代是否 +1</th><th>为什么</th></tr>
+  <tr><td>用户点「停止」</td><td><strong>否</strong></td><td>这一轮仍要交付它的「已取消」终态，好让界面把按钮复位、状态写清楚</td></tr>
+  <tr><td>用户再次点「开始」</td><td><strong>是</strong></td><td>新一轮 supersede 旧一轮，旧结果不再需要</td></tr>
+</table>
+
+<h2>问题二：取消根本停不下来</h2>
+
+<h3>症状</h3>
+<p>
+点了「停止」，界面按钮变灰了，但程序还在跑。关窗时更明显——窗口消失了，进程还赖着不退。
+</p>
+
+<h3>根因：取消只在两次取数「之间」被检查</h3>
+<pre><code>for symbol in symbols:
+    if cancel.is_cancelled(): break   # ← 只有这里检查
+    fetch(symbol)                     # ← 这一步本身可能跑 100 秒</code></pre>
+
+<p>
+早期实现里，单只股票的历史取数最坏要走 <strong>4 个数据源 × 3 次重试 × 8 秒 ≈ 100 秒</strong>，
+且<strong>每个源各自重新获得完整的超时预算</strong>。这段时间里取消完全不起作用。
+</p>
+
+<h3>解法一：协作取消令牌深入传输层</h3>
+<pre><code>run_with_contract(attempts, deadline=..., cancel_token=...):
+    for label, call in attempts:
+        if cancel_token.is_cancelled(): return 已取消
+        if deadline.expired():          return 超时
+        ...</code></pre>
+<p>控制器开一轮时，把本轮的取消令牌<strong>绑给自己的 provider</strong>，于是令牌一翻，在途请求就会在下一个可中断点退出。</p>
+
+<div class="warn">
+  <strong>这里有个隐藏前提：每个控制器必须持有自己的 provider 实例。</strong>
+  五个控制器共用一个 provider 时，它的取消令牌是<strong>单一可变状态</strong>——
+  个股页按「停止」会连带翻掉预警轮询和选股在途请求的令牌。这比不做取消更糟。
+</div>
+
+<h3>解法二：总 deadline</h3>
+<pre><code>@dataclass(frozen=True)
+class Deadline:
+    budget_seconds: float
+    started_at: float
+    clock: Callable[[], float] = time.monotonic   # 注入时钟，测试不必真的 sleep</code></pre>
+
+<div class="key">
+  <strong>一个 deadline 覆盖所有重试与备用源</strong>，而不是每个源重新拿一份完整预算。
+  这把最坏耗时从约 100 秒压到 20 秒。<code>time.monotonic</code> 而非 <code>time.time</code>：
+  单调时钟不受系统时间调整影响。时钟可注入，因此 deadline 相关的测试<strong>一秒都不用睡</strong>。
+</div>
+
+<h2>问题三：周期任务重叠</h2>
+
+<p>
+条件预警是一个 <code>QTimer</code> 每 60 秒跑一轮。如果某一轮因为网络慢跑了 90 秒会怎样？
+定时器不会等它——第二轮、第三轮照常提交，多个周期重叠在跑。
+</p>
+
+<h3>后果</h3>
+<p>
+预警是<strong>边沿触发</strong>的（条件由假变真才提醒，持续为真不重复刷屏），它靠一个 <code>fired</code> 集合记住
+「哪些规则已经响过」。重叠的周期各自拿着<strong>同一份旧快照</strong>出发，于是同一条预警<strong>每轮都会重新触发</strong>；
+更糟的是它们完成时会互相覆盖 <code>fired</code> 状态。
+</p>
+
+<h3>解法：在途守卫</h3>
+<pre><code>def _tick(self):
+    if self._in_flight:      # 上一轮还没跑完
+        return               # 跳过这一拍
+    self._in_flight = True
+    ...提交 worker...
+
+def _on_cycle_done(...):
+    if 不是当前世代 or 已停止: return
+    self._in_flight = False  # 当前代这一轮结束，放行下一拍</code></pre>
+
+<h2>关闭时的生命周期</h2>
+
+<pre><code>closeEvent → 每个控制器 shutdown():
+    cancel()                      # 先请求协作取消
+    pool.waitForDone(5000)        # 再有限等待线程池排空</code></pre>
+
+<div class="note">
+  <strong>顺序不能反。</strong>不先取消就等待，等的是完整的取数时长；
+  而 <code>QThreadPool</code> 的析构函数会<strong>无限期阻塞</strong>直到任务结束——那就是「关不掉的窗口」。
+  <br><br>
+  等池排空后，任何仍排队的 queued signal 会因为目标 QObject 被删除而由 Qt 丢弃，
+  所以控件拆除期间不会有信号打到已释放的对象上。
+</div>
+
+<h2>如何测试并发代码</h2>
+
+<table>
+  <tr><th>要验证的性质</th><th>怎么写成确定性测试</th></tr>
+  <tr><td>迟到结果被丢弃</td><td>手工构造两轮，让第一轮的完成信号在第二轮开始<strong>之后</strong>才发，断言界面状态属于第二轮</td></tr>
+  <tr><td>取消交付「已取消」终态</td><td>取消后等待完成信号，断言终态标志而不是断言"没有信号"</td></tr>
+  <tr><td>deadline 生效</td><td><strong>注入假时钟</strong>，手工推进时间，断言超时分支——不 sleep</td></tr>
+  <tr><td>取消真的到达传输层</td><td>用 spy provider 记录被绑上来的令牌，断言 <code>cancel()</code> 后它确实被翻转</td></tr>
+  <tr><td>跨控制器不误伤</td><td>取消 A，断言 B 的令牌<strong>未</strong>被翻转</td></tr>
+</table>
+
+<div class="key">
+  <strong>并发测试的通用原则：不要用 sleep 来"等一等"。</strong>
+  sleep 让测试变慢，而且在慢机器上偶发失败（flaky）。
+  正确做法是<strong>注入可控的时钟</strong>、<strong>用事件循环等待信号</strong>、
+  <strong>把并发点做成可观察的对象</strong>（世代号、令牌、在途标志）然后直接断言它们。
+</div>
+
+<h2>本篇要点回顾</h2>
+<ul>
+  <li>QWidget <strong>只能在 GUI 线程</strong>操作；结果靠 queued signal 回来，槽用绑定方法不用闭包。</li>
+  <li><strong>世代守卫</strong>丢弃迟到结果；计数器只在单线程读写，因此无需加锁。</li>
+  <li><strong>协作取消 + 总 deadline</strong>让"停止"和"关窗"真的能停下来；每个控制器要有自己的 provider。</li>
+  <li>周期任务需要<strong>在途守卫</strong>，否则边沿触发的状态会被重叠周期反复重置。</li>
+  <li>关闭顺序是<strong>先取消、再有限等待</strong>；测试并发用<strong>假时钟</strong>而不是 sleep。</li>
+</ul>
+
+<nav class="crumbs" style="margin-top:32px">
+  <a href="03-qt-ui.html">← 上一篇</a> · <a href="05-data-quality.html">下一篇：行情数据与数值纪律 →</a>
+</nav>
+
+<div class="disclaimer">本文用于讲解程序实现，<strong>不构成投资建议</strong>。</div>
+<footer class="foot">股市锦囊 · knowledge · 04 线程、取消与世代守卫</footer>
+
+</div>
+</body>
+</html>

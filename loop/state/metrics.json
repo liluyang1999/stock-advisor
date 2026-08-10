@@ -22,9 +22,9 @@
     "independent_verification": true
   },
   "tests": {
-    "modules": 77,
-    "methods": 874,
-    "passed": 874,
+    "modules": 76,
+    "methods": 870,
+    "passed": 870,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
@@ -33,8 +33,8 @@
     "qt_specific": 211
   },
   "coverage": {
-    "statement": 0.9582,
-    "branch": 0.9096
+    "statement": 0.9487,
+    "branch": 0.9099
   },
   "tooling": {
     "ci": false,

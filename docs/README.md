@@ -51,8 +51,23 @@ git log --all --full-history -- docs/superpowers/<specs-or-plans>/<name>.md   # 
 
 - `docs/ui-concepts/` — UI concept mockups (`r2/`, `r3/`: Tkinter-era rounds; `pyside6-r1/`,
   `pyside6-r2/`: PySide6 rounds).
-- `docs/stock_advisor_technical_stack_report.html` — standalone "技术栈、原理与实现" (technical
-  stack, principles, and implementation) teaching report.
+
+## 教学材料已迁往 `knowledge/`
+
+面向读者的**教学性**内容不再放在 `docs/` 下，统一收拢到仓库根目录的 **`knowledge/`**：
+
+| 页面 | 内容 |
+|---|---|
+| `knowledge/index.html` | 知识库入口：阅读路径、技术栈速览、与其它文档的关系 |
+| `knowledge/01-architecture.html` | 分层架构、纯领域内核、端口与适配器、信封模式 |
+| `knowledge/02-domain-algorithms.html` | 技术指标、五档决策强度、仓位测算、回测与选股 |
+| `knowledge/03-qt-ui.html` | PySide6 模型/视图、设计 token、空态与失败态、可访问性（含真实截图） |
+| `knowledge/04-concurrency.html` | 线程边界、世代守卫、协作取消与总 deadline |
+| `knowledge/05-data-quality.html` | 多源回退、零伪造、分页完整度、Decimal/int/float 三分法 |
+| `knowledge/06-engineering.html` | TDD、八道质量门禁、loop 控制平面、CI 的坑、打包与发布 |
+| `knowledge/07-technical-stack-report.html` | 原 `docs/stock_advisor_technical_stack_report.html`，迁入后保留为通读长文 |
+
+`docs/` 自此只留**过程性记录**（设计规格、实施计划、界面概念稿），不再承载教学材料。
 
 ## Documentation hygiene
 

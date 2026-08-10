@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from qt_test_helpers import QtCore, QtWidgets, qt_app, requires_qt
 
 if QtWidgets is not None:
-    from qt_app.widgets.table_utils import Column, make_readonly_table
+    from qt_app.widgets.table_utils import Column, make_readonly_table, table_height
 
 _LEFT = None if QtCore is None else QtCore.Qt.AlignmentFlag.AlignLeft
 _RIGHT = None if QtCore is None else QtCore.Qt.AlignmentFlag.AlignRight
@@ -120,6 +120,36 @@ class RowTooltipTests(unittest.TestCase):
         columns = [Column("a", "甲", 100)]
         row = make_row(["x"], columns)
         self.assertEqual(row[0].toolTip(), "")
+
+
+@requires_qt
+class TableHeightTests(unittest.TestCase):
+    """表高按 token 现算，而不是各页手抄一个“表头大概这么高”的常数。
+
+    这三条对应 Tk 时代 `gui_layout.GuiLayoutTests` 的三条表高契约（小批量紧凑、空表用较矮的占位
+    高度、大批量有界）。此前 tk-contract-mapping 把它们的替代测试记成 `test_qt_result_model`，
+    但那个文件测的是一个从未被生产实例化的 `ResultTableModel`，从来没测过表高——契约实际上
+    **无人接管**。`table_height` 被五个页面用来定 min/max 高度，这里给它真正的守卫。
+    """
+
+    def setUp(self):
+        self.app = qt_app()
+
+    def test_height_grows_with_row_count(self):
+        heights = [table_height(n) for n in (0, 1, 4, 8, 20)]
+        # strict=False 是**有意**的：这是成对滑窗，两个序列本就差一个元素。
+        for shorter, taller in zip(heights, heights[1:], strict=False):
+            self.assertLess(shorter, taller, "行数变多，表高必须随之变高")
+
+    def test_zero_rows_still_leaves_room_for_the_header(self):
+        # 空表不是零高：表头与边框仍要占位，否则空态提示无处可放（老版的“较矮占位高度”）。
+        self.assertGreater(table_height(0), 0)
+
+    def test_height_is_linear_so_a_large_batch_stays_bounded(self):
+        """每多一行只多一个行高——大批量因此可预测、不会失控（老版“大批量有界”那条）。"""
+        step = table_height(2) - table_height(1)
+        self.assertGreater(step, 0)
+        self.assertEqual(table_height(20) - table_height(10), step * 10)
 
 
 if __name__ == "__main__":

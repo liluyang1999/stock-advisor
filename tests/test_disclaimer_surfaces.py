@@ -34,6 +34,9 @@ _RESULT_VIEW_PAGES = (
     "src/qt_app/pages/screener_page.py",
     "src/qt_app/pages/alerts_page.py",
     "src/qt_app/pages/evidence_page.py",
+    # 自选/持仓页同样是结果视图（横向对比表就是一份结论），此前漏在这份清单外——
+    # 守卫少一页，就等于那一页的免责声明可以被删掉而没人发现（REQ-031）。
+    "src/qt_app/pages/portfolio_page.py",
 )
 
 
@@ -74,6 +77,14 @@ class ResultViewDisclaimerTests(unittest.TestCase):
         for rel in _RESULT_VIEW_PAGES:
             src = (PROJECT_ROOT / rel).read_text(encoding="utf-8")
             self.assertIn("CORE_DISCLAIMER", src, f"结果视图未引用免责声明：{rel}")
+
+    def test_core_disclaimer_actually_says_it_is_not_advice(self):
+        """免责声明的**内容**也要守住：字符串还在、话却说没了，等于没有声明。
+
+        （原先这条断言挂在 `test_qt_result_model.py` 里，随那个从未被生产实例化的
+        `ResultTableModel` 一起被删除时移到这里——它与那个类无关，不该跟着消失。）
+        """
+        self.assertIn("不构成投资建议", CORE_DISCLAIMER)
 
 
 if __name__ == "__main__":

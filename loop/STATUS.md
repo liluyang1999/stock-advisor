@@ -9,11 +9,11 @@
 - Dirty worktree: `true`
 - GUI（现＝目标，Tk 生产层已随 WI-023 移除）: `PySide6`
 - Runtime font target: `Microsoft YaHei`
-- Tests: `874/874`
+- Tests: `870/870`
 - Loop tooling tests: `59/59`
 - Loop schemas: `23`
 - Traceability: `34/34`
-- Coverage: `0.9582`
+- Coverage: `0.9487`
 - Release candidate: `false`
 - Latest gate run: `LOOP-20260711-003`
 

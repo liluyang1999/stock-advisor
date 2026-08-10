@@ -20,14 +20,29 @@
 
 QSplitter 设置初始比例、最小宽度和 stretch factor；用户比例可版本化保存。核心表格不得被辅助 Dock 压到不可用。
 
-## 表格模型
+## 表格模型（**已出货形态**，与本节最初设想不同，理由见下）
 
-- `QAbstractTableModel` 提供 DisplayRole、TextAlignmentRole、ForegroundRole、ToolTipRole、AccessibleTextRole。
-- `QSortFilterProxyModel` 做排序/过滤；排序键使用原始数值而非格式化字符串。
-- 名称左对齐，数字右对齐，状态居中。
-- 缺失值展示 `—`，底层保持 `None`。
-- 增量更新使用正确的 begin/endInsertRows 或 dataChanged 范围。
-- 用 QAbstractItemModelTester 和行为测试验证模型一致性。
+五张表统一由 `qt_app/widgets/table_utils.make_readonly_table` 建出，**实际落地的是
+`QStandardItemModel` + `QTableView`**，而不是本节最初设想的「自定义 `QAbstractTableModel` +
+`QSortFilterProxyModel`」。这是一次**有意的偏离**，记录在此而不是让文档与代码各说各话：
+
+- **不用 `QSortFilterProxyModel`**：代理排序会让模型真的搬行，而各页普遍拿 `index.row()` 当数据
+  下标（删除选中行、按行取结果都靠它）。因此 Qt 内建排序刻意关闭，改由 `_HeaderSort` **只重排
+  垂直表头的视觉次序**，模型行号原地不动——既得到点表头排序，又不破坏行号即下标的约定。
+- **不用自定义 `QAbstractTableModel`**：`QStandardItemModel` 已能承载本节要求的全部角色，且逐格
+  `setData` 天然支持「切档只改已有行」的就地刷新。曾经存在一个自定义 `ResultTableModel`，但它
+  从未被任何页面实例化过（纯遗留物），已随本次复核删除，以免文档与追溯继续引用一段死代码。
+
+仍然成立的约束（由 `make_readonly_table` / `make_row` 统一施加）：
+
+- 角色齐备：DisplayRole、TextAlignmentRole（表头与格值同边）、ForegroundRole/BackgroundRole
+  （按结论着色）、ToolTipRole（失败行全文原因）、以及**排序键 `Qt.UserRole`**。
+- **排序键使用原始数值而非格式化字符串**：`make_row` 建行时就把 `cell_sort_value` 落进 UserRole，
+  `_HeaderSort` 优先读它——`+9.50%` 按 9.5 排、风险按 RISK_ORDER 排，而不是按字面量。
+- 名称左对齐，数字右对齐，状态居中；缺失值展示 `—`，底层保持 `None`。
+- 列宽按声明宽度**比例**分摊余宽（`_ProportionalColumns`），复刻 Tk Treeview 的行为；等宽拉伸与
+  「余宽全给最后一列」都试过，都不是基线的样子。
+- 行为测试覆盖：排序与显示值一致（含切档后）、空态提示、失败行不着色且带全文 tooltip。
 
 ## 字体
 

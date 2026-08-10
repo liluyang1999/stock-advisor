@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>股市锦囊 · 知识库</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="band">
+  <div class="wrap">
+    <h1>股市锦囊 · 知识库</h1>
+    <p>一个离线、规则驱动的 A 股桌面决策支持工具，从架构到算法、从并发到打包的完整教学材料</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+<div class="card">
+  <p style="margin-top:0">
+    这份知识库把「股市锦囊」这个真实项目里用到的<strong>全部知识点</strong>拆开讲：它为什么这样分层、
+    每个指标怎么算、Qt 的线程边界为什么必须这样划、金额为什么不能用 <code>float</code>、
+    打包为什么选 onedir 而不是 onefile、以及一套「文档不许和代码说不一样话」的工程治理是怎么运转的。
+  </p>
+  <p style="margin-bottom:0">
+    它不是 API 手册。每一节都尽量回答三个问题：<strong>这是什么</strong>、<strong>为什么这么选</strong>、
+    <strong>不这么做会出什么事</strong>——第三个问题往往最有价值，因为项目里的多数设计都是被真实的坑逼出来的。
+  </p>
+</div>
+
+<h2>阅读路径</h2>
+
+<p>按顺序读能建立完整认知；按需查阅也可以，各页自成体系。</p>
+
+<div class="grid">
+
+  <a class="tile" href="01-architecture.html">
+    <div class="tag">01 · 地基</div>
+    <h3>分层架构与依赖方向</h3>
+    <p>纯领域内核、端口与适配器、四层依赖单向流动，以及「让机器守住架构」的静态门禁。</p>
+  </a>
+
+  <a class="tile" href="02-domain-algorithms.html">
+    <div class="tag">02 · 算法</div>
+    <h3>指标、决策与回测</h3>
+    <p>MA/RSI/MACD/布林/ATR 怎么算，五档决策强度如何把客观测量翻译成建议，仓位与回测的数学。</p>
+  </a>
+
+  <a class="tile" href="03-qt-ui.html">
+    <div class="tag">03 · 界面</div>
+    <h3>PySide6 桌面界面</h3>
+    <p>模型/视图、QSS 与设计 token、K 线自绘、空态与失败态、可访问性——附真实渲染截图。</p>
+  </a>
+
+  <a class="tile" href="04-concurrency.html">
+    <div class="tag">04 · 并发</div>
+    <h3>线程、取消与世代守卫</h3>
+    <p>GUI 线程为什么不能碰网络、迟到结果如何丢弃、协作取消与总 deadline 的合同。</p>
+  </a>
+
+  <a class="tile" href="05-data-quality.html">
+    <div class="tag">05 · 数据</div>
+    <h3>行情数据与数值纪律</h3>
+    <p>多源回退、解析鲁棒性、分页完整度、零伪造原则，以及 Decimal / int / float 的三分法。</p>
+  </a>
+
+  <a class="tile" href="06-engineering.html">
+    <div class="tag">06 · 工程</div>
+    <h3>测试、门禁与交付</h3>
+    <p>TDD 的真实用法、八道质量门禁、loop 控制平面、CI 的坑、PyInstaller 打包与发布元数据。</p>
+  </a>
+
+  <a class="tile" href="07-technical-stack-report.html">
+    <div class="tag">07 · 附录</div>
+    <h3>技术栈整体报告</h3>
+    <p>早先编写的「技术栈、原理与实现」长篇教学报告，按模块逐一拆解，可作为通读材料。</p>
+  </a>
+
+</div>
+
+<div class="note">
+  <strong>关于第 07 篇：</strong>它是本知识库建立<strong>之前</strong>写的一份独立长文，
+  叙述角度与 01–06 有重叠。两者冲突时，以 01–06 与 <code>loop/</code> 为准——
+  它们跟随代码同步维护，长文则保留其原有结构作为通读补充。
+</div>
+
+<h2>这个产品长什么样</h2>
+
+<figure>
+  <img src="images/ui-individual.png" alt="个股分析页：顶部五档决策强度指挥带，下方研究标的输入与结果表">
+  <figcaption>
+    个股分析页。顶部墨蓝「指挥带」是五档决策强度（L1 稳健 → L5 激进），下面一行实时显示当前档位的口径
+    （买入线 / 卖出线 / 风险预算 / 仓位上限）。结果表按 A 股习惯着色：<span class="up">红＝涨/买</span>、
+    <span class="down">绿＝跌/卖</span>。底部常驻免责声明。
+  </figcaption>
+</figure>
+
+<div class="key">
+  <strong>贯穿全项目的一条立场：</strong>本产品是<strong>可解释的辅助判断工具，不构成投资建议</strong>。
+  这不只是一句免责话术，它是有机器强制的设计约束——所有结果视图、生成的说明书、每一份导出都必须带这句话，
+  少一处，测试就红。技术上它对应「零伪造」原则：取不到数据就如实报错，绝不用回退值假装有结果。
+</div>
+
+<h2>技术栈速览</h2>
+
+<table>
+  <tr><th>层面</th><th>选型</th><th>关键约束</th></tr>
+  <tr><td>语言</td><td>Python 3.14</td><td>用到 PEP 758（<code>except A, B:</code> 免括号）、PEP 695 泛型语法</td></tr>
+  <tr><td>界面</td><td>PySide6-Essentials（LGPL-3.0）</td><td>运行期<strong>唯一</strong>第三方依赖；领域内核连它都不许 import</td></tr>
+  <tr><td>其余运行期</td><td>纯标准库</td><td><code>urllib</code> / <code>json</code> / <code>csv</code> / <code>decimal</code> / <code>threading</code></td></tr>
+  <tr><td>构建</td><td>PyInstaller 6.21.0（钉死）</td><td>onedir + windowed；交付物是一个应用目录，不是单文件</td></tr>
+  <tr><td>开发工具</td><td>ruff / pyright / pytest / coverage / pre-commit</td><td>全部 dev-only，绝不进交付物</td></tr>
+  <tr><td>数据源</td><td>东方财富 / 新浪 / 腾讯</td><td>多源回退；失败必须可见，不伪造</td></tr>
+</table>
+
+<h2>与其它文档的关系</h2>
+
+<table>
+  <tr><th>位置</th><th>是什么</th></tr>
+  <tr><td><code>knowledge/</code>（本目录）</td><td><strong>教学材料</strong>：讲原理、讲取舍、讲踩过的坑。面向想读懂这个项目的人。</td></tr>
+  <tr><td><code>loop/</code></td><td><strong>工程控制平面</strong>，也是当前状态的唯一真源：需求、验收标准、架构决策（ADR）、工作项、风险、质量门禁、验证证据。文档与 <code>loop/</code> 冲突时以 <code>loop/</code> 为准。</td></tr>
+  <tr><td><code>README.md</code></td><td>面向使用者与贡献者的入口：怎么跑、怎么打包、目录结构。</td></tr>
+  <tr><td><code>docs/ui-concepts/</code></td><td>界面概念稿（设计过程的历史记录）。</td></tr>
+</table>
+
+<div class="disclaimer">
+  本知识库随项目源码维护。文中所有算法说明、阈值与示例仅用于讲解程序实现，
+  <strong>不构成投资建议</strong>；任何模型输出都不代表对未来收益的承诺。
+</div>
+
+<footer class="foot">
+  股市锦囊 · knowledge · 与 <code>src/</code> 和 <code>loop/</code> 同步维护
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 行情数据与数值纪律 · 股市锦囊知识库</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="band">
+  <div class="wrap">
+    <h1>05 · 行情数据与数值纪律</h1>
+    <p>多源回退、解析鲁棒性、分页完整度、零伪造，以及 Decimal / int / float 的三分法</p>
+  </div>
+</header>
+
+<div class="wrap">
+<nav class="crumbs"><a href="index.html">← 首页</a> · <a href="04-concurrency.html">← 上一篇：线程与取消</a></nav>
+
+<h2>一、金额为什么不能用 float</h2>
+
+<p>这是整个项目最值得单独教的一个知识点，因为它在<strong>任何</strong>涉及钱的程序里都成立。</p>
+
+<pre><code>&gt;&gt;&gt; 0.1 + 0.2
+0.30000000000000004
+&gt;&gt;&gt; 2.675
+2.67499999999999982236431605997495353221893310546875</code></pre>
+
+<p>
+二进制浮点数无法精确表示大多数十进制小数。单次计算误差极小，但<strong>累积起来会显示成用户看得见的偏差</strong>——
+持仓成本 × 股数 × 若干次加减之后，浮动盈亏可能差出几分钱，而用户会截图来问「为什么算错了」。
+</p>
+
+<h3>本项目的三分法</h3>
+<table>
+  <tr><th>类别</th><th>类型</th><th>例子</th></tr>
+  <tr><td><strong>金额与报价</strong></td><td><code>Decimal</code>，量化到 2 位小数</td><td>价格、成本、本金、成交额、市值、盈亏</td></tr>
+  <tr><td><strong>数量</strong></td><td><code>int</code></td><td>股数、成交量、天数</td></tr>
+  <tr><td><strong>比率与统计量</strong></td><td><code>float</code></td><td>涨跌幅%、RSI、MA、ATR%、评分</td></tr>
+</table>
+
+<div class="key">
+  <strong>为什么比率可以用 float：</strong>它们本来就是统计量，还要喂给 <code>mean</code>/<code>pstdev</code> 这类函数；
+  用 <code>Decimal</code> 既慢又没有意义（RSI 精确到小数点后 20 位没有价值）。
+  <strong>关键是别让 float 回流到金额</strong>——float 只在「把报价喂给统计函数」这个边界上产生，算完不再变回钱。
+</div>
+
+<h3>两个实现细节</h3>
+
+<h4>① 四舍五入要用 ROUND_HALF_UP，不是 Python 默认的银行家舍入</h4>
+<pre><code>&gt;&gt;&gt; Decimal("0.005").quantize(Decimal("0.01"))                    # 默认 ROUND_HALF_EVEN
+Decimal('0.00')      # ← 银行家舍入，0.005 舍成 0.00
+&gt;&gt;&gt; quantize_money(Decimal("0.005"))                              # ROUND_HALF_UP
+Decimal('0.01')      # ← 金额习惯</code></pre>
+
+<h4>② float 转 Decimal 必须先经 repr</h4>
+<pre><code>Decimal(2.675)          → 2.67499999999999982...  量化后得 2.67   ✗
+Decimal(repr(2.675))    → Decimal("2.675")         量化后得 2.68   ✓</code></pre>
+<p><code>repr()</code> 给出能<strong>往返</strong>的最短十进制串，把二进制展开挡在门外。</p>
+
+<h4>③ 「安全解析器」的契约是：绝不抛异常</h4>
+<pre><code>parse_money(None)     → None
+parse_money("-")      → None      # 东财用 "-" 表示字段缺失
+parse_money("abc")    → None
+parse_money(True)     → None      # bool 是 int 的子类，必须显式挡掉
+parse_money(float("inf")) → None
+parse_money("1E30")   → None      # 超出十进制上下文，也返回 None 而不是抛异常</code></pre>
+<div class="warn">
+  最后一条是本项目修过的一个真实缺陷：<code>quantize()</code> 写在 <code>try</code> 块<strong>外面</strong>，
+  于是超大有限数会抛 <code>decimal.InvalidOperation</code>——而这个函数的文档明明承诺「读不出合法金额就返回 None」。
+  用户在本金框里输入一个荒谬的大数就会让程序抛异常。
+  <strong>教训：安全解析器的每一条出口都必须真的安全，包括量化这一步。</strong>
+</div>
+
+<h2>二、多源回退与解析鲁棒性</h2>
+
+<h3>数据源</h3>
+<table>
+  <tr><th>用途</th><th>源</th></tr>
+  <tr><td>实时行情</td><td>东方财富 → 新浪</td></tr>
+  <tr><td>历史日线</td><td>东方财富 → 新浪 → 腾讯（前复权）→ 腾讯</td></tr>
+  <tr><td>全市场快照</td><td>东方财富 clist（分页）</td></tr>
+  <tr><td>个股资金流</td><td>东方财富 fflow（多主机轮换）</td></tr>
+</table>
+
+<h3>市场号不能靠代码前缀猜</h3>
+<div class="note">
+  东财接口要求 <code>secid</code> 形如 <code>1.600000</code>（沪）或 <code>0.000001</code>（深/北）。
+  很多教程教人「6 开头是沪、0/3 开头是深」——<strong>这在北交所出现后就错了</strong>（新代码段是 <code>920xxx</code>）。
+  本项目从快照返回的 <strong><code>f13</code> 字段</strong>直接取市场号，而不是猜。
+</div>
+
+<h3>解析必须容忍缺失与异常值</h3>
+<table>
+  <tr><th>情形</th><th>处理</th></tr>
+  <tr><td>字段是 <code>"-"</code></td><td>记 <code>None</code>，不记 0</td></tr>
+  <tr><td>PE 为负（亏损股）</td><td>合法值，照常保留</td></tr>
+  <tr><td>字段整个不存在</td><td><code>None</code></td></tr>
+  <tr><td>区间过滤遇到 <code>None</code></td><td>若该端设了边界 → 判不通过（宁可漏，不可错）</td></tr>
+</table>
+
+<h2>三、零伪造（Zero Fabrication）</h2>
+
+<div class="key">
+  <strong>核心主张：接口失败必须明确报错，绝不伪造行情或建议。</strong>
+  一个投资辅助工具如果在取不到数据时返回 0 或上一次的缓存值假装成功，
+  用户会基于<strong>不存在的数据</strong>做决定——这比直接报错危险得多。
+</div>
+
+<h3>三层落地</h3>
+<table>
+  <tr><th>层</th><th>怎么保证</th></tr>
+  <tr><td>类型层</td><td><code>TransportOutcome.failed()</code> 根本没有 data 参数——失败路径<strong>构造不出</strong>带数据的结果</td></tr>
+  <tr><td>编排层</td><td>取数失败返回带错误的结果对象，不返回默认值；历史取不到时明确标记为「降级」并把原因写进风险提示</td></tr>
+  <tr><td>界面层</td><td>失败行照样占位、数值格显示破折号、失败原因可读全文</td></tr>
+</table>
+
+<h2>四、分页完整度：一个隐蔽而危险的坑</h2>
+
+<h3>症状</h3>
+<p>
+全市场快照要分页拉取（每页 500 条，最多 20 页）。如果第 3 页失败了会怎样？
+早期实现是 <code>break</code> 掉循环、返回已经拿到的部分——<strong>然后若无其事地拿去排序选股</strong>。
+</p>
+
+<div class="warn">
+  <strong>用户以为自己在全市场里选股，其实只在拿到的那一部分里。</strong>
+  界面上没有任何提示，因为程序自己都不知道数据是残缺的。
+</div>
+
+<h3>解法：把完整度当成一等公民带回来</h3>
+<pre><code>@dataclass(frozen=True)
+class Completeness:
+    expected: int | None        # 应有多少条
+    received: int | None        # 实收多少条
+    missing_pages: tuple[int, ...]   # 缺了第几页
+
+    @property
+    def is_complete(self) -> bool: ...</code></pre>
+
+<p>
+成功的信封带着这份完整度一路回到界面，选股结果会如实标注<strong>「非全市场结果」</strong>并说明缺了哪几页。
+</p>
+
+<div class="note">
+  <strong>本项目踩过的一个「链路断在最后一米」的教训：</strong>
+  完整度机制早就实现好了，但出货用的 provider <strong>没有实现 <code>market_completeness()</code> 这个方法</strong>，
+  而编排层用 duck-typing 取它——取不到就默认「完整」。于是整套机制在出货版里<strong>从未生效过</strong>，
+  警告永远不会触发。
+  <br><br>
+  <strong>教训：能力做好了不等于用户拿得到。</strong>本项目后来加了一道装配级门禁（G-SURFACE）：
+  凡是声明已交付的能力，都必须能从装配好的主窗口往下找到对应的部件，否则构建失败。
+</div>
+
+<h2>五、数据摄取的边界防护</h2>
+
+<table>
+  <tr><th>防护</th><th>防什么</th></tr>
+  <tr><td>响应体<strong>字节上限</strong></td><td>超大响应（或被篡改的响应）把内存撑爆</td></tr>
+  <tr><td><strong>总 deadline</strong></td><td>慢速滴流（slow drip）攻击，以及正常的慢网拖死界面</td></tr>
+  <tr><td>浏览器 UA</td><td>东财对含 "Python" 的 UA 直接断连（实测）</td></tr>
+  <tr><td>失败分类</td><td>把 network / parse 分开，日志里能看出是网断了还是对方改了字段</td></tr>
+</table>
+
+<h2>六、持久化</h2>
+
+<pre><code>%APPDATA%\StockAdvisor\config.json    ← 自选/持仓、本金、档位、预设、预警规则
+%APPDATA%\StockAdvisor\logs\          ← 结构化日志（NDJSON，每行一条）</code></pre>
+
+<h3>原子写</h3>
+<pre><code>1. 写进同目录的临时文件
+2. flush + fsync            ← 确保字节真的落盘，而不是停在 OS 缓存里
+3. os.replace(临时文件, 目标)  ← 同一文件系统内的原子替换</code></pre>
+<p>
+这样即使在写入过程中断电，用户拿到的要么是<strong>完整的旧文件</strong>、要么是<strong>完整的新文件</strong>，
+不会是半个 JSON。读取失败或文件损坏时一律回退默认配置，绝不崩溃。
+</p>
+
+<div class="note">
+  <strong>测试绝不能写用户的真实 <code>%APPDATA%</code>。</strong>
+  本项目用环境变量 <code>STOCK_ADVISOR_CONFIG</code> 把配置路径指向临时文件，
+  并写了一条测试断言「只有应用装配处才能调用读真实配置的那个入口」——
+  因为曾经真的有测试把档位写进了开发者自己的配置里。
+</div>
+
+<h2>七、结构化日志</h2>
+
+<pre><code>{"timestamp":"2026-07-21T13:29:59.383+09:00","level":"INFO",
+ "logger":"stock_advisor.fund_flow","message":"资金流完成",
+ "operation":"fetch_fund_flow","outcome":"ok"}</code></pre>
+
+<table>
+  <tr><th>规则</th><th>原因</th></tr>
+  <tr><td>只写<strong>声明过的字段</strong>，未登记字段直接报错</td><td>防止把敏感信息随手塞进日志</td></tr>
+  <tr><td>原始报文、完整自选股/持仓<strong>不入日志</strong></td><td>那是用户的隐私数据</td></tr>
+  <tr><td>打包成无控制台的 GUI 后，轮转文件是唯一可诊断的持久 sink</td><td>用户看不到 stderr</td></tr>
+</table>
+
+<h2>本篇要点回顾</h2>
+<ul>
+  <li><strong>金额用 Decimal、数量用 int、比率用 float</strong>；float 不许回流成钱。</li>
+  <li>四舍五入用 <code>ROUND_HALF_UP</code>；float→Decimal 必须过 <code>repr</code>。</li>
+  <li>「安全解析器」的每条出口都要真的安全，<strong>包括量化那一步</strong>。</li>
+  <li>市场号取自接口字段，<strong>不靠代码前缀猜</strong>。</li>
+  <li><strong>零伪造</strong>由类型（失败信封无 data）+ 编排 + 界面三层共同保证。</li>
+  <li>分页残缺必须<strong>如实上报</strong>；能力做好了不等于用户拿得到，要有装配级门禁兜底。</li>
+  <li>配置<strong>原子写 + fsync</strong>；日志只写白名单字段。</li>
+</ul>
+
+<nav class="crumbs" style="margin-top:32px">
+  <a href="04-concurrency.html">← 上一篇</a> · <a href="06-engineering.html">下一篇：测试、门禁与交付 →</a>
+</nav>
+
+<div class="disclaimer">本文用于讲解程序实现，<strong>不构成投资建议</strong>。</div>
+<footer class="foot">股市锦囊 · knowledge · 05 行情数据与数值纪律</footer>
+
+</div>
+</body>
+</html>

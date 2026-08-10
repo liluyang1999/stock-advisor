@@ -1100,7 +1100,8 @@
       "finished_at": "2026-07-27T05:45:00+09:00",
       "summary": "Owner-requested CHANGELOG consolidation + a CI audit that found a real defect. (1) loop/CHANGELOG.md is now the single user-facing changelog, merging the richer root copy (full 1.0 body + this session's [Unreleased] entries) with the loop copy's unique 1.0 retro note, fixing stale src/stock_advisor and build_exe.py paths on the way; the root CHANGELOG.md is deleted. The deletion is safe only because the machine enforcement MOVED with it: tests/test_version_single_source.py now targets loop/CHANGELOG.md and a new test asserts no root copy returns (watched it fail both ways). VERSION_AND_CHANGE_CONTROL.md's changelog obligation was re-pointed accordingly; the CHANGELOG mentions in decisions/0015 and HISTORY_REWRITE.md were left alone because they are historical records. (2) CI defect: run_gates.py degraded a missing tool to SKIP and still exited 0, so a pyright that failed to install would make G-TYPE vanish while the pipeline went green. Added --strict (SKIP counts as failure), TDD-driven, and CI now calls it. Also removed the now-false 'no git remote yet' comment (the remote exists and main is pushed), added timeout-minutes 30, a cancel-in-progress concurrency group, contents:read permissions and pip caching; the duplicated test steps are kept deliberately and documented as the source of readable failure output, since run_gates only prints a failing command's last 3 lines. No requirement/acceptance/work-item/milestone/gate structure touched; release readiness unchanged with the three human gates still unsigned.",
       "implemented_by": "changelog-consolidation-and-ci-strict",
-      "verified_by": "loop/scripts/run_gates.py --strict (machine gate suite; no independent human review -- see artifact)"
+      "verified_by": "loop/scripts/run_gates.py --strict (machine gate suite; no independent human review -- see artifact)",
+      "superseded_by": "EVD-LOOP-014"
     },
     {
       "id": "EVD-NET-004",
@@ -1218,6 +1219,35 @@
       "finished_at": "2026-07-30T20:10:00+09:00",
       "summary": "WI-033 的 DoD 收尾：编排层原生消费 TransportOutcome。新增 _fetch_outcome 作为唯一路径——provider 有 <name>_outcome 就用其 envelope，老式 provider/测试替身按异常包成等价失败信封，因此不改 Protocol、不动任何 FakeProvider。收益可断言：error_class 不再靠 isinstance(exc, MarketDataError) 二选一反推（parse 记 parse、network 记 network）；取消与失败可区分，ScreenReport.cancelled 此前恒为 False，现在取消的全市场抓取如实标记；完整度优先取 envelope 自带的那份，老式 provider 退回 duck-typed 取法以保持向后兼容。六条断言先红后绿。过程中既有契约测试抓到我一处行为削弱并已纠正：最初的 data is not None 兜底会把「取数成功却返回 None」这种 provider 违约静默降级，而既有契约要求它冒泡成分析计算失败——改回只在 envelope 失败时降级。Qt 控制器仍消费编排层结果对象（分层刻意如此），services/fund_flow.py 仍按异常处理（它本就把成败收敛成可展示结果，且是降级安全的旁路）。",
       "verified_by": "root"
+    },
+    {
+      "id": "EVD-LOOP-014",
+      "record_version": "2.0.0",
+      "requirement_ids": [
+        "REQ-012",
+        "REQ-027",
+        "REQ-028",
+        "REQ-031"
+      ],
+      "acceptance_ids": [
+        "AC-000"
+      ],
+      "work_item_id": "WI-000",
+      "type": "control_plane_rebaseline_after_knowledge_base_and_model_reality_reconcile",
+      "command": "validate_loop + run_gates.py --strict + 产品 870 + loop 59 + self-test + 链接校验",
+      "cwd": "D:/Projects/stock-advisor",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-LOOP-014-knowledge-base-and-model-reality-reconcile.txt",
+      "sha256": "f0f140aa39753b65d3913f621fe312896c331e05bcfbf20791385ba48883585c",
+      "control_plane_sha256": "b3321fa154284fef8aef03dc23939ac20e7cecedfcf128666b92a3e192b50056",
+      "commit": "bbd31cbb5881b966d354de13ce5cebea7bd6bf94",
+      "dirty_worktree": true,
+      "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",
+      "started_at": "2026-08-10T13:00:00+09:00",
+      "finished_at": "2026-08-10T14:30:00+09:00",
+      "implemented_by": "knowledge-base-and-model-reality-reconcile",
+      "verified_by": "loop/scripts/run_gates.py --strict (machine gate suite; no independent human review -- see artifact)",
+      "summary": "全项目复核后的收尾。最实质的一处：REQ-012 的追溯证据指向 ResultTableModel，而该类从未被任何页面实例化——出货结果表是 make_readonly_table 的 QStandardItemModel；架构文档描述的QAbstractTableModel+QSortFilterProxyModel 是一套被放弃的设计。选择「文档跟随实现」而非「实现迁就文档」：不用代理排序有充分理由（代理会真的搬行，而各页拿 index.row() 当数据下标），故改文档如实描述出货形态并记录偏离理由、改 REQ-012 追溯注记、删除遗留的 ResultTableModel及其 8 条测试、同步改写 TEST-MODEL-001 口径。顺带补两处缺口：4 条 Tk 契约的替代测试记成的test_qt_result_model 从未测过表高（契约实际无人接管），已补 table_height 真实断言并重指；免责声明守卫清单漏了 portfolio_page.py，已补入，并把与死代码无关的「声明内容」断言移出保全。界面以真实字体重渲五页三态逐张复核，未发现需修缺陷（两处疑似经查证为刻意设计）。新建 knowledge/ 知识库（8 页图文教学 + 7 张真实截图，0 断链），docs/ 的教学长文经 git mv 迁入。计数对账 874->870、模块 77->76、覆盖率实测 0.9487/0.9099。发布就绪未推进，三个人工门禁仍未签署。"
     }
   ]
 }

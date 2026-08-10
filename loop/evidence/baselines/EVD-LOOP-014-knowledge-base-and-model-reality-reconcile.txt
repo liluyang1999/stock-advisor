@@ -1,0 +1,73 @@
+EVD-LOOP-014 — 控制平面再基线：知识库落地 + 表格模型「文档与实现」对账
+
+Base commit: bbd31cb + dirty worktree
+Old baseline: EVD-LOOP-013 — 由本记录取代
+New control_plane_sha256: b3321fa154284fef8aef03dc23939ac20e7cecedfcf128666b92a3e192b50056
+
+范围
+----
+一次全项目复核（含界面渲染审美复核）之后的收尾：把复核查出的两处「文档说的和代码做的不一样」
+订正掉，删掉随之暴露的一段死代码，并建立面向读者的知识库 `knowledge/`。
+
+1. 表格模型：文档与实现对账（本轮最实质的一处）
+---------------------------------------------
+复核发现 `REQ-012` 的追溯注记写着「results ride a real QAbstractTableModel (ResultTableModel)」，
+而 `ResultTableModel` **从未被任何页面实例化过**——出货的结果表是 `make_readonly_table` 建出的
+`QStandardItemModel`。同时 `PYSIDE6_UI_ARCHITECTURE.md` 的「表格模型」一节描述的是
+`QAbstractTableModel + QSortFilterProxyModel`，那是一套**被放弃的设计**。
+
+也就是说：需求的证据指向一段死代码，架构文档描述一个没有实现的方案。这正是本项目治理体系
+要防的那类问题（与 WI-029「宣称已交付却接不通」同源）。
+
+处理（选择「文档跟随实现」，而不是「实现去迁就文档」）：
+ - 不采用 QSortFilterProxyModel 是**有充分理由的技术决策**：代理排序会真的搬行，而各页普遍拿
+   `index.row()` 当数据下标；改用 `_HeaderSort` 只重排垂直表头的视觉次序，模型行号原地不动。
+   强行改成代理排序是一次高风险重构，收益为零。
+ - 因此：改架构文档去如实描述出货形态 + 记录这次偏离的理由；改 REQ-012 追溯注记指向真实机制；
+   删除遗留的 `ResultTableModel`（86 行）及其 8 条测试。
+ - `TEST-MODEL-001` 的 scope/expected_goal 同步改写为出货形态实际被验证的性质
+   （UserRole 原始数值排序键、表头对齐随列、空态提示、失败行 tooltip、表高线性）。
+
+2. 顺带查出并补上的两处缺口
+---------------------------
+ - `tk-contract-mapping.csv` 里 4 条契约把替代测试记成 `test_qt_result_model`，但那个文件
+   **从来没测过表高**（它测的是 ResultTableModel），现在更是随之删除。也就是说这 4 条契约
+   实际上无人接管。已在 `test_qt_table_polish.py` 补上 `table_height` 的真实断言
+   （随行数单调增长、空表仍留表头高度、线性因而大批量有界），并把 4 条契约重指到它。
+   —— 这与 WI-032 的原则一致：「改成 qt_replaced」必须有真实存在的替代断言，不能只换标签。
+ - `test_disclaimer_surfaces.py` 的 `_RESULT_VIEW_PAGES` 漏掉了 `portfolio_page.py`，
+   而它确实是携带免责声明的结果视图（横向对比表就是一份结论）。守卫少一页，那一页的免责声明
+   就可以被删掉而没人发现（REQ-031）。已补入清单。
+   同时把原先挂在 `test_qt_result_model.py` 里、与该类无关的
+   「免责声明内容必须真的说了不构成投资建议」一条断言移到此处，避免它随死代码一起消失。
+
+3. 界面渲染复核（未产生改动，如实记录结论）
+------------------------------------------
+以真实平台字体重渲五页 × 成功/失败/空三态逐张查看。确认：A 股本土配色正确（红涨绿跌）、
+空态是行动邀请而非白板、失败态如实（失败行占位、数值格破折号、原因有 tooltip 全文）、
+免责声明常驻、可访问名齐备。两处曾疑为缺陷、经查证为**刻意设计**因而未改：
+ - 列宽按声明宽度比例分摊余宽（复刻 Tk Treeview；等宽拉伸与「余宽全给最后一列」都被明确否决）；
+ - 失败原因占用「风险」列的位置（该列对失败行本就无值，且有 tooltip 与摘要区两重补偿）。
+唯一记录在案的轻微观感项：3 列的资金流明细表在宽卡片里被拉伸后略显稀疏，但对齐口径连贯，
+改动布局引擎的回归风险高于收益，故不动。
+
+4. knowledge/ 知识库（新增）
+---------------------------
+新建仓库根目录 `knowledge/`，把面向读者的教学材料从 `docs/` 收拢过来并成体系：
+ index / 01 架构 / 02 算法 / 03 界面 / 04 并发 / 05 数据与数值 / 06 工程与交付 / 07 原技术栈长文
+（原 `docs/stock_advisor_technical_stack_report.html` 经 git mv 迁入，历史保留）。
+配图为本次真实渲染的界面截图 7 张。所有页面链接与图片引用经脚本校验，0 断链。
+`docs/README.md` 与根 `README.md` 同步指向新位置；`docs/` 自此只留过程性记录。
+
+计数对账
+--------
+产品测试 874 -> 870（删 8 条 ResultTableModel 测试，补 3 条表高 + 1 条免责声明内容断言）；
+测试模块 77 -> 76；覆盖率重新实测：语句 0.9487、分支 0.9099（均在 convergence.json 阈值之上）。
+loop 工具测试 59 不变。metrics/current/STATUS/backlog 已同步并重渲染。
+
+发布就绪未推进
+--------------
+三个人工门禁（HG-LICENSE / HG-PACKAGING / HG-RELEASE）仍未签署，`release.ready` 保持 false。
+本轮是复核与文档工作，不构成发布决定。
+
+Environment: Windows 11 AMD64 / CPython 3.14.4 / PySide6-Essentials 6.11.1 / dirty worktree

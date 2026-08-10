@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 指标、决策与回测 · 股市锦囊知识库</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="band">
+  <div class="wrap">
+    <h1>02 · 指标、决策与回测</h1>
+    <p>技术指标怎么算、五档决策强度如何把客观测量翻译成建议、仓位与回测的数学</p>
+  </div>
+</header>
+
+<div class="wrap">
+<nav class="crumbs"><a href="index.html">← 首页</a> · <a href="01-architecture.html">← 上一篇：分层架构</a></nav>
+
+<div class="warn">
+  <strong>先把话说清楚：</strong>下面所有公式、阈值与权重都是<strong>这个程序的实现细节</strong>，
+  用来说明「代码在做什么」。它们不是投资方法论，更<strong>不构成投资建议</strong>。
+  规则型模型的本质是把一组可解释的经验规则写成可复现的代码，它无法预测未来。
+</div>
+
+<h2>一、技术指标层</h2>
+
+<p>全部在 <code>src/domain/engine.py</code>，都是纯函数：输入一个数组，输出一个数或 <code>None</code>。</p>
+
+<h3>移动平均 MA</h3>
+<pre><code>moving_average(values, window)  # 最后 window 个值的算术平均</code></pre>
+<p>
+样本不足 <code>window</code> 时返回 <code>None</code>，<strong>不是</strong>用现有数据凑一个近似值。
+这是贯穿全项目的「零伪造」在算法层的体现：数据不够就说不够。
+</p>
+
+<h3>指数移动平均 EMA 与 MACD</h3>
+<pre><code>EMA_t = price_t × α + EMA_{t-1} × (1 − α)，其中 α = 2 / (period + 1)
+MACD  = EMA(12) − EMA(26)
+Signal = EMA(MACD 序列, 9)
+Hist  = MACD − Signal</code></pre>
+<div class="note">
+  <strong>实现要点：</strong>算 Signal 需要 MACD 的<strong>历史序列</strong>，而不是只有当前值。
+  代码里 <code>_ema_series()</code> 先算出 EMA12 与 EMA26 的完整序列，逐点相减得到 MACD 序列，
+  再对它求 EMA。若偷懒只用当前 MACD 值，Signal 根本无从算起——这是初学者最常写错的地方。
+</div>
+
+<h3>RSI（相对强弱）</h3>
+<pre><code>RS  = 平均涨幅 / 平均跌幅（period 内）
+RSI = 100 − 100 / (1 + RS)</code></pre>
+<table>
+  <tr><th>退化情形</th><th>本实现的返回</th><th>为什么</th></tr>
+  <tr><td>全程无下跌</td><td>100</td><td>分母为 0，数学上 RSI 趋于 100</td></tr>
+  <tr><td>全程无上涨</td><td>0</td><td>同理</td></tr>
+  <tr><td>价格完全不动</td><td>50</td><td>涨跌都是 0，视为中性，而不是 0/0 崩溃</td></tr>
+  <tr><td>样本不足 period+1</td><td><code>None</code></td><td>不够就是不够</td></tr>
+</table>
+
+<h3>布林带位置 Bollinger Position</h3>
+<pre><code>mid = MA(window)，σ = 总体标准差
+upper = mid + 2σ，lower = mid − 2σ
+position = (last − lower) / (upper − lower)   # 归一化到 0..1</code></pre>
+<p>
+0 表示贴着下轨、1 表示贴着上轨、0.5 是中轨。<strong>当 σ = 0（价格完全不动）时返回 0.5</strong>，
+而不是让 0/0 抛异常——这类退化输入在真实行情里会出现（停牌、一字板）。
+</p>
+
+<h3>ATR%（真实波动幅度百分比）</h3>
+<pre><code>TR = max(高−低, |高−昨收|, |低−昨收|)      # 真实波幅，考虑跳空
+ATR = TR 的 period 日平均
+ATR% = ATR / 最新价 × 100</code></pre>
+<div class="key">
+  ATR 后面会直接决定<strong>止损距离和仓位大小</strong>，是本项目里最「有用」的一个指标。
+  它的意义是「这只股票平常一天大概动多少」——止损设得比常态波动还窄，就是在给自己制造无谓的止损出局。
+</div>
+
+<h2>二、测量层：measure()</h2>
+
+<p>
+<code>measure(quote, history)</code> 把上面的指标汇总成一个 <code>Measurement</code>。它<strong>与决策档位完全无关</strong>——
+同一只股票，无论你是保守派还是激进派，客观测量是同一份。
+</p>
+
+<h3>八个打分因子</h3>
+<table>
+  <tr><th>因子</th><th>看什么</th></tr>
+  <tr><td><code>_score_moving_averages</code></td><td>价格与 5/20/60 日均线的相对位置、均线多头/空头排列</td></tr>
+  <tr><td><code>_score_trend</code></td><td>MACD 金叉/死叉、柱状体方向</td></tr>
+  <tr><td><code>_score_momentum</code></td><td>RSI 区间、近 5 日胜率、最大回撤</td></tr>
+  <tr><td><code>_score_volume</code></td><td>量比、放量/缩量与价格方向是否配合</td></tr>
+  <tr><td><code>_score_intraday</code></td><td>当日收在振幅区间的什么位置（收在高位还是低位）</td></tr>
+  <tr><td><code>_score_bollinger</code></td><td>通道位置：贴上轨/贴下轨/中枢</td></tr>
+  <tr><td><code>_score_support_resistance</code></td><td>距离近期支撑位与压力位的远近</td></tr>
+  <tr><td><code>_score_volatility</code></td><td>ATR% 是否过高（波动太大扣分）</td></tr>
+</table>
+
+<p>
+每个因子返回<strong>得分 + 人话理由 + 风险提示</strong>。「人话理由」是这个产品的核心卖点之一：
+界面上每条结论都能展开看到它是由哪些因子、以什么理由得出的——这就是「可解释」的含义。
+</p>
+
+<h3>风控扣分与把握程度</h3>
+<pre><code>base_factor_sum  = 八个因子得分之和
+risk_penalty     = 负数，来自 ST 标记、极端波动、流动性不足等
+confidence       = 由综合分、历史长度、指标齐备度共同决定（0..100）</code></pre>
+
+<h2>三、决策层：五档决策强度</h2>
+
+<p>这是本产品最有辨识度的设计。<strong>同一份客观测量，五种决策口径</strong>：</p>
+
+<table>
+  <tr>
+    <th>档位</th><th>买入线<br><code>t_buy</code></th><th>卖出线<br><code>t_sell</code></th>
+    <th>风控权重<br><code>risk_weight</code></th><th>买入把握门槛<br><code>confidence_gate</code></th>
+    <th>风险预算<br><code>risk_budget</code></th><th>仓位上限<br><code>position_cap</code></th>
+  </tr>
+  <tr><td><strong>L1 稳健</strong></td><td>+40</td><td>−15</td><td>1.6</td><td>70</td><td>0.5%</td><td>30%</td></tr>
+  <tr><td><strong>L2 稳进</strong></td><td>+33</td><td>−19</td><td>1.3</td><td>60</td><td>0.75%</td><td>45%</td></tr>
+  <tr><td><strong>L3 标准</strong></td><td>+25</td><td>−25</td><td>1.0</td><td>不设</td><td>1%</td><td>60%</td></tr>
+  <tr><td><strong>L4 积极</strong></td><td>+18</td><td>−33</td><td>0.8</td><td>不设</td><td>1.5%</td><td>75%</td></tr>
+  <tr><td><strong>L5 激进</strong></td><td>+12</td><td>−42</td><td>0.6</td><td>不设</td><td>2%</td><td>90%</td></tr>
+</table>
+
+<div class="note">
+  <strong>怎么读这张表：</strong>越稳健的档位，<strong>买入线越高</strong>（要更强的信号才肯买）、
+  <strong>卖出线越靠近 0</strong>（稍有不妙就减仓）、<strong>风控扣分权重越大</strong>（对风险更敏感）、
+  <strong>仓位上限越低</strong>。L1 还额外要求把握程度 ≥ 70 才允许买入——信号够强但把握不足时，它选择观望。
+</div>
+
+<h3>决策分：policy_score</h3>
+<pre><code>score = base_factor_sum + risk_penalty × risk_weight
+if 历史长度 &lt; 30 天:  score × 0.75      # 样本不足，降低置信
+score = clamp(score, −100, +100)</code></pre>
+<p>
+注意 <strong>L3 的 <code>risk_weight</code> 恰好是 1.0</strong>，所以 L3 的决策分就等于客观综合分——
+「标准档」在设计上就是那个不加偏置的参考点。
+</p>
+
+<h3>从分数到动作</h3>
+<pre><code>score ≥ t_buy   →  BUY   （L1/L2 还要过 confidence_gate，否则降级为 HOLD）
+score ≤ t_sell  →  SELL
+其余             →  HOLD</code></pre>
+
+<h2>四、仓位测算：把「建议」变成可执行的数字</h2>
+
+<p>光说「买入」没有用，用户真正需要的是<strong>买多少</strong>。这一步用的是风险预算法：</p>
+
+<pre><code>止损距离 stop% = clamp(1.8 × ATR%, 2%, 12%)
+
+强度系数 strength = clamp(|score| / 55, 0.4, 1.0)
+把握系数 conf     = clamp(confidence / 100, 0.5, 1.0)
+
+投入比例 = (risk_budget / stop%) × strength × conf
+投入比例 = min(投入比例, position_cap)</code></pre>
+
+<div class="key">
+  <strong>这个公式的直觉：</strong>「我这一笔最多亏本金的 <code>risk_budget</code>（如 1%）」。
+  如果止损距离是 5%，那么投入比例 = 1% / 5% = 20% 的本金——这样即使真的止损出局，
+  总亏损也就是本金的 1%。<strong>波动越大的股票，止损必须放得越宽，因而仓位必须越小</strong>，
+  这正是 ATR 在这里的作用。最后再乘以信号强度和把握程度做微调，并被档位的仓位上限封顶。
+</div>
+
+<p>
+最终 <code>position_plan()</code> 输出：建议股数（按 A 股 100 股一手取整）、止损价、止盈价、
+最大亏损金额。所有金额用 <code>Decimal</code> 参与计算（见 <a href="05-data-quality.html">第 05 篇</a>）。
+</p>
+
+<h2>五、可信度回测</h2>
+
+<p>
+<code>backtest_signals()</code> 回答一个诚实的问题：<strong>这套规则在这只股票的历史上，表现如何？</strong>
+</p>
+
+<pre><code>对历史上每一天 i：
+    只用第 i 天及之前的数据 → 生成当时的信号
+    看第 i+N 天的价格 → 计算这个信号的前瞻收益</code></pre>
+
+<div class="warn">
+  <strong>最容易犯的错误：前视偏差（look-ahead bias）。</strong>
+  如果算第 i 天信号时不小心用到了第 i+1 天的数据，回测结果会好得离谱，而实盘一败涂地。
+  本项目为此写了专门的<strong>防前视测试</strong>：把序列截断到第 i 天算一次，再用完整序列算一次，
+  两者在第 i 天的结论必须一致。指标是纯函数、没有隐藏状态，这条性质才有可能成立。
+</div>
+
+<p>
+回测还会在<strong>样本不足时明说「样本不足」</strong>，而不是用三五个样本硬算出一个胜率给用户看。
+界面上这条信息是显示出来的，不是悄悄藏起来。
+</p>
+
+<h2>六、全市场选股</h2>
+
+<p>选股（<code>screener.py</code>）与个股分析是两条不同的路径：</p>
+
+<table>
+  <tr><th></th><th>个股分析</th><th>全市场选股</th></tr>
+  <tr><td>数据</td><td>实时行情 + 历史日线（每只单独取）</td><td>一次快照拉全市场（分页）</td></tr>
+  <tr><td>深度</td><td>八因子 + 指标 + 回测</td><td>先按快照字段硬性过滤，再打分排序</td></tr>
+  <tr><td>可选深度分析</td><td>—</td><td>对 TopN 再跑一次完整个股分析</td></tr>
+</table>
+
+<h3>硬性过滤与打分</h3>
+<pre><code>apply_filters(snapshots, criteria)   # 价格/涨跌幅/换手/量比/市值/PE/PB… 区间过滤
+rank(filtered, objective)            # 按目标（动量/突破/超跌…）打分排序</code></pre>
+
+<div class="note">
+  <strong>区间端点是闭区间</strong>（含端点）：<code>price_min=10.0</code> 时价格正好 10.00 的股票会被保留。
+  <strong>字段缺失（东财返回 <code>"-"</code>）时，若该端设了边界则判为不通过</strong>——
+  宁可漏掉，也不把一只连数据都没有的股票推荐给用户。
+</div>
+
+<h3>六个策略预设</h3>
+<p>
+强势动量、放量突破、超跌反弹、低估值蓝筹、高换手活跃、稳健低波动。每个预设是一组
+「过滤条件 + 排序目标 + 可调参数」的组合，用户还能微调其中的关键参数（如成交额下限、TopN）。
+</p>
+
+<h2>本篇要点回顾</h2>
+<ul>
+  <li>指标全是<strong>纯函数</strong>，样本不足或退化输入一律返回 <code>None</code> 或中性值，绝不硬凑。</li>
+  <li><strong>测量与决策分离</strong>：<code>measure()</code> 客观、<code>decide()</code> 带档位偏好；L3 的风控权重为 1.0，是不加偏置的参考点。</li>
+  <li>仓位用<strong>风险预算法</strong>：波动越大 → 止损越宽 → 仓位越小，让单笔最大亏损可控。</li>
+  <li>回测必须<strong>防前视偏差</strong>，并在样本不足时明说。</li>
+  <li>选股的区间过滤是<strong>闭区间</strong>，缺失字段在设了边界时判不通过。</li>
+</ul>
+
+<nav class="crumbs" style="margin-top:32px">
+  <a href="01-architecture.html">← 上一篇</a> · <a href="03-qt-ui.html">下一篇：PySide6 桌面界面 →</a>
+</nav>
+
+<div class="disclaimer">
+  本文所述算法、阈值与示例仅用于讲解程序实现，<strong>不构成投资建议</strong>，
+  也不代表对任何标的未来表现的预测。
+</div>
+
+<footer class="foot">股市锦囊 · knowledge · 02 指标、决策与回测</footer>
+
+</div>
+</body>
+</html>

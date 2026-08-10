@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 PySide6 桌面界面 · 股市锦囊知识库</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="band">
+  <div class="wrap">
+    <h1>03 · PySide6 桌面界面</h1>
+    <p>模型/视图、设计 token、K 线自绘、空态与失败态、可访问性</p>
+  </div>
+</header>
+
+<div class="wrap">
+<nav class="crumbs"><a href="index.html">← 首页</a> · <a href="02-domain-algorithms.html">← 上一篇：指标与决策</a></nav>
+
+<h2>整体形态：五页导航</h2>
+
+<p>
+主窗是一个 <code>QMainWindow</code>，中间放一个 <code>QTabWidget</code>，五个功能页平铺：
+<strong>个股分析 · 全市场选股 · 自选/持仓 · 条件预警 · 个股资金流</strong>。
+</p>
+
+<figure>
+  <img src="images/ui-individual.png" alt="个股分析页完整界面">
+  <figcaption>
+    个股分析页。自上而下：五页签导航 → 墨蓝<strong>指挥带</strong>（五档决策强度 + 当前档口径）→
+    研究标的输入卡 → 研究结果卡（组合概览 + 操作按钮）→ 股票列表。底部状态栏常驻免责声明。
+  </figcaption>
+</figure>
+
+<h3>为什么是页签，而不是「模式切换 + 弹窗」</h3>
+<p>
+老版 Tkinter 是「两个模式 + 四个对话框」。迁移时改成五个平铺页签，理由是：对话框里的内容
+<strong>无法与主界面并置比较</strong>，而这个产品的核心动作恰恰是「对照」——对照五个档位、对照多只股票。
+页签让每一块都有固定的位置，用户建立肌肉记忆后不必再找。
+</p>
+
+<h2>模型 / 视图：实际落地的形态</h2>
+
+<div class="warn">
+  <strong>这里有一个值得学习的「设计与规范不一致」案例。</strong>
+  项目的架构文档最初设想「自定义 <code>QAbstractTableModel</code> + <code>QSortFilterProxyModel</code>」，
+  但实际出货的是 <code>QStandardItemModel</code> + 自定义表头排序。这是<strong>有意偏离</strong>，
+  理由写在下面——重要的是：文档后来被改成了描述真实形态，而不是让代码和文档各说各话。
+</div>
+
+<h3>为什么不用 QSortFilterProxyModel</h3>
+<p>
+代理排序会让模型<strong>真的搬行</strong>。而各个页面普遍拿 <code>index.row()</code> 当数据下标
+（删除选中行、按行取结果都靠它）。一旦行被搬动，行号与数据就对不上了。
+</p>
+<p>解决办法是把 Qt 内建排序<strong>刻意关闭</strong>，改由 <code>_HeaderSort</code> 只重排
+<strong>垂直表头的视觉次序</strong>——模型行号原地不动，用户看到的顺序变了，代码里的 <code>row()</code> 依然可靠。</p>
+
+<h3>排序键必须是原始数值</h3>
+<pre><code>make_row() 建行时：item.setData(cell_sort_value(text), Qt.UserRole)
+_HeaderSort 排序时：优先读 UserRole，读不到才退回解析显示文本</code></pre>
+<div class="key">
+  <strong>不这么做会怎样：</strong>按显示文本排序，<code>"+9.50%"</code> 和 <code>"-1.20%"</code> 会按字符串比大小，
+  得出「+9.50% &lt; -1.20%」这种荒谬结果（因为字符 <code>'+'</code> 的码位小于 <code>'-'</code>）。
+  <br><br>
+  <strong>本项目踩过的一个真实 bug：</strong>切换决策强度档位后，代码用 <code>setText()</code> 就地更新了显示值，
+  却<strong>忘了同步更新 UserRole</strong>。于是屏幕上显示的是新档位的数字，排序用的却是旧档位的键——
+  点列头得到与眼前数字矛盾的顺序。修复就是在就地刷新时一并 <code>setData(..., UserRole)</code>。
+</div>
+
+<h2>视觉体系：设计 token 单一真源</h2>
+
+<p>
+所有颜色、间距、字号、控件高度都定义在 <code>loop/product/tokens.json</code>，
+Qt 侧由 <code>qt_app/theme/tokens.py</code> 读取后生成 QSS 样式表。
+</p>
+
+<table>
+  <tr><th>token</th><th>用途</th><th>值</th></tr>
+  <tr><td><code>ink</code></td><td>墨蓝：指挥带底色、标题</td><td>#122B3D</td></tr>
+  <tr><td><code>up_red</code></td><td><span class="up">涨 / 买入 / 净流入</span></td><td>#CC0000</td></tr>
+  <tr><td><code>down_green</code></td><td><span class="down">跌 / 卖出 / 净流出</span></td><td>#00742A</td></tr>
+  <tr><td><code>paper</code></td><td>纸面底色</td><td>#FBFAF7</td></tr>
+</table>
+
+<div class="note">
+  <strong>红涨绿跌是 A 股本土习惯</strong>，与欧美市场相反。做本土产品时照搬国外配色会让用户瞬间误读。
+  token 里还记录了每对前景/背景色的 <strong>WCAG 对比度实测值</strong>，确保文字在各种底色上都读得清。
+</div>
+
+<h2>五个页面各自解决什么</h2>
+
+<figure>
+  <img src="images/ui-screener.png" alt="全市场选股页">
+  <figcaption>
+    全市场选股。六个策略预设做成一排按钮（当前选中的用主色实心），下面是该预设可微调的参数——
+    参数用 <code>QDoubleSpinBox</code>，范围由 <code>setRange()</code> <strong>钳死</strong>，
+    因此非法值根本输不进去，不需要再写一套输入校验。
+  </figcaption>
+</figure>
+
+<figure>
+  <img src="images/ui-portfolio.png" alt="自选/持仓页">
+  <figcaption>
+    自选 / 持仓。上卡是自选表（可填成本与股数），下卡是横向对比表（11 列）。
+    注意两处细节：指标条在无数据时显示<strong>破折号而不是 0</strong>（「没填」不等于「不赚不亏」）；
+    成本留空表示只关注、未持仓。
+  </figcaption>
+</figure>
+
+<figure>
+  <img src="images/ui-fundflow.png" alt="个股资金流页">
+  <figcaption>
+    个股资金流。<span class="up">红＝净流入</span>、<span class="down">绿＝净流出</span>。
+    这条数据源偶发被限流，因此它是<strong>按需查询、降级安全</strong>的旁路：取不到就提示稍后重试，
+    绝不影响其它功能，也绝不进入核心分析流程。
+  </figcaption>
+</figure>
+
+<h2>空态与失败态：界面质量的分水岭</h2>
+
+<figure>
+  <img src="images/ui-empty-state.png" alt="空态：三步引导">
+  <figcaption>空态不是一片白，而是<strong>行动邀请</strong>。个股页给三步引导，其余表格给一句「下一步做什么」。</figcaption>
+</figure>
+
+<figure>
+  <img src="images/ui-failure-state.png" alt="失败态：失败行如实标注">
+  <figcaption>
+    失败态。三只股票里两只取数失败：<strong>失败行照样占一行</strong>（不是悄悄消失），
+    数值格显示<strong>破折号而不是 0</strong>，摘要如实写「完成 1 只 / 失败 2 只」。
+    失败原因塞不下时截断显示，但<strong>整行带 tooltip 给出全文</strong>，选中该行摘要区也会显示原因。
+  </figcaption>
+</figure>
+
+<div class="key">
+  <strong>「零伪造」在界面层的三条落地：</strong>
+  <br>① 失败行不消失——用户输入了 3 只就该看到 3 行，否则他不知道哪只失败了；
+  <br>② 数值格用破折号——显示 0 会被读成「综合分 0 分」，那是编造的结论；
+  <br>③ 原因必须能读到全文——只截断不给全文，等于让用户猜。
+</div>
+
+<h2>K 线图：QPainter 自绘</h2>
+
+<p>
+项目<strong>没有引入 QtCharts</strong>。原因是 QtCharts 在 PySide6 的 Addons 包里，
+而引入 Addons 会让打包体积从 202 MB 涨到 634 MB（多出的 432 MB 里有 195 MB 是根本用不到的 WebEngine）。
+一个 K 线图不值这个代价。
+</p>
+
+<h3>几何计算是纯函数，绘制才在 Qt 里</h3>
+<pre><code>domain/chart.py     ← 纯几何：价格→y 坐标、索引→x 坐标、均线、量柱高度、刻度
+qt_app/widgets/candlestick_chart.py  ← 只负责 QPainter 落笔与鼠标交互</code></pre>
+<p>
+这样几何逻辑可以脱离 Qt 单测：给一组价格和画布尺寸，断言返回的坐标。
+退化输入都有明确行为——价格区间为 0（一字板）时 <code>price_to_y</code> 返回中位，不做除零。
+</p>
+
+<h2>可访问性（REQ-017）</h2>
+
+<table>
+  <tr><th>规则</th><th>为什么</th></tr>
+  <tr><td>每张表必须有 <code>accessibleName</code></td><td>表格控件本身无文本，读屏软件只能靠它识别；本项目让它成为<strong>必填参数</strong>，不传就抛异常</td></tr>
+  <tr><td>输入框/下拉必须有可访问名</td><td>按钮能从文本自动取名，输入框不能</td></tr>
+  <tr><td>五档按钮各自带名</td><td>读屏要能报出「第几档、叫什么」，而不是只念一个「按钮」</td></tr>
+</table>
+
+<h2>布局约定（硬性）</h2>
+<ul>
+  <li>所有窗体相对主窗<strong>居中</strong>，四边留白<strong>均匀</strong>。</li>
+  <li>内容限制<strong>最大宽度</strong>并水平居中——超宽屏上两侧均匀留白，组件不会被拉成一条长带。</li>
+  <li>窗口居中交给 Qt 原生（Tk 时代那套手写几何计算已随迁移删除）。</li>
+</ul>
+
+<h2>本篇要点回顾</h2>
+<ul>
+  <li>模型/视图的<strong>实际形态</strong>是 <code>QStandardItemModel</code> + 视觉排序，偏离最初设想是有意的，且文档已同步。</li>
+  <li><strong>排序键必须是原始数值</strong>并随显示值同步更新，否则出现「显示与顺序矛盾」。</li>
+  <li>颜色/间距来自 <strong>token 单一真源</strong>；红涨绿跌是本土习惯。</li>
+  <li><strong>空态是行动邀请，失败态要如实且可读</strong>——这是零伪造在界面层的体现。</li>
+  <li>K 线<strong>几何纯函数 + QPainter 绘制</strong>分离，省下 432 MB 依赖的同时保住可测性。</li>
+</ul>
+
+<nav class="crumbs" style="margin-top:32px">
+  <a href="02-domain-algorithms.html">← 上一篇</a> · <a href="04-concurrency.html">下一篇：线程、取消与世代守卫 →</a>
+</nav>
+
+<div class="disclaimer">本文用于讲解程序实现，<strong>不构成投资建议</strong>。</div>
+<footer class="foot">股市锦囊 · knowledge · 03 PySide6 桌面界面</footer>
+
+</div>
+</body>
+</html>

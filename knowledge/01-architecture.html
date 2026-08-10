@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 分层架构与依赖方向 · 股市锦囊知识库</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="band">
+  <div class="wrap">
+    <h1>01 · 分层架构与依赖方向</h1>
+    <p>纯领域内核、端口与适配器，以及「让机器守住架构」这件事</p>
+  </div>
+</header>
+
+<div class="wrap">
+<nav class="crumbs"><a href="index.html">← 回到知识库首页</a></nav>
+
+<h2>为什么先讲架构</h2>
+
+<p>
+这个项目的所有其它设计——为什么能离线自检、为什么换 GUI 框架不用重写算法、为什么测试跑得飞快——
+都是同一个决定的推论：<strong>把「算什么」和「怎么显示、从哪取数」彻底分开</strong>。
+先把这层讲透，后面几篇会省力很多。
+</p>
+
+<h2>四层结构</h2>
+
+<pre><code>src/
+  domain/        ← 纯领域内核（12 个模块）：只依赖标准库，不许 import 网络与 GUI
+  data/          ← 数据适配：唯一做网络请求的地方
+  services/      ← 编排：把 domain 的纯函数按业务流程串起来
+  qt_app/        ← PySide6 界面：页面、控制器、部件、主题
+  ui/            ← 与框架无关的展示层（格式化、文案、主题 token、说明书 HTML）
+  observability/ ← 结构化日志
+  ports.py       ← 传输层的「端口」合同（envelope / deadline / 取消）
+  version.py     ← 版本号唯一真源</code></pre>
+
+<h3>依赖只能单向流动</h3>
+
+<pre><code>qt_app  ──▶ services ──▶ domain
+   │            │            ▲
+   │            └──▶ data ───┘
+   └──▶ ui（展示层，纯函数）</code></pre>
+
+<p>
+箭头是<strong>允许</strong>的依赖方向。反向依赖一律禁止：<code>domain</code> 不知道 <code>services</code> 存在，
+更不知道有没有界面。这条规则不是靠自觉——它由静态门禁 <code>G-CORE</code> 在每次提交前用 AST 扫描强制。
+</p>
+
+<h2>核心概念：纯领域内核（Pure Domain Core）</h2>
+
+<div class="key">
+  <strong>定义：</strong><code>src/domain/</code> 下的 12 个模块<strong>只能</strong> import 标准库。
+  不许 <code>import urllib</code>（不碰网络）、不许 <code>import PySide6</code>（不碰界面）、不做文件 I/O。
+  它们是一堆<strong>纯函数</strong>：同样的输入永远得到同样的输出，没有隐藏状态。
+</div>
+
+<h3>这样做换来什么</h3>
+
+<table>
+  <tr><th>好处</th><th>具体表现</th></tr>
+  <tr><td>可独立单测</td><td>测 RSI 不需要启动 Qt、不需要联网、不需要造 mock。传一个数组进去比对结果即可。</td></tr>
+  <tr><td>测试快</td><td>870 个测试跑完约 50 秒，其中大部分是 Qt 界面测试；纯算法测试几乎不耗时。</td></tr>
+  <tr><td>换框架不动算法</td><td>本项目真的把界面从 Tkinter 全量换成了 PySide6（ADR-0001）。领域内核<strong>一行没改</strong>。</td></tr>
+  <tr><td>可离线自检</td><td><code>--self-test</code> 用内置样例数据跑通整条管线，不联网、不开窗，用来验证交付物是否可用。</td></tr>
+</table>
+
+<h3>Qt 是应用的依赖，不是模型的依赖</h3>
+
+<p>
+这句话是本项目的一条硬性约束。整个程序运行期只有一个第三方依赖 PySide6，但即便如此，
+<strong>领域内核连它也不许 import</strong>。原因很直接：一旦某个算法模块 <code>import PySide6</code>，
+它就再也不能在没有 Qt 的环境里被测试或复用，「纯内核」就名存实亡了。
+</p>
+
+<div class="note">
+  <strong>怎么强制：</strong><code>loop/scripts/check_core_boundaries.py</code> 解析每个核心模块的 AST，
+  提取全部 import 目标，与 <code>core-module-manifest.json</code> 里声明的
+  <code>forbidden_import_roots</code> 比对。写错一行，<code>G-CORE</code> 门禁立刻变红。
+  <br><br>
+  <strong>为什么用 AST 而不是文本 grep：</strong>grep 会被字符串、注释、以及
+  <code>importlib.import_module("PySide6")</code> 这类写法骗过去；AST 看的是语法结构。
+</div>
+
+<h2>端口与适配器（Ports &amp; Adapters）</h2>
+
+<p>
+<code>src/ports.py</code> 定义传输层的<strong>合同</strong>，而它自己<strong>不依赖任何具体传输</strong>——
+既不 import <code>urllib</code>，也不 import PySide6。于是「用 urllib 同步取数」和「用 Qt 的
+<code>QNetworkAccessManager</code> 异步取数」两种实现可以满足同一份合同，合同本身还能离线确定性测试。
+</p>
+
+<h3>三个不可绕过的性质</h3>
+
+<table>
+  <tr><th>性质</th><th>含义</th><th>为什么重要</th></tr>
+  <tr><td>错误分类</td><td>每次失败归入 network / parse / validation 等固定类别</td><td>日志里能统计「到底是网断了还是对方改了字段」</td></tr>
+  <tr><td>总 deadline</td><td>一个预算覆盖<strong>所有</strong>重试与备用源</td><td>否则 4 个源 × 3 次重试 × 8 秒 ≈ 100 秒，界面像卡死</td></tr>
+  <tr><td>零伪造回退</td><td>失败的信封<strong>结构上不带 data 字段</strong></td><td>调用方在类型层面就拿不到假数据</td></tr>
+</table>
+
+<h3>信封（Envelope）模式</h3>
+
+<pre><code>@dataclass(frozen=True)
+class TransportOutcome[T]:
+    succeeded: bool
+    data: T | None = None            # 只有成功才有
+    completeness: Completeness = ... # 分页完整度
+    error_class: ErrorClass | None = None
+    message: str = ""
+    cancelled: bool = False          # 取消 ≠ 失败
+    attempts: tuple[str, ...] = ()   # 试过哪些源</code></pre>
+
+<p>
+关键在 <code>ok()</code> 和 <code>failed()</code> 两个构造器：<code>failed()</code> 根本不接受 data 参数。
+这就是「零伪造」的<strong>机器保证</strong>——不是靠程序员记得别返回假数据，而是失败路径压根构造不出带数据的结果。
+</p>
+
+<div class="note">
+  <strong>取消为什么要单独一个字段？</strong>如果取消也走「抛异常」，它和超时长得一模一样，
+  界面只能笼统说「获取失败」。有了 <code>cancelled</code> 标志，用户主动取消一次全市场筛选时，
+  程序能如实说「已取消」而不是报错——这是两件完全不同的事。
+</div>
+
+<h2>测量与决策分离</h2>
+
+<p>这是领域内核里最值得单独讲的一个设计。</p>
+
+<pre><code>engine.measure(quote, history)  ──▶  Measurement   # 客观测量，与档位无关
+policy.decide(measurement, level) ──▶ Decision      # 按 5 档强度翻译成买/持/卖 + 仓位</code></pre>
+
+<table>
+  <tr><th></th><th>measure()</th><th>decide()</th></tr>
+  <tr><td>产出</td><td>RSI、均线关系、波动率、各因子得分……</td><td>买/持/卖、建议仓位、把握程度</td></tr>
+  <tr><td>受档位影响</td><td><strong>否</strong>——同一只股票的客观数据不因你保守还是激进而改变</td><td><strong>是</strong>——同样的测量，L1 可能建议观望，L5 建议买入</td></tr>
+  <tr><td>是否联网</td><td>否（输入已经取好了）</td><td>否</td></tr>
+</table>
+
+<div class="key">
+  <strong>这个切分换来一个直接的用户价值：</strong>切换决策强度档位时，程序只对<strong>缓存的
+  Measurement</strong> 重新跑一次 <code>decide()</code>，<strong>不重新联网</strong>。
+  用户点 L1→L5 是瞬间响应的，而且不会消耗一次取数配额。
+</div>
+
+<h2>包结构的两次演进</h2>
+
+<p>架构不是一次定死的。这个项目的 <code>src/</code> 结构改过两次，两次都留下了 ADR：</p>
+
+<table>
+  <tr><th>决策</th><th>做了什么</th><th>动机</th></tr>
+  <tr><td>ADR-0007</td><td>把 23 个扁平模块按职责分成 <code>domain</code>/<code>data</code>/<code>services</code>/<code>ui</code> 子包</td><td>单目录 23 个文件看不出层次；分层后依赖方向才可检查</td></tr>
+  <tr><td>ADR-0015</td><td>删掉 <code>src/stock_advisor/</code> 这层包根，各层直接成为 <code>src/</code> 下的顶级包</td><td><code>src/</code> 下只有一个子目录属于无意义嵌套；导入从 <code>stock_advisor.domain.engine</code> 缩短为 <code>domain.engine</code></td></tr>
+</table>
+
+<div class="warn">
+  <strong>行为保持的搬迁（behavior-preserving move）是一种独立的工作类型。</strong>
+  这两次重构都遵守同一条纪律：<strong>只移动文件、只改 import，不碰任何一行逻辑</strong>，
+  改完后原有测试必须<strong>一个不改地</strong>全部通过。如果重构时顺手「优化」了逻辑，
+  测试红了你就无法判断是搬错了还是改错了。
+</div>
+
+<h2>本篇要点回顾</h2>
+
+<ul>
+  <li>领域内核是<strong>纯函数 + 只用标准库</strong>，由 AST 静态门禁强制，不是靠自觉。</li>
+  <li>依赖<strong>单向流动</strong>：界面 → 编排 → 领域；领域不知道上层存在。</li>
+  <li>端口定义合同、适配器提供实现；<strong>失败信封结构上不带数据</strong>，零伪造由类型保证。</li>
+  <li><strong>测量与决策分离</strong>，因此切档不联网。</li>
+  <li>重构分两类：<strong>行为保持的搬迁</strong>和真正的行为变更，两者绝不混在一次改动里。</li>
+</ul>
+
+<nav class="crumbs" style="margin-top:32px">
+  <a href="index.html">← 首页</a> · <a href="02-domain-algorithms.html">下一篇：指标、决策与回测 →</a>
+</nav>
+
+<div class="disclaimer">
+  本文用于讲解程序实现，<strong>不构成投资建议</strong>。
+</div>
+
+<footer class="foot">股市锦囊 · knowledge · 01 分层架构</footer>
+
+</div>
+</body>
+</html>
