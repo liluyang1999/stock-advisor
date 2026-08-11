@@ -22,7 +22,7 @@
 | 决定 | `decisions/` | ADR 权威记录 |
 | 进度记忆 | `state/progress.jsonl` | 只追加的迭代事实 |
 | 不可妥协原则（INVARIANTS） | `governance/CHARTER.md` | 唯一权威列表；本文件下方"不可妥协原则"与 `AGENTS.md`"不得违反"只做摘要式引用，不独立维护 |
-| 文档卫生政策 | `governance/DOCUMENTATION_HYGIENE.md` | `loop/` / `knowledge/` / 根 README 三者的分工、新设计文档去向、淘汰材料清理规则；本文件下方"文档卫生"只做摘要式引用，不独立维护 |
+| 文档卫生政策 | `governance/DOCUMENTATION_HYGIENE.md` | `loop/` / `../docs/` / 根 README 三者的分工、新设计文档去向、淘汰材料清理规则；本文件下方"文档卫生"只做摘要式引用，不独立维护 |
 
 根目录不再保留第二套 `state.json`、`backlog.json`、`loop.yaml` 或重复质量配置。任何工具和协作者都必须读取上表路径。
 
@@ -102,6 +102,6 @@ PySide6、pytest-qt、Ruff、pyright、覆盖率、Qt GUI 与打包门在工具�
 
 唯一权威定义见 `governance/DOCUMENTATION_HYGIENE.md`；本节只给首次阅读者一个摘要，不独立维护规则：
 
-- `loop/` 是唯一权威源；`planning/archive/`（`specs/`、`plans/`）只保存推动 `loop/` 演进的叙事性设计说明与实现计划，`knowledge/` 只放教学材料——两者与 `loop/` 分歧时以 `loop/` 为准。
+- `loop/` 是唯一权威源；`planning/archive/`（`specs/`、`plans/`）只保存推动 `loop/` 演进的叙事性设计说明与实现计划，`../docs/` 只放教学材料——两者与 `loop/` 分歧时以 `loop/` 为准。
 - 新设计工作写入 `loop/planning/archive/specs/`（设计说明）或 `loop/planning/archive/plans/`（实现计划），不要散落到别处；其中长期有价值的内容仍需落到 `loop/` 对应文件。
 - 被 `loop/`（或新设计文档）取代且独有价值已提炼的旧文档要删除，不留着腐烂；删除前用 `git grep` 排查悬挂引用，并在提交信息/就近索引文档里留一个 git 历史定位点（如本仓库的基线提交 `61b3cde`），保证内容仍可通过 `git log --all --full-history` 找回。

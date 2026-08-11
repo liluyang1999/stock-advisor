@@ -1,0 +1,60 @@
+EVD-LOOP-016 — 教学目录由 knowledge/ 改回 docs/ 后的引用对账与再基线
+
+Base commit: 968d724 + dirty worktree（改名由仓库所有者在工作区完成，git 识别为 R 重命名，历史保留）
+Old baseline: EVD-LOOP-015 — 由本记录取代
+New control_plane_sha256: e17e9293bcc1bad39f2a39394a366f113f229679f72d265af4b6fe30db4f462f
+
+背景
+----
+EVD-LOOP-015 把教学材料收拢到 `knowledge/`、解散了当时的 `docs/`。所有者其后把 `knowledge/`
+改回 `docs/`（同一批内容，只换目录名）。改名本身没问题，但它让上一轮写进各处的 `knowledge/`
+路径引用全部失效——本记录就是这次对账。
+
+`docs/` 这个名字因此被复用了一次，两版含义不同，读历史时要分清：
+  - 旧 `docs/`（已解散）：叙事性规划材料（设计规格 + 实施计划）+ 界面概念稿
+  - 今 `docs/`（本次）  ：教学材料（9 页图文）+ 界面概念稿
+过程性记录仍在 `loop/planning/archive/`，未受本次改名影响。
+
+修正的活引用
+------------
+- README.md：目录结构里的 `knowledge/` 段落改为 `docs/`，入口路径改 `docs/index.html`。
+- loop/baseline/REPOSITORY_INVENTORY.md：`../knowledge/ui-concepts/` -> `../docs/ui-concepts/`。
+- loop/planning/work-items.json（WI-035 next_action）：人工视觉复核的对照目录改为 `docs/ui-concepts`。
+- loop/governance/DOCUMENTATION_HYGIENE.md：批量替换在这里留下了自相矛盾的表述
+  （「旧 docs/ 解散后内容迁入 docs/」）。已改写为明确说明「`docs/` 这个名字被复用过一次」，
+  并指出 EVD-LOOP-014/015 里写的 `knowledge/` 即今天的 `docs/`。
+- docs/index.html：目录说明表里的两处 `knowledge/` 改为 `docs/`。
+- docs/08-technical-stack-report.html：对自身路径的自指从 `knowledge/08-…` 改为 `docs/08-…`。
+
+顺带修掉上一轮重编号的漏项（本次复核才发现）
+--------------------------------------------
+上一轮为新增 03（PySide6 框架）而把原 03..07 顺延为 04..08 时，改了每页的 `<title>` 与 `<h1>`，
+**但漏了页脚**：05 页脚仍写「04 线程」、06 页脚写「05 行情」、07 页脚写「06 测试」——即页脚编号
+比文件编号少 1。另外新增的 03 页当时**根本没有页脚**，与全站样式不一致。
+现已全部对齐（页脚同时把 `knowledge` 字样改为 `docs`），并给 03 页补上页脚。
+这类「改了标题忘了页脚」的漏项，正是只靠肉眼扫一遍容易漏、而逐项列出来比对才抓得到的。
+
+刻意不改的
+----------
+- `loop/evidence/baselines/EVD-LOOP-014/015-*.txt` 与 `evidence-index.json` 里的记录 id、
+  artifact_path、summary：它们是当时事实的快照，`knowledge/` 在当时就是真实路径。追改历史证据
+  去迎合今天的目录名等于伪造现场；名字复用带来的歧义已在 DOCUMENTATION_HYGIENE 里说明。
+- `loop/planning/archive/` 下的历史计划：其中的 "knowledge" 是英文单词，非路径。
+- `licenses/GPL-3.0.txt` 里的 "acknowledges"：巧合命中，与路径无关。
+
+验证
+----
+  docs/ 断链校验            -> 9 页 0 断链
+  全仓活引用扫描            -> 除上述历史记录外，无残留 knowledge/ 路径
+  tests/ 与 scripts/ 扫描   -> 无任何硬编码 docs/ 或 knowledge/ 路径（改名不影响测试）
+  ruff format / check       -> 干净
+  pyright                   -> 0 errors
+  产品 unittest             -> 870 OK
+  loop 工具 unittest        -> 59 OK
+  main.py --self-test       -> SELF_TEST_OK checks=8/8, exit 0
+  run_gates.py --strict     -> RUN_GATES_OK ran=8 failed=0 skipped=0
+  loop/ 无 CRLF、无二进制   -> 通过
+
+发布就绪未推进：HG-LICENSE / HG-PACKAGING / HG-RELEASE 三个人工门禁仍未签署，release.ready 保持 false。
+
+Environment: Windows 11 AMD64 / CPython 3.14.4 / PySide6-Essentials 6.11.1 / dirty worktree

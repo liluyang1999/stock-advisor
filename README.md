@@ -189,8 +189,8 @@ pyproject.toml              项目元数据 + ruff/pyright/pytest/coverage 配�
 .pre-commit-config.yaml     提交前钩子（ruff format / ruff check / validate_loop）
 .github/workflows/ci.yml    CI（windows-latest，门禁全量强制）
 assets/ licenses/           应用图标 · Qt 的 LGPL/GPL 许可证文本（随交付物分发）
-knowledge/                  知识库：本项目全部知识点的图文教学材料（knowledge/index.html 是入口）
-  ui-concepts/              界面概念稿（四轮设计参考，随知识库同处一地）
+docs/                       知识库：本项目全部知识点的图文教学材料（docs/index.html 是入口）
+  ui-concepts/              界面概念稿（四轮设计参考，随教学材料同处一地）
 ```
 
 > **两条命名与布局的既有说明**

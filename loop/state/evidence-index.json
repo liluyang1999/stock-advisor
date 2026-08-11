@@ -1275,7 +1275,35 @@
       "finished_at": "2026-08-10T14:00:00+09:00",
       "implemented_by": "docs-consolidation-and-knowledge-restructure",
       "verified_by": "loop/scripts/run_gates.py --strict (machine gate suite; no independent human review -- see artifact)",
-      "summary": "文档归位：docs/superpowers 的 7 份设计规格与实施计划（Loop Engineering 的过程性记录）迁入 loop/planning/archive/，9 处引用同步改写，1 个 CRLF 文件按 loop/** eol=lf 归一化，并补 archive/README 说明其「只回答当初为什么、不回答现在是什么」。34 张概念稿迁入 knowledge/ui-concepts/（不能进 loop/：.gitattributes 对 loop/** 强制 text eol=lf 会损坏二进制 PNG，控制面摘要与 LF 不变量测试都以「loop/ 全是文本」为前提；knowledge/ 无此约束），docs/ 目录整体解散不再存在，DOCUMENTATION_HYGIENE 重写为 loop/ / knowledge/ / 根 README 三者分工。knowledge/ 新增 03-pyside6-framework 讲框架本身（对象树与 GC、连接类型与线程亲和、ItemDataRole 分离、QSS 两个坑、打包插件与 offscreen 字体副作用、新手错误速查），与讲本项目落地的 04 篇分工不重复；其后各篇顺延重排，git mv 保历史，标号/导航/首页卡片一并改写，附录补返回导航；校验 9 页 0 断链 0 孤儿。"
+      "summary": "文档归位：docs/superpowers 的 7 份设计规格与实施计划（Loop Engineering 的过程性记录）迁入 loop/planning/archive/，9 处引用同步改写，1 个 CRLF 文件按 loop/** eol=lf 归一化，并补 archive/README 说明其「只回答当初为什么、不回答现在是什么」。34 张概念稿迁入 knowledge/ui-concepts/（不能进 loop/：.gitattributes 对 loop/** 强制 text eol=lf 会损坏二进制 PNG，控制面摘要与 LF 不变量测试都以「loop/ 全是文本」为前提；knowledge/ 无此约束），docs/ 目录整体解散不再存在，DOCUMENTATION_HYGIENE 重写为 loop/ / knowledge/ / 根 README 三者分工。knowledge/ 新增 03-pyside6-framework 讲框架本身（对象树与 GC、连接类型与线程亲和、ItemDataRole 分离、QSS 两个坑、打包插件与 offscreen 字体副作用、新手错误速查），与讲本项目落地的 04 篇分工不重复；其后各篇顺延重排，git mv 保历史，标号/导航/首页卡片一并改写，附录补返回导航；校验 9 页 0 断链 0 孤儿。",
+      "superseded_by": "EVD-LOOP-016"
+    },
+    {
+      "id": "EVD-LOOP-016",
+      "record_version": "2.0.0",
+      "requirement_ids": [
+        "REQ-027",
+        "REQ-028"
+      ],
+      "acceptance_ids": [
+        "AC-000"
+      ],
+      "work_item_id": "WI-000",
+      "type": "control_plane_rebaseline_after_docs_rename",
+      "command": "引用对账 + 断链校验 + validate_loop + run_gates --strict + 全量 unittest",
+      "cwd": "D:/Projects/stock-advisor",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-LOOP-016-docs-rename-reconcile.txt",
+      "sha256": "0110f11d0fb0b39c18a883e4bf297f772d7f9b63a63d390b8c97a0f8cbcac4fa",
+      "control_plane_sha256": "e17e9293bcc1bad39f2a39394a366f113f229679f72d265af4b6fe30db4f462f",
+      "commit": "968d724",
+      "dirty_worktree": true,
+      "environment": "Windows 11 AMD64 / CPython 3.14.4 / dirty worktree",
+      "started_at": "2026-08-12T10:00:00+09:00",
+      "finished_at": "2026-08-12T10:30:00+09:00",
+      "implemented_by": "docs-rename-reconcile",
+      "verified_by": "loop/scripts/run_gates.py --strict（机器门禁全套；无独立人工复核 —— 见 artifact）",
+      "summary": "所有者把教学目录 knowledge/ 改回 docs/（git 识别为 R 重命名，历史保留），本记录做随之的引用对账。docs/ 这个名字因此被复用：旧 docs/ 装规划材料（已解散，过程记录在 loop/planning/archive/），今 docs/ 装教学材料 + 概念稿。修正 6 处活引用（README 目录结构、REPOSITORY_INVENTORY、work-items WI-035 的视觉复核对照目录、docs/index 目录表、08 页自指路径），并改写 DOCUMENTATION_HYGIENE —— 批量替换在那里留下了「旧 docs 解散后内容迁入 docs」的自相矛盾表述，现已明确说明名字复用及 EVD-014/015 里的 knowledge/ 即今天的 docs/。本次复核还抓到上一轮重编号的漏项：为新增 03 而顺延各页时只改了 title 与 h1，页脚编号仍是旧号（05/06/07 页脚各少 1），且新增的 03 页压根没有页脚；已全部对齐并补齐。历史证据（EVD-014/015）中的 knowledge/ 按当时事实留存不追改。校验：docs 9 页 0 断链、tests 与 scripts 无硬编码路径、8 门禁 --strict 全绿、产品 870 / loop 59 全过、自检 8/8。发布就绪未推进，三个人工门禁仍未签署。"
     }
   ]
 }
