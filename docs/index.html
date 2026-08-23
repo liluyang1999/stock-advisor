@@ -91,6 +91,65 @@
   它们跟随代码同步维护，长文则保留其原有结构作为通读补充。
 </div>
 
+<h2>快速上手：先把它跑起来</h2>
+
+<p>
+读之前先跑一遍，后面每一篇都会好懂很多。需要 <strong>Python 3.14+</strong>；
+下面的命令都<strong>不联网</strong>也能跑（自检与测试自带离线样例数据）。
+</p>
+
+<pre><code># 1. 装唯一的运行期依赖（PySide6-Essentials，约 200 MB）
+python -m pip install --group gui
+
+# 2. 启动图形界面
+python main.py
+#    或用一键脚本： run.bat（Windows） / ./run.sh（Git Bash、WSL）
+
+# 3. 离线自检：不联网跑通「分析 → 五档决策 → 仓位 → 回测 → 选股」全链路
+python main.py --self-test
+#    成功会打印 SELF_TEST_OK ... checks=8/8 并以退出码 0 结束</code></pre>
+
+<p>想进一步动手：</p>
+
+<pre><code># 跑测试（约 900 个用例，界面测试用 offscreen，无需显示器）
+python -m pip install --group dev
+python -m unittest discover -s tests
+
+# 把五个页面逐页截图，看版式效果（自带假数据，不联网、不碰你的配置）
+python scripts/capture_ui.py --states success fail empty
+
+# 打包成免安装应用目录（自动装构建依赖 PyInstaller）
+build.bat        # 或 ./build.sh</code></pre>
+
+<div class="note">
+  <strong>数据与配置存在哪：</strong>自选股、本金、档位、预设、预警规则存在
+  <code>%APPDATA%\StockAdvisor\config.json</code>，日志在同目录的 <code>logs\</code> 下。
+  测试与截图工具都指向临时目录，<strong>不会动你的真实配置</strong>。
+</div>
+
+<h2>按主题的学习路径</h2>
+
+<p>不必从头读到尾。按你想学的东西选一条：</p>
+
+<table>
+  <thead><tr><th>你想学的</th><th>建议顺序</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Qt / PySide6 桌面开发</strong></td>
+        <td><a href="03-pyside6-framework.html">03 框架基础</a> →
+            <a href="04-qt-ui.html">04 界面实现</a> →
+            <a href="05-concurrency.html">05 线程与取消</a></td></tr>
+    <tr><td><strong>把工程做扎实</strong>（测试、门禁、可复现交付）</td>
+        <td><a href="01-architecture.html">01 分层架构</a> →
+            <a href="07-engineering.html">07 测试与交付</a> →
+            <a href="06-data-quality.html">06 数值纪律</a></td></tr>
+    <tr><td><strong>量化指标与决策模型</strong></td>
+        <td><a href="02-domain-algorithms.html">02 指标与决策</a> →
+            <a href="06-data-quality.html">06 行情数据</a></td></tr>
+    <tr><td><strong>先看全貌再深入</strong></td>
+        <td><a href="08-technical-stack-report.html">08 技术栈长文</a> → 回到 01 顺序精读</td></tr>
+  </tbody>
+</table>
+
 <h2>这个产品长什么样</h2>
 
 <figure>

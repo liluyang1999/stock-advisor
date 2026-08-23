@@ -156,3 +156,21 @@ footer.foot {
   body { font-size: 15px; }
   .wrap { padding: 0 16px 60px; }
 }
+
+/* 篇首导语：比正文略大、颜色略柔，用来交代「本篇讲什么、与相邻篇如何分工」 */
+p.lead {
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--ink-soft);
+  border-left: 3px solid var(--accent);
+  padding-left: 14px;
+  margin: 18px 0 26px;
+}
+
+/* 页尾的上一篇/下一篇导航：与页首面包屑同源，只是加条上边线并留出间距 */
+nav.crumbs.bottom {
+  margin-top: 36px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  margin-bottom: 0;
+}
