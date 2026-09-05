@@ -46,14 +46,14 @@ class WorkerControllerBase(QtCore.QObject):
         if self._cancel is not None:
             self._cancel.cancel()
 
-    def shutdown(self) -> None:
+    def shutdown(self, wait_ms: int = _SHUTDOWN_WAIT_MS) -> bool:
         """停止接收新工作并在有限时间内等待在跑的 worker 退出（ADR-0003 生命周期）。幂等。
 
         销毁前调用：等池排空后，任何仍排队的 queued signal 会因目标 QObject 被删而由 Qt 丢弃，
         故控件拆除竞态下不会有信号打到已释放对象上。
         """
         self.cancel()
-        self._pool.waitForDone(_SHUTDOWN_WAIT_MS)
+        return self._pool.waitForDone(wait_ms)
 
     # --- 子类在 start()/完成槽里调用的骨架钩子 ---
 

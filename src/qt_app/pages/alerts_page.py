@@ -101,12 +101,14 @@ class AlertsPage(QtWidgets.QWidget):
         card.body().addLayout(self._build_monitor_row())
         return card
 
-    def _build_editor_row(self) -> QtWidgets.QHBoxLayout:
+    def _build_editor_row(self) -> QtWidgets.QVBoxLayout:
         """新建规则行：代码 / 字段 / 条件 / 阈值 + 添加 / 删除选中，与老版表单同序同文案。
 
         字段下拉显示中文标签，写库时映射回 domain 的键（求值与展示都按键索引，不受文案影响）。
         """
 
+        column = QtWidgets.QVBoxLayout()
+        column.setSpacing(gap(0))
         row = QtWidgets.QHBoxLayout()
         row.setSpacing(gap(0))
 
@@ -138,7 +140,10 @@ class AlertsPage(QtWidgets.QWidget):
             row.addWidget(label(caption, "hint"))
             row.addWidget(field)
 
-        row.addWidget(divider(QtCore.Qt.Orientation.Vertical))
+        row.addStretch(1)
+        column.addLayout(row)
+        row = QtWidgets.QHBoxLayout()
+        row.setSpacing(gap(0))
         self.add_rule_button = QtWidgets.QPushButton("添加")
         self.add_rule_button.setProperty("role", "primary")
         self.remove_rule_button = QtWidgets.QPushButton("删除选中")
@@ -149,7 +154,8 @@ class AlertsPage(QtWidgets.QWidget):
         row.addWidget(self.toggle_rule_button)
         row.addWidget(self.remove_rule_button)
         row.addStretch(1)
-        return row
+        column.addLayout(row)
+        return column
 
     def _build_monitor_row(self) -> QtWidgets.QHBoxLayout:
         """实时预警开关：一颗可切换按钮，文案自带当前状态（老版的反相药丸 Checkbutton）。

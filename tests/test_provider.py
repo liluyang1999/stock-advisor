@@ -42,6 +42,58 @@ def clist_item(code="600001", market=1, name="stock", price=10.0, change_pct=1.0
 
 
 class ProviderParsingTests(unittest.TestCase):
+    def test_parse_quote_payload_recomputes_invalid_change_pct_from_prices(self):
+        invalid_values = {
+            "text": "abc",
+            "nan": "NaN",
+            "positive_infinity": "Infinity",
+            "negative_infinity": "-Infinity",
+            "true": True,
+            "false": False,
+            "overflow": 10**400,
+            "missing": None,
+            "placeholder": "-",
+        }
+        for label, raw in invalid_values.items():
+            for last, expected in ((1020, 2.0), (950, -5.0)):
+                with self.subTest(value=label, last=last):
+                    payload = json.dumps(
+                        {
+                            "data": {
+                                "f43": last,
+                                "f46": 1000,
+                                "f44": 1030,
+                                "f45": 940,
+                                "f60": 1000,
+                                "f170": raw,
+                                "f168": raw,
+                            }
+                        }
+                    )
+
+                    quote = parse_quote_payload(normalize_symbol("600519"), payload)
+
+                    self.assertEqual(quote.change_pct, expected)
+                    self.assertEqual(quote.turnover_rate, 0.0)
+
+    def test_parse_quote_payload_preserves_valid_zero_change_pct(self):
+        payload = json.dumps(
+            {
+                "data": {
+                    "f43": 1020,
+                    "f46": 1000,
+                    "f44": 1030,
+                    "f45": 990,
+                    "f60": 1000,
+                    "f170": 0,
+                }
+            }
+        )
+
+        quote = parse_quote_payload(normalize_symbol("600519"), payload)
+
+        self.assertEqual(quote.change_pct, 0.0)
+
     def test_parse_quote_payload_converts_eastmoney_scaled_fields(self):
         payload = json.dumps(
             {
@@ -1176,7 +1228,7 @@ class PayloadEdgeCaseTests(unittest.TestCase):
         with self.assertRaises(MarketDataError):
             parse_quote_payload(normalize_symbol("600519"), json.dumps({"data": None}))
 
-    def test_parse_quote_payload_defaults_unparseable_percent_and_amount_to_zero(self):
+    def test_parse_quote_payload_recomputes_flat_change_and_defaults_invalid_amount(self):
         payload = json.dumps(
             {
                 "data": {
@@ -1197,7 +1249,7 @@ class PayloadEdgeCaseTests(unittest.TestCase):
 
         quote = parse_quote_payload(normalize_symbol("600519"), payload)
 
-        # 无法解析的涨跌幅/成交额按 0 兜底，不拖垮整个报价
+        # 涨跌幅按最新价/昨收价重算（此例二者相等）；无法解析的成交额仍按 0 兜底。
         self.assertEqual(quote.change_pct, 0.0)
         self.assertEqual(quote.amount, 0.0)
 

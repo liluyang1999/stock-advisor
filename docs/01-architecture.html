@@ -29,11 +29,11 @@
 <h2>四层结构</h2>
 
 <pre><code>src/
-  domain/        ← 纯领域内核（12 个模块）：只依赖标准库，不许 import 网络与 GUI
+  domain/        ← 纯领域内核：只依赖标准库，不许 import 网络与 GUI
   data/          ← 数据适配：唯一做网络请求的地方
   services/      ← 编排：把 domain 的纯函数按业务流程串起来
   qt_app/        ← PySide6 界面：页面、控制器、部件、主题
-  ui/            ← 与框架无关的展示层（格式化、文案、主题 token、说明书 HTML）
+  ui/            ← 展示辅助（格式化、文案、说明书 HTML；app.py 是转交 Qt 的薄入口）
   observability/ ← 结构化日志
   ports.py       ← 传输层的「端口」合同（envelope / deadline / 取消）
   version.py     ← 版本号唯一真源</code></pre>
@@ -47,13 +47,13 @@
 
 <p>
 箭头是<strong>允许</strong>的依赖方向。反向依赖一律禁止：<code>domain</code> 不知道 <code>services</code> 存在，
-更不知道有没有界面。这条规则不是靠自觉——它由静态门禁 <code>G-CORE</code> 在每次提交前用 AST 扫描强制。
+更不知道有没有界面。这条规则不是靠自觉——静态门禁 <code>G-CORE</code> 按核心模块清单扫描依赖；本地提交是否执行取决于钩子配置，不能用一次提交成功代替完整门禁。
 </p>
 
 <h2>核心概念：纯领域内核（Pure Domain Core）</h2>
 
 <div class="key">
-  <strong>定义：</strong><code>src/domain/</code> 下的 12 个模块<strong>只能</strong> import 标准库。
+  <strong>定义：</strong><code>src/domain/</code> 内的业务计算<strong>只使用标准库与领域内辅助模块</strong>。
   不许 <code>import urllib</code>（不碰网络）、不许 <code>import PySide6</code>（不碰界面）、不做文件 I/O。
   它们是一堆<strong>纯函数</strong>：同样的输入永远得到同样的输出，没有隐藏状态。
 </div>
@@ -63,7 +63,7 @@
 <table>
   <tr><th>好处</th><th>具体表现</th></tr>
   <tr><td>可独立单测</td><td>测 RSI 不需要启动 Qt、不需要联网、不需要造 mock。传一个数组进去比对结果即可。</td></tr>
-  <tr><td>测试快</td><td>870 个测试跑完约 50 秒，其中大部分是 Qt 界面测试；纯算法测试几乎不耗时。</td></tr>
+  <tr><td>测试快</td><td>纯算法测试不必启动窗口或等待网络；数量与耗时以本次实际运行结果为准。</td></tr>
   <tr><td>换框架不动算法</td><td>本项目真的把界面从 Tkinter 全量换成了 PySide6（ADR-0001）。领域内核<strong>一行没改</strong>。</td></tr>
   <tr><td>可离线自检</td><td><code>--self-test</code> 用内置样例数据跑通整条管线，不联网、不开窗，用来验证交付物是否可用。</td></tr>
 </table>
@@ -81,16 +81,14 @@
   提取全部 import 目标，与 <code>core-module-manifest.json</code> 里声明的
   <code>forbidden_import_roots</code> 比对。写错一行，<code>G-CORE</code> 门禁立刻变红。
   <br><br>
-  <strong>为什么用 AST 而不是文本 grep：</strong>grep 会被字符串、注释、以及
-  <code>importlib.import_module("PySide6")</code> 这类写法骗过去；AST 看的是语法结构。
+  <strong>为什么用 AST 而不是文本 grep：</strong>AST 能区分导入语句与注释中的文字。具体能检查哪些动态导入取决于校验器实现；静态扫描并不自动覆盖任意运行时行为。
 </div>
 
 <h2>端口与适配器（Ports &amp; Adapters）</h2>
 
 <p>
 <code>src/ports.py</code> 定义传输层的<strong>合同</strong>，而它自己<strong>不依赖任何具体传输</strong>——
-既不 import <code>urllib</code>，也不 import PySide6。于是「用 urllib 同步取数」和「用 Qt 的
-<code>QNetworkAccessManager</code> 异步取数」两种实现可以满足同一份合同，合同本身还能离线确定性测试。
+既不 import <code>urllib</code>，也不 import PySide6。当前生产链路是 <code>BoundedMarketDataProvider → BoundedUrllibProvider → urllib</code>，在线程池中取数。<code>QNetworkAccessManager</code> 是工程设计中的替代方向，不能当成已运行的实现。
 </p>
 
 <h3>三个不可绕过的性质</h3>
@@ -99,7 +97,7 @@
   <tr><th>性质</th><th>含义</th><th>为什么重要</th></tr>
   <tr><td>错误分类</td><td>每次失败归入 network / parse / validation 等固定类别</td><td>日志里能统计「到底是网断了还是对方改了字段」</td></tr>
   <tr><td>总 deadline</td><td>一个预算覆盖<strong>所有</strong>重试与备用源</td><td>否则 4 个源 × 3 次重试 × 8 秒 ≈ 100 秒，界面像卡死</td></tr>
-  <tr><td>零伪造回退</td><td>失败的信封<strong>结构上不带 data 字段</strong></td><td>调用方在类型层面就拿不到假数据</td></tr>
+  <tr><td>零伪造回退</td><td><code>failed()</code> 构造的信封中 <code>data=None</code></td><td>调用方检查成功标志与数据，失败则如实报告</td></tr>
 </table>
 
 <h3>信封（Envelope）模式</h3>
@@ -116,7 +114,7 @@ class TransportOutcome[T]:
 
 <p>
 关键在 <code>ok()</code> 和 <code>failed()</code> 两个构造器：<code>failed()</code> 根本不接受 data 参数。
-这就是「零伪造」的<strong>机器保证</strong>——不是靠程序员记得别返回假数据，而是失败路径压根构造不出带数据的结果。
+失败对象仍有 <code>data</code> 字段，只是值为 <code>None</code>。数据类并未禁止直接构造矛盾字段，必须使用约定构造器并在调用边界校验；类型提示不能独自证明数据真实。
 </p>
 
 <div class="note">
@@ -167,7 +165,7 @@ policy.decide(measurement, level) ──▶ Decision      # 按 5 档强度翻�
 <ul>
   <li>领域内核是<strong>纯函数 + 只用标准库</strong>，由 AST 静态门禁强制，不是靠自觉。</li>
   <li>依赖<strong>单向流动</strong>：界面 → 编排 → 领域；领域不知道上层存在。</li>
-  <li>端口定义合同、适配器提供实现；<strong>失败信封结构上不带数据</strong>，零伪造由类型保证。</li>
+  <li>端口定义合同、适配器提供实现；<strong>失败构造器令 data 为 None</strong>，与调用方校验一起防止伪造回退。</li>
   <li><strong>测量与决策分离</strong>，因此切档不联网。</li>
   <li>重构分两类：<strong>行为保持的搬迁</strong>和真正的行为变更，两者绝不混在一次改动里。</li>
 </ul>

@@ -17,6 +17,7 @@ from ports import ManualCancel
 from services.batch import BatchProgress, BatchReport, run_batch_analysis
 from services.workflow import AnalysisOutcome, MarketDataProvider
 
+from .backtest_controller import BacktestController
 from .base import WorkerControllerBase
 
 
@@ -84,6 +85,16 @@ class AnalysisController(WorkerControllerBase):
     def __init__(self, provider: MarketDataProvider, parent: QtCore.QObject | None = None) -> None:
         super().__init__(parent)
         self._provider = provider
+        self.backtests = BacktestController(self)
+
+    def shutdown(self, wait_ms: int = 5000) -> bool:
+        from time import monotonic
+
+        deadline = monotonic() + wait_ms / 1000
+        self.cancel()
+        backtests_drained = self.backtests.shutdown(wait_ms)
+        analysis_drained = super().shutdown(max(0, int((deadline - monotonic()) * 1000)))
+        return backtests_drained and analysis_drained
 
     def start(self, text: str, level: int = 3) -> None:
         """提交一次批量分析并**立即返回**；结果稍后经信号到达（REQ-013 不阻塞 GUI）。"""

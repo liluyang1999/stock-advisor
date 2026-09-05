@@ -93,9 +93,9 @@ class AlertController(QtCore.QObject):
         if self._cancel is not None:
             self._cancel.cancel()  # 打断在途那一轮，让 shutdown 能按时排空
 
-    def shutdown(self) -> None:
+    def shutdown(self, wait_ms: int = 5000) -> bool:
         self.stop()
-        self._pool.waitForDone(5000)
+        return self._pool.waitForDone(wait_ms)
 
     def _tick(self) -> None:
         if self._in_flight:

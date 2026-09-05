@@ -31,7 +31,6 @@ from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from domain import money
-from domain.backtest import backtest_signals
 from domain.formatting import risk_level
 from domain.models import (
     CORE_DISCLAIMER,
@@ -121,6 +120,7 @@ class IndividualPage(QtWidgets.QWidget):
         self._controller = controller
         self._settings = settings
         self._results: list[AnalysisResult] = []
+        self._discard_run = False
         # 每只票的日线与测量都留在页面里：换行换图、切档重判，两者都不必重新联网
         # （REQ-003 切档不联网 / REQ-004 / WI-027）。
         self._history: dict[str, list[DailyBar]] = {}
@@ -375,6 +375,7 @@ class IndividualPage(QtWidgets.QWidget):
             selection.currentRowChanged.connect(self._on_row_changed)
         self.tier.results_changed.connect(self._on_tier_results)
         self.tier.level_changed.connect(self._on_tier_persist)
+        self._controller.backtests.ready.connect(self._on_backtest_ready)
         self.capital_input.editingFinished.connect(self._on_capital_changed)
         # 本页专属快捷键（老版 Ctrl+L / Ctrl+Shift+C）。作用域限定在本页及其子控件：
         # 「开始分析 / 开始选股」那组是**按当前页派发**的，挂在主窗上（见 app.py 的
@@ -405,11 +406,14 @@ class IndividualPage(QtWidgets.QWidget):
         用户刚清掉的表里（老版 `clear()` 同样先 set cancel_event 再清）。"""
 
         running = not self.analyze_button.isEnabled()
+        self._discard_run = True
+        self._controller.backtests.reset()
         if running:
             self._controller.cancel()
         self.input.clear()
         self.model.removeRows(0, self.model.rowCount())
         self._results = []
+        self.tier.set_measurements([])
         self._history.clear()
         self._measurements.clear()
         self._failures.clear()
@@ -421,6 +425,7 @@ class IndividualPage(QtWidgets.QWidget):
         self.overview.setText("组合概览：暂无结果。输入代码后点击开始分析。")
         self.summary.setText("暂无结果")
         self.run_status.setText("正在停止并清空…" if running else "已清空")
+        self.progress.setVisible(False)
 
     # ---------------- 选中行联动 ----------------
 
@@ -454,7 +459,7 @@ class IndividualPage(QtWidgets.QWidget):
 
         self.factor_bars.set_factors(list(result.factor_scores))
         self.stats.set_value("方向", result.action_label, self._action_colour(result.action))
-        self.stats.set_value("仓位", f"{result.suggested_position:.0%}")
+        self.stats.set_value("仓位", f"{result.suggested_position:.0f}%")
         self.stats.set_value("把握", f"{result.confidence:.0f}%")
         self.stats.set_value("波动", f"{result.expected_move_pct:.1f}%")
         # 一行式摘要沿用老版 build_visual_summary 的措辞（"把握程度"而非"胜率"，REQ-022）。
@@ -480,10 +485,25 @@ class IndividualPage(QtWidgets.QWidget):
         # 没有日线也照样交给引擎——它会返回"历史样本不足"的说明。跳过不显示等于让用户对着空白
         # 猜发生了什么，而"说不出结论"本身就是要如实告诉他的结论。
         history = self._history.get(self._canonical(code), [])
+        report = self._controller.backtests.request(
+            self._canonical(code), history, self.tier.current_level()
+        )
         extras.append(
-            build_backtest_text(backtest_signals(history, level=self.tier.current_level()))
+            build_backtest_text(report)
+            if report is not None
+            else "可信度回测\n正在后台复盘历史信号，仅使用当日及之前数据；不预示未来。"
         )
         self.detail.show_result(result, "\n\n".join(extras))
+
+    def _on_backtest_ready(self, key: object) -> None:
+        code = self._current_code()
+        if self._discard_run or key != (self._canonical(code), self.tier.current_level()):
+            return
+        # 后台结果补齐时保留用户正在读的位置，不把章节强行跳回顶端。
+        scroll = self.detail.verticalScrollBar()
+        position = scroll.value()
+        self._show_details_for(code)
+        scroll.setValue(position)
 
     def _result_for(self, code: str) -> AnalysisResult | None:
         return next(
@@ -522,6 +542,9 @@ class IndividualPage(QtWidgets.QWidget):
         self._results = list(results)
         self._refresh_rows()
         self._show_details_for(self._current_code())
+        self._refresh_action_buttons()
+        self.summary.setText(summarize_results(self._results, len(self._failures)))
+        self.overview.setText(self._build_overview(len(self._failures)))
 
     def _current_code(self) -> str:
         index = self.table.currentIndex()
@@ -587,8 +610,13 @@ class IndividualPage(QtWidgets.QWidget):
     # ---------------- 运行 ----------------
 
     def _on_analyze(self) -> None:
+        if not self.analyze_button.isEnabled():
+            return
+        self._discard_run = False
+        self._controller.backtests.reset()
         self.model.removeRows(0, self.model.rowCount())
         self._results = []
+        self.tier.set_measurements([])
         self._history.clear()
         self._measurements.clear()
         self._failures.clear()
@@ -607,11 +635,15 @@ class IndividualPage(QtWidgets.QWidget):
         self._controller.start(self.symbols_text())
 
     def _on_progress(self, progress: BatchProgress) -> None:
+        if self._discard_run:
+            return
         self.progress.setRange(0, max(1, progress.total))
         self.progress.setValue(progress.done)
         self.run_status.setText(f"已处理 {progress.done}/{progress.total} 只")
 
     def _append_row(self, outcome: AnalysisOutcome) -> None:
+        if self._discard_run:
+            return
         self._canonical_key[outcome.symbol.display] = outcome.symbol.normalized
         if outcome.history:
             self._history[outcome.symbol.normalized] = list(outcome.history)
@@ -646,6 +678,9 @@ class IndividualPage(QtWidgets.QWidget):
         self.analyze_button.setEnabled(True)
         self.stop_button.setEnabled(False)
         self.progress.setVisible(False)
+        if self._discard_run:
+            self.run_status.setText("已清空")
+            return
         # 收集成功结果；动作按钮的开合规则见 `_refresh_action_buttons`
         # （复制/导出看表里有没有行，加入自选与复制解释看有没有成功结果）。
         self._results = [o.result for o in report.outcomes if o.ok and o.result is not None]
@@ -660,7 +695,7 @@ class IndividualPage(QtWidgets.QWidget):
         self._show_results(bool(self.model.rowCount()))
 
         self.summary.setText(summarize_results(self._results, report.failure_count))
-        self.overview.setText(self._build_overview(report))
+        self.overview.setText(self._build_overview(report.failure_count))
         if report.input_error:
             self.run_status.setText(f"输入有误：{report.input_error}")
         elif report.cancelled:
@@ -668,7 +703,7 @@ class IndividualPage(QtWidgets.QWidget):
         else:
             self.run_status.setText("分析完成")
 
-    def _build_overview(self, report: BatchReport) -> str:
+    def _build_overview(self, failure_count: int) -> str:
         """组合概览一行：完成多少、买卖持分布、平均把握、高风险几只、失败几只。"""
 
         if not self._results:
@@ -681,7 +716,7 @@ class IndividualPage(QtWidgets.QWidget):
         risky = sum(1 for r in self._results if risk_level(r) == "高")
         return (
             f"组合概览：完成 {total} 只，买入 {buys} / 持有 {holds} / 卖出 {sells}；"
-            f"平均把握 {average:.0f}%；高风险 {risky} 只；失败 {report.failure_count} 只"
+            f"平均把握 {average:.0f}%；高风险 {risky} 只；失败 {failure_count} 只"
         )
 
     def _request_fund_flow(self) -> None:
@@ -719,10 +754,19 @@ class IndividualPage(QtWidgets.QWidget):
         """把表格里**显示着的**每一行读回来（含失败行）。"""
 
         rows: list[tuple[str, ...]] = []
-        for row in range(self.model.rowCount()):
+        header = self.table.verticalHeader()
+        for visual in range(self.model.rowCount()):
+            row = header.logicalIndex(visual)
             cells = [self.model.item(row, col) for col in range(self.model.columnCount())]
             rows.append(tuple(cell.text() if cell is not None else "" for cell in cells))
         return rows
+
+    def _ordered_results(self) -> list[AnalysisResult]:
+        """导出顺序与屏上排序一致，同时保留完整解释等额外导出列。"""
+        if not self.model.rowCount():
+            return list(self._results)
+        by_code = {r.symbol.display: r for r in self._results}
+        return [by_code[row[0]] for row in self._table_rows() if row[0] in by_code]
 
     def _has_failures(self) -> bool:
         """表里有行不属于成功结果——失败行只在表里，`self._results` 装不下它们。"""
@@ -739,7 +783,7 @@ class IndividualPage(QtWidgets.QWidget):
         text = (
             format_table_rows_for_clipboard(self._table_rows())
             if self._has_failures()
-            else format_results_for_clipboard(self._results)
+            else format_results_for_clipboard(self._ordered_results())
         )
         QtWidgets.QApplication.clipboard().setText(text)
         return text
@@ -805,6 +849,6 @@ class IndividualPage(QtWidgets.QWidget):
         text = (
             format_table_rows_as_csv(self._table_rows())
             if self._has_failures()
-            else format_results_as_csv(self._results)
+            else format_results_as_csv(self._ordered_results())
         )
         path.write_text(text, encoding="utf-8")

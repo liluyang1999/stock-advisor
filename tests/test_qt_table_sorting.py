@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from qt_test_helpers import qt_app, requires_qt  # noqa: E402
+from qt_test_helpers import QtCore, qt_app, requires_qt  # noqa: E402
 
 try:
     from qt_app.widgets.table_utils import (
@@ -129,6 +129,21 @@ class HeaderSortTests(unittest.TestCase):
 
         self.assertTrue(header.isSortIndicatorShown())
         self.assertEqual(header.sortIndicatorSection(), 1)
+
+    def test_active_sort_is_reapplied_when_a_value_changes(self):
+        self._click(1)
+        item = self.model.item(0, 1)
+        item.setText("999")
+        item.setData(999, QtCore.Qt.ItemDataRole.UserRole)
+        self.app.processEvents()
+        self.assertEqual(self._visual_order()[0], "A")
+
+    def test_new_rows_join_the_active_sort_without_moving_model_ids(self):
+        self._click(1)
+        self.model.appendRow(make_row(["D", "999", "低"], self.columns))
+        self.app.processEvents()
+        self.assertEqual(self._visual_order()[0], "D")
+        self.assertEqual(self.model.item(0, 0).text(), "A")
 
 
 if __name__ == "__main__":

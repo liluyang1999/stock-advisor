@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Generator
 from statistics import mean
 
 from .engine import clean_history, measure
@@ -49,7 +50,24 @@ def backtest_signals(
     """同股历史信号事后复盘：逐日只用当日及之前数据生成信号，度量未来 horizon 日收益。
 
     无未来泄漏：第 t 日信号只看 history[:t] + 第 t 根；未来收益仅作度量、不作输入。
+    SELL 命中率表示事后价格下跌占比，不受成本影响；BUY/HOLD 胜率和各组平均收益均计入成本。
     """
+    steps = backtest_steps(history, level, horizon, warmup, cost_pct)
+    while True:
+        try:
+            next(steps)
+        except StopIteration as completed:
+            return completed.value
+
+
+def backtest_steps(
+    history: list[DailyBar],
+    level: int = STANDARD_LEVEL,
+    horizon: int = 5,
+    warmup: int = 30,
+    cost_pct: float = 0.13,
+) -> Generator[None, None, BacktestReport]:
+    """每个历史样本之间让出控制权；调用方可停止迭代，领域内核不感知线程或取消令牌。"""
     try:
         horizon = int(horizon)
         warmup = int(warmup)
@@ -89,26 +107,28 @@ def backtest_signals(
     rows: dict[Action, list[float]] = {"BUY": [], "SELL": [], "HOLD": []}
     gross_all: list[float] = []
     for t in range(warmup, n - horizon):
+        yield
         as_of = history[: t + 1]
         quote = quote_from_bar(history[t], history[t - 1] if t > 0 else None)
         action = decide(measure(quote, as_of), level).action
         gross = float((history[t + horizon].close - history[t].close) / history[t].close * 100)
-        rows[action].append(gross - cost_pct)
+        rows[action].append(gross)
         gross_all.append(gross)
 
     stats: dict[str, BacktestStat] = {}
     for action, vals in rows.items():
         if not vals:
             continue
+        net_returns = [value - cost_pct for value in vals]
         if action == "SELL":
             wins = sum(1 for v in vals if v < 0)  # 卖出信号「对」= 之后下跌
         else:
-            wins = sum(1 for v in vals if v > 0)
+            wins = sum(1 for v in net_returns if v > 0)
         stats[action] = BacktestStat(
             action=action,
             count=len(vals),
             win_rate=round(wins / len(vals), 4),
-            avg_return=round(mean(vals), 4),
+            avg_return=round(mean(net_returns), 4),
         )
     return BacktestReport(
         level=level,

@@ -75,6 +75,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._open_dialogs.append(dialog)
         dialog.finished.connect(lambda _=0, d=dialog: self._open_dialogs.remove(d))
+        dialog.finished.connect(dialog.deleteLater)
         dialog.show()
         return dialog
 

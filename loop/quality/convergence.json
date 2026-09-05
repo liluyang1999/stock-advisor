@@ -22,21 +22,19 @@
     "qt_controller_statement_min": 0.9,
     "qt_controller_branch_min": 0.85,
     "current": {
-      "measured_at": "2026-07-20",
-      "commit": "b15168a",
+      "measured_at": "2026-09-05T14:24:50.850366",
+      "commit": "21500be + review worktree",
       "command": "python -m coverage run -m unittest discover -s tests; python -m coverage json -q -o build/coverage.json; python loop/scripts/check_coverage.py build/coverage.json",
-      "omit": [
-        "*/ui/_app_members.py"
-      ],
-      "overall_statement": 0.9807,
-      "overall_branch": 0.9394,
-      "core_statement": 0.99,
-      "core_branch": 0.9835,
-      "combined_total": 0.9707,
+      "omit": [],
+      "overall_statement": 0.96042,
+      "overall_branch": 0.91205,
+      "core_statement": 0.993272,
+      "core_branch": 0.983871,
+      "qt_controller_statement": 0.994286,
+      "qt_controller_branch": 0.958333,
+      "combined_total": 0.9512706313859052,
       "verdict": "meets_target",
-      "note": "六条门槛全部实测达标，724 项测试全绿。WI-025 起 qt_controller_* 不再是 SKIP：WI-023 让 PySide6 成为唯一出货 GUI，控制器已存在，check_coverage.py 遂按 qt_app/controllers 归属实测。启用当场就抓到欠账——qt_controller_branch 只有 75%（15/20），四个世代守卫的丢弃分支从未被执行过（真实 worker 被 supersede 后往往先看见取消令牌就停了，第二道防线打不到）。补上直投槽的单元测试后升到 95%。这正是\"跳过的维度在上层汇总里读起来像通过\"的实例。合并总数 97.07% 仍只供参考，不是门禁口径。",
-      "qt_controller_statement": 0.9956,
-      "qt_controller_branch": 0.95
+      "note": "909 tests pass in the final recorded coverage/unittest run; all six coverage dimensions pass. The raw run summary is preserved in EVD-LOOP-017. No coverage omission."
     }
   },
   "numeric": {

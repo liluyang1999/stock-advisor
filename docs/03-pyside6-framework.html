@@ -34,15 +34,15 @@ PySide6 是 <strong>Qt 官方</strong>的 Python 绑定（项目名 <em>Qt for P
   <thead><tr><th>对比项</th><th>PySide6</th><th>PyQt6</th></tr></thead>
   <tbody>
     <tr><td>维护方</td><td>Qt 公司官方</td><td>第三方 Riverbank</td></tr>
-    <tr><td>许可证</td><td><strong>LGPL-3.0</strong>（可闭源分发，须履行重链接义务）</td><td>GPL-3.0 或商业授权</td></tr>
-    <tr><td>API</td><td colspan="2">几乎一致，改个 import 大多能跑；信号定义写法略有差别</td></tr>
+    <tr><td>本项目的许可取舍</td><td>采用 <strong>LGPL</strong> 分发方案，保留库替换能力及许可材料</td><td>未选用；不能把 PySide6 的分发方案直接套用到其它绑定</td></tr>
+    <tr><td>API</td><td colspan="2">都映射 Qt 概念，但信号定义、类型和对象生命周期细节须逐项验证，不能只换 import 就认定迁移完成</td></tr>
   </tbody>
 </table>
 
 <p>
-本项目选 PySide6 的决定性理由就是<strong>许可证</strong>：LGPL 允许我们不开源自己的代码，
-代价是要让用户能用自己编译的 Qt 替换我们分发的那份（见
-<a href="07-engineering.html">07 · 测试、门禁与交付</a> 里的 onedir 与重链接义务）。
+本项目把<strong>许可证与分发方式</strong>一起考虑：选择 PySide6，并以保留独立 Qt 动态库的应用目录分发。
+教材解释项目的选择，许可证原文与完整分发要求留在 <code>licenses/</code> 和工程记录中（见
+<a href="07-engineering.html">07 · 测试、门禁与交付</a>）。
 </p>
 
 <h3>三个包名别搞混</h3>
@@ -53,7 +53,7 @@ PySide6 是 <strong>Qt 官方</strong>的 Python 绑定（项目名 <em>Qt for P
 </ul>
 <p>
 本项目<strong>只装 Essentials 并钉死 6.11.1</strong>。K 线是用 <code>QPainter</code> 自绘的，
-不需要 QtCharts；省下的 430 MB 直接反映在交付体积上。
+不需要 QtCharts。上面的体积是选型时的安装测量，不是压缩包或最终交付物大小；裁剪仍需由构建结果验证。
 </p>
 
 <h2>QObject：对象树与内存</h2>
@@ -75,6 +75,8 @@ Qt 的基类是 <code>QObject</code>。它给了三样东西：<strong>对象树
 反过来还有一个镜像坑：C++ 侧对象已删除，Python 侧包装还在，再访问就抛
 <code>RuntimeError: Internal C++ object already deleted</code>。
 </div>
+
+<p>本项目的帮助对话框还有明确的关闭路径：结束时从主窗持有列表中移除，再调用 <code>deleteLater()</code>，由事件循环释放控件。反复打开关闭帮助时，应检查对象数量回落；只把窗口藏起来不等于已经释放。</p>
 
 <h2>信号与槽：Qt 的解耦方式</h2>
 
@@ -106,9 +108,8 @@ worker.finished.emit(3, payload)            # 发射</code></pre>
 </p>
 
 <div class="warn">
-<strong>前提是「绑定方法槽」。</strong>连到临时 lambda 或闭包会丢失线程亲和，退化成直连——
-于是工作线程直接碰了控件，行为不可预测。本项目为此明确规定：跨线程信号一律连到
-<code>self.xxx</code> 这样的绑定方法。
+<strong>接收者必须明确。</strong>不要依赖临时 lambda 的隐含执行线程。本项目把跨线程信号连到
+GUI 线程里 QObject 的绑定方法槽，并显式使用排队连接；普通同线程按钮回调仍可使用 lambda。
 </div>
 
 <h2>事件循环</h2>
@@ -237,9 +238,8 @@ QPushButton[role="primary"] { background: #1B3A5B; color: white; }
       「could not load the Qt platform plugin」直接启动失败）、<code>styles/</code>、
       <code>imageformats/</code>。</li>
   <li><code>QT_QPA_PLATFORM=offscreen</code> 让 Qt 在无显示器环境跑（CI 测试靠它）。
-      副作用是字体回退成默认族，中文会显示成方块——所以<strong>看版式效果必须用真实平台渲染</strong>。</li>
-  <li>LGPL 要求用户能替换 Qt 库 → 交付必须是 <strong>onedir</strong>（Qt DLL 是可替换的独立文件），
-      不能是把一切压进一个 exe 的 onefile。</li>
+      字体效果还受已安装字体与平台插件影响，不能据此保证真实桌面观感；<strong>人工验收补用 Windows 原生渲染</strong>。</li>
+  <li>本项目按 ADR-0004 使用 <strong>onedir</strong>，保留可替换的 Qt 动态库；依赖版本、许可证和第三方通知也要一并核对。</li>
 </ul>
 
 <h2>速查：新手最容易犯的错</h2>

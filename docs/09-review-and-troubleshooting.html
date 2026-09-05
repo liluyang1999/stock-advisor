@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09 学习复盘与常见问题 · 股市锦囊知识库</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="band"><div class="wrap">
+  <h1>09 · 学习复盘与常见问题</h1>
+  <p>沿一次真实操作检查理解：看得清、算得对、状态一致、失败说得明白</p>
+</div></header>
+<div class="wrap">
+<nav class="crumbs"><a href="index.html">← 知识库首页</a> · <a href="08-technical-stack-report.html">← 上一篇：技术栈报告</a></nav>
+
+<p class="lead">这是一份可重复使用的学习与验收指南。读懂原理后，用下面的操作确认程序是否真的把它交到用户手中。检查结果应记录在工程证据里，教材只保留方法。</p>
+<nav aria-label="本页目录"><a href="#flow">操作链路</a> · <a href="#ui-review">界面验收</a> · <a href="#data-check">数值检查</a> · <a href="#troubleshooting">常见问题</a> · <a href="#cleanup">测试与清理</a></nav>
+
+<h2 id="flow">一、用一句话讲清每一步</h2>
+<p>本项目是桌面应用。这里说的「前后端交互」，是界面与本机后台任务之间的传递，并没有另外部署一个网页服务器。</p>
+<table>
+  <tr><th>操作</th><th>程序在做什么</th><th>读哪里</th></tr>
+  <tr><td>输入代码并开始</td><td>页面整理输入；控制器把取数与计算交给工作线程，界面继续响应。</td><td><a href="01-architecture.html">01 分层</a>、<a href="05-concurrency.html">05 并发</a></td></tr>
+  <tr><td>取得行情</td><td>数据层解析外部字段，带回成功、失败、取消和完整度，避免把缺失当作零。</td><td><a href="06-data-quality.html">06 数据</a></td></tr>
+  <tr><td>形成结论</td><td>先测量事实，再按所选档位解释为买／持／卖；把握程度是规则评分，不是获利概率。</td><td><a href="02-domain-algorithms.html">02 算法</a></td></tr>
+  <tr><td>结果回到页面</td><td>控制器确认结果属于当前任务，页面更新表格、概览、详情与图表。</td><td><a href="04-qt-ui.html">04 界面</a></td></tr>
+  <tr><td>切换档位</td><td>使用缓存测量重判，不重新获取行情；因此档位变化也不会使旧行情变新。</td><td><a href="02-domain-algorithms.html">02 测量与决策</a></td></tr>
+</table>
+
+<h2 id="ui-review">二、界面验收：不只看一张大窗口截图</h2>
+<p>在正常尺寸和约 <strong>1000 × 680</strong> 的窄窗口分别走一遍五个页面，再检查 Windows 常用缩放比例。窗口尺寸不等于可用内容宽度：页签、边距与滚动条都会占空间。</p>
+<ul>
+  <li><strong>内容可达：</strong>卡片标题、说明能换行；表单与操作按钮合理分行。检查实际滚动视口与内部内容几何，不能只看主窗口是否成功缩小。允许表格内部滚动看更多列，页面不应把按钮挤到右边看不见。</li>
+  <li><strong>空／成功／失败分清：</strong>空态告诉用户下一步；成功态确实有结果；失败行保留代码、原因和缺失值标记。截图的文件名叫「成功」不能证明内容就是成功。</li>
+  <li><strong>清空不会反弹：</strong>用可控的慢速替身开始分析，清空后再交付旧结果；表格、概览和详情应继续保持空态。停止当前任务与清空作废结果是两种操作。</li>
+  <li><strong>切档保持一致：</strong>分析完成后切档，对照表格、买／持／卖数量、平均把握、详情和仓位。它们都应对应当前档位，股票选择保持一致，数据源调用次数不增加。</li>
+  <li><strong>回测等待不冻结：</strong>首次查看允许显示后台计算提示；同批次切回同一标的与档位应复用报告。重新分析或清空后旧报告不得回填，改本金不应重复回测。</li>
+  <li><strong>交互可理解：</strong>排序后选中、删除或查看详情仍指向同一只股票；Tab 焦点可辨认；不用只靠红绿识别状态，文字也要说明含义。</li>
+  <li><strong>排序与导出一致：</strong>选定一列排序后，让新行或新数字到达；处理下一轮 Qt 事件再检查顺序。导出应跟随屏上次序，全部成功时还保留扩展解释列，混合失败时仍保留失败行。</li>
+  <li><strong>缓存和释放可验证：</strong>移动 K 线光标不应反复计算均线，缩放窗口应重算几何，换数据应更新两者；hover 可读完整数据。反复打开关闭帮助，事件循环处理后应释放对应控件。</li>
+</ul>
+<p>自动化测试适合检查控件位置、状态变化与调用次数；真实 Windows 渲染用来补查字体、缩放、截断和观感。两类证据互相补充。</p>
+
+<h2 id="data-check">三、数值检查：从小例子开始</h2>
+<ul>
+  <li><strong>缺失不等于零：</strong>价格无效时不可生成正常分析；历史缺失时要标记降级；全市场分页不完整时不能宣称覆盖整个市场。筛选边界包含端点，设有边界的字段缺失则不通过。</li>
+  <li><strong>取消不算降级：</strong>历史请求返回取消后不继续生成结论。无效涨跌幅则在价格有效时从最新价与昨收价重算，例如 11 对 10 为 10%。</li>
+  <li><strong>金额自己算一次：</strong>本项目金额保留两位小数，用十进制计算。拿简单价格与整手股数核对成本、盈亏及仓位；仓位不足一手时应解释原因。</li>
+  <li><strong>回测只看当时：</strong>第 t 天形成信号时不能用未来日线。再过若干交易日的涨跌只用于评价。样本量、持有周期与成本假设必须一起读，不能把胜率当成未来承诺。</li>
+  <li><strong>方向与成本分开：</strong>用平盘、微涨、微跌各造一组样例。只有原始价格下跌才算 SELL 命中，扣费不能把平盘或微涨变成「卖对」。</li>
+  <li><strong>风险预算是测算：</strong>止损价与预估亏损是假设条件下的参考，不会替你下单，也不能保证在跳空或流动性不足时按该价格成交。</li>
+</ul>
+
+<h2 id="troubleshooting">四、遇到问题先判断属于哪一层</h2>
+<table>
+  <tr><th>现象</th><th>如何理解与排查</th></tr>
+  <tr><td>离线自检成功，真实行情查询失败</td><td>自检验证本地计算与装配，不能证明外部接口可用。查看页面错误与重试提示，不用样例替换真实行情。</td></tr>
+  <tr><td>选股没有结果</td><td>先区分「数据已取到但没有匹配项」与「取数失败／分页残缺」，再检查筛选边界；不能把三种情况都显示为成功。</td></tr>
+  <tr><td>清空后旧内容回来，或切档后概览没变</td><td>这是状态同步问题。分别核对旧任务结果是否作废、概览是否从当前结果重建，而不是只重绘表格。</td></tr>
+  <tr><td>预警没有一直响</td><td>预警按条件由假变真提醒，持续为真不重复刷屏。需开启监控且保持程序运行；默认每 60 秒检查，网络忙时可能跳过重叠一轮，不是逐笔推送。</td></tr>
+  <tr><td>资金流暂不可用</td><td>它是独立的按需查询。取不到时稍后重试，不应影响个股分析，也不能把净流入缺失显示成 0。</td></tr>
+  <tr><td>重启后设置没有保留</td><td>查看保存失败提示与配置路径是否可写。读取损坏配置会退回默认，写入失败不代表已经保存；不要直接删除真实自选与持仓配置。</td></tr>
+  <tr><td>无窗口或中文显示异常</td><td>检查是否误留测试用的 <code>QT_QPA_PLATFORM=offscreen</code>，再核对 Qt 环境和实际字体。打包程序需保留整个应用目录及其运行库。</td></tr>
+</table>
+
+<h2 id="cleanup">五、测试隔离与清理</h2>
+<p>使用已经配置好的 Python 环境，以下命令在仓库根目录的 PowerShell 中运行。文档检查只读本地文件，不启动产品、不联网，也不写临时文件：</p>
+<pre><code>$env:PYTHONDONTWRITEBYTECODE = '1'
+python -B -m unittest discover -s tests -p test_docs.py
+
+# 产品测试由维护者统一运行；Qt 使用无显示器平台
+$env:QT_QPA_PLATFORM = 'offscreen'
+python -B -m unittest discover -s tests</code></pre>
+<p>文档测试验证本地页面、图片、样式表与 HTML 锚点是否可达，以及 README → 首页 → 章节 → 首页的主要阅读入口。它不访问外链，也不能判断算法解释是否准确或界面是否好看，这些仍需对照源码与渲染检查。</p>
+<p>产品测试用 <code>STOCK_ADVISOR_CONFIG</code> 或显式临时路径隔离配置；截图也要保持同样的边界。使用临时目录上下文，并先关闭窗口、结束后台任务，再释放目录。测试结束后恢复原环境设置。</p>
+<p>测试中的临时视觉截图随 <code>TemporaryDirectory</code> 自动回收。<code>scripts/capture_ui.py</code> 则按需保留复核截图，默认写入 <code>build/ui-review/</code>，并在画面标明「演示数据 · 非实时行情」；它的临时配置自动清理，正式截图是否保留由维护者决定。两者不能混为「所有截图都自动删除」。</p>
+<p><strong>只回收自己创建的临时产物。</strong>核对创建前后的文件清单，清理自己的临时配置、日志、截图草稿及测试缓存；保留正式教学图片与必要验证证据。不能整仓删除缓存或日志，更不能删除真实 <code>%APPDATA%\StockAdvisor</code> 数据。<code>-B</code> 仅禁止 Python 自动写字节码，不能阻止显式 <code>compileall</code>、覆盖率工具或打包命令生成文件。</p>
+
+<h2>资料应该放在哪里</h2>
+<p>本知识库的章节、样式、截图与概念稿都在 <code>docs/</code>。根 README 是阅读入口；<code>loop/</code> 存工程合同与证据，<code>licenses/</code> 存许可证原文；<code>src/ui/manual.py</code> 生成随应用分发的操作说明。参见<a href="index.html#document-map">资料职责表</a>，不要为集中教材而复制这些真源。</p>
+<nav class="crumbs bottom"><a href="08-technical-stack-report.html">← 上一篇</a> · <a href="index.html">返回知识库首页</a></nav>
+<div class="disclaimer">本文用于学习实现与验证方法，<strong>不构成投资建议</strong>，不代表未来收益承诺。</div>
+<footer class="foot">股市锦囊 · docs · 09 学习复盘与常见问题</footer>
+</div>
+</body>
+</html>

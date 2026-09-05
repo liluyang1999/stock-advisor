@@ -26,7 +26,7 @@
 
 <h2>一、技术指标层</h2>
 
-<p>全部在 <code>src/domain/engine.py</code>，都是纯函数：输入一个数组，输出一个数或 <code>None</code>。</p>
+<p>指标在 <code>src/domain/engine.py</code> 中实现，都是纯函数：接收价格序列或日线，返回数值、指标元组或表示不可计算的 <code>None</code>。</p>
 
 <h3>移动平均 MA</h3>
 <pre><code>moving_average(values, window)  # 最后 window 个值的算术平均</code></pre>
@@ -60,9 +60,9 @@ RSI = 100 − 100 / (1 + RS)</code></pre>
 <h3>布林带位置 Bollinger Position</h3>
 <pre><code>mid = MA(window)，σ = 总体标准差
 upper = mid + 2σ，lower = mid − 2σ
-position = (last − lower) / (upper − lower)   # 归一化到 0..1</code></pre>
+position = (last − lower) / (upper − lower)   # 相对轨道的位置，不截断到 0..1</code></pre>
 <p>
-0 表示贴着下轨、1 表示贴着上轨、0.5 是中轨。<strong>当 σ = 0（价格完全不动）时返回 0.5</strong>，
+0 表示贴着下轨、1 表示贴着上轨、0.5 是中轨；跌破下轨可小于 0，突破上轨可大于 1。<strong>当 σ = 0（价格完全不动）时返回 0.5</strong>，
 而不是让 0/0 抛异常——这类退化输入在真实行情里会出现（停牌、一字板）。
 </p>
 
@@ -86,8 +86,8 @@ ATR% = ATR / 最新价 × 100</code></pre>
 <table>
   <tr><th>因子</th><th>看什么</th></tr>
   <tr><td><code>_score_moving_averages</code></td><td>价格与 5/20/60 日均线的相对位置、均线多头/空头排列</td></tr>
-  <tr><td><code>_score_trend</code></td><td>MACD 金叉/死叉、柱状体方向</td></tr>
-  <tr><td><code>_score_momentum</code></td><td>RSI 区间、近 5 日胜率、最大回撤</td></tr>
+  <tr><td><code>_score_trend</code></td><td>5/20 日均线斜率、近 5 日上涨占比、近期最大回撤</td></tr>
+  <tr><td><code>_score_momentum</code></td><td>RSI 区间、MACD 快慢线与柱状体关系</td></tr>
   <tr><td><code>_score_volume</code></td><td>量比、放量/缩量与价格方向是否配合</td></tr>
   <tr><td><code>_score_intraday</code></td><td>当日收在振幅区间的什么位置（收在高位还是低位）</td></tr>
   <tr><td><code>_score_bollinger</code></td><td>通道位置：贴上轨/贴下轨/中枢</td></tr>
@@ -102,8 +102,9 @@ ATR% = ATR / 最新价 × 100</code></pre>
 
 <h3>风控扣分与把握程度</h3>
 <pre><code>base_factor_sum  = 八个因子得分之和
-risk_penalty     = 负数，来自 ST 标记、极端波动、流动性不足等
+risk_penalty     = 非正数，来自开盘跳空、当日振幅、距近期高点回撤等
 confidence       = 由综合分、历史长度、指标齐备度共同决定（0..100）</code></pre>
+<p>「把握程度」表示程序对当前证据的评分，不能读作获利概率。ST 等证券特征也用于选股过滤，不能把筛选条件与个股风控扣分混为一谈。</p>
 
 <h2>三、决策层：五档决策强度</h2>
 
@@ -138,13 +139,13 @@ score = clamp(score, −100, +100)</code></pre>
 </p>
 
 <h3>从分数到动作</h3>
-<pre><code>score ≥ t_buy   →  BUY   （L1/L2 还要过 confidence_gate，否则降级为 HOLD）
+<pre><code>score ≥ t_buy   →  BUY   （把握程度须有效且为正；L1/L2 还要过 confidence_gate，否则为 HOLD）
 score ≤ t_sell  →  SELL
 其余             →  HOLD</code></pre>
 
-<h2>四、仓位测算：把「建议」变成可执行的数字</h2>
+<h2>四、仓位测算：把规则翻译成数字参考</h2>
 
-<p>光说「买入」没有用，用户真正需要的是<strong>买多少</strong>。这一步用的是风险预算法：</p>
+<p>风险预算法估算可投入比例。只有达到买入门槛、把握程度有效且通过所需确认，才计算新建多头仓位；观望或减仓时为 0：</p>
 
 <pre><code>止损距离 stop% = clamp(1.8 × ATR%, 2%, 12%)
 
@@ -153,18 +154,20 @@ score ≤ t_sell  →  SELL
 
 投入比例 = (risk_budget / stop%) × strength × conf
 投入比例 = min(投入比例, position_cap)</code></pre>
+<p>缺少有效 ATR 时用常态波动估计，仍缺失才用 3% 作为波动输入；还要乘 1.8 并限制在 2%–12%。默认波动输入为 3%，并不等于最终止损距离为 3%。</p>
 
 <div class="key">
   <strong>这个公式的直觉：</strong>「我这一笔最多亏本金的 <code>risk_budget</code>（如 1%）」。
-  如果止损距离是 5%，那么投入比例 = 1% / 5% = 20% 的本金——这样即使真的止损出局，
-  总亏损也就是本金的 1%。<strong>波动越大的股票，止损必须放得越宽，因而仓位必须越小</strong>，
+  如果止损距离是 5%，则未乘调整系数前投入比例 = 1% / 5% = 20% 的本金；在按参考价成交的假设下，
+  对应测算亏损是本金的 1%。<strong>在其它条件相同且未触及上下限时，波动输入越大，测算仓位越小</strong>，
   这正是 ATR 在这里的作用。最后再乘以信号强度和把握程度做微调，并被档位的仓位上限封顶。
 </div>
 
 <p>
 最终 <code>position_plan()</code> 输出：建议股数（按 A 股 100 股一手取整）、止损价、止盈价、
-最大亏损金额。所有金额用 <code>Decimal</code> 参与计算（见 <a href="06-data-quality.html">第 05 篇</a>）。
+预估亏损金额。这里按项目约定的 100 股单位向下取整，并不覆盖所有板块的实际申报规则。金额用 <code>Decimal</code> 参与计算（见 <a href="06-data-quality.html">第 06 篇</a>）。
 </p>
+<p>这些只是模型参考，没有自动下单或自动止损。费用、跳空与实际成交条件都可能使实际损失超过测算值。</p>
 
 <h2>五、可信度回测</h2>
 
@@ -179,14 +182,15 @@ score ≤ t_sell  →  SELL
 <div class="warn">
   <strong>最容易犯的错误：前视偏差（look-ahead bias）。</strong>
   如果算第 i 天信号时不小心用到了第 i+1 天的数据，回测结果会好得离谱，而实盘一败涂地。
-  本项目为此写了专门的<strong>防前视测试</strong>：把序列截断到第 i 天算一次，再用完整序列算一次，
-  两者在第 i 天的结论必须一致。指标是纯函数、没有隐藏状态，这条性质才有可能成立。
+  本项目的<strong>防前视测试</strong>会捕获传给测量函数的历史序列，检查它包含当日而不包含未来日线。指标是纯函数、没有隐藏状态，这条性质才有可能成立。
 </div>
 
 <p>
-回测还会在<strong>样本不足时明说「样本不足」</strong>，而不是用三五个样本硬算出一个胜率给用户看。
-界面上这条信息是显示出来的，不是悄悄藏起来。
+总历史长度不足 <code>warmup + horizon + 1</code> 时，回测返回「样本不足」。通过这个门槛后，某类信号仍可能只有少数样本，必须把该组样本数与胜率一起看。
 </p>
+<p><strong>命中率和收益不是一回事：</strong>卖出信号的命中取决于之后价格是否真的下跌，即原始收益 <code>gross &lt; 0</code>；平盘或微涨不能因为扣费变负就算卖对。买入／持有组按扣除成本后的收益是否为正计命中，各组平均收益也扣除所设成本。</p>
+<p>默认 <code>cost_pct=0.13</code> 表示扣 0.13 个百分点，是模型统一的单边成本假设。基线是各观察窗口原始收益的平均值，并非一笔从头持有到尾的账户净值；卖出组平均收益也不是做空交易盈亏。</p>
+<p>界面中的回测按需在后台计算，等待时显示「正在后台复盘」。同一分析批次中，标的与档位相同就复用报告；换批或清空会失效，改本金不重跑回测。这样价格参考、仓位输入与历史统计不会混成同一种缓存。</p>
 
 <h2>六、全市场选股</h2>
 
@@ -219,7 +223,7 @@ rank(filtered, objective)            # 按目标（动量/突破/超跌…）打
 <ul>
   <li>指标全是<strong>纯函数</strong>，样本不足或退化输入一律返回 <code>None</code> 或中性值，绝不硬凑。</li>
   <li><strong>测量与决策分离</strong>：<code>measure()</code> 客观、<code>decide()</code> 带档位偏好；L3 的风控权重为 1.0，是不加偏置的参考点。</li>
-  <li>仓位用<strong>风险预算法</strong>：波动越大 → 止损越宽 → 仓位越小，让单笔最大亏损可控。</li>
+  <li>仓位用<strong>风险预算法</strong>：受买入门槛、输入有效性及上下限约束；测算亏损不是实际亏损保证。</li>
   <li>回测必须<strong>防前视偏差</strong>，并在样本不足时明说。</li>
   <li>选股的区间过滤是<strong>闭区间</strong>，缺失字段在设了边界时判不通过。</li>
 </ul>

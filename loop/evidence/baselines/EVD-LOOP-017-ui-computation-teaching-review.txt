@@ -1,0 +1,31 @@
+2026-09-05 comprehensive review. Verification in progress; not a release authorization.
+
+Measured product coverage run: 908 tests passed in 86.696s.
+{
+  "overall_statement": 0.96042,
+  "overall_branch": 0.91205,
+  "core_statement": 0.993272,
+  "core_branch": 0.983871,
+  "qt_controller_statement": 0.994286,
+  "qt_controller_branch": 0.958333
+}
+Native Windows: PySide6 6.11.1, Python 3.14.4, Microsoft YaHei, effective DPR 2.5; five pages x success/fail/empty.
+Offscreen effective DPR 1/1.25/1.5/2; target pixels 1366x768/1920x1080/1920x1080/2560x1440; five pages all content widths fit viewport. Native minimum 1000x680: viewport/content 930/930 on each page.
+Live bounded read-only smoke: quote success; history 60 bars; fundflow success; market first page 50 rows and completeness false as expected.
+Teaching: 10 HTML pages, 121 references, 6 document tests. Browser rendering at default desktop viewport: no overflow or missing images on all ten pages. Seven native screenshots refreshed; demo data explicitly labelled.
+Final strict gates, independent review and build will be appended after execution.
+
+Final raw product run: Ran 909 tests in 73.152s
+
+OK
+Follow-up verification: final G-CORE and G-COVERAGE PASS. Independent reviewer Erdos: 30 targeted tests PASS, original two P2 findings fixed, no blocking findings. Remaining P3 delayed capture close was reproduced then fixed with WA_DeleteOnClose; all 12 capture tests PASS.
+The final gate run detected only the stale product-count metadata (908 instead of 909); counters updated before rerunning G-LOOP.
+Four capture-ui temporary config directories created during the initial regression run were inspected and removed under their owning sandbox account; post-check count=0.
+
+Completed current gate set:
+G-FORMAT PASS; G-LINT PASS; G-TYPE PASS; G-CORE PASS; G-COVERAGE PASS; G-SECURITY PASS; G-SURFACE PASS.
+Counter correction rerun: [G-LOOP] PASS / RUN_GATES_OK ran=1 failed=0 skipped=0.
+Fresh whole-repository format: 177 files already formatted; lint: All checks passed; pyright: 0 errors, 0 warnings, 0 informations.
+compileall main.py scripts src: exit 0.
+SELF_TEST_OK checks=8/8; exit 0.
+No formal release authorization is claimed. Packaging verification follows from committed source.

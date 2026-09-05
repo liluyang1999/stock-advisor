@@ -206,6 +206,6 @@ confidence = clamp(round(base + history_bonus + available_indicator_bonus − hi
 
 事后信号复盘，用于展示"可信度回测"而非预测：默认 `horizon=5`（持有天数）、`warmup=30`（预热样本数）、`cost_pct=0.13`（单边成本%）。样本不足（`len(clean_history)<warmup+horizon+1`）或参数非法（非有限、≤0、成本为负）返回 `ok=False` 并说明原因，不伪造回测结果。
 
-无未来泄漏：第 `t` 日信号只使用 `history[:t+1]`（含当日）经 `measure()+decide()` 生成；未来收益 `(close[t+horizon]-close[t])/close[t]×100−cost_pct` 仅作事后度量，不回流进第 `t` 日的信号计算。胜率口径：BUY/HOLD 以未来收益为正记胜，SELL 以未来收益为负记胜（卖出信号"对"意味着随后下跌）。报告同时给出买入持有基线收益、样本量与"仅用当日及之前数据，不预示未来"的诚实说明。
+无未来泄漏：第 `t` 日信号只使用 `history[:t+1]`（含当日）经 `measure()+decide()` 生成；未来收益仅作事后度量，不回流进信号计算。先计算原始涨跌 `gross=(close[t+horizon]-close[t])/close[t]×100`，平均收益再扣 `cost_pct`。BUY/HOLD 以扣费收益为正记胜；SELL 以原始 `gross<0` 记方向命中，平盘或小幅上涨不能因扣费变负就算命中。它衡量的是卖出后的方向，不是可执行做空策略的收益。报告同时给出相同持有窗口的未扣费平均涨跌基线、样本量与“仅用当日及之前数据，不预示未来”的说明；该基线不是整段持仓累计回报。
 
 来源：已归档/删除的遗留设计 `loop/planning/archive/specs/2026-06-24-decision-strength-and-modules-design.md`（2026-06-24，可从 git 历史恢复）§8，默认参数已于 2026-07-13 对照 `src/domain/backtest.py::backtest_signals` 签名核对仍然准确。

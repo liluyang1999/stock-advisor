@@ -8,10 +8,10 @@
   "active_milestone_id": "MS-08",
   "active_work_item_id": "WI-035",
   "iteration": 2,
-  "baseline_commit": "881099806deca77a7bf7e784d6786f9bccdf0ce6",
-  "branch": "main",
+  "baseline_commit": "21500be61cf8321312e4c5000e7bdc7ec4ba3b9d",
+  "branch": "codex/review-ui-quality-20260905",
   "dirty_worktree": true,
-  "last_updated": "2026-07-25T00:00:00+09:00",
+  "last_updated": "2026-09-05T14:27:39+09:00",
   "completed_ids": [
     "WI-000",
     "WI-001",
@@ -52,9 +52,9 @@
     "WI-035"
   ],
   "next_actions": [
-    "complete WI-035 verification (Tk 视觉基线回归的最终核验)",
-    "close out WI-025 release readiness: 许可证/SBOM/连续全绿/发布门禁",
-    "adjudicate WI-032 (pure_preserved 合同：layout.py 已退役，view_text.py 保留) 与 WI-033 (BoundedUrllibProvider 接入)"
+    "本轮 909 项产品测试、六项覆盖率、八项门禁、UI 与教学复核已完成，见 EVD-LOOP-017；下一步构建验证并同步远程。",
+    "HG-LICENSE / HG-PACKAGING / HG-RELEASE 的人工签署仍是正式发布条件。",
+    "WI-032/033/035 的历史人工验收状态不由本轮机器验证自动代签。"
   ],
   "blocker_ids": [],
   "risk_ids": [
@@ -70,14 +70,14 @@
     "RISK-010"
   ],
   "pending_decision_ids": [],
-  "latest_gate_run_id": "LOOP-20260711-003",
+  "latest_gate_run_id": "LOOP-20260905-001",
   "quality_summary": {
-    "tests_total": 870,
-    "tests_passed": 870,
+    "tests_total": 909,
+    "tests_passed": 909,
     "tests_failed": 0,
     "tests_skipped": 0,
-    "coverage": 0.9487,
-    "qt_tests": 211,
+    "coverage": 0.96042,
+    "qt_tests": 276,
     "release_ready": false
   },
   "release_candidate": false,

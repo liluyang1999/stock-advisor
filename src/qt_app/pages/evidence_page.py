@@ -58,6 +58,7 @@ class EvidencePage(QtWidgets.QWidget):
     ) -> None:
         super().__init__(parent)
         self._controller = controller
+        self._submitted_code = ""
         self._build_ui()
         self._connect()
 
@@ -115,7 +116,8 @@ class EvidencePage(QtWidgets.QWidget):
         self.stats.clear()
         self.warning.setVisible(False)
         self.body.setText("查询中…")
-        self._controller.start(self.input.text())
+        self._submitted_code = self.input.text().strip()
+        self._controller.start(self._submitted_code)
 
     def _on_ready(self, result: FundFlowResult) -> None:
         self.query_button.setEnabled(True)
@@ -130,7 +132,7 @@ class EvidencePage(QtWidgets.QWidget):
         self.warning.setVisible(False)
 
         flow = result.flow
-        self.body.setText(build_fund_flow_text(flow, self.input.text().strip()))
+        self.body.setText(build_fund_flow_text(flow, self._submitted_code))
         self.stats.set_value(
             "今日主力净额", _fmt_yi(flow.today_main), _flow_colour(flow.today_main)
         )

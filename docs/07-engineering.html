@@ -96,7 +96,7 @@ RUN_GATES_OK ran=1 failed=0 skipped=1</code></pre>
 <table>
   <tr><th>目录</th><th>内容</th></tr>
   <tr><td><code>product/</code></td><td>需求（REQ-*）、验收标准（AC-*）、能力面、设计 token</td></tr>
-  <tr><td><code>decisions/</code></td><td>架构决策记录（ADR），16 份，每份含背景/决策/后果</td></tr>
+  <tr><td><code>decisions/</code></td><td>架构决策记录（ADR），说明背景、选择及后果；具体清单留在工程目录</td></tr>
   <tr><td><code>architecture/</code></td><td>模块边界、数据流、并发、安全威胁模型、打包……</td></tr>
   <tr><td><code>quality/</code></td><td>门禁定义、测试目录、追溯矩阵、发布就绪清单</td></tr>
   <tr><td><code>planning/</code></td><td>工作项（WI-*）、里程碑、依赖图</td></tr>
@@ -107,13 +107,12 @@ RUN_GATES_OK ran=1 failed=0 skipped=1</code></pre>
 <h3>摘要锚定（digest anchoring）</h3>
 <pre><code>control_plane_digest() = sha256(loop/ 下所有受管文件的字节)</code></pre>
 <p>
-这个摘要被记录在「基线证据」里。任何人改动 <code>loop/</code> 的任何一个字节，摘要就变，
-<code>G-LOOP</code> 立刻失败——除非同时走<strong>再基线协议</strong>：写一份说明改了什么、为什么改的证据文件，
-并把新摘要登记进去。
+这个摘要被记录在「基线证据」里。摘要范围内的受管文件变化时，需要按<strong>再基线协议</strong>同步证据。
+并非 <code>loop/</code> 中每个文件都参与同一个摘要；纳入与排除范围以校验器为准。教材讲方法，实际状态与基线由工程维护者更新。
 </p>
 <div class="key">
-  这条机制的价值在于：<strong>它让「悄悄改文档」变得不可能</strong>。
-  你可以改，但必须留下一份说明。工程治理最难的不是写规则，而是让规则无法被绕过。
+  这条机制的价值在于：<strong>检查内容与证据是否对应</strong>。
+  摘要不是审批或测试的替代品；维护者还要检查变更的含义、运行结果与实际交付行为。
 </div>
 
 <h3>计数锚点：防止数字悄悄烂掉</h3>
@@ -153,27 +152,27 @@ RUN_GATES_OK ran=1 failed=0 skipped=1</code></pre>
   <tr><td><code>timeout-minutes</code></td><td>不设的话，一个卡住的任务会烧到 6 小时默认上限</td></tr>
   <tr><td><code>concurrency</code> + cancel-in-progress</td><td>新推送让在途运行作废，不用两个 runner 抢答同一个问题</td></tr>
   <tr><td><code>permissions: contents: read</code></td><td>最小权限：这个流水线只需要读仓库</td></tr>
-  <tr><td><code>QT_QPA_PLATFORM=offscreen</code></td><td>Qt 测试要构造真实 QWidget，offscreen 是唯一不需要显示器的平台插件</td></tr>
+  <tr><td><code>QT_QPA_PLATFORM=offscreen</code></td><td>Qt 测试构造真实 QWidget，本项目选用 offscreen 在无需显示器的环境运行</td></tr>
 </table>
 
 <h2>五、打包与交付</h2>
 
 <h3>onedir 而不是 onefile</h3>
 <table>
-  <tr><th>形态</th><th>热启动</th><th>LGPL 重链接义务</th></tr>
-  <tr><td>onefile（单个 exe）</td><td><strong>2.903 秒</strong>（每次启动重新解压约 100 MB）</td><td>做不到</td></tr>
-  <tr><td>onedir（应用目录）</td><td><strong>0.685 秒</strong></td><td>可以</td></tr>
+  <tr><th>形态</th><th>选型时记录的热启动</th><th>本项目的分发取舍</th></tr>
+  <tr><td>onefile（单个 exe）</td><td><strong>2.903 秒</strong>（启动需解压运行时）</td><td>未采用；不提供当前方案的独立库布局</td></tr>
+  <tr><td>onedir（应用目录）</td><td><strong>0.685 秒</strong></td><td>已采用；保留可替换的 Qt 动态库</td></tr>
 </table>
 <div class="note">
   <strong>两条独立理由都指向 onedir：</strong>
   ① 单文件热启动超出 2.5 秒的性能预算；
-  ② PySide6 以 <strong>LGPL-3.0</strong> 分发，其第 4(d) 条要求用户能用自己编译的 Qt 重新链接——
-  只有当 Qt 动态库是<strong>可替换的独立文件</strong>时这条义务才履行得了。
+  ② 本项目按 LGPL 方案分发 PySide6，应用目录便于用户替换 Qt 动态库。完整义务仍需核对 <code>licenses/</code> 原文、第三方通知与工程分发记录，不能把一种打包形式直接等同于全部许可要求已满足。
   <br><br>
   <strong>许可证是真实的工程约束，不是法务的事后审批。</strong>
 </div>
 
 <h3>为什么用 PySide6-Essentials 而不是 PySide6</h3>
+<p>以下是选型时的安装体积记录，不是最新压缩包大小；启动速度与交付体积应随实际构建重新测量。</p>
 <pre><code>PySide6（元包）= Essentials + Addons = 634.1 MB
 PySide6-Essentials              = 202.2 MB
 其中 Qt6WebEngineCore.dll 一个文件就 195.3 MB —— 而这个产品根本不用浏览器内核</code></pre>
@@ -183,7 +182,7 @@ PySide6-Essentials              = 202.2 MB
   <tr><th>产物</th><th>作用</th></tr>
   <tr><td><code>SBOM.json</code>（CycloneDX 1.5）</td><td>软件物料清单：交付物里到底有哪些组件、什么许可证</td></tr>
   <tr><td><code>THIRD_PARTY_NOTICES.md</code></td><td>第三方许可通知</td></tr>
-  <tr><td><code>RELEASE_MANIFEST.json</code></td><td>逐文件 SHA-256（204 个文件）</td></tr>
+  <tr><td><code>RELEASE_MANIFEST.json</code></td><td>本次交付物的逐文件 SHA-256；文件数以清单为准</td></tr>
   <tr><td><code>--verify</code></td><td>校验一份交付目录是否与清单完全一致（防篡改/防传输损坏）</td></tr>
 </table>
 
@@ -203,6 +202,11 @@ PySide6-Essentials              = 202.2 MB
   <strong>构建依赖必须钉死版本</strong>：交付物的可复现性取决于它。浮动版本会让「同一个提交构建出不同产物」成为可能，
   而那时你连 bug 是自己引入的还是工具链变的都分不清。
 </div>
+<p>钉版减少工具链漂移，但不能单独保证每次字节完全相同；解释器、资源、构建环境与实际产物清单也要记录和验证。</p>
+
+<h2>七、教材也需要验证</h2>
+<p><code>tests/test_docs.py</code> 用标准库解析 HTML，检查本地链接、资源和锚点，以及 README、首页、各教学章的入口。错误文案与算法解释仍需人工对照源码；不应写一个机械锁定全部句子的测试代替审阅。</p>
+<p>运行文档测试无需启动 GUI 或生成任何文件。产品全量门禁、图像更新、发布证据与远程同步由维护者统一完成；阅读顺序与清理方法见<a href="09-review-and-troubleshooting.html#cleanup">第 09 篇</a>。</p>
 
 <h2>本篇要点回顾</h2>
 <ul>
@@ -215,7 +219,7 @@ PySide6-Essentials              = 202.2 MB
 </ul>
 
 <nav class="crumbs bottom">
-  <a href="06-data-quality.html">← 上一篇</a> · <a href="index.html">回到首页</a>
+  <a href="06-data-quality.html">← 上一篇</a> · <a href="index.html">首页</a> · <a href="08-technical-stack-report.html">下一篇：技术栈报告 →</a>
 </nav>
 
 <div class="disclaimer">本文用于讲解程序实现与工程方法，<strong>不构成投资建议</strong>。</div>

@@ -49,6 +49,9 @@ class CandlestickChart(QtWidgets.QWidget):
         self._bars: list[DailyBar] = []
         self._title = ""
         self._hover = -1
+        self._layout_size: tuple[int, int] | None = None
+        self._candle_layout: list[dict] = []
+        self._ma_series: list[list[float | None]] = []
         tokens = load_tokens()
         # 一律走 tokens.colour() 取色，不直接下标 colors/state_colors——与另外两个自绘部件
         # （factor_bars/spectrum_strip）同一口径，调用方不必记住某个色值住在哪个组里
@@ -79,6 +82,10 @@ class CandlestickChart(QtWidgets.QWidget):
         self._bars = list(bars)
         self._title = title
         self._hover = -1
+        self._layout_size = None
+        closes = [float(bar.close or 0.0) for bar in self._bars]
+        self._ma_series = [geometry.moving_average_series(closes, window) for window in _MA_WINDOWS]
+        self.setToolTip("")
         self.update()
 
     def clear(self) -> None:
@@ -121,6 +128,7 @@ class CandlestickChart(QtWidgets.QWidget):
             index = geometry.nearest_index(x, self._layout())
         if index != self._hover:
             self._hover = index
+            self.setToolTip(self.hover_text())
             self.update()
 
     # --- 绘制 ---
@@ -134,8 +142,12 @@ class CandlestickChart(QtWidgets.QWidget):
         return left, right, top, usable * _PRICE_RATIO
 
     def _layout(self) -> list[dict]:
-        left, right, top, height = self._plot_rect()
-        return geometry.candle_layout(self._bars, left, right, top, height)
+        size = (self.width(), self.height())
+        if self._layout_size != size:
+            left, right, top, height = self._plot_rect()
+            self._candle_layout = geometry.candle_layout(self._bars, left, right, top, height)
+            self._layout_size = size
+        return self._candle_layout
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         painter = QtGui.QPainter(self)
@@ -224,10 +236,8 @@ class CandlestickChart(QtWidgets.QWidget):
     def _paint_moving_averages(self, painter: QtGui.QPainter) -> None:
         left, right, top, height = self._plot_rect()
         lo, hi = geometry.price_bounds(self._bars)
-        closes = [float(bar.close or 0.0) for bar in self._bars]
         count = len(self._bars)
-        for window, color in zip(_MA_WINDOWS, self._ma_colors, strict=False):
-            series = geometry.moving_average_series(closes, window)
+        for series, color in zip(self._ma_series, self._ma_colors, strict=True):
             path = QtGui.QPainterPath()
             started = False
             for index, value in enumerate(series):
@@ -290,6 +300,9 @@ class CandlestickChart(QtWidgets.QWidget):
         text = self.hover_text() or self._title
         if not text:
             return
+        text = painter.fontMetrics().elidedText(
+            text, QtCore.Qt.TextElideMode.ElideRight, max(1, int(self.width() - 2 * _PADDING))
+        )
         painter.drawText(
             QtCore.QRectF(
                 _PADDING, _PADDING / 2, max(1.0, self.width() - 2 * _PADDING), _READOUT_HEIGHT

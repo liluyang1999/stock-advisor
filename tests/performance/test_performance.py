@@ -126,12 +126,15 @@ class StartupBudgetTests(unittest.TestCase):
             + "'); "
             "from qt_app.app import build_app; "
             "from qt_app.settings import Settings; "
-            "tmp = tempfile.mkdtemp(); "
-            "a, w = build_app([], settings=Settings(pathlib.Path(tmp) / 'config.json')); w.show()"
+            "tmp = tempfile.TemporaryDirectory(); "
+            "a, w = build_app([], settings=Settings(pathlib.Path(tmp.name) / 'config.json')); "
+            "w.show(); w.close(); tmp.cleanup()"
         )
         env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
         start = time.perf_counter()
-        subprocess.run([sys.executable, "-c", code], env=env, check=True, capture_output=True)
+        subprocess.run(
+            [sys.executable, "-c", code], env=env, check=True, capture_output=True, timeout=30
+        )
         return time.perf_counter() - start
 
     def test_cold_and_warm_start_within_p95_budget(self):

@@ -7,18 +7,30 @@
 
 贯穿两页的核心是**五档决策强度**（稳健 · 稳进 · 标准 · 积极 · 激进）：客观测量不变，只调整决策策略——越激进越早出手、仓位越大、对风险越宽容；越稳健越要求强确认、仓位越小、更快减仓。点选档位即时重算、不重新联网。并配有三个实用模块：**决策强度光谱**（同一只股票五档结论一眼对照）、**仓位/风控计算器**（按风险预算 + ATR 止损给出股数/止损/止盈/最大亏损）、**可信度回测**（同股历史信号事后复盘）。配色采用 A 股本土习惯：红=涨/买，绿=跌/卖。
 
+回测按需在后台计算，复用本批次同一标的与档位的结果；重新分析或清空会使缓存失效。切档同步更新结果与概览，改本金只重算仓位。页面用换行说明与分行表单适应窄窗，清空后丢弃旧任务的迟到结果。
+
 工作台能力：**自选股 / 持仓**（可填持仓成本与股数，看浮动盈亏）与本金、档位、预设、预警跨会话**持久化**（存到 `%APPDATA%\StockAdvisor\config.json`，启动恢复）；**横向对比**把已分析的股票放进一张表（指标 + 各档强度提示 + 持仓盈亏）；K 线支持 **hover 十字光标**显示当根 OHLC；**条件预警**在开市挂机时，价格/涨跌幅/综合分越线即横幅 + 提示音提醒（边沿触发，仅程序开启时生效）；**个股资金流**按需查询主力净流入（今日 + 近5日，按需取数、降级安全，数据源不稳定时提示稍后重试，不影响其它功能）。
 
 > 模型结果仅供研究和辅助决策，**不构成任何投资建议**；交易前请自行核验行情、公告与风险。
+
+## 学习与验收入口
+
+图文教材统一放在 [`docs` 知识库](docs/index.html)，可以直接用浏览器打开。先读
+[学习复盘与常见问题](docs/09-review-and-troubleshooting.html)，再按需要深入架构、算法、界面或测试章节。
+其中也说明了怎样检查窄窗排版、清空与取消、切档后的表格和概览，以及成功／空／失败三种状态。
+
+`docs/` 负责通俗教学；`loop/` 保留需求、决策和验证证据等工程真源，`licenses/` 保留许可证原文。
+随应用分发的 `dist/使用说明.html` 由 `src/ui/manual.py` 生成，面向实际操作。
+这些资料职责不同，教材提供导读，不复制或迁移它们。
 
 ## 运行
 
 直接用脚本启动（推荐，CLI 一行即可）：
 
 ```bash
-run.bat              # Windows（cmd / PowerShell）
-./run.sh             # Git Bash / WSL
-run.bat --self-test  # 透传参数：离线自测（不触网）
+.\run.bat              # Windows PowerShell；cmd 中也可写 run.bat
+./run.sh               # Git Bash；须使用已配置 Qt 的 Python 环境
+.\run.bat --self-test  # 透传参数：离线自测（不触网）
 ```
 
 或手动调用：
@@ -40,23 +52,28 @@ python -m pip install --group gui   # PySide6-Essentials（运行期）+ pytest-
 
 ADR-0001 接受的 Tkinter → PySide6 Widgets 迁移已经完成（WI-023）：`python main.py` 和 `股市锦囊.exe` 跑的都是 PySide6 版（`src/qt_app/`），Tkinter 生产层已经删除，`ui/app.py` 只剩一个把 `run_gui` 委托给 Qt 装配的薄入口。
 
-领域内核（`domain/` 的 12 个模块）与 Qt 无关，这一点由 G-CORE 门禁静态强制：内核里不允许出现 `PySide6` 或 `urllib` 的 import。换界面框架不需要动内核。
+领域内核（`domain/`）与 Qt 无关，G-CORE 按核心模块清单检查禁入依赖：受保护模块里不允许出现 `PySide6` 或 `urllib` 的 import。换界面框架不需要重写算法；清单不等于目录文件总数。
 
 ## 测试
 
-```bash
-python -m unittest discover -s tests
+```powershell
+$env:PYTHONDONTWRITEBYTECODE = '1'
+$env:QT_QPA_PLATFORM = 'offscreen'
+python -B -m unittest discover -s tests
+python -B -m unittest discover -s tests -p test_docs.py  # 仅检查教材导航，不联网、不写文件
 ```
 
 纯逻辑（代码解析、行情解析、指标、筛选、排序、预设、编排、布局计算）均有单元测试覆盖；GUI 关键布局与交互也有 headless 测试。
+源码环境的首次依赖安装通常需要联网，离线自检和替身测试不需要行情接口。
+人工观察真实 Windows 字体与缩放效果前，应在单独终端启动 GUI，避免沿用测试的 `offscreen` 设置。
 
 ## 构建 Windows 交付物
 
 直接用脚本打包（会自动安装唯一的构建依赖 PyInstaller）：
 
 ```bash
-build.bat            # Windows（cmd / PowerShell）
-./build.sh           # Git Bash / WSL
+.\build.bat          # Windows PowerShell；cmd 中也可写 build.bat
+./build.sh           # Windows Git Bash；Windows 交付物须在 Windows 构建
 ```
 
 或手动执行：
@@ -71,7 +88,9 @@ python scripts/build_exe.py
 - `dist/股市锦囊/` —— 应用目录，双击其中的 `股市锦囊.exe` 即可运行，无需安装。
 - `dist/使用说明.html` —— 随构建生成的图文说明书。
 
-采用 onedir 而非单文件是 ADR-0004 的决定，有两条独立理由：onefile 每次启动都要重新解压约 100 MB 运行时（实测热启动 2.9s，超出 2.5s 预算），而 onedir 是 0.69s；且 Qt 以 LGPL-3.0 分发，其第 4(d) 条要求用户能用自己的 Qt 重新链接——Qt DLL 作为独立文件放在应用目录里才做得到，压进单文件就做不到。
+采用 onedir 是 ADR-0004 的决定：当时记录的热启动测量约为 onefile 2.9s、onedir 0.69s，
+前者超过项目 2.5s 的预算。应用目录也让 Qt 动态库可以替换，便于落实项目选择的 LGPL 分发方案。
+这些是选型依据，不是所有机器的速度保证；完整分发还需许可证、第三方通知及组件清单，不能只拷贝 EXE。
 
 构建完成后可执行 `dist\股市锦囊\股市锦囊.exe --self-test` 验证打包程序能启动并跑通核心逻辑。
 
@@ -86,8 +105,10 @@ python scripts/build_exe.py
 方向**，反向依赖会被门禁拒绝：
 
 ```
-qt_app/ ──> ui/ ──> services/ ──> data/ ──> domain/
-                                    observability/（横切，各层皆可用）
+qt_app/ ──> services/ ──> domain/
+   │             └──> data/ ──> domain/
+   └──> ui/（展示辅助；app.py 是转交 Qt 的薄入口）
+observability/（数据与服务等层的日志辅助；纯领域内核不记日志）
 ```
 
 `domain/` 的纯度不是靠自觉，是**机器强制**的：`loop/scripts/check_core_boundaries.py`
@@ -97,8 +118,8 @@ qt_app/ ──> ui/ ──> services/ ──> data/ ──> domain/
 ```
 src/
   version.py                产品版本单一真源（原 stock_advisor/__init__.py）
-  ports.py                  网络传输的 port/envelope 合同（框架无关、纯 stdlib，两代传输共用）
-  domain/                   纯逻辑核心 · 16 模块 · 无网络、无 GUI、无磁盘
+  ports.py                  网络传输的 port/envelope 合同（框架无关、纯 stdlib）
+  domain/                   纯逻辑核心 · 无网络、无 GUI、无磁盘
     models.py                 数据结构（行情、K线、指标、快照、测量、决策、仓位、回测）
     money.py / numeric.py     金额与价格的 Decimal 表示（ADR-0013）；浮点解析的唯一入口
     symbols.py                代码规范化与市场号映射
@@ -111,11 +132,12 @@ src/
     formatting.py             数值/单位的呈现规则
     input_validate.py         外部输入的边界校验
     data_quality.py           行情数据的可信度判定
-  data/                     外部接入 · 4 模块
+  data/                     外部接入
     data_provider.py          实时行情、历史日线、全市场快照获取（多源容错）
     bounded_transport.py      有界 HTTP 传输（超时/大小上限，防挂死与超大响应）
+    bounded_adapter.py        生产 provider：把传输结果、取消与分页完整度交给编排层
     sample_data.py            离线样例数据
-  services/                 用例编排与持久化 · 9 模块
+  services/                 用例编排与持久化
     workflow.py               个股分析与全市场选股编排（回传测量供改档重判）
     store.py                  用户配置持久化（自选股/持仓、本金、档位、预设、预警）
     screener_run.py           选股批次执行 · batch.py 批处理调度
@@ -123,20 +145,23 @@ src/
     fund_flow.py              个股资金流取数编排
     self_check.py             端到端自检（main.py --self-test 的实现）
   observability/            结构化日志（NDJSON；只写声明过的字段，原始报文不入日志）
-  ui/                       与 GUI 框架无关的展示逻辑 · 7 模块
+  ui/                       展示辅助与薄启动入口
     view_text.py              文案与结果文本组装
     view_format.py            结果行/剪贴板/CSV 格式化（导出注入中和 + 免责声明页脚）
     theme.py                  应用身份/窗口尺寸/表列与排序序/免责声明
     manual.py                 使用说明 HTML 生成
     assets.py                 打包/仓库两态的资源路径解析（图标、tokens.json）
     app.py                    薄入口：run_gui() 委托给 qt_app 装配，保持入口契约不变
-  qt_app/                   PySide6 界面（出货）· 36 模块
+  qt_app/                   PySide6 界面（出货）
     app.py                    装配：4 类控制器 + 5 个功能页挂上 QTabWidget
     main_window.py            QMainWindow 外壳（标题栏身份、免责声明常驻、页面挂载）
     settings.py               五项持久化设置的单一归属（WI-030）
     pages/                    个股分析 / 全市场选股 / 自选持仓 / 条件预警 / 个股资金流
     controllers/              异步控制器（QThreadPool + 队列信号，代次守卫丢弃迟到结果）
-    workers/                  后台任务体 · table_models/ QAbstractTableModel + 排序代理
+                              backtest_controller.py 按需后台回测与本批次缓存
+    workers/                  世代守卫；后台 QRunnable 随各控制器定义
+    widgets/table_utils.py    QStandardItemModel + 表头视觉排序（模型行号保持不变）
+    table_models/             保留的包入口；当前通用表格实现见 widgets/table_utils.py
     widgets/                  自绘控件（K线、因子条、光谱条、卡片、预设网格…）
     dialogs/                  模态对话框
     theme/                    QSS 与设计令牌；fonts.py 字体契约：QFontInfo 如实报告实际
@@ -147,7 +172,8 @@ src/
 
 ```
 tests/
-  test_*.py                 73 个测试文件（27 个 test_qt_* 界面测试 + 46 个逻辑测试）
+  test_*.py                 逻辑与 test_qt_* 界面测试；数量以本次实际发现结果为准
+  test_docs.py              教材本地链接、HTML 锚点与关键阅读入口
   fixtures/                 测试数据：golden_indicators.json（人手笔算的黄金样本，
                             绝不由被测代码生成，否则是循环验证）
   performance/              性能基准（bench_util.py + test_performance.py）
@@ -183,7 +209,8 @@ scripts/                    工具脚本（不随应用分发）
   build_exe.py                PyInstaller 打包（中间产物 build/，交付物 dist/）
   make_release_manifest.py    发布清单、第三方声明、SBOM 生成
   capture_ui.py               逐页截图供视觉评审：python scripts/capture_ui.py
-                              [--states success fail empty]（自带假数据，不联网、不碰用户配置）
+                              [--states success fail empty]（标明演示数据，不联网、不碰用户配置）
+                              默认保留到 build/ui-review/；临时配置自动回收
 run.bat / run.sh            一键启动 · build.bat / build.sh 一键打包
 pyproject.toml              项目元数据 + ruff/pyright/pytest/coverage 配置的唯一归属
 .pre-commit-config.yaml     提交前钩子（ruff format / ruff check / validate_loop）
@@ -197,7 +224,7 @@ docs/                       知识库：本项目全部知识点的图文教学�
 >
 > - `src/` 下**不再有** `stock_advisor/` 包根（ADR-0015）：各层直接是顶级包，导入形如
 >   `domain.engine` / `qt_app.app`。代价是 `domain`/`data`/`services`/`ui` 成为本项目占用的
->   顶级模块名——本应用离线运行、依赖封闭钉版（仅 PySide6-Essentials），且 `src/` 在
+>   顶级模块名——本应用本机计算、行情按需联网、依赖封闭钉版（仅 PySide6-Essentials），且 `src/` 在
 >   sys.path 首位，故风险有界；但**新增运行期依赖前须确认不与这些名字冲突**。G-CORE 门禁
 >   已随之适配：层名列入 `forbidden_import_roots`，越层导入（如今必然是绝对形式）照样即红，
 >   机制经变异验证。产品在日志里的命名空间仍叫 `stock_advisor`（`observability/log.py`），

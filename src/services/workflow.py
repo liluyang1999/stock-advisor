@@ -128,6 +128,19 @@ def analyze_symbol(
     history_error = ""
     history: list[DailyBar] = []
     history_outcome = _fetch_outcome(provider, "fetch_history", symbol)
+    if history_outcome.cancelled:
+        # 取消应终止本次分析，不能按取数故障降级后继续生成、缓存新的结论。
+        _log.info(
+            "历史日线请求已取消",
+            extra=task_extra(
+                operation="analyze_symbol.history", outcome="cancelled", cancelled=True
+            ),
+        )
+        return AnalysisOutcome(
+            symbol=symbol,
+            error=history_outcome.message or "历史日线请求已取消",
+            quality=DataQuality(level="invalid"),
+        )
     if history_outcome.succeeded:
         # 注意这里**不**做 `data is not None` 的兜底：取数成功却给回 None 是 provider 违约，
         # 交给下面的 `measure` 抛出来变成"分析计算失败"，而不是静默降级把违约盖掉

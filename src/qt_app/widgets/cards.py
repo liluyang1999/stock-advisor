@@ -90,12 +90,14 @@ class Card(QtWidgets.QFrame):
             row = QtWidgets.QHBoxLayout(head)
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(gap(1))
+            text = QtWidgets.QVBoxLayout()
+            text.setSpacing(gap(0) // 2)
             self.title_label = label(title, "section")
-            row.addWidget(self.title_label)
+            text.addWidget(self.title_label)
             if hint is not None:
-                self.hint_label = label(hint, "hint")
-                row.addWidget(self.hint_label)
-            row.addStretch(1)
+                self.hint_label = label(hint, "hint", wrap=True)
+                text.addWidget(self.hint_label)
+            row.addLayout(text, 1)
             self._head_row = row
             outer.addWidget(head)
             outer.addWidget(divider())
@@ -115,7 +117,7 @@ class Card(QtWidgets.QFrame):
 
         if self._head_row is None:
             raise ValueError("这张卡没有表头条：构造时必须给 title 才有地方挂控件")
-        self._head_row.addWidget(widget)
+        self._head_row.addWidget(widget, 0, QtCore.Qt.AlignmentFlag.AlignTop)
 
     def set_hint(self, text: str) -> None:
         if self.hint_label is not None:

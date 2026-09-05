@@ -51,8 +51,9 @@
 
 <h3>为什么不用 QSortFilterProxyModel</h3>
 <p>
-代理排序会让模型<strong>真的搬行</strong>。而各个页面普遍拿 <code>index.row()</code> 当数据下标
-（删除选中行、按行取结果都靠它）。一旦行被搬动，行号与数据就对不上了。
+代理排序会改变<strong>视图行与源模型行的映射</strong>，并不必然搬动源数据。若使用代理，页面就要先
+<code>mapToSource()</code> 再取业务对象；不能把代理的 <code>index.row()</code> 直接当源数据下标。
+当前实现保留页面按模型行访问的约定，选择视觉排序。
 </p>
 <p>解决办法是把 Qt 内建排序<strong>刻意关闭</strong>，改由 <code>_HeaderSort</code> 只重排
 <strong>垂直表头的视觉次序</strong>——模型行号原地不动，用户看到的顺序变了，代码里的 <code>row()</code> 依然可靠。</p>
@@ -69,11 +70,14 @@ _HeaderSort 排序时：优先读 UserRole，读不到才退回解析显示文�
   点列头得到与眼前数字矛盾的顺序。修复就是在就地刷新时一并 <code>setData(..., UserRole)</code>。
 </div>
 
+<p>当前排序还会跟随数据变化：新行到达、数值变化或行被移除时，排一个零延时单次定时器，在下一轮 Qt 事件处理中按已选列重排。同一轮逐格更新合并成一次排序，避免每改一个单元格就重排整表。</p>
+<p>复制与 CSV 导出跟随屏上行顺序。全部成功时，按这个顺序导出完整结果并保留扩展解释列；混有失败行时，导出表格所见，失败行和原因不能消失。顺序与字段完整性要分开测试。</p>
+
 <h2>视觉体系：设计 token 单一真源</h2>
 
 <p>
-所有颜色、间距、字号、控件高度都定义在 <code>loop/product/tokens.json</code>，
-Qt 侧由 <code>qt_app/theme/tokens.py</code> 读取后生成 QSS 样式表。
+共享颜色、间距、字号和控件尺寸令牌定义在 <code>loop/product/tokens.json</code>，
+Qt 侧由 <code>qt_app/theme/tokens.py</code> 读取后生成 QSS；部分布局常量仍位于 <code>ui/theme.py</code> 与组件内，不能把令牌表当成全部布局代码。
 </p>
 
 <table>
@@ -96,7 +100,7 @@ Qt 侧由 <code>qt_app/theme/tokens.py</code> 读取后生成 QSS 样式表。
   <figcaption>
     全市场选股。六个策略预设做成一排按钮（当前选中的用主色实心），下面是该预设可微调的参数——
     参数用 <code>QDoubleSpinBox</code>，范围由 <code>setRange()</code> <strong>钳死</strong>，
-    因此非法值根本输不进去，不需要再写一套输入校验。
+    但单框范围不能阻止「下限大于上限」。配置、编排与领域入口仍需校验，成对边界由 <code>presets.apply_tunables()</code> 检查。
   </figcaption>
 </figure>
 
@@ -145,7 +149,7 @@ Qt 侧由 <code>qt_app/theme/tokens.py</code> 读取后生成 QSS 样式表。
 
 <p>
 项目<strong>没有引入 QtCharts</strong>。原因是 QtCharts 在 PySide6 的 Addons 包里，
-而引入 Addons 会让打包体积从 202 MB 涨到 634 MB（多出的 432 MB 里有 195 MB 是根本用不到的 WebEngine）。
+选型记录中 Essentials 与完整包的安装体积约为 202 MB 和 634 MB，其中包括产品不需要的 WebEngine。安装体积不等于最终打包大小。
 一个 K 线图不值这个代价。
 </p>
 
@@ -156,6 +160,8 @@ qt_app/widgets/candlestick_chart.py  ← 只负责 QPainter 落笔与鼠标交�
 这样几何逻辑可以脱离 Qt 单测：给一组价格和画布尺寸，断言返回的坐标。
 退化输入都有明确行为——价格区间为 0（一字板）时 <code>price_to_y</code> 返回中位，不做除零。
 </p>
+
+<p>K 线缓存也按用途分开：蜡烛几何随画布尺寸缓存，换数据会使它失效；均线序列只在日线数据变化时重新计算。hover 仍会触发绘制，但可复用这些计算；提示保留完整日期与开高低收，存在涨跌幅时一并显示，不能只剩一段被截断的文字。</p>
 
 <h2>可访问性（REQ-017）</h2>
 
@@ -173,13 +179,17 @@ qt_app/widgets/candlestick_chart.py  ← 只负责 QPainter 落笔与鼠标交�
   <li>窗口居中交给 Qt 原生（Tk 时代那套手写几何计算已随迁移删除）。</li>
 </ul>
 
+<h3>窄窗与状态一致性</h3>
+<p>卡片标题和说明应允许换行，表单与操作按钮分行摆放。检查约 1000 × 680 的窗口时，要量内部内容与滚动视口，确认按钮仍可达；仅断言主窗宽度不够。表格自身的横向滚动与整页被挤宽是两件事。</p>
+<p>切换档位时，表格、概览、详情和仓位应来自同一份当前结果。区分百分数单位：建议仓位 <code>30</code> 表示 <code>30%</code>；仓位比例 <code>0.30</code> 才适合用百分比格式化，混用会显示成 <code>3000%</code>。清空则需要作废旧结果，不能只把控件文字删掉。操作检查见<a href="09-review-and-troubleshooting.html#ui-review">第 09 篇</a>。</p>
+
 <h2>本篇要点回顾</h2>
 <ul>
   <li>模型/视图的<strong>实际形态</strong>是 <code>QStandardItemModel</code> + 视觉排序，偏离最初设想是有意的，且文档已同步。</li>
   <li><strong>排序键必须是原始数值</strong>并随显示值同步更新，否则出现「显示与顺序矛盾」。</li>
   <li>颜色/间距来自 <strong>token 单一真源</strong>；红涨绿跌是本土习惯。</li>
   <li><strong>空态是行动邀请，失败态要如实且可读</strong>——这是零伪造在界面层的体现。</li>
-  <li>K 线<strong>几何纯函数 + QPainter 绘制</strong>分离，省下 432 MB 依赖的同时保住可测性。</li>
+  <li>K 线<strong>几何纯函数 + QPainter 绘制</strong>分离，减少附加依赖并保留可测性。</li>
 </ul>
 
 <nav class="crumbs bottom">

@@ -11,7 +11,7 @@
 <header class="band">
   <div class="wrap">
     <h1>股市锦囊 · 知识库</h1>
-    <p>一个离线、规则驱动的 A 股桌面决策支持工具，从架构到算法、从并发到打包的完整教学材料</p>
+    <p>本机计算、行情按需联网的 A 股桌面辅助工具：从架构到算法、从界面到测试的教学材料</p>
   </div>
 </header>
 
@@ -19,7 +19,7 @@
 
 <div class="card">
   <p style="margin-top:0">
-    这份知识库把「股市锦囊」这个真实项目里用到的<strong>全部知识点</strong>拆开讲：它为什么这样分层、
+    这份知识库把读懂「股市锦囊」需要的<strong>主要知识点</strong>拆开讲：它为什么这样分层、
     每个指标怎么算、Qt 的线程边界为什么必须这样划、金额为什么不能用 <code>float</code>、
     打包为什么选 onedir 而不是 onefile、以及一套「文档不许和代码说不一样话」的工程治理是怎么运转的。
   </p>
@@ -80,30 +80,36 @@
   <a class="tile" href="08-technical-stack-report.html">
     <div class="tag">08 · 附录</div>
     <h3>技术栈整体报告</h3>
-    <p>早先编写的「技术栈、原理与实现」长篇教学报告，按模块逐一拆解，可作为通读材料。</p>
+    <p>按操作链路串起技术栈、源码职责与实现边界，作为通读材料，并链接到各主题的详细说明。</p>
+  </a>
+
+  <a class="tile" href="09-review-and-troubleshooting.html">
+    <div class="tag">09 · 动手复盘</div>
+    <h3>学习复盘与常见问题</h3>
+    <p>从输入到结果走一遍：验收窄窗、清空与切档，读懂数据缺失，隔离测试并清理自己的临时产物。</p>
   </a>
 
 </div>
 
 <div class="note">
-  <strong>关于第 07 篇：</strong>它是本知识库建立<strong>之前</strong>写的一份独立长文，
-  叙述角度与 01–06 有重叠。两者冲突时，以 01–06 与 <code>loop/</code> 为准——
-  它们跟随代码同步维护，长文则保留其原有结构作为通读补充。
+  <strong>怎么选：</strong>01–07 按主题讲解，08 是通读附录，09 帮你动手检查理解。
+  教材都随源码维护；发现差异时，应对照实现与工程记录核实，不把旧文章当成当前行为的保证。
 </div>
 
 <h2>快速上手：先把它跑起来</h2>
 
 <p>
 读之前先跑一遍，后面每一篇都会好懂很多。需要 <strong>Python 3.14+</strong>；
-下面的命令都<strong>不联网</strong>也能跑（自检与测试自带离线样例数据）。
+依赖安装通常需要联网；装好以后，<strong>自检与替身测试可离线运行</strong>。
+真实行情查询需要联网；打开空白界面并不代表已获得最新数据。
 </p>
 
-<pre><code># 1. 装唯一的运行期依赖（PySide6-Essentials，约 200 MB）
+<pre><code># 1. 在配置好的 Python 环境里安装 GUI 与测试依赖（通常联网）
 python -m pip install --group gui
 
 # 2. 启动图形界面
 python main.py
-#    或用一键脚本： run.bat（Windows） / ./run.sh（Git Bash、WSL）
+#    Windows PowerShell 也可用一键脚本： .\run.bat
 
 # 3. 离线自检：不联网跑通「分析 → 五档决策 → 仓位 → 回测 → 选股」全链路
 python main.py --self-test
@@ -111,20 +117,23 @@ python main.py --self-test
 
 <p>想进一步动手：</p>
 
-<pre><code># 跑测试（约 900 个用例，界面测试用 offscreen，无需显示器）
-python -m pip install --group dev
-python -m unittest discover -s tests
+<pre><code># PowerShell：在测试终端运行
+$env:PYTHONDONTWRITEBYTECODE = '1'
+$env:QT_QPA_PLATFORM = 'offscreen'
+python -B -m unittest discover -s tests
+python -B -m unittest discover -s tests -p test_docs.py
 
-# 把五个页面逐页截图，看版式效果（自带假数据，不联网、不碰你的配置）
+# 在另一个终端截图：使用演示数据，不调用行情接口；核对各状态与配置隔离
 python scripts/capture_ui.py --states success fail empty
 
 # 打包成免安装应用目录（自动装构建依赖 PyInstaller）
-build.bat        # 或 ./build.sh</code></pre>
+.\build.bat      # Windows PowerShell；首次构建可能安装依赖</code></pre>
 
 <div class="note">
   <strong>数据与配置存在哪：</strong>自选股、本金、档位、预设、预警规则存在
   <code>%APPDATA%\StockAdvisor\config.json</code>，日志在同目录的 <code>logs\</code> 下。
-  测试与截图工具都指向临时目录，<strong>不会动你的真实配置</strong>。
+  测试与截图应使用临时配置，并在关闭窗口与后台任务后回收自己的临时文件。
+  具体边界见<a href="09-review-and-troubleshooting.html#cleanup">测试隔离与清理</a>。
 </div>
 
 <h2>按主题的学习路径</h2>
@@ -146,7 +155,7 @@ build.bat        # 或 ./build.sh</code></pre>
         <td><a href="02-domain-algorithms.html">02 指标与决策</a> →
             <a href="06-data-quality.html">06 行情数据</a></td></tr>
     <tr><td><strong>先看全貌再深入</strong></td>
-        <td><a href="08-technical-stack-report.html">08 技术栈长文</a> → 回到 01 顺序精读</td></tr>
+        <td><a href="08-technical-stack-report.html">08 技术栈报告</a> → <a href="09-review-and-troubleshooting.html">09 动手复盘</a> → 按需精读</td></tr>
   </tbody>
 </table>
 
@@ -163,8 +172,8 @@ build.bat        # 或 ./build.sh</code></pre>
 
 <div class="key">
   <strong>贯穿全项目的一条立场：</strong>本产品是<strong>可解释的辅助判断工具，不构成投资建议</strong>。
-  这不只是一句免责话术，它是有机器强制的设计约束——所有结果视图、生成的说明书、每一份导出都必须带这句话，
-  少一处，测试就红。技术上它对应「零伪造」原则：取不到数据就如实报错，绝不用回退值假装有结果。
+  关键结果视图、生成说明书和导出有回归测试检查这一边界；新增界面仍需补查。
+  技术上还要守住「零伪造」原则：取不到数据就如实报错，绝不用回退值假装有结果。
 </div>
 
 <h2>技术栈速览</h2>
@@ -179,14 +188,16 @@ build.bat        # 或 ./build.sh</code></pre>
   <tr><td>数据源</td><td>东方财富 / 新浪 / 腾讯</td><td>多源回退；失败必须可见，不伪造</td></tr>
 </table>
 
-<h2>与其它文档的关系</h2>
+<h2 id="document-map">与其它文档的关系</h2>
 
 <table>
   <tr><th>位置</th><th>是什么</th></tr>
   <tr><td><code>docs/</code>（本目录）</td><td><strong>教学材料</strong>：讲原理、讲取舍、讲踩过的坑。面向想读懂这个项目的人。</td></tr>
-  <tr><td><code>loop/</code></td><td><strong>工程控制平面</strong>，也是当前状态的唯一真源：需求、验收标准、架构决策（ADR）、工作项、风险、质量门禁、验证证据。文档与 <code>loop/</code> 冲突时以 <code>loop/</code> 为准。</td></tr>
-  <tr><td><code>README.md</code></td><td>面向使用者与贡献者的入口：怎么跑、怎么打包、目录结构。</td></tr>
-  <tr><td><code>docs/ui-concepts/</code></td><td>界面概念稿（四轮设计参考，本知识库的一部分）。</td></tr>
+  <tr><td><a href="../loop/README.md">loop/</a></td><td><strong>工程真源</strong>：需求、验收标准、架构决策、工作项与验证证据。教材解释这些概念，不复制工程状态。</td></tr>
+  <tr><td><a href="../README.md">README.md</a></td><td>仓库入口：怎么跑、怎么打包、从哪里开始学习。</td></tr>
+  <tr><td><code>licenses/</code></td><td>许可证原文；教材只解释它如何影响项目分发，不替代原文与第三方通知。</td></tr>
+  <tr><td><a href="../src/ui/manual.py">src/ui/manual.py</a></td><td>生成随构建分发的 <code>dist/使用说明.html</code>，讲具体操作。生成程序仍属于产品代码，不搬到教材目录。</td></tr>
+  <tr><td><code>docs/images/</code> 与 <code>docs/ui-concepts/</code></td><td>教学截图与历史概念稿。概念稿用于理解设计取舍，不能当成当前功能已交付的证据。</td></tr>
 </table>
 
 <div class="disclaimer">

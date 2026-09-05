@@ -5,14 +5,15 @@ DoD 的可度量判据是「零关键裁剪、零字体 token 违规」。这里
 
 1. **无裁剪**：页面的 minimumSizeHint 在每个尺寸内都放得下——布局不会把内容挤出窗口。
 2. **字体 token 合规**：应用级字体族取自 tokens（微软雅黑契约），不是 Qt 默认字体。
-3. **截图矩阵**：每个 页×尺寸 grab 一张 PNG 落到 build/screenshots/，作为 TEST-VIS-002 的产物。
+3. **截图矩阵**：每个 页×尺寸 grab 一张 PNG 到自动清理的临时目录，验证真实绘制可用。
 
 真·多 DPI 像素缩放矩阵（QT_SCALE_FACTOR 逐档、跨进程）与对照设计稿的像素级视觉复核，是 CI/人工
-的 V4 环节；本测试覆盖其可自动化的结构判据并产出截图供复核。
+的 V4 环节；持久截图请用 scripts/capture_ui.py 按需生成，测试不留下截图垃圾。
 """
 
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -23,7 +24,6 @@ from qt_test_helpers import QtWidgets, qt_app, requires_qt, temp_settings
 from test_engine import FakeProvider
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-_SHOTS = PROJECT_ROOT / "build" / "screenshots"
 
 if QtWidgets is not None:
     from qt_app.controllers.alert_controller import AlertController
@@ -57,7 +57,9 @@ def _page_factories(case):
 class VisualMatrixTests(unittest.TestCase):
     def setUp(self):
         self.app = qt_app()
-        _SHOTS.mkdir(parents=True, exist_ok=True)
+        tmp = tempfile.TemporaryDirectory(prefix="qt-visual-")
+        self.addCleanup(tmp.cleanup)
+        self._shots = Path(tmp.name)
 
     def _host(self, page, size):
         host = QtWidgets.QWidget()
@@ -100,7 +102,7 @@ class VisualMatrixTests(unittest.TestCase):
             for width, height in _SIZES:
                 page = factory()
                 self._host(page, (width, height))
-                path = _SHOTS / f"{name}_{width}x{height}.png"
+                path = self._shots / f"{name}_{width}x{height}.png"
                 self.assertTrue(page.grab().save(str(path)), f"截图保存失败：{path}")
                 self.assertGreater(path.stat().st_size, 0)
                 captured += 1

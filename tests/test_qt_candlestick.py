@@ -17,6 +17,7 @@ import sys
 import unittest
 from decimal import Decimal
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -81,6 +82,28 @@ class CandlestickGeometryTests(unittest.TestCase):
         expected = geometry.candle_layout(bars, left, right, top, height)
 
         self.assertEqual(self.widget._layout(), expected)
+
+    def test_hover_and_repaint_reuse_geometry_until_data_or_size_changes(self):
+        with patch.object(geometry, "candle_layout", wraps=geometry.candle_layout) as layout:
+            self.widget.set_bars(_series())
+            self.widget._layout()
+            self.widget._set_hover(100)
+            self.widget.grab()
+            self.widget._set_hover(150)
+            self.widget.grab()
+            self.assertEqual(layout.call_count, 1)
+            self.widget.resize(800, 300)
+            self.widget._layout()
+            self.assertEqual(layout.call_count, 2)
+            self.widget.set_bars(_series(10))
+            self.widget._layout()
+            self.assertEqual(layout.call_count, 3)
+
+    def test_hover_exposes_the_full_readout_even_on_a_narrow_chart(self):
+        self.widget.set_bars(_series())
+        self.widget._set_hover(100)
+        self.assertTrue(self.widget.hover_text())
+        self.assertEqual(self.widget.toolTip(), self.widget.hover_text())
 
     def test_widget_reports_the_bar_count_it_was_given(self):
         self.widget.set_bars(_series(12))

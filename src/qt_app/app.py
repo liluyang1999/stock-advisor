@@ -10,7 +10,9 @@
 
 from __future__ import annotations
 
-from PySide6 import QtGui, QtWidgets
+from time import monotonic
+
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from data.bounded_adapter import BoundedMarketDataProvider
 from domain.alerts import rule_summary
@@ -76,6 +78,7 @@ class AppWindow(MainWindow):
         self.set_page(self.tabs)
         self._wire_cross_page()
         self._wire_shortcuts()
+        self._closing = False
 
     def _wire_shortcuts(self) -> None:
         """「开始分析 / 开始选股」按当前页派发（老版 `_run_active_tab`）。
@@ -93,6 +96,9 @@ class AppWindow(MainWindow):
         """触发当前页的主操作；当前页没有主操作就什么都不做。"""
 
         page = self.tabs.currentWidget()
+        button = getattr(page, "analyze_button", None) or getattr(page, "screen_button", None)
+        if button is not None and not button.isEnabled():
+            return
         action = getattr(page, "_on_analyze", None) or getattr(page, "_on_screen", None)
         if callable(action):
             action()
@@ -134,8 +140,21 @@ class AppWindow(MainWindow):
 
     def closeEvent(self, event) -> None:  # noqa: N802 - Qt 事件命名
         """关闭即排空：先取消再等待线程池，避免在途 worker 撞上析构（ADR-0003）。"""
-        for controller in self.controllers():
-            controller.shutdown()
+        deadline = monotonic() + (0 if self._closing else 5)
+        self._closing = True
+        # 先给所有池发送取消，再共享一次等待预算；超时继续保留对象，避免析构无限阻塞。
+        drained = [controller.shutdown(0) for controller in self.controllers()]
+        for index, controller in enumerate(self.controllers()):
+            if not drained[index]:
+                drained[index] = controller.shutdown(max(0, int((deadline - monotonic()) * 1000)))
+        if not all(drained):
+            event.ignore()
+            self.tabs.setEnabled(False)
+            self.statusBar().showMessage(
+                "正在停止后台任务，请稍候…　|　模型仅供研究和辅助决策，不构成投资建议。"
+            )
+            QtCore.QTimer.singleShot(100, self.close)
+            return
         super().closeEvent(event)
 
 

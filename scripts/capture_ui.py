@@ -117,14 +117,14 @@ class DemoProvider:
             price = Decimal(f"{30 - i * 0.4:.2f}")
             rows.append(
                 MarketSnapshot(
-                    code=f"6000{20 - i:02d}",
+                    code=f"600{120 - i:03d}",
                     market_id="1",
                     name="演示标的",
                     price=price,
                     change_pct=7.0 - i * 0.1,
                     change=Decimal("0.40"),
                     volume=210000 + i * 1000,
-                    amount=float(price) * 210000,
+                    amount=2.5e8 + i * 1e6,
                     amplitude=2.6,
                     turnover_rate=2.1 - i * 0.02,
                     pe_ttm=24.0,
@@ -142,7 +142,7 @@ class DemoProvider:
     def fetch_fund_flow(self, symbol: StockSymbol, limit: int = 6) -> FundFlow:
         del limit
         if self._fund_flow_fails:
-            raise ValueError("资金流暂不可用：所有源均不可用")
+            raise ValueError("所有源均不可用")
         recent = [(f"2026-07-{13 + i:02d}", (1.5 - i * 0.4) * 1e8) for i in range(5)]
         del symbol
         return FundFlow(today_main=1.5e8, main_5d=3.2e8, recent=recent)
@@ -157,18 +157,22 @@ def _wait(signal: object, timeout_ms: int = 8000) -> None:
     timer = QtCore.QTimer()
     timer.setSingleShot(True)
     timer.timeout.connect(loop.quit)
-    signal.connect(loop.quit)  # type: ignore[attr-defined]
+    completed = False
+
+    def finish(*args: object) -> None:
+        nonlocal completed
+        completed = True
+        loop.quit()
+
+    signal.connect(finish)  # type: ignore[attr-defined]
     timer.start(timeout_ms)
-    loop.exec()
-
-
-def _settings():
-    """一份指向临时文件的 Settings：截图工具绝不读写用户真实 %APPDATA% 配置。"""
-
-    from qt_app.settings import Settings
-
-    tmp = tempfile.mkdtemp(prefix="capture-ui-")
-    return Settings(Path(tmp) / "config.json")
+    try:
+        loop.exec()
+    finally:
+        timer.stop()
+        signal.disconnect(finish)  # type: ignore[attr-defined]
+    if not completed:
+        raise TimeoutError("截图等待异步结果超时，未生成完成态证据")
 
 
 def _drive(window: object, app: object, state: str) -> None:
@@ -182,6 +186,7 @@ def _drive(window: object, app: object, state: str) -> None:
     individual._on_analyze()
     _wait(window.analysis.batch_finished)  # type: ignore[attr-defined]
     app.processEvents()  # type: ignore[attr-defined]
+
     individual.table.selectRow(0)
     app.processEvents()  # type: ignore[attr-defined]
 
@@ -189,11 +194,26 @@ def _drive(window: object, app: object, state: str) -> None:
     screener._on_screen()
     _wait(window.screener.screen_finished)  # type: ignore[attr-defined]
 
+    window.portfolio_page.refresh()  # type: ignore[attr-defined]
+    _wait(window.portfolio.batch_finished)  # type: ignore[attr-defined]
+
     fund_flow = window.fund_flow_page  # type: ignore[attr-defined]
     fund_flow.input.setText(_DEMO_CODES[0])
     fund_flow._on_query()
     _wait(window.fund_flow.fund_flow_ready)  # type: ignore[attr-defined]
     app.processEvents()  # type: ignore[attr-defined]
+
+    _wait_backtest(window.analysis.backtests)  # type: ignore[attr-defined]
+
+
+def _wait_backtest(controller: object, timeout_ms: int = 8000) -> None:
+    """等待当前选中标的的全部回测终态；失败时不把占位提示保存成成功态。"""
+    from time import monotonic
+
+    deadline = monotonic() + timeout_ms / 1000
+    while controller.is_running():  # type: ignore[attr-defined]
+        remaining = max(0, int((deadline - monotonic()) * 1000))
+        _wait(controller.ready, timeout_ms=remaining)  # type: ignore[attr-defined]
 
 
 _PAGE_TABS = ("individual", "screener", "portfolio", "alerts", "fundflow")
@@ -202,8 +222,15 @@ _PAGE_TABS = ("individual", "screener", "portfolio", "alerts", "fundflow")
 def capture(states: list[str], out_dir: Path, size: tuple[int, int]) -> list[Path]:
     """为每个 state 装配一次主窗、逐页抓图，返回写出的文件路径。"""
 
-    from qt_app.app import build_app
+    from PySide6 import QtCore
 
+    from domain.symbols import normalize_symbol
+    from qt_app.app import build_app
+    from qt_app.settings import Settings
+    from services.store import AlertRule, WatchItem
+
+    if min(size) <= 0:
+        raise ValueError("窗口宽高必须大于零")
     out_dir.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
     for state in states:
@@ -211,16 +238,39 @@ def capture(states: list[str], out_dir: Path, size: tuple[int, int]) -> list[Pat
             fail_codes=frozenset(_DEMO_CODES[1:]) if state == "fail" else frozenset(),
             fund_flow_fails=state == "fail",
         )
-        app, window = build_app([], provider=provider, settings=_settings())
-        window.resize(*size)
-        _drive(window, app, state)
-        for index, name in enumerate(_PAGE_TABS):
-            window.tabs.setCurrentIndex(index)  # type: ignore[attr-defined]
-            app.processEvents()
-            path = out_dir / f"{state}-{index + 1}-{name}.png"
-            window.grab().save(str(path))  # type: ignore[attr-defined]
-            written.append(path)
-        window.close()  # type: ignore[attr-defined]
+        with tempfile.TemporaryDirectory(prefix="capture-ui-", dir=out_dir) as tmp:
+            settings = Settings(Path(tmp) / "config.json")
+            if state != "empty":
+                settings.update(
+                    watchlist=tuple(
+                        WatchItem(
+                            code=normalize_symbol(code).normalized, cost=Decimal("30"), shares=100
+                        )
+                        for code in _DEMO_CODES
+                    ),
+                    alerts=(AlertRule(code="sh600519", field="price", op=">=", threshold=32.0),),
+                )
+            app, window = build_app([], provider=provider, settings=settings)
+            window.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
+            try:
+                window.resize(*size)
+                window.show()
+                app.processEvents()
+                _drive(window, app, state)
+                for index, name in enumerate(_PAGE_TABS):
+                    window.tabs.setCurrentIndex(index)
+                    app.processEvents()
+                    window.statusBar().showMessage(
+                        "演示数据 · 非实时行情　|　模型仅供研究和辅助决策，不构成投资建议。"
+                    )
+                    path = out_dir / f"{state}-{index + 1}-{name}.png"
+                    if not window.grab().save(str(path)):
+                        raise OSError(f"截图保存失败：{path}")
+                    written.append(path)
+            finally:
+                if not window.close():
+                    raise TimeoutError("截图窗口仍有后台任务，保留窗口等待安全关闭")
+                app.sendPostedEvents(window, QtCore.QEvent.Type.DeferredDelete)
     return written
 
 

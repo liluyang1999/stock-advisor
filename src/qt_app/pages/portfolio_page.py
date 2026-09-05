@@ -133,9 +133,11 @@ class PortfolioPage(QtWidgets.QWidget):
         )
         return card
 
-    def _build_edit_row(self) -> QtWidgets.QHBoxLayout:
-        """编辑行：代码 / 成本 / 股数 三个输入 + 五个动作按钮，与老版编辑行同序。"""
+    def _build_edit_row(self) -> QtWidgets.QVBoxLayout:
+        """输入与操作分行：小窗仍可完整访问所有动作，不靠缩字或横向裁切。"""
 
+        column = QtWidgets.QVBoxLayout()
+        column.setSpacing(gap(0))
         row = QtWidgets.QHBoxLayout()
         row.setSpacing(gap(0))
 
@@ -160,7 +162,10 @@ class PortfolioPage(QtWidgets.QWidget):
             row.addWidget(label(caption, "hint"))
             row.addWidget(field)
 
-        row.addWidget(divider(QtCore.Qt.Orientation.Vertical))
+        row.addStretch(1)
+        column.addLayout(row)
+        row = QtWidgets.QHBoxLayout()
+        row.setSpacing(gap(0))
         self.add_button = QtWidgets.QPushButton("加入自选")
         self.add_button.setProperty("role", "primary")
         self.save_button = QtWidgets.QPushButton("保存持仓")
@@ -181,7 +186,8 @@ class PortfolioPage(QtWidgets.QWidget):
         ):
             row.addWidget(button)
         row.addStretch(1)
-        return row
+        column.addLayout(row)
+        return column
 
     def _build_comparison_card(self) -> Card:
         card = Card("横向对比", "把已完成深度分析的标的放在同一张表里，比较结论、风险与持仓表现。")

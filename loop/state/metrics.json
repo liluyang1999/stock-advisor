@@ -1,7 +1,7 @@
 {
   "$schema": "../schemas/metrics.schema.json",
   "schema_version": "1.0.0",
-  "updated_at": "2026-07-25T00:00:00+09:00",
+  "updated_at": "2026-09-05T14:25:34+09:00",
   "engineering": {
     "requirements_total": 34,
     "requirements_verified": 0,
@@ -22,22 +22,22 @@
     "independent_verification": true
   },
   "tests": {
-    "modules": 76,
-    "methods": 870,
-    "passed": 870,
+    "modules": 80,
+    "methods": 909,
+    "passed": 909,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
-    "duration_seconds": 52.6,
     "tk_specific": 0,
-    "qt_specific": 211
+    "qt_specific": 276,
+    "duration_seconds": 73.152
   },
   "coverage": {
-    "statement": 0.9487,
-    "branch": 0.9099
+    "statement": 0.96042,
+    "branch": 0.91205
   },
   "tooling": {
-    "ci": false,
+    "ci": true,
     "pyproject": true,
     "lockfile": false,
     "ruff": true,
@@ -45,14 +45,14 @@
     "coverage": true,
     "pytest": true,
     "pre_commit": true,
-    "pyside6_installed": false
+    "pyside6_installed": true
   },
   "release": {
     "ready": false,
-    "full_green_streak": 5,
-    "packaged_self_test_current_commit": true,
+    "full_green_streak": 0,
+    "packaged_self_test_current_commit": false,
     "license_gate": false,
-    "packaging_gate": true,
+    "packaging_gate": false,
     "release_gate": false
   }
 }

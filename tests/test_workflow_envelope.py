@@ -87,6 +87,24 @@ class CancellationIsDistinguishableTests(unittest.TestCase):
         self.assertFalse(outcome.ok)
         self.assertIn("取消", outcome.error)
 
+    def test_cancelled_history_does_not_produce_a_degraded_recommendation(self):
+        for message in ("历史请求已取消", ""):
+            with self.subTest(message=message):
+                provider = _EnvelopeProvider(
+                    history_outcome=TransportOutcome.failed("network", message, cancelled=True)
+                )
+                with self.assertLogs("stock_advisor.workflow", level="INFO") as captured:
+                    outcome = analyze_symbol(SYMBOL, provider)
+
+                self.assertFalse(outcome.ok)
+                self.assertIsNone(outcome.result)
+                self.assertIsNone(outcome.measurement)
+                self.assertEqual(outcome.history, [])
+                self.assertFalse(outcome.degraded)
+                self.assertIn("取消", outcome.error)
+                self.assertEqual(outcome.quality.level, "invalid")
+                self.assertEqual(captured.records[0].outcome, "cancelled")
+
     def test_cancelled_snapshot_marks_the_report_cancelled_not_errored(self):
         """`ScreenReport.cancelled` 此前永远是 False——取消的全市场抓取只会变成一条泛化错误。"""
         provider = _EnvelopeProvider(

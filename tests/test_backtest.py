@@ -63,6 +63,38 @@ class BacktestTests(unittest.TestCase):
         lo = backtest_signals(h, cost_pct=1.0)
         self.assertGreaterEqual(hi.stats["BUY"].avg_return, lo.stats["BUY"].avg_return)
 
+    def test_sell_hit_rate_counts_price_declines_independently_of_cost(self):
+        for gross in (-0.1, 0.0, 0.1):
+            history = make_history(start=100, step=0, days=3)
+            history[-1] = replace(history[-1], close=100 + gross)
+            for cost in (0.0, 0.13, 1.0):
+                with (
+                    self.subTest(gross=gross, cost=cost),
+                    patch("domain.backtest.decide", return_value=SimpleNamespace(action="SELL")),
+                ):
+                    report = backtest_signals(history, horizon=1, warmup=1, cost_pct=cost)
+
+                    self.assertTrue(report.ok)
+                    sell = report.stats["SELL"]
+                    self.assertEqual(sell.count, 1)
+                    self.assertEqual(sell.win_rate, 1.0 if gross < 0 else 0.0)
+                    self.assertAlmostEqual(sell.avg_return, gross - cost, places=4)
+                    self.assertAlmostEqual(report.buy_hold_return, gross, places=4)
+
+    def test_buy_and_hold_win_rates_still_use_net_returns(self):
+        history = make_history(start=100, step=0, days=3)
+        history[-1] = replace(history[-1], close=100.1)
+        for action in ("BUY", "HOLD"):
+            for cost, expected in ((0.0, 1.0), (0.13, 0.0)):
+                with (
+                    self.subTest(action=action, cost=cost),
+                    patch("domain.backtest.decide", return_value=SimpleNamespace(action=action)),
+                ):
+                    report = backtest_signals(history, horizon=1, warmup=1, cost_pct=cost)
+
+                    self.assertEqual(report.stats[action].win_rate, expected)
+                    self.assertAlmostEqual(report.stats[action].avg_return, 0.1 - cost, places=4)
+
     def test_no_future_leakage(self):
         # 在序列尾部加一根未来异动，不应改变更早某日 t 的信号（信号只看 t 及之前）。
         base = make_history(start=20, step=0.2, days=80)

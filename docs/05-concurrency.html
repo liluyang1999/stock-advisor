@@ -43,8 +43,7 @@ Qt 的信号槽在跨线程连接时默认是 <strong>queued connection</strong>
 
 <div class="warn">
   <strong>一个容易踩的坑：</strong>把槽连接到<strong>临时闭包</strong>（lambda）上，
-  会丢失 QObject 的线程亲和性，可能退化成直连（在工作线程里执行），甚至因为没有引用而被垃圾回收。
-  本项目一律把槽写成 <strong>QObject 的绑定方法</strong>，不用闭包接跨线程信号。
+  不宜依赖其隐含线程归属。这里把槽写成 GUI 线程里 <strong>QObject 的绑定方法</strong>，并显式使用排队连接；不要把普通同线程按钮回调与这条跨线程边界混为一谈。
 </div>
 
 <h2>问题一：迟到的结果会覆盖新状态</h2>
@@ -81,6 +80,8 @@ worker 完成 → 信号回 GUI 线程 → 槽里第一件事：
   <tr><td>用户点「停止」</td><td><strong>否</strong></td><td>这一轮仍要交付它的「已取消」终态，好让界面把按钮复位、状态写清楚</td></tr>
   <tr><td>用户再次点「开始」</td><td><strong>是</strong></td><td>新一轮 supersede 旧一轮，旧结果不再需要</td></tr>
 </table>
+
+<p><strong>清空与停止也不同：</strong>停止仍要接收本轮终态，清空则表示不再展示本轮任何结果；必须防止已排队的结果或完成信号把表格、概览和详情重新填回来。测试应主动交付这些迟到信号，而不是靠等待一段时间猜它们不会出现。</p>
 
 <h2>问题二：取消根本停不下来</h2>
 
@@ -122,7 +123,7 @@ class Deadline:
 
 <div class="key">
   <strong>一个 deadline 覆盖所有重试与备用源</strong>，而不是每个源重新拿一份完整预算。
-  这把最坏耗时从约 100 秒压到 20 秒。<code>time.monotonic</code> 而非 <code>time.time</code>：
+  当前默认单次取数预算为 20 秒；它不是整个批次或进程退出的绝对时限。阻塞 I/O 仍须在传输层受约束，外层检查不能强杀正在执行的系统调用。<code>time.monotonic</code> 而非 <code>time.time</code>：
   单调时钟不受系统时间调整影响。时钟可注入，因此 deadline 相关的测试<strong>一秒都不用睡</strong>。
 </div>
 
@@ -162,19 +163,24 @@ def _on_cycle_done(...):
 
 <h2>关闭时的生命周期</h2>
 
-<pre><code>closeEvent → 每个控制器 shutdown():
-    cancel()                      # 先请求协作取消
-    pool.waitForDone(5000)        # 再有限等待线程池排空</code></pre>
+<pre><code>closeEvent → 先给所有控制器请求取消
+    共用最多 5000 ms 的等待预算
+    检查 waitForDone() 返回值
+    未排空：保留窗口与 worker 对象，提示正在停止
+    通过定时器继续检查，排空后才真正关闭</code></pre>
 
 <div class="note">
   <strong>顺序不能反。</strong>不先取消就等待，等的是完整的取数时长；
   而 <code>QThreadPool</code> 的析构函数会<strong>无限期阻塞</strong>直到任务结束——那就是「关不掉的窗口」。
   <br><br>
-  等池排空后，任何仍排队的 queued signal 会因为目标 QObject 被删除而由 Qt 丢弃，
-  所以控件拆除期间不会有信号打到已释放的对象上。
+  有限等待并不自动证明池已排空；还需核查完成状态、失效代次和对象生命周期。单靠写下 5000 ms，不能保证任意阻塞请求都能在五秒内结束。
 </div>
 
 <h2>如何测试并发代码</h2>
+
+<h3>回测也要离开 GUI 线程</h3>
+<p><code>BacktestController</code> 只读取已经取得的历史日线，不持有 provider、不联网。它保留一项正在计算的工作和一项最新等待选择；快速切换标的或档位时不把每次点击都排成队。</p>
+<p>报告按本批次的「规范化标的 + 档位」缓存，最多保存 150 项；换批或清空时清缓存并递增代次。纯函数 <code>backtest_steps</code> 每处理一个历史样本便让出控制权，worker 在样本之间检查取消；领域内核不依赖 Qt 或线程。旧计算即使正在结束，迟到报告也不再交付。修改本金只影响仓位，不影响回测。测试应覆盖缓存命中、最新等待选择、换批作废和当前选择匹配。</p>
 
 <table>
   <tr><th>要验证的性质</th><th>怎么写成确定性测试</th></tr>

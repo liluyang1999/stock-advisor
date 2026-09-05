@@ -10,6 +10,7 @@ from decimal import Decimal
 
 from domain import money
 from domain.models import DailyBar, FundFlow, MarketSnapshot, Quote, StockSymbol
+from domain.numeric import finite_float
 
 # 浏览器 UA：含 "Python" 的 UA 会被东方财富 clist 接口拒绝（连接被直接关闭）。
 BROWSER_USER_AGENT = (
@@ -663,10 +664,9 @@ def _positive_float(value: object, label: str) -> Decimal:
 
 
 def _scaled_percent(value: object) -> float | None:
-    if value in (None, "", "-"):
-        return None
-    number = _safe_float(value)
-    return round(number / 100, 4)
+    # 无效涨跌幅必须保留缺失语义，让报价入口按最新价/昨收价重算；零值是有效数据。
+    number = finite_float(value)
+    return None if number is None else round(number / 100, 4)
 
 
 def _scaled_nonnegative_percent(value: object) -> float:

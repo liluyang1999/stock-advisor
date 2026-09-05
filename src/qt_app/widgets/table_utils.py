@@ -127,6 +127,16 @@ class _HeaderSort(QtCore.QObject):
         # 每列各记各的方向（老版 `self.sort_reverse` 字典）：再次点回某列时，从它自己上次的
         # 方向翻转，而不是从头再来一遍首点方向。
         self._orders: dict[int, QtCore.Qt.SortOrder] = {}
+        self._column: int | None = None
+        self._refresh_timer = QtCore.QTimer(self)
+        self._refresh_timer.setSingleShot(True)
+        self._refresh_timer.timeout.connect(self._refresh)
+        model = table.model()
+        if model is not None:
+            model.dataChanged.connect(self._schedule_refresh)
+            model.rowsInserted.connect(self._schedule_refresh)
+            model.rowsRemoved.connect(self._schedule_refresh)
+            model.modelReset.connect(self._schedule_refresh)
         header = table.horizontalHeader()
         if header is not None:
             header.setSectionsClickable(True)
@@ -139,6 +149,8 @@ class _HeaderSort(QtCore.QObject):
         if not 0 <= column < len(self._columns):
             return
         order = self._next_order(column)
+        self._column = column
+        self._refresh_timer.stop()
         self._orders[column] = order
         header = self._table.horizontalHeader()
         if header is not None:
@@ -147,6 +159,15 @@ class _HeaderSort(QtCore.QObject):
             # 这里覆盖成本列该有的方向，箭头才与实际顺序一致。
             header.setSortIndicator(column, order)
         self._apply(column, order)
+
+    def _schedule_refresh(self, *args: object) -> None:
+        if self._column is not None:
+            # 同一轮切档会逐格更新；合并为一次排序，避免每个单元格都重排整表。
+            self._refresh_timer.start(0)
+
+    def _refresh(self) -> None:
+        if self._column is not None:
+            self._apply(self._column, self._orders[self._column])
 
     def _next_order(self, column: int) -> QtCore.Qt.SortOrder:
         previous = self._orders.get(column)

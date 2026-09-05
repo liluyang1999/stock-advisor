@@ -1303,7 +1303,41 @@
       "finished_at": "2026-08-12T10:30:00+09:00",
       "implemented_by": "docs-rename-reconcile",
       "verified_by": "loop/scripts/run_gates.py --strict（机器门禁全套；无独立人工复核 —— 见 artifact）",
-      "summary": "所有者把教学目录 knowledge/ 改回 docs/（git 识别为 R 重命名，历史保留），本记录做随之的引用对账。docs/ 这个名字因此被复用：旧 docs/ 装规划材料（已解散，过程记录在 loop/planning/archive/），今 docs/ 装教学材料 + 概念稿。修正 6 处活引用（README 目录结构、REPOSITORY_INVENTORY、work-items WI-035 的视觉复核对照目录、docs/index 目录表、08 页自指路径），并改写 DOCUMENTATION_HYGIENE —— 批量替换在那里留下了「旧 docs 解散后内容迁入 docs」的自相矛盾表述，现已明确说明名字复用及 EVD-014/015 里的 knowledge/ 即今天的 docs/。本次复核还抓到上一轮重编号的漏项：为新增 03 而顺延各页时只改了 title 与 h1，页脚编号仍是旧号（05/06/07 页脚各少 1），且新增的 03 页压根没有页脚；已全部对齐并补齐。历史证据（EVD-014/015）中的 knowledge/ 按当时事实留存不追改。校验：docs 9 页 0 断链、tests 与 scripts 无硬编码路径、8 门禁 --strict 全绿、产品 870 / loop 59 全过、自检 8/8。发布就绪未推进，三个人工门禁仍未签署。"
+      "summary": "所有者把教学目录 knowledge/ 改回 docs/（git 识别为 R 重命名，历史保留），本记录做随之的引用对账。docs/ 这个名字因此被复用：旧 docs/ 装规划材料（已解散，过程记录在 loop/planning/archive/），今 docs/ 装教学材料 + 概念稿。修正 6 处活引用（README 目录结构、REPOSITORY_INVENTORY、work-items WI-035 的视觉复核对照目录、docs/index 目录表、08 页自指路径），并改写 DOCUMENTATION_HYGIENE —— 批量替换在那里留下了「旧 docs 解散后内容迁入 docs」的自相矛盾表述，现已明确说明名字复用及 EVD-014/015 里的 knowledge/ 即今天的 docs/。本次复核还抓到上一轮重编号的漏项：为新增 03 而顺延各页时只改了 title 与 h1，页脚编号仍是旧号（05/06/07 页脚各少 1），且新增的 03 页压根没有页脚；已全部对齐并补齐。历史证据（EVD-014/015）中的 knowledge/ 按当时事实留存不追改。校验：docs 9 页 0 断链、tests 与 scripts 无硬编码路径、8 门禁 --strict 全绿、产品 870 / loop 59 全过、自检 8/8。发布就绪未推进，三个人工门禁仍未签署。",
+      "superseded_by": "EVD-LOOP-017"
+    },
+    {
+      "id": "EVD-LOOP-017",
+      "record_version": "2.0.0",
+      "requirement_ids": [
+        "REQ-013",
+        "REQ-018",
+        "REQ-021",
+        "REQ-024",
+        "REQ-025",
+        "REQ-027",
+        "REQ-028"
+      ],
+      "acceptance_ids": [
+        "AC-000",
+        "AC-004"
+      ],
+      "work_item_id": "WI-000",
+      "type": "comprehensive_ui_computation_teaching_review",
+      "command": "Final coverage/unittest 909 + all eight latest gates (G-LOOP rerun after count correction) + compileall + self-test + native/DPI/teaching/live smoke",
+      "cwd": "D:/Projects/stock-advisor",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-LOOP-017-ui-computation-teaching-review.txt",
+      "sha256": "8d00cd7f9697a77236154a6ee689c27a01650f99fb1925d433cb678dcc49960a",
+      "control_plane_sha256": "1019e76a93a1b2ad2f212e5d742661d69089cbe10f73d4d8b7e32e7a28e533f5",
+      "commit": "21500be61cf8321312e4c5000e7bdc7ec4ba3b9d",
+      "dirty_worktree": true,
+      "environment": "Windows / CPython 3.14.4 / PySide6-Essentials 6.11.1",
+      "started_at": "2026-09-05T14:00:50+09:00",
+      "finished_at": "2026-09-05T14:27:39+09:00",
+      "implemented_by": "coordinator + bounded implementation workers",
+      "verified_by": "Erdos independent code review + 30 targeted tests; coordinator machine/visual integration; P3 follow-up capture tests",
+      "summary": "909 product tests, all six coverage dimensions and all eight latest gate results pass. Independent review and the final P3 capture regression are closed. UI and teaching screenshots are synchronized; packaging still to be verified from committed source; formal release gates remain unsigned."
     }
   ]
 }
