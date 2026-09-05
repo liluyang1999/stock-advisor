@@ -164,7 +164,7 @@
       "pass_condition": "overall statement >=90%/branch >=85%; core statement >=95%/branch >=90%; qt_controller statement >=90%/branch >=85%. check_coverage.py independently enforces all six dimensions from quality/convergence.json.",
       "evidence_type": "report",
       "owning_work_item": "WI-000",
-      "note": "owned by WI-000 (control-plane tooling, REQ-028); coverage runs via the authoritative unittest runner, not pytest (the legacy Tk GUI suite is flaky under pytest — see loop/quality/TOOLCHAIN_BASELINE.md). Enabled 2026-07-16 at 40e4f87 on freshly measured evidence: all four documented thresholds now pass — overall stmt 92.99/90, branch 87.84/85; core stmt 99.75/95, branch 99.26/90 (values recorded in quality/convergence.json.coverage.current), after the two test-strengthening rounds be93713 and 40e4f87 took the suite from 467 to 580 tests. The former `coverage report --fail-under=85` step was replaced by loop/scripts/check_coverage.py because --fail-under floors only coverage.py's combined statement+branch total: on 2026-07-15 that blended 86.8% passed while all four documented thresholds failed, so the gate would have certified a green it never checked. Coverage omits ui/_app_members.py (ADR-0014 type-only base for pyright, never imported at runtime; its 310 declarations are unexecutable and uncoverable by any test, and counting them distorted the total to 82.7%)."
+      "note": "Owned by WI-000 (control-plane tooling, REQ-028). Coverage uses the authoritative unittest runner and collects all production source without legacy Tk omissions. check_coverage.py enforces six separate statement/branch thresholds for overall, core and Qt controllers; the blended coverage.py total is not a substitute. Current measurements and floors live in quality/convergence.json; dated baseline history remains in TOOLCHAIN_BASELINE.md and Git."
     },
     {
       "id": "G-NUMERIC",
@@ -266,7 +266,7 @@
       ],
       "enabled": true,
       "required_for_release": true,
-      "pass_condition": "TEST-SEC-001 passes: every CSV/clipboard export neutralizes the =/+/-/@ (and TAB/CR) formula-injection leads. The dependency-scan half of the original condition ('0 critical/high') is vacuous for the shipped artifact and is not asserted here -- see note; re-add a scan command the moment a runtime dependency is introduced.",
+      "pass_condition": "TEST-SEC-001 passes: every CSV/clipboard export neutralizes formula-injection leads (=, +, -, @, TAB, CR). This gate checks export behavior, not runtime dependency vulnerability scanning.",
       "evidence_type": "scan_and_test",
       "owning_work_item": "WI-028",
       "note": "CSV formula injection and disclosure tests are enforced. PySide6-Essentials and shiboken6 are shipping runtime dependencies; license/SBOM/hash verification is tracked separately by release packaging. This gate does not claim vulnerability scanning. Export paths come from the OS save dialog, config uses a fixed application path, and asset paths come from code constants."

@@ -1337,7 +1337,37 @@
       "finished_at": "2026-09-05T14:27:39+09:00",
       "implemented_by": "coordinator + bounded implementation workers",
       "verified_by": "Erdos independent code review + 30 targeted tests; coordinator machine/visual integration; P3 follow-up capture tests",
-      "summary": "909 product tests, all six coverage dimensions and all eight latest gate results pass. Independent review and the final P3 capture regression are closed. UI and teaching screenshots are synchronized; packaging still to be verified from committed source; formal release gates remain unsigned."
+      "summary": "909 product tests, all six coverage dimensions and all eight latest gate results pass. Independent review and the final P3 capture regression are closed. UI and teaching screenshots are synchronized; packaging still to be verified from committed source; formal release gates remain unsigned.",
+      "superseded_by": "EVD-LOOP-018"
+    },
+    {
+      "id": "EVD-LOOP-018",
+      "record_version": "2.0.0",
+      "requirement_ids": [
+        "REQ-028",
+        "REQ-029",
+        "REQ-030"
+      ],
+      "acceptance_ids": [
+        "AC-000",
+        "AC-010"
+      ],
+      "work_item_id": "WI-025",
+      "type": "windows_build_dependency_isolation",
+      "command": "Final coverage unittest 912; check_coverage; 6 build-config tests; PyInstaller diagnostic rebuild; packaged self-test and native startup; TOC provenance audit",
+      "cwd": "D:/Projects/stock-advisor",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-LOOP-018-build-dependency-isolation.txt",
+      "sha256": "5e4452dea372c8db82d01027a8983e28d84114f9cc9cf083d61d4fcf10251c50",
+      "control_plane_sha256": "4215d8e568d65d6187001b8dc43c592b7cd7dc0cc141664127c6a4b48198f6f1",
+      "commit": "e827d840a791fc23bcdbd26b1424147820017d88",
+      "dirty_worktree": true,
+      "environment": "Windows 11 / CPython 3.14.4 / PySide6-Essentials 6.11.1 / PyInstaller 6.21.0",
+      "started_at": "2026-09-05T14:37:40+09:00",
+      "finished_at": "2026-09-05T14:47:33+09:00",
+      "implemented_by": "coordinator build fix",
+      "verified_by": "Erdos independent build review + 6 tests; coordinator real build and integration",
+      "summary": "912 product tests and six coverage dimensions pass. Fixed host PATH DLL contamination: diagnostic native GUI starts without stderr and package shrinks from 136.9 to 92.1 MiB; TOC has no unrelated host-tool libraries. Final delivery source/hash must still be verified by dist manifest; formal release remains unsigned. Full strict run: eight enabled development gates pass, zero skipped."
     }
   ]
 }

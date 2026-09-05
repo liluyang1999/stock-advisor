@@ -1,7 +1,7 @@
 {
   "$schema": "../schemas/metrics.schema.json",
   "schema_version": "1.0.0",
-  "updated_at": "2026-09-05T14:25:34+09:00",
+  "updated_at": "2026-09-05T14:44:00+09:00",
   "engineering": {
     "requirements_total": 34,
     "requirements_verified": 0,
@@ -23,14 +23,14 @@
   },
   "tests": {
     "modules": 80,
-    "methods": 909,
-    "passed": 909,
+    "methods": 912,
+    "passed": 912,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
     "tk_specific": 0,
     "qt_specific": 276,
-    "duration_seconds": 73.152
+    "duration_seconds": 74.267
   },
   "coverage": {
     "statement": 0.96042,

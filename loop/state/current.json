@@ -8,10 +8,10 @@
   "active_milestone_id": "MS-08",
   "active_work_item_id": "WI-035",
   "iteration": 2,
-  "baseline_commit": "21500be61cf8321312e4c5000e7bdc7ec4ba3b9d",
+  "baseline_commit": "e827d840a791fc23bcdbd26b1424147820017d88",
   "branch": "codex/review-ui-quality-20260905",
   "dirty_worktree": true,
-  "last_updated": "2026-09-05T14:27:39+09:00",
+  "last_updated": "2026-09-05T14:47:33+09:00",
   "completed_ids": [
     "WI-000",
     "WI-001",
@@ -52,9 +52,9 @@
     "WI-035"
   ],
   "next_actions": [
-    "本轮 909 项产品测试、六项覆盖率、八项门禁、UI 与教学复核已完成，见 EVD-LOOP-017；下一步构建验证并同步远程。",
-    "HG-LICENSE / HG-PACKAGING / HG-RELEASE 的人工签署仍是正式发布条件。",
-    "WI-032/033/035 的历史人工验收状态不由本轮机器验证自动代签。"
+    "本轮 UI、交互、教学与构建隔离验证见 EVD-LOOP-017/018；最终交付的来源提交和哈希以 dist/RELEASE_MANIFEST.json 为准。",
+    "HG-LICENSE / HG-PACKAGING / HG-RELEASE 仍待原约定的人类签署，代码同步不代表正式发布。",
+    "WI-032/033/035 的历史人工验收状态不由机器验证自动代签。"
   ],
   "blocker_ids": [],
   "risk_ids": [
@@ -70,10 +70,10 @@
     "RISK-010"
   ],
   "pending_decision_ids": [],
-  "latest_gate_run_id": "LOOP-20260905-001",
+  "latest_gate_run_id": "LOOP-20260905-002",
   "quality_summary": {
-    "tests_total": 909,
-    "tests_passed": 909,
+    "tests_total": 912,
+    "tests_passed": 912,
     "tests_failed": 0,
     "tests_skipped": 0,
     "coverage": 0.96042,

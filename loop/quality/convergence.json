@@ -22,8 +22,8 @@
     "qt_controller_statement_min": 0.9,
     "qt_controller_branch_min": 0.85,
     "current": {
-      "measured_at": "2026-09-05T14:24:50.850366",
-      "commit": "21500be + review worktree",
+      "measured_at": "2026-09-05T14:38:57.562727",
+      "commit": "e827d84 + reviewed build-isolation worktree",
       "command": "python -m coverage run -m unittest discover -s tests; python -m coverage json -q -o build/coverage.json; python loop/scripts/check_coverage.py build/coverage.json",
       "omit": [],
       "overall_statement": 0.96042,
@@ -34,7 +34,7 @@
       "qt_controller_branch": 0.958333,
       "combined_total": 0.9512706313859052,
       "verdict": "meets_target",
-      "note": "909 tests pass in the final recorded coverage/unittest run; all six coverage dimensions pass. The raw run summary is preserved in EVD-LOOP-017. No coverage omission."
+      "note": "912 tests pass; six coverage dimensions pass. Build environment tests increased by three; no source coverage omission. Raw final summary in EVD-LOOP-018."
     }
   },
   "numeric": {

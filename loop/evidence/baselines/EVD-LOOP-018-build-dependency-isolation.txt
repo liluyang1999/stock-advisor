@@ -1,0 +1,55 @@
+2026-09-05 build dependency isolation and final integration checkpoint
+
+Observed defect:
+Clean commit e827d84, pinned PyInstaller 6.21.0 / Qt 6.11.1: --self-test returned SELF_TEST_OK, but native GUI stderr reported QtCore DLL load failure. Analysis-00.toc identified ICU/OpenSSL/CRT libraries collected from unrelated host tools on PATH. QtCore.pyd/Qt6Core.dll hashes matched the installed wheel, ruling out a mismatched Qt copy.
+
+Correction:
+Only the Windows PyInstaller child PATH is restricted to interpreter/base Python/DLLs/System32/SystemRoot. Parent PATH, unrelated variables and non-Windows behavior remain unchanged. No dependencies or system settings changed.
+
+Independent review: Erdos found no blocking issue or required omission; 6 build-config tests passed. Three new cases were first observed failing, then passed.
+
+Diagnostic rebuilt worktree (e827d84 + reviewed build-script change):
+[
+  {
+    "test": "packaged-self-test",
+    "exit": 0,
+    "seconds": 0.478,
+    "stdout": "SELF_TEST_OK symbol=SH.600519 action=BUY score=47 confidence=84 L1=BUY L5=BUY plan_shares=1300 backtest_ok=True self_check=True checks=8/8 screen_candidates=3 top=600000",
+    "stderr": ""
+  },
+  {
+    "test": "packaged-native-startup",
+    "alive_after_8_seconds": true,
+    "stderr": "",
+    "test_process_terminated": true
+  },
+  {
+    "test": "binary-provenance",
+    "unrelated_host_runtime_dependencies": 0,
+    "app_bytes": 96562465,
+    "source_worktree": "e827d84 + uncommitted build-environment fix (diagnostic build); clean rebuild required before delivery"
+  }
+]
+This is diagnostic build evidence, not a claim that this dirty worktree was a clean commit. Final delivery must still be rebuilt from the committed revision and identified by dist/BUILD_INFO and RELEASE_MANIFEST.
+
+Final raw product suite:
+Ran 912 tests in 74.267s
+
+OK
+
+Six coverage dimensions pass: overall 96.04/91.20%; core 99.33/98.39%; Qt controllers 99.43/95.83% (statement/branch).
+Teaching explanation synchronized in docs/07-engineering.html.
+No new human release approval is implied.
+
+Final integrated gates, completed 2026-09-05T14:47:33+09:00:
+[G-LOOP     ] PASS
+[G-FORMAT   ] PASS
+[G-LINT     ] PASS
+[G-TYPE     ] PASS
+[G-CORE     ] PASS
+[G-COVERAGE ] PASS
+[G-SECURITY ] PASS
+[G-SURFACE  ] PASS
+RUN_GATES_OK ran=8 failed=0 skipped=0
+
+Coverage/security gate descriptions aligned with the current six-threshold policy and export-only security scope; no gate command, threshold or enabled state changed.

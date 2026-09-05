@@ -1,6 +1,8 @@
+import os
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
@@ -26,6 +28,37 @@ class BuildConfigTests(unittest.TestCase):
         self.assertFalse(hasattr(build_exe, "OUTPUT_DIR"))
         # PyInstaller 原始产物留在 build/ 内，避免污染 dist/
         self.assertIn(build_dir, build_exe.PYI_DIST_DIR.resolve().parents)
+
+    def test_windows_build_does_not_resolve_dlls_from_unrelated_tools(self):
+        foreign = r"C:\unrelated-tools\poppler;C:\unrelated-tools\libheif"
+        with patch.dict(
+            os.environ,
+            {"PATH": foreign, "SYSTEMROOT": r"C:\Windows", "BUILD_LABEL": "review"},
+            clear=True,
+        ):
+            with patch.object(sys, "platform", "win32"):
+                child = build_exe._pyinstaller_environment()
+            self.assertEqual(os.environ["PATH"], foreign)
+        paths = child["PATH"].split(os.pathsep)
+        self.assertNotIn(r"C:\unrelated-tools\poppler", paths)
+        self.assertNotIn(r"C:\unrelated-tools\libheif", paths)
+        self.assertIn(str(Path(sys.executable).resolve().parent), paths)
+        self.assertIn(str(Path(sys.base_prefix) / "DLLs"), paths)
+        self.assertIn(str(Path(r"C:\Windows") / "System32"), paths)
+        self.assertEqual(child["BUILD_LABEL"], "review")
+
+    def test_windows_build_reports_missing_system_root(self):
+        with patch.dict(os.environ, {"PATH": "unrelated"}, clear=True):
+            with patch.object(sys, "platform", "win32"):
+                with self.assertRaisesRegex(RuntimeError, "SystemRoot"):
+                    build_exe._pyinstaller_environment()
+
+    def test_other_platforms_keep_their_library_search_environment(self):
+        with patch.dict(os.environ, {"PATH": "/usr/bin:/custom/bin"}, clear=True):
+            with patch.object(sys, "platform", "linux"):
+                child = build_exe._pyinstaller_environment()
+            self.assertEqual(child, dict(os.environ))
+            self.assertIsNot(child, os.environ)
 
     def test_build_also_emits_html_manual_into_dist(self):
         self.assertEqual(build_exe.MANUAL_NAME, "使用说明.html")

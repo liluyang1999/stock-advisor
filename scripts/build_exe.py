@@ -22,6 +22,25 @@ ICON_PATH = PROJECT_ROOT / "assets" / "a_stock_strategy.ico"
 TOKENS_PATH = PROJECT_ROOT / "loop" / "product" / "tokens.json"
 
 
+def _pyinstaller_environment() -> dict[str, str]:
+    """构建子进程只搜索 Python 与 Windows 目录，避免 PATH 中其它工具的同名 DLL 混入。"""
+    env = dict(os.environ)
+    if sys.platform == "win32":
+        system_root = env.get("SYSTEMROOT") or env.get("SystemRoot")
+        if not system_root:
+            raise RuntimeError("Windows 构建缺少 SystemRoot，无法确定系统 DLL 来源。")
+        roots = [
+            Path(sys.executable).resolve().parent,
+            Path(sys.base_prefix),
+            Path(sys.base_prefix) / "DLLs",
+            Path(system_root) / "System32",
+            Path(system_root),
+        ]
+        env = {key: value for key, value in env.items() if key.upper() != "PATH"}
+        env["PATH"] = os.pathsep.join(dict.fromkeys(str(path) for path in roots))
+    return env
+
+
 def main() -> int:
     if not _pyinstaller_available():
         print(
@@ -75,7 +94,7 @@ def main() -> int:
         str(BUILD_DIR),
         str(ENTRY),
     ]
-    subprocess.run(command, cwd=PROJECT_ROOT, check=True)
+    subprocess.run(command, cwd=PROJECT_ROOT, env=_pyinstaller_environment(), check=True)
 
     built_dir = PYI_DIST_DIR / APP_NAME
     built_exe = built_dir / f"{APP_NAME}.exe"
