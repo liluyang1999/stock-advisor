@@ -1,57 +1,39 @@
 # 打包与部署
 
-## 当前合同
+## 当前实现与合同
 
-- `build/` 仅中间产物。
-- `dist/` 仅最终 `股市锦囊.exe` + `使用说明.html`。
-- onefile、windowed。
-- EXE `--self-test` 退出 0 并含 `SELF_TEST_OK`。
+- Python 3.14+；运行依赖 PySide6-Essentials，构建依赖 PyInstaller，精确版本见 `pyproject.toml`。
+- `.venv/` 是项目内构建环境；开发测试使用仓库配置的 Python。不得修改全局环境。
+- `build/` 仅中间产物。构建会重建 `build/`、`dist/`，执行前核对路径并确认无用户文件。
+- ADR-0004 已选择 **onedir、windowed**：`dist/股市锦囊/股市锦囊.exe` 与独立 Qt 运行库。
+- 配套交付包含 `使用说明.html`、`RELEASE_MANIFEST.json`、`SBOM.json`、`THIRD_PARTY_NOTICES.md` 和 `licenses/` 两份正文。
+- 教材在 `docs/`，操作说明由 `src/ui/manual.py` 生成。不能只分发 EXE。
 
-PySide6 迁移是否继续 onefile 由 ADR-0004 和 HG-PACKAGING 决定；未批准前不改变用户合同。
+## 构建与核验
 
-## clean build
+1. 在隔离构建环境按 `pyproject.toml` 的 gui/build 组安装依赖；记录 Python、Qt、PyInstaller 版本。
+2. 运行产品与工程门禁。当前仅直接依赖精确钉版，尚无完整传递依赖哈希锁，不能声称完全可复现。
+3. `python scripts/build_exe.py` 生成应用与说明书；仅 Windows 打包子进程限制额外 DLL 搜索 PATH，避免混入其它工具的 ICU/CRT/OpenSSL。
+4. 在**同一构建环境**运行 `python scripts/make_release_manifest.py`，生成元数据、许可副本与文件摘要。
+5. 运行 `python scripts/make_release_manifest.py --verify`：文件改动、缺失或多出均失败。1.1 清单覆盖配套许可与元数据；旧清单须核实来源后重建。
+6. EXE `--self-test` 应退出 0 且含 `SELF_TEST_OK`；另行启动原生 Windows GUI 并检查 stderr、字体与交互。自检不加载完整 Qt 界面。
+7. 独立核对 BUILD_INFO、清单中的来源提交和真实构建提交；回滚核验允许旧提交，哈希通过本身不表示等于当前源码。
+8. 清理本轮临时配置、日志、截图草稿和构建缓存，保留最终 dist 与最小有效证据。
 
-1. 新建项目内隔离环境（实际策略待批准）。
-2. 从精确锁文件安装 Python/PySide6/PyInstaller。
-3. 验证无系统 PySide6/Shiboken 混入。
-4. 跑 format/lint/type/test/coverage/Qt/fault/performance。
-5. 清理并验证 build/dist 解析路径仍在项目内。
-6. 构建 Qt plugins/resources/QSS/icon/translations。
-7. EXE self-test、Windows GUI 冒烟、字体/DPI/网络降级。
-8. 生成 SHA-256、SBOM、许可证/NOTICE 和构建元数据。
+## Qt 资产与预算
 
-## Qt 资产清单
+图标与 tokens.json 随包收集，QSS 由代码和 token 生成；Windows platform、imageformats、styles 等插件按实际产物检查。项目没有单独的 resources.qrc，不捆绑系统微软雅黑字体。
 
-- platform plugin（Windows）。
-- 必需 imageformats/styles（按实际使用最小化）。
-- resources.qrc、SVG/多倍图标、QSS。
-- 不捆绑系统 Microsoft YaHei 字体文件；运行时验证系统字体。
-- offscreen 插件仅开发/测试按需收集。
+包体预算沿用 `quality/performance-budgets.json`，实际统计整个 onedir 应用目录；不能用小 EXE 的大小代替运行库总大小。启动和内存预算以实际 Windows 测量为准。
 
-## 预算
+## 分发状态与人工验收
 
-首个 spike 测量 EXE 大小、冷/热启动、RSS；在 HG-PACKAGING 批准后冻结预算。暂定 onefile 上限 150MiB，但不能代替实测和许可决策。
+当前构建未作 Authenticode 签名。README 与操作说明必须披露；用户应核实来源与 SHA-256，不能引导关闭系统防护。签名方案、证书及密钥管理尚未实现，归 WI-025 和人工发布门禁。
+
+PySide6 与 shiboken6 的组件记录、LGPL/GPL 正文及 THIRD_PARTY_NOTICES 已由清单脚本生成。文件存在不等于许可方案已经签署，也不等于漏洞审查已完成；Qt 及打包原生库的完整组件清点、漏洞复核、完整解析锁仍须在正式发布前补证。现有 SBOM 只声明两个 Python 发行组件，不冒充完整原生库 SBOM。
+
+HG-LICENSE → HG-PACKAGING → HG-RELEASE 的人工签署不由代码审查代替。当前缺口集中在 `quality/RELEASE_READINESS.md`。
 
 ## 回滚
 
-保留最后一个通过全门禁的 Tk 或 PySide6 发布包、哈希和说明。配置 schema 必须向后兼容；若 UI 回滚，用户自选/持仓不得丢失。
-
-## 分发安全（代码签名 / SmartScreen / Qt LGPL 归属）
-
-本节记录 Windows EXE 对外分发前必须解决的两类供应链/合规义务的**计划与归属**，不代表已经实现——产品已是 PySide6 onedir 交付并捆绑 Qt 二进制（WI-024），但代码签名证书与 NOTICE 正文仍待人工发布门禁（HG-LICENSE/HG-PACKAGING/HG-RELEASE）落定；提前编造签名证书细节或 NOTICE 正文内容会违反"不伪造证据"原则，因此这里只锁定目标形态、决策路径和责任工作项。
-
-### 代码签名与 SmartScreen 来源信誉
-
-- **现状**：`股市锦囊.exe` 当前未签名；未采购代码签名证书；`HG-LICENSE`/`HG-PACKAGING`/`HG-RELEASE` 均未触发（产品尚未对外发布）。
-- **目标形态（待 `HG-LICENSE` 批准，非当前实现）**：使用 Authenticode 对最终 `dist/股市锦囊.exe` 签名（证书类型、密钥保管方式——如 HSM/云 KMS 而非本地明文私钥文件——及签名时间戳服务器的选择留待批准时确定），使 Windows SmartScreen 能建立发布者信誉。
-- **已知约束**：SmartScreen 信誉需要同一签名身份积累下载量与时间，**首次或低分发量阶段仍会出现"Windows 已保护你的电脑"式未知发布者提示**，这是预期状态而非缺陷；`使用说明.html` 必须明确告知用户这一现象及如何核实发布者/哈希，不得引导用户关闭 SmartScreen 或以其他方式绕过系统安全控件。
-- **未签名阶段的分发披露**：在签名方案被 `HG-LICENSE`/`HG-RELEASE` 批准并实际生效前，任何形式的分发都必须在 `使用说明.html`/README 中明确声明"当前构建未经代码签名"，并提供 SHA-256 供用户自行核验，不得静默隐藏未签名状态。
-- **归属**：证书采购、签名流水线接入 `scripts/build_exe.py` clean build 步骤、SmartScreen 信誉积累策略，归属 `WI-025`（许可证/SBOM/连续全绿/发布门禁），受 `HG-LICENSE` 与 `HG-RELEASE` 双重人工门禁约束；本次治理加固只记录计划，不新增签名相关产品代码或采购行为。
-
-### Qt LGPL NOTICE / 第三方许可归属
-
-- **义务来源**：PySide6 采用 LGPLv3（或项目最终经 `HG-LICENSE` 批准的商业许可，见 `governance/DEPENDENCY_POLICY.md`"PySide6 特别规则"），LGPL 分发通常要求提供第三方许可证全文/版权声明，并保留用户替换受 LGPL 约束的库的可行路径——后者与 onefile 单文件打包是否可行存在已知张力，属于 `ADR-0004`（打包策略）与 `HG-PACKAGING` 的决策范围，本节不重新展开该权衡，只记录 NOTICE 本身的归属。
-- **计划形态**：`scripts/build_exe.py` 的 clean build 流程（见"clean build"第 8 步"生成 SHA-256、SBOM、许可证/NOTICE 和构建元数据"）产出一份 `NOTICE.txt`/`THIRD_PARTY_LICENSES.txt`，随 `dist/` 一并分发，内容至少覆盖 PySide6/Qt、PyInstaller 及其传递依赖的许可证全文或可核验链接与版权声明。
-- **明确 deferral（本次不实现的理由）**：产品尚未进入 PySide6 实际迁移，当前不存在真实的 Qt 二进制/传递依赖清单可供生成准确 NOTICE；在此之前编造 NOTICE 正文属于伪造合规文档，比不写更危险。因此本节只确定"必须做什么（NOTICE 生成与人工复核）、卡在哪个门禁（`G-LICENSE`）、由谁做（`WI-025`）"，具体 NOTICE 内容生成、许可证文本采集与人工复核在 `WI-025` 实际执行时落地。
-- **归属**：`WI-025`；门禁 `G-LICENSE`（`quality/quality-gates.json`，`pass_condition: "human gate HG-LICENSE accepted"`）。
-
+保留上一份已验证的应用目录、说明书和完整配套清单；用对应清单核验后切换目录。配置兼容性单测不等于在干净目标机完成升级/回滚演练；用户自选、持仓不得因回滚被删除。

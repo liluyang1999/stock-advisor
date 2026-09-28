@@ -81,6 +81,8 @@ python -B -m unittest discover -s tests -p test_docs.py  # 仅检查教材导航
 ```bash
 python -m pip install --group build   # 唯一的构建期依赖 PyInstaller（版本已钉）
 python scripts/build_exe.py
+python scripts/make_release_manifest.py
+python scripts/make_release_manifest.py --verify
 ```
 
 构建中间产物全部放在 `build/`；最终交付物输出到 `dist/`：
@@ -93,6 +95,15 @@ python scripts/build_exe.py
 这些是选型依据，不是所有机器的速度保证；完整分发还需许可证、第三方通知及组件清单，不能只拷贝 EXE。
 
 构建完成后可执行 `dist\股市锦囊\股市锦囊.exe --self-test` 验证打包程序能启动并跑通核心逻辑。
+
+`build.bat` / `build.sh` 生成应用与说明书后，仍需在同一构建环境执行上面的清单生成与校验命令。
+清单覆盖应用、说明书、SBOM、第三方声明和两份许可证；多出的文件也会令校验失败。
+旧版清单没有覆盖这些配套文件，需在核对构建来源后重新生成，不能沿用旧的成功标记。
+还需启动真实 GUI：离线自检不会加载完整界面，不能替代 Windows 启动验证。
+
+当前构建未经代码签名。校验 SHA-256 能发现文件变化，不能单独证明发布者身份；请从可信来源取得清单，
+并保留系统安全检查。[发布就绪检查](loop/quality/RELEASE_READINESS.md)记录未完成条件，
+测试全绿不等于已经获准正式发布。
 
 ## 目录结构
 

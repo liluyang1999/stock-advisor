@@ -6,12 +6,12 @@
   "phase": "release_prep",
   "status": "active",
   "active_milestone_id": "MS-08",
-  "active_work_item_id": "WI-035",
+  "active_work_item_id": "WI-025",
   "iteration": 2,
-  "baseline_commit": "e827d840a791fc23bcdbd26b1424147820017d88",
-  "branch": "codex/review-ui-quality-20260905",
+  "baseline_commit": "57e3d9cd8b7b8a01f22ca11179518b34ea26aa52",
+  "branch": "codex/readiness-cleanup-20260928",
   "dirty_worktree": true,
-  "last_updated": "2026-09-05T14:47:33+09:00",
+  "last_updated": "2026-09-28T23:02:30+09:00",
   "completed_ids": [
     "WI-000",
     "WI-001",
@@ -52,9 +52,9 @@
     "WI-035"
   ],
   "next_actions": [
-    "本轮 UI、交互、教学与构建隔离验证见 EVD-LOOP-017/018；最终交付的来源提交和哈希以 dist/RELEASE_MANIFEST.json 为准。",
-    "HG-LICENSE / HG-PACKAGING / HG-RELEASE 仍待原约定的人类签署，代码同步不代表正式发布。",
-    "WI-032/033/035 的历史人工验收状态不由机器验证自动代签。"
+    "本轮本地修复与文档已复核，记录见 EVD-LOOP-019；交付来源以 dist/RELEASE_MANIFEST.json 为准。",
+    "正式发布尚未就绪：人工签署、完整依赖/安全证据、目标机验收和发布追溯见 quality/RELEASE_READINESS.md。",
+    "本轮只提交本地主题分支，不自动合并、推送或发布。"
   ],
   "blocker_ids": [],
   "risk_ids": [
@@ -70,13 +70,13 @@
     "RISK-010"
   ],
   "pending_decision_ids": [],
-  "latest_gate_run_id": "LOOP-20260905-002",
+  "latest_gate_run_id": "LOOP-20260928-001",
   "quality_summary": {
-    "tests_total": 912,
-    "tests_passed": 912,
+    "tests_total": 921,
+    "tests_passed": 921,
     "tests_failed": 0,
     "tests_skipped": 0,
-    "coverage": 0.96042,
+    "coverage": 0.9604264254563075,
     "qt_tests": 276,
     "release_ready": false
   },

@@ -11,18 +11,18 @@
     "disclaimer": "模型仅供研究和辅助决策，不构成投资建议；交易前请自行核验行情、公告和风险。"
   },
   "target_stack": {
-    "python": ">=3.12",
+    "python": ">=3.14",
     "gui": "PySide6",
-    "gui_version_policy": "exact pin after approved dependency spike",
+    "gui_version_policy": "exact pins in pyproject.toml; changes require review",
     "packager": "PyInstaller",
-    "test_runner": "unittest initially; additional dev tools require approval",
+    "test_runner": "unittest authoritative; pytest available for development",
     "runtime_font": "Microsoft YaHei",
     "candidate_versions": {
       "PySide6": "6.11.1",
       "PyInstaller": "6.21.0",
       "pytest": "9.1.1",
       "pytest-qt": "4.5.0",
-      "status": "unverified_until_WI-003"
+      "status": "implemented; pins verified in the current environment"
     }
   },
   "ui_tokens": {

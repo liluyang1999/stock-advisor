@@ -120,6 +120,7 @@ python -B -m unittest discover -s tests -p test_docs.py</code></pre>
 <section id="packaging">
 <h2>9. 打包：交付整个应用目录</h2>
 <p><code>scripts/build_exe.py</code> 调用 PyInstaller；构建中间产物留在 <code>build/</code>，最终应用在 <code>dist/股市锦囊/</code>，含 EXE、Qt 动态库、插件与资源。不能只拿走 EXE。Windows 交付物在 Windows 构建，运行命令见<a href="../README.md">README</a>。</p>
+<p>随后在同一构建环境运行 <code>scripts/make_release_manifest.py</code>，生成组件清单、第三方声明、许可证副本和完整文件摘要，再加 <code>--verify</code> 验证。当前构建未签名；正式发布还需完成<a href="../loop/quality/RELEASE_READINESS.md">发布验收条件</a>。</p>
 <p>onedir 是 ADR-0004 的项目决定，依据包括启动测量和可替换 Qt 库的分发方案。钉住构建依赖有助于复现，但仍需核对环境、文件清单、许可证、SBOM 与第三方通知。打包自检检验基础可执行性，真实 GUI 和联网行为另行验收。</p>
 <p><code>src/ui/manual.py</code> 生成 <code>dist/使用说明.html</code>，其中既有从代码取得的常量，也有需要维护的操作文字。生成一次不能自动保证所有说明准确；它与 <code>docs/</code> 教材各有测试和审阅责任。</p>
 </section>

@@ -1,6 +1,8 @@
 # 路线图
 
-## MS-00 基线与规格冻结（进行中）
+> 本文定义里程碑和退出条件；实际进度以 `state/current.json` 和 `planning/work-items.json` 为准。MS-01 保留当时的 onefile spike 比较，MS-08 按 ADR-0004 交付 onedir。
+
+## MS-00 基线与规格冻结
 
 退出：Loop 校验绿；ADR-0001/0002/0005 明确；现有功能、Tk 测试和风险 100% 盘点。
 
@@ -50,5 +52,5 @@ DPI/分辨率、字体、焦点、对比度、视觉基准、表格与图表性�
 
 clean build、EXE self-test、Windows 冒烟、SBOM/许可/漏洞/哈希、连续五次全绿和人工发布门禁。
 
-退出：干净环境 Qt onefile 构建成功且产物清单精确（`clean EXE`）；依赖许可证、SBOM、漏洞扫描与哈希记录完整（`license/SBOM`）；连续五次完整发布门禁全绿（`five green runs`）；人工发布门禁（HG-PACKAGING/HG-RELEASE）批准（`human release gate`）。
+退出：干净环境 Qt onedir 构建成功且产物清单精确（`clean EXE`）；依赖许可证、SBOM、漏洞扫描与哈希记录完整（`license/SBOM`）；连续五次完整发布门禁全绿（`five green runs`）；人工发布门禁（HG-PACKAGING/HG-RELEASE）批准（`human release gate`）。
 

@@ -2,7 +2,7 @@
 
 `build_exe.py` 产出交付物本身，本脚本产出"证明交付物是什么"的那一层，即 RELEASE_PLAN.md 要求的
 SHA-256、SBOM 与依赖许可清单、构建元数据。两者分开是因为职责不同：构建可以重跑，而清单必须描述
-磁盘上此刻这一份产物——所以本脚本只读 `dist/`，从不触发构建。
+磁盘上此刻这一份产物——本脚本读取应用目录、生成配套元数据，从不触发构建。
 
 许可证是硬门禁而不是提示：产品以 LGPL-3.0 选项分发 Qt，第 4 条要求随附许可证正文并让用户能用自己
 的 Qt 重新链接。缺正文就是不合规，因此正文缺失时本脚本照常写出其余产物（便于审阅），但以非零码退出
@@ -58,15 +58,15 @@ def main(argv: list[str] | None = None) -> int:
 
     components = _collect_components()
     licenses, missing = _stage_license_texts()
-    artifacts = _hash_artifacts()
 
     SBOM_PATH.write_text(
         json.dumps(_build_sbom(components), ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     NOTICES_PATH.write_text(_build_notices(components, licenses, missing), encoding="utf-8")
+    artifacts = _hash_artifacts()
 
     manifest: dict[str, Any] = {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "product": "股市锦囊",
         "version": _app_version(),
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
@@ -118,7 +118,12 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         blocked = True
+    if any(not component.get("installed") for component in components):
+        print("RELEASE_MANIFEST_INCOMPLETE 无法确认运行期组件版本", file=sys.stderr)
+        blocked = True
     if blocked:
+        return 1
+    if _verify() != 0:
         return 1
     print(f"RELEASE_MANIFEST_OK commit={source['commit']}")
     return 0
@@ -134,14 +139,70 @@ def _verify() -> int:
     if not MANIFEST_PATH.is_file():
         print(f"未找到 {MANIFEST_PATH}；无可比对的基准", file=sys.stderr)
         return 2
-    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    expected = {f["path"]: f["sha256"] for f in manifest["artifacts"]["files"]}
-    actual = {f["path"]: f["sha256"] for f in _hash_artifacts()["files"]}
+    try:
+        manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+        if not isinstance(manifest, dict):
+            raise ValueError("清单必须是 JSON 对象")
+        if manifest.get("schema_version") != "1.1":
+            raise ValueError("不支持该清单版本；请核对来源后生成完整交付清单 1.1")
+        entries = manifest["artifacts"]["files"]
+        expected = {f["path"]: f["sha256"] for f in entries}
+        if len(expected) != len(entries) or not all(
+            isinstance(path, str)
+            and isinstance(digest, str)
+            and re.fullmatch(r"[0-9a-f]{64}", digest)
+            for path, digest in expected.items()
+        ):
+            raise ValueError("文件条目重复或摘要无效")
+        required = {
+            f"{APP_DIR.name}/股市锦囊.exe",
+            f"{APP_DIR.name}/BUILD_INFO.json",
+            *[p.relative_to(DIST_DIR).as_posix() for p in _supporting_artifacts()],
+        }
+        components = manifest["components"]
+        names = [_normalize(c["name"]) for c in components]
+        source = manifest["source"]
+        build_info = json.loads((APP_DIR / "BUILD_INFO.json").read_text(encoding="utf-8"))
+        commit = build_info["commit"]
+        if (
+            not required <= expected.keys()
+            or manifest["license_compliance"]["complete"] is not True
+            or manifest["source"]["build_matches_repo"] is not True
+            or set(names) != {_normalize(name) for name in SHIPPED_DISTRIBUTIONS}
+            or len(names) != len(set(names))
+            or any(
+                c["installed"] is not True
+                or not isinstance(c["version"], str)
+                or not c["version"].strip()
+                or c["version"].lower() == "unknown"
+                for c in components
+            )
+            or not isinstance(commit, str)
+            or re.fullmatch(r"[0-9a-f]{40}", commit) is None
+            or not source["commit"] == source["build_commit"] == source["repo_commit"] == commit
+        ):
+            print("RELEASE_VERIFY_INCOMPLETE 缺少完整交付基线；请重新生成清单", file=sys.stderr)
+            return 1
+        actual = {
+            p.relative_to(DIST_DIR).as_posix(): _sha256(p)
+            for p in DIST_DIR.rglob("*")
+            if p.is_file() and p != MANIFEST_PATH
+        }
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        print(f"RELEASE_VERIFY_INVALID {exc}", file=sys.stderr)
+        return 1
 
     changed = sorted(p for p in expected.keys() & actual.keys() if expected[p] != actual[p])
     absent = sorted(expected.keys() - actual.keys())
     extra = sorted(actual.keys() - expected.keys())
     if not (changed or absent or extra):
+        tree = hashlib.sha256()
+        for path, digest in sorted(actual.items()):
+            if path.startswith(APP_DIR.name + "/"):
+                tree.update(f"{path}\n{digest}\n".encode())
+        if tree.hexdigest() != manifest["artifacts"].get("tree_sha256"):
+            print("RELEASE_VERIFY_INVALID 应用目录合并摘要不一致", file=sys.stderr)
+            return 1
         print(f"RELEASE_VERIFY_OK files={len(expected)} version={manifest.get('version')}")
         print(f"  基准提交 {manifest.get('source', {}).get('commit')}")
         return 0
@@ -223,6 +284,15 @@ def _stage_license_texts() -> tuple[list[str], list[str]]:
     return present, missing
 
 
+def _supporting_artifacts() -> list[Path]:
+    return [
+        DIST_DIR / "使用说明.html",
+        SBOM_PATH,
+        NOTICES_PATH,
+        *[LICENSES_OUT / name for name in REQUIRED_LICENSE_TEXTS],
+    ]
+
+
 def _hash_artifacts() -> dict[str, Any]:
     """逐文件 SHA-256，外加一个覆盖整个应用目录的合并摘要。
 
@@ -239,7 +309,7 @@ def _hash_artifacts() -> dict[str, Any]:
         files.append({"path": rel, "bytes": path.stat().st_size, "sha256": digest})
         tree.update(f"{rel}\n{digest}\n".encode())
 
-    for extra in (DIST_DIR / "使用说明.html",):
+    for extra in _supporting_artifacts():
         if extra.is_file():
             files.append(
                 {

@@ -102,7 +102,7 @@ def build_manual_html() -> str:
     )
     sections.append(
         "<h2>可筛选的证券特征</h2>"
-        "<p>当前版本的特征均来自一次实时行情快照，稳定可靠；资金流向、ROE 等基本面特征列入后续版本。</p>"
+        "<p>筛选特征来自本次行情快照，缺失字段和取数失败会影响可用结果；资金流是独立查询，ROE 尚未纳入筛选。</p>"
         f"<ul>{characteristic_items}</ul>"
     )
 
@@ -161,6 +161,16 @@ def build_manual_html() -> str:
 
     for title, body in build_help_sections():
         sections.append(_render_section(title, body))
+
+    sections.append(
+        "<h2>交付文件与安全核验</h2>"
+        "<p>当前构建未经代码签名。请保留整个应用目录，不要只复制 EXE；配套文件包括本说明书、"
+        "RELEASE_MANIFEST.json、SBOM.json、THIRD_PARTY_NOTICES.md 和 licenses 目录。</p>"
+        "<p>维护者可用 scripts/make_release_manifest.py --verify 核对完整交付文件。"
+        "SHA-256 用于发现文件变化，不能单独证明发布者身份；清单也应来自可信来源。"
+        "遇到系统安全提示，请先核实来源，不要关闭系统防护。</p>"
+        "<p>离线自检不证明真实行情接口此刻可用；测试通过也不代表已经完成正式发布审批。</p>"
+    )
     for title, body in build_strategy_sections():
         sections.append(_render_section(title, body))
 

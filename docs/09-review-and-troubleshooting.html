@@ -78,6 +78,7 @@ python -B -m unittest discover -s tests</code></pre>
 <p><strong>只回收自己创建的临时产物。</strong>核对创建前后的文件清单，清理自己的临时配置、日志、截图草稿及测试缓存；保留正式教学图片与必要验证证据。不能整仓删除缓存或日志，更不能删除真实 <code>%APPDATA%\StockAdvisor</code> 数据。<code>-B</code> 仅禁止 Python 自动写字节码，不能阻止显式 <code>compileall</code>、覆盖率工具或打包命令生成文件。</p>
 
 <h2>资料应该放在哪里</h2>
+<p><strong>怎样判断已经准备好：</strong>分别检查代码测试、实际 GUI、交付文件、外部行情与正式发布条件。开发门禁全绿只证明其中一部分；许可证文件齐全也不能代替许可方案签署。当前未完成项集中在<a href="../loop/quality/RELEASE_READINESS.md">发布就绪检查</a>，不要从历史截图、旧日志或单个成功标记推断整项完成。</p>
 <p>本知识库的章节、样式、截图与概念稿都在 <code>docs/</code>。根 README 是阅读入口；<code>loop/</code> 存工程合同与证据，<code>licenses/</code> 存许可证原文；<code>src/ui/manual.py</code> 生成随应用分发的操作说明。参见<a href="index.html#document-map">资料职责表</a>，不要为集中教材而复制这些真源。</p>
 <nav class="crumbs bottom"><a href="08-technical-stack-report.html">← 上一篇</a> · <a href="index.html">返回知识库首页</a></nav>
 <div class="disclaimer">本文用于学习实现与验证方法，<strong>不构成投资建议</strong>，不代表未来收益承诺。</div>

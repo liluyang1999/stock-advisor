@@ -104,7 +104,7 @@
       "metric": "single_file_exe_mib",
       "max": 150,
       "rebaseline_rule": "after first approved clean Qt build, regression <=10%",
-      "method": "file size of the built onefile executable measured on disk after a clean PyInstaller build",
+      "method": "Legacy metric key retained for compatibility: sum file sizes of the entire onedir application directory after a clean PyInstaller build (ADR-0004), not just the EXE.",
       "scenario": "clean release build per scripts/build_exe.py (see G-BUILD)",
       "owning_test": "TEST-PKG-002"
     },

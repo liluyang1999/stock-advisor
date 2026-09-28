@@ -1367,7 +1367,37 @@
       "finished_at": "2026-09-05T14:47:33+09:00",
       "implemented_by": "coordinator build fix",
       "verified_by": "Erdos independent build review + 6 tests; coordinator real build and integration",
-      "summary": "912 product tests and six coverage dimensions pass. Fixed host PATH DLL contamination: diagnostic native GUI starts without stderr and package shrinks from 136.9 to 92.1 MiB; TOC has no unrelated host-tool libraries. Final delivery source/hash must still be verified by dist manifest; formal release remains unsigned. Full strict run: eight enabled development gates pass, zero skipped."
+      "summary": "912 product tests and six coverage dimensions pass. Fixed host PATH DLL contamination: diagnostic native GUI starts without stderr and package shrinks from 136.9 to 92.1 MiB; TOC has no unrelated host-tool libraries. Final delivery source/hash must still be verified by dist manifest; formal release remains unsigned. Full strict run: eight enabled development gates pass, zero skipped.",
+      "superseded_by": "EVD-LOOP-019"
+    },
+    {
+      "id": "EVD-LOOP-019",
+      "record_version": "2.0.0",
+      "requirement_ids": [
+        "REQ-028",
+        "REQ-029",
+        "REQ-030"
+      ],
+      "acceptance_ids": [
+        "AC-000",
+        "AC-010"
+      ],
+      "work_item_id": "WI-025",
+      "type": "readiness_and_delivery_verification",
+      "command": "Product coverage; independent initial eight development gates and final 25 tests/13 probes; final fast gates; docs tests; release trace (exit 1, unresolved); cleanup audit",
+      "cwd": "D:\\Projects\\stock-advisor",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-LOOP-019-readiness-cleanup.txt",
+      "sha256": "cd82e18ec5529d1a82e8a47cd2c514b3bf6f5331369a974d3c1029cec0540aa2",
+      "control_plane_sha256": "d5fa8018a98555368c080a0ab7203846b738189779bac8cb796ed34353a03368",
+      "commit": "57e3d9cd8b7b8a01f22ca11179518b34ea26aa52",
+      "dirty_worktree": true,
+      "environment": "Windows 11; Python 3.14.4; Qt 6.11.1; pinned local toolchain",
+      "started_at": "2026-09-28T22:35:13+09:00",
+      "finished_at": "2026-09-28T23:04:49+09:00",
+      "implemented_by": "coordinator",
+      "verified_by": "Wegener independent initial strict gates plus final 25 tests/13 probes",
+      "summary": "921 final product tests, 59 loop tests, independent initial eight-gate run, final 25 tests/13 probes and final fast gates pass; 18 obsolete scratch diff snapshots removed. Source/docs review complete. Formal release blockers and browser visual-review limitation are explicit; final clean local build is identified by dist manifest."
     }
   ]
 }

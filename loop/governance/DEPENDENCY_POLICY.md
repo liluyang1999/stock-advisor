@@ -21,15 +21,15 @@
 
 ## PySide6 特别规则
 
-- 当前仅记录为目标依赖，环境尚未安装。
-- 先做隔离 spike，再批准精确版本；禁止使用无上界的 `>=` 作为发布锁定。
+- 已是生产运行依赖：`PySide6-Essentials==6.11.1`，带入同版本 shiboken6，版本真源为 `pyproject.toml`。
+- 已完成隔离 spike；后续升级仍须单独复核。禁止使用无上界的 `>=` 作为发布锁定。
 - 必须验证 platform plugin、styles、imageformats、translations、QSS、图标和 offscreen 插件。
 - 必须用干净虚拟环境防止 PyInstaller 混用系统 PySide6/Shiboken。
 - 在 LGPL/GPL/商业许可方案批准前，不得对外发布 Qt 构建。
 
 ## 锁定与更新
 
-- 目标态使用 `pyproject.toml` 作为元数据真源，并提交解析锁文件。
+- 当前 `pyproject.toml` 精确钉住直接运行、开发和构建依赖；尚无包含全部传递依赖及哈希的解析锁文件。不得把直接版本钉住或 PyInstaller `--clean` 宣称为依赖解析完全可复现；完整解析锁定仍是发布准备项。
 - 自动升级只能提出变更，不能自动合并或发布。
 - 依赖更新必须跑完整门禁，并比较包体、启动、内存和视觉结果。
 

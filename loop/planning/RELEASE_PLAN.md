@@ -9,10 +9,10 @@
 
 ## 产物
 
-- `dist/股市锦囊.exe`
+- `dist/股市锦囊/股市锦囊.exe` 及整个应用目录（onedir，ADR-0004）
 - `dist/使用说明.html`
-- SHA-256
-- SBOM 与依赖许可清单
+- `dist/RELEASE_MANIFEST.json`：除清单自身外的完整交付文件 SHA-256
+- `dist/SBOM.json`、`dist/THIRD_PARTY_NOTICES.md`、`dist/licenses/`
 - 构建元数据、self-test 和 Windows 冒烟报告
 
 ## 人工门禁

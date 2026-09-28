@@ -4,7 +4,7 @@
 
 ## 硬性约束
 
-- **GUI 栈就是 PySide6。** ADR-0001 的 Tkinter→PySide6 Widgets 迁移（REQ-011/012/013）已由 **WI-023 完成**：`main.py` → `ui/app.run_gui` → `qt_app.app.run_qt_gui`，Tkinter 生产层（10 个文件）已删除，生产源零 `tkinter` import 由 TEST-ARCH-002 的 AST 全量扫描机器强制。新界面代码一律写在 `src/qt_app/`；`ui/` 只保留与框架无关的展示层，`ui/theme.py` 仍是 token 单一真源。
+- **GUI 栈就是 PySide6。** ADR-0001 的 Tkinter→PySide6 Widgets 迁移（REQ-011/012/013）已由 **WI-023 完成**：`main.py` → `ui/app.run_gui` → `qt_app.app.run_qt_gui`，Tkinter 生产层（10 个文件）已删除，生产源零 `tkinter` import 由 TEST-ARCH-002 的 AST 全量扫描机器强制。新界面代码一律写在 `src/qt_app/`；`ui/` 保留共享展示逻辑和薄入口，设计 token 真源是 `loop/product/tokens.json`。
 - **运行期依赖只有 PySide6-Essentials**，它在 `pyproject.toml` 的 `[project].dependencies` 里（WI-025 随出货一并移入）。除它以外一律只用标准库（`urllib`、`json`、`csv`、`decimal`、`threading`）。**新增其它运行期第三方依赖仍然不允许**——每加一个都要重做许可证、SBOM 与打包体积的论证。
   - 领域内核（`domain/` 12 个模块）连 PySide6 和 `urllib` 都不许 import，由 G-CORE 门禁静态强制。Qt 是应用的依赖，不是模型的依赖。
 - **构建期唯一依赖是 PyInstaller**，精确钉在 `pyproject.toml` 的 `[dependency-groups].build` 里（与 dev/gui 同一机制），装法 `python -m pip install --group build`。构建依赖必须钉死版本：交付物可复现性取决于它。
@@ -23,7 +23,7 @@
 - **条件预警**：`alerts.check_rules` 是**边沿触发纯函数**（条件假→真才触发，回落复位）；周期监控由 `qt_app/controllers/alert_controller.py` 的 `QTimer` 驱动（默认 60000 ms，见 `AlertController.start`），每轮在 worker 线程跑、结果经队列信号回 GUI 线程判定，仅程序开启时生效。
 - **持久化写到 `%APPDATA%\StockAdvisor\config.json`**（应用自身运行态：自选股/持仓、本金、档位、预设），非项目产物；读坏/不可写都回退默认且不崩溃。测试经环境变量 `STOCK_ADVISOR_CONFIG` 指向临时文件隔离，**严禁让测试写真实 %APPDATA%**。
 - **测量与决策分离**：`engine.measure()` 产出客观 `Measurement`（与档位无关）；`policy.decide(m, level)` 按 5 档决策强度翻译为买/持/卖与仓位；`engine.analyze_stock(..., level)` 是二者的薄包装，默认 L3「标准」复现既有行为。改档只对缓存的 `Measurement` 重判，不重新联网。
-- `data_provider.py` 是唯一做网络请求的模块；解析函数（`parse_*`）保持纯函数以便单测。
+- 网络接入只在 `data/`：`data_provider.py` 保留解析与兼容 provider，生产由 `bounded_adapter.py` 配合 `bounded_transport.py` 提供有界请求；解析函数（`parse_*`）保持纯函数以便单测。
 - `workflow.py` 负责编排（个股分析、全市场选股），通过 Protocol 接收 provider，便于用 FakeProvider 测试；回传 `Measurement` 供界面改档重判。
 - 界面层只负责呈现与编排：`qt_app/pages/` 是薄视图，异步与取消在 `qt_app/controllers/`，业务判断一律留在 `domain`/`services`。可测的几何/格式化逻辑（`chart.py` K 线几何、`ui/view_format.py` 格式化）都是模块级纯函数。
 - 配色为 A 股本土习惯：红=涨/买/积极，绿=跌/卖/谨慎。**色值真源是 `loop/product/tokens.json`**（带 WCAG 对比度实测），Qt 侧经 `qt_app/theme/tokens.py` 读取生成 QSS；`ui/theme.py` 只留少数非 Qt 路径（说明书 HTML、纯函数格式化）仍在用的色值，新增颜色一律加进 tokens.json。

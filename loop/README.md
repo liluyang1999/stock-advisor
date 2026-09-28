@@ -85,7 +85,7 @@ python main.py --self-test
 python -m compileall -q main.py scripts src
 ```
 
-PySide6、pytest-qt、Ruff、pyright、覆盖率、Qt GUI 与打包门在工具链工作项完成前保持未启用/未验证，不能提前声称通过。
+当前已启用八项开发门禁（含格式、静态分析、类型、测试、覆盖率与 Qt 能力面）。执行 `python loop/scripts/run_gates.py --strict`；完整发布门禁和人工签署另见 `quality/RELEASE_READINESS.md`，不能由开发门禁全绿代替。
 
 ## 不可妥协原则（INVARIANTS）
 

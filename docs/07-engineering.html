@@ -79,7 +79,7 @@ RUN_GATES_OK ran=1 failed=0 skipped=1</code></pre>
 <h3>覆盖率的正确用法</h3>
 <div class="note">
   <code>coverage report --fail-under=85</code> 比较的是<strong>语句+分支的合并值</strong>，
-  它并不断言你文档里写的那四个阈值中的任何一个。本项目改用自己的检查脚本，
+  它不能分别证明各项语句与分支阈值达标。本项目改用自己的检查脚本，
   <strong>逐维度</strong>断言：整体语句 ≥ 90%、整体分支 ≥ 85%、核心语句 ≥ 95%、核心分支 ≥ 90%。
   <br><br>
   另外：<strong>高覆盖率不等于测得好</strong>。死代码被它自己的测试覆盖到 100%，
@@ -222,6 +222,10 @@ PySide6-Essentials              = 202.2 MB
 <p><code>--self-test</code> 主要检查领域和编排，不会加载完整 Qt 界面。还要从交付目录启动 GUI，检查退出状态与错误输出。仅看到进程仍在，也可能只是错误窗口尚未退出。</p>
 <p>本轮实测曾发现：打包器从开发终端的 <code>PATH</code> 收进别的工具的 ICU、OpenSSL 和兼容 DLL，造成 QtCore 加载失败。构建脚本现在只给 Windows 打包子进程提供 Python 与 Windows 系统目录；Qt 自身依赖仍由 PyInstaller 的 Qt 钩子收集。它不修改系统 PATH，也不靠删除用户安装的软件解决问题。</p>
 <p>排查顺序是：先看 <code>build/</code> 中的依赖来源，再清洁重建；最后验证 EXE 自检、真实 GUI 启动、清单哈希和来源提交。依赖版本相同，并不能单独证明打包内容相同。</p>
+
+<h2>交付清单要覆盖整份交付</h2>
+<p>应用目录外的说明书、SBOM、第三方声明和许可证也是交付的一部分。清单生成后，<code>--verify</code> 会重新计算这些文件的 SHA-256，并拒绝缺失、改动或多出的文件。只检查 EXE 和 DLL，会漏掉被删除的许可证和遗留错误日志。</p>
+<p>清单格式 1.1 补齐了这些文件的基线；旧清单需核对构建来源后重新生成。清单本身不能给自己作真实性担保，应从可信渠道取得。它也不能替代漏洞审查、代码签名和人工发布验收，当前进度见<a href="../loop/quality/RELEASE_READINESS.md">发布就绪检查</a>。</p>
 
 <nav class="crumbs bottom">
   <a href="06-data-quality.html">← 上一篇</a> · <a href="index.html">首页</a> · <a href="08-technical-stack-report.html">下一篇：技术栈报告 →</a>

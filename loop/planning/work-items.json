@@ -837,9 +837,10 @@
         "TEST-REL-001"
       ],
       "evidence_ids": [
-        "EVD-REL-001"
+        "EVD-REL-001",
+        "EVD-LOOP-019"
       ],
-      "next_action": "补齐 licenses/GPL-3.0.txt 后由人签 HG-LICENSE → HG-PACKAGING → HG-RELEASE",
+      "next_action": "许可证正文已齐；本轮完善交付清单校验。仍需完整依赖/安全证据、目标机与签名方案、发布追溯及五次完整发布门禁，最后 HG-LICENSE → HG-PACKAGING → HG-RELEASE 人工签署。见 quality/RELEASE_READINESS.md。",
       "size": "S",
       "definition_of_done": "requirement/evidence traceability is 100%, dependency license/SBOM/hash/rollback artifacts are ready, five consecutive full-green gate runs are recorded, and the human release gate is approved (AC-008/AC-010)."
     },
@@ -1122,7 +1123,7 @@
       "definition_of_done": "控制器与编排消费 TransportOutcome 而非捕获异常，分页完整度对用户可见（残缺的全市场会在界面上自报），且既有降级行为不回退。",
       "scope_out": [
         "QNetworkAccessManager 传输本身——那是 ADR-0003 的终态，另行推进",
-        "背景：WI-026 造好并以 28 个离屏用例验完整个故障矩阵，但应用仍走 EastmoneyProvider，因此总 deadline、协作取消与分页完整度这三项目前只在适配器里成立、未惠及用户。切换要改控制器的错误处理形状，属独立工作项。"
+        "历史背景：WI-026 当时只完成适配器；WI-033 已完成生产接线，当前实现见 next_action，仍待人工复核。"
       ]
     },
     {

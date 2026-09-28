@@ -1,0 +1,168 @@
+2026-09-28 readiness and cleanup verification
+
+Status: product, documentation and independent development-gate verification complete. Final clean-commit packaging follows this evidence commit and is identified by the dist manifest; no release approval is claimed.
+
+Observed defects: the previous verifier ignored license/SBOM/NOTICE changes and root junk; regression run failed (7 failures/3 errors), followed by two source/component rejection failures. All were corrected without weakening tests.
+
+Initial product suite raw summary:
+Ran 919 tests in 124.199s
+
+OK
+
+Coverage: overall 96.04/91.20%, core 99.33/98.39%, Qt controllers 99.43/95.83% (statement/branch), all six thresholds pass.
+
+Release traceability (--release): exit 1; 34 requirements remain verifying. Development pass is not release acceptance.
+Authenticode status of existing delivery: NotSigned.
+
+Cleanup: 18 unreferenced obsolete generated review diff snapshots removed from .superpowers/sdd; 618574 bytes. User IDE settings, environment, source, teaching concepts and historical rationale retained. Full temporary build/test cleanup will follow final verification.
+
+Current docs corrected: onedir paths, Python 3.14 floor, installed pins, completed license texts, dependency-lock/security gaps, full manifest coverage and unsigned distribution disclosure.
+
+Final metadata follow-up: two new regression methods first failed on six counterexamples, then all 25 manifest tests passed. Final full suite: Ran 921 tests in 111.600s
+
+OK
+
+
+Independent review and strict gates, sealed 2026-09-28T23:02:30+09:00:
+INDEPENDENT_COMMAND 01 exit=0 python loop/scripts/validate_loop.py
+INDEPENDENT_COMMAND 02 exit=0 python loop/scripts/check_traceability.py
+INDEPENDENT_COMMAND 03 exit=0 python loop/scripts/render_status.py --check
+INDEPENDENT_COMMAND 04 exit=0 python loop/scripts/render_backlog.py --check
+INDEPENDENT_COMMAND 05 exit=0 python loop/scripts/check_core_boundaries.py
+INDEPENDENT_COMMAND 06 exit=0 python -m unittest discover -s loop/tests
+[G-LOOP     ] PASS
+INDEPENDENT_COMMAND 07 exit=0 python -m ruff format --check .
+[G-FORMAT   ] PASS
+INDEPENDENT_COMMAND 08 exit=0 python -m ruff check .
+[G-LINT     ] PASS
+INDEPENDENT_COMMAND 09 exit=0 python -m pyright
+[G-TYPE     ] PASS
+INDEPENDENT_COMMAND 10 exit=0 python -m unittest discover -s tests
+INDEPENDENT_COMMAND 11 exit=0 python main.py --self-test
+[G-CORE     ] PASS
+INDEPENDENT_COMMAND 12 exit=0 python -m coverage run -m unittest discover -s tests
+INDEPENDENT_COMMAND 13 exit=0 python -m coverage json -q -o build/coverage.json
+INDEPENDENT_COMMAND 14 exit=0 python loop/scripts/check_coverage.py build/coverage.json
+[G-COVERAGE ] PASS
+INDEPENDENT_COMMAND 15 exit=0 python -m unittest tests.test_export_security
+INDEPENDENT_COMMAND 16 exit=0 python -m unittest tests.test_qt_export_security
+[G-SECURITY ] PASS
+INDEPENDENT_COMMAND 17 exit=0 python loop/scripts/check_capability_surface.py
+[G-SURFACE  ] PASS
+RUN_GATES_OK ran=8 failed=0 skipped=0
+
+Each command was independently rerun with raw stdout/stderr and exit status. Final evidence-only metadata closure is rechecked with G-LOOP.
+
+Browser visual review limitation: local file:// page open was rejected by browser security policy; no bypass attempted. All six local docs navigation/resource/anchor tests pass; a new browser visual approval is not claimed.
+
+Final fast-gate raw output:
+[G-FORMAT   ] PASS
+[G-LINT     ] PASS
+[G-TYPE     ] PASS
+[G-SECURITY ] PASS
+[G-SURFACE  ] PASS
+RUN_GATES_OK ran=5 failed=0 skipped=0
+
+Final independent follow-up:
+Independent follow-up: PASS
+
+Scope: scripts/make_release_manifest.py and tests/test_release_manifest.py.
+Targeted unittest: exit 0; 25 tests.
+Independent metadata probes: 13/13 expected outcomes.
+Cases include missing/duplicate/installed-only components, missing/empty version, unsupported schema, three source fields, BUILD_INFO mismatch with otherwise consistent file/tree hashes, incorrect tree digest, valid delivery, and archived rollback.
+Reviewed-file hashes unchanged: True.
+No tracked files were edited. No full GUI/coverage suite or G-LOOP closure was run. Prior loop counts were not treated as a failure or a fresh result. Formal release approval is outside this review.
+
+Task-local raw follow-up files were reviewed before cleanup; the retained report, outcomes and reviewed-file hashes are embedded here.
+
+Reviewed-file SHA-256:
+{
+  "scripts/make_release_manifest.py": "cfa66a3e517fce475a2861996a19c24429039208276d25d7e53223ca9a6386c9",
+  "tests/test_release_manifest.py": "958b4096f6e8505e47f33d9dc1266212b5b6c48e2056d2e8107f9754f41bab2c"
+}
+
+Independent raw product summary:
+Ran 919 tests in 88.805s
+
+OK
+
+
+Final control-plane closure: python -B loop/scripts/run_gates.py --strict --gate G-LOOP
+[G-LOOP     ] PASS
+RUN_GATES_OK ran=1 failed=0 skipped=0
+
+Obsolete generated scratch snapshots removed (names and bytes):
+[
+  {
+    "Name": "final-review-diff.txt",
+    "Length": 95136
+  },
+  {
+    "Name": "p2-final-review-diff.txt",
+    "Length": 134586
+  },
+  {
+    "Name": "review-175b619..dc7fee7.diff",
+    "Length": 14791
+  },
+  {
+    "Name": "review-29cbe13..175b619.diff",
+    "Length": 5785
+  },
+  {
+    "Name": "review-2faf686..459c939.diff",
+    "Length": 24785
+  },
+  {
+    "Name": "review-44f91fe..0b53672.diff",
+    "Length": 16350
+  },
+  {
+    "Name": "review-46cc3e9..91f5bbb.diff",
+    "Length": 18912
+  },
+  {
+    "Name": "review-61126ac..46cc3e9.diff",
+    "Length": 12699
+  },
+  {
+    "Name": "review-91f5bbb..e42b69b.diff",
+    "Length": 43515
+  },
+  {
+    "Name": "review-a43499d..2faf686.diff",
+    "Length": 16811
+  },
+  {
+    "Name": "review-a95b8a9..e03eb95.diff",
+    "Length": 13914
+  },
+  {
+    "Name": "review-b19d070..f8c5d02.diff",
+    "Length": 20305
+  },
+  {
+    "Name": "review-dc7fee7..a43499d.diff",
+    "Length": 22277
+  },
+  {
+    "Name": "review-deb1560..61126ac.diff",
+    "Length": 7518
+  },
+  {
+    "Name": "review-deb1560..a66e1e3.diff",
+    "Length": 100870
+  },
+  {
+    "Name": "review-e42b69b..a95b8a9.diff",
+    "Length": 27631
+  },
+  {
+    "Name": "review-f8c5d02..44f91fe.diff",
+    "Length": 16892
+  },
+  {
+    "Name": "task-8-diff.txt",
+    "Length": 25797
+  }
+]

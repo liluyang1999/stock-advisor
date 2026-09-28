@@ -230,6 +230,102 @@ class ReleaseManifestTests(unittest.TestCase):
 
         self.assertEqual(self._run_args(["--verify"]), 2)
 
+    def test_verify_protects_licenses_sbom_and_notices(self):
+        self.staged.write_all_licenses()
+        for name in (
+            "licenses/GPL-3.0.txt",
+            "licenses/LGPL-3.0.txt",
+            "SBOM.json",
+            "THIRD_PARTY_NOTICES.md",
+        ):
+            with self.subTest(path=name):
+                self.assertEqual(self._run(), 0)
+                path = self.staged.dist / name
+                original = path.read_bytes()
+                path.write_bytes(original + b" changed")
+                self.assertEqual(self._run_args(["--verify"]), 1)
+                path.unlink()
+                self.assertEqual(self._run_args(["--verify"]), 1)
+
+    def test_root_junk_is_rejected_by_verification_and_generation(self):
+        self.staged.write_all_licenses()
+        self.assertEqual(self._run(), 0)
+        (self.staged.dist / "old-error.log").write_text("obsolete", encoding="utf-8")
+        self.assertEqual(self._run_args(["--verify"]), 1)
+        self.assertEqual(self._run(), 1)
+
+    def test_incomplete_delivery_cannot_pass_verification(self):
+        self.assertEqual(self._run(), 1)
+        self.assertEqual(self._run_args(["--verify"]), 1)
+
+    def test_unknown_runtime_components_cannot_produce_a_complete_manifest(self):
+        self.staged.write_all_licenses()
+        with mock.patch.object(
+            rel,
+            "_collect_components",
+            return_value=[{"name": "PySide6-Essentials", "installed": False}],
+        ):
+            self.assertEqual(self._run(), 1)
+        self.assertEqual(self._run_args(["--verify"]), 1)
+
+    def test_rejected_source_cannot_later_pass_verification(self):
+        self.staged.write_all_licenses()
+        self.staged.write_build_info("0" * 40)
+        self.assertEqual(self._run(), 1)
+        self.assertEqual(self._run_args(["--verify"]), 1)
+
+    def test_missing_manual_is_not_a_complete_delivery(self):
+        self.staged.write_all_licenses()
+        (self.staged.dist / "使用说明.html").unlink()
+        self.assertEqual(self._run(), 1)
+
+    def test_malformed_manifest_reports_failure_without_traceback(self):
+        self.staged.write_all_licenses()
+        for contents in ("not json", "[]", '{"artifacts": {"files": [{}]}}'):
+            with self.subTest(contents=contents):
+                rel.MANIFEST_PATH.write_text(contents, encoding="utf-8")
+                self.assertEqual(self._run_args(["--verify"]), 1)
+
+    def test_verify_requires_all_runtime_components_and_versions(self):
+        self.staged.write_all_licenses()
+        for defect in (
+            "missing_component",
+            "missing_version",
+            "empty_version",
+            "installed_only",
+            "duplicate",
+        ):
+            with self.subTest(defect=defect):
+                self.assertEqual(self._run(), 0)
+                manifest = self._manifest()
+                if defect == "missing_component":
+                    manifest["components"].pop()
+                elif defect == "missing_version":
+                    manifest["components"][0].pop("version")
+                elif defect == "installed_only":
+                    manifest["components"] = [{"installed": True}]
+                elif defect == "duplicate":
+                    manifest["components"].append(dict(manifest["components"][0]))
+                else:
+                    manifest["components"][0]["version"] = ""
+                rel.MANIFEST_PATH.write_text(json.dumps(manifest), encoding="utf-8")
+                self.assertEqual(self._run_args(["--verify"]), 1)
+
+    def test_verify_rejects_inconsistent_source_digest_and_unknown_schema(self):
+        self.staged.write_all_licenses()
+        for defect in ("source", "tree_digest", "schema"):
+            with self.subTest(defect=defect):
+                self.assertEqual(self._run(), 0)
+                manifest = self._manifest()
+                if defect == "source":
+                    manifest["source"]["build_commit"] = "0" * 40
+                elif defect == "tree_digest":
+                    manifest["artifacts"]["tree_sha256"] = "0" * 64
+                else:
+                    manifest["schema_version"] = "999"
+                rel.MANIFEST_PATH.write_text(json.dumps(manifest), encoding="utf-8")
+                self.assertEqual(self._run_args(["--verify"]), 1)
+
     def test_manifest_records_the_source_commit_so_a_build_is_traceable(self):
         self.staged.write_all_licenses()
 
