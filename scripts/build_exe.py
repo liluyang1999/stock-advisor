@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
 import subprocess
 import sys
+from importlib import metadata
 from pathlib import Path
 
 APP_NAME = "AStockIntradayAdvisor"
@@ -16,6 +18,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]  # scripts/ 的上一级才�
 BUILD_DIR = PROJECT_ROOT / "build"
 DIST_DIR = PROJECT_ROOT / "dist"
 PYI_DIST_DIR = BUILD_DIR / "pyinstaller"  # PyInstaller 原始产物，留在 build/ 内
+WORK_DIR = BUILD_DIR / "pyinstaller-work"
 ENTRY = PROJECT_ROOT / "main.py"
 ICON_PATH = PROJECT_ROOT / "assets" / "a_stock_strategy.ico"
 # 设计 token 真源随包分发：打包后仓库路径不存在，Qt 主题只能从 assets/ 取（ui.assets.tokens_path）。
@@ -42,15 +45,21 @@ def _pyinstaller_environment() -> dict[str, str]:
 
 
 def main() -> int:
+    if not _source_is_clean():
+        print("BUILD_REFUSED 源码必须是干净的 Git 提交，才能标注交付来源。", file=sys.stderr)
+        return 2
+    starting_commit = _git_commit()
     if not _pyinstaller_available():
         print(
             "PyInstaller is not installed. Run: python -m pip install pyinstaller", file=sys.stderr
         )
         return 2
 
-    _remove_dir(BUILD_DIR)
+    _remove_dir(PYI_DIST_DIR)
+    _remove_dir(WORK_DIR)
     _remove_dir(DIST_DIR)
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
+    WORK_DIR.mkdir(parents=True, exist_ok=True)
     DIST_DIR.mkdir(parents=True, exist_ok=True)
 
     command = [
@@ -89,9 +98,9 @@ def main() -> int:
         "--distpath",
         str(PYI_DIST_DIR),
         "--workpath",
-        str(BUILD_DIR),
+        str(WORK_DIR),
         "--specpath",
-        str(BUILD_DIR),
+        str(WORK_DIR),
         str(ENTRY),
     ]
     subprocess.run(command, cwd=PROJECT_ROOT, env=_pyinstaller_environment(), check=True)
@@ -111,12 +120,47 @@ def main() -> int:
     print(f"App written to: {target_dir}")
     print(f"  EXE: {target.name} ({size_mib:.1f} MiB); folder total {folder_mib:.1f} MiB")
 
+    if not _source_is_clean() or _git_commit() != starting_commit:
+        raise RuntimeError(
+            "Source changed during build; delivery cannot be attributed to a clean commit"
+        )
+    _write_runtime_metadata(target_dir)
     info_path = _write_build_info(target_dir)
     print(f"Build info written to: {info_path.name} (commit {_git_commit() or '未知'})")
 
     manual_path = _write_manual()
     print(f"Manual written to: {manual_path}")
     return 0
+
+
+def _write_runtime_metadata(target_dir: Path) -> None:
+    """Inventory actual native binaries without claiming a static-library SBOM."""
+    licenses = target_dir / "_internal" / "licenses"
+    licenses.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(Path(sys.base_prefix) / "LICENSE.txt", licenses / "Python-LICENSE.txt")
+    installer = metadata.distribution("pyinstaller")
+    copying = next(
+        file for file in installer.files or () if str(file).endswith("licenses/COPYING.txt")
+    )
+    shutil.copyfile(str(installer.locate_file(copying)), licenses / "PyInstaller-COPYING.txt")
+    inventory = {
+        "python": sys.version.split()[0],
+        "qt_for_python": metadata.version("PySide6-Essentials"),
+        "pyinstaller_bootloader": metadata.version("pyinstaller"),
+        "scope": "Actual shipped EXE/DLL/PYD files; statically embedded third-party components need upstream SBOM review separately.",
+        "native_files": [
+            {
+                "path": file.relative_to(target_dir).as_posix(),
+                "bytes": file.stat().st_size,
+                "sha256": hashlib.sha256(file.read_bytes()).hexdigest(),
+            }
+            for file in sorted(target_dir.rglob("*"))
+            if file.is_file() and file.suffix.lower() in {".dll", ".pyd", ".exe"}
+        ],
+    }
+    (target_dir / "RUNTIME_INVENTORY.json").write_text(
+        json.dumps(inventory, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
 
 
 def _write_build_info(target_dir: Path) -> Path:
@@ -130,6 +174,9 @@ def _write_build_info(target_dir: Path) -> Path:
         "commit": _git_commit(),
         "python": sys.version.split()[0],
         "packaging_mode": "onedir (ADR-0004)",
+        "build_lock_sha256": hashlib.sha256(
+            (PROJECT_ROOT / "requirements" / "build-windows.lock").read_bytes()
+        ).hexdigest(),
     }
     path = target_dir / "BUILD_INFO.json"
     path.write_text(json.dumps(info, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -148,6 +195,55 @@ def _git_commit() -> str | None:
     except OSError:
         return None
     return result.stdout.strip() or None if result.returncode == 0 else None
+
+
+def _source_is_clean() -> bool:
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "-c",
+                "core.excludesFile=/dev/null",
+                "status",
+                "--porcelain",
+                "--untracked-files=normal",
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0 or result.stdout.strip() or _git_commit() is None:
+            return False
+        ignored = subprocess.run(
+            [
+                "git",
+                "ls-files",
+                "--others",
+                "--ignored",
+                "--exclude-standard",
+                "--",
+                "src",
+                "main.py",
+                "scripts",
+                "assets",
+                "loop/product",
+                "requirements",
+                "pyproject.toml",
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        # A local info/exclude rule must not hide executable/importable build inputs.
+        return ignored.returncode == 0 and not any(
+            Path(name).suffix.lower()
+            in {".py", ".pyw", ".pyd", ".dll", ".json", ".ico", ".toml", ".lock"}
+            for name in ignored.stdout.splitlines()
+        )
+    except OSError:
+        return False
 
 
 def _write_manual() -> Path:
@@ -173,8 +269,12 @@ def _pyinstaller_available() -> bool:
 def _remove_dir(path: Path) -> None:
     resolved = path.resolve()
     project = PROJECT_ROOT.resolve()
-    if project not in resolved.parents and resolved != project:
-        raise RuntimeError(f"Refusing to remove path outside project: {resolved}")
+    if (
+        path.is_symlink()
+        or path.is_junction()
+        or not (resolved == project / "dist" or project / "build" in resolved.parents)
+    ):
+        raise RuntimeError(f"Refusing to remove unmanaged path: {resolved}")
     if path.exists():
         shutil.rmtree(path)
 

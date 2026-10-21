@@ -252,6 +252,7 @@ def format_results_for_clipboard(results: list[AnalysisResult]) -> str:
             "建议仓位",
             "预测说明",
             "主要依据",
+            "数据来源与时效",
         ]
     )
     for result in results:
@@ -263,6 +264,7 @@ def format_results_for_clipboard(results: list[AnalysisResult]) -> str:
                     _fmt_whole_percent(result.suggested_position),
                     result.forecast_label,
                     "；".join(result.reasons[:3]),
+                    result.data_note,
                 ]
             )
         )
@@ -287,6 +289,7 @@ def format_results_as_csv(results: list[AnalysisResult]) -> str:
             "预测说明",
             "主要依据",
             "风险提示",
+            "数据来源与时效",
         ]
     )
     for result in results:
@@ -299,6 +302,7 @@ def format_results_as_csv(results: list[AnalysisResult]) -> str:
                     result.forecast_label,
                     "；".join(result.reasons[:3]),
                     "；".join(result.risks[:3]),
+                    result.data_note,
                 ]
             )
         )

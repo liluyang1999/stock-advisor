@@ -6,7 +6,7 @@
 
 - **GUI 栈就是 PySide6。** ADR-0001 的 Tkinter→PySide6 Widgets 迁移（REQ-011/012/013）已由 **WI-023 完成**：`main.py` → `ui/app.run_gui` → `qt_app.app.run_qt_gui`，Tkinter 生产层（10 个文件）已删除，生产源零 `tkinter` import 由 TEST-ARCH-002 的 AST 全量扫描机器强制。新界面代码一律写在 `src/qt_app/`；`ui/` 保留共享展示逻辑和薄入口，设计 token 真源是 `loop/product/tokens.json`。
 - **运行期依赖只有 PySide6-Essentials**，它在 `pyproject.toml` 的 `[project].dependencies` 里（WI-025 随出货一并移入）。除它以外一律只用标准库（`urllib`、`json`、`csv`、`decimal`、`threading`）。**新增其它运行期第三方依赖仍然不允许**——每加一个都要重做许可证、SBOM 与打包体积的论证。
-  - 领域内核（`domain/` 12 个模块）连 PySide6 和 `urllib` 都不许 import，由 G-CORE 门禁静态强制。Qt 是应用的依赖，不是模型的依赖。
+  - 领域内核（`domain/` 13 个模块）连 PySide6 和 `urllib` 都不许 import，由 G-CORE 门禁静态强制。Qt 是应用的依赖，不是模型的依赖。
 - **构建期唯一依赖是 PyInstaller**，精确钉在 `pyproject.toml` 的 `[dependency-groups].build` 里（与 dev/gui 同一机制），装法 `python -m pip install --group build`。构建依赖必须钉死版本：交付物可复现性取决于它。
 - **不引入** Node、.NET、Electron、浏览器框架或其他非 Python 工具链。
 - **交付物是一个应用目录**：`dist/股市锦囊/`（onedir、windowed，内含 `股市锦囊.exe` 与 Qt 运行时），随构建附带一份 HTML 说明书 `dist/使用说明.html`。

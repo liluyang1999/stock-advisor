@@ -9,6 +9,7 @@
     {"path":"domain/models.py","layer":"domain_models"},
     {"path":"domain/symbols.py","layer":"domain"},
     {"path":"domain/engine.py","layer":"domain"},
+    {"path":"domain/history.py","layer":"domain"},
     {"path":"domain/policy.py","layer":"domain"},
     {"path":"domain/screener.py","layer":"domain"},
     {"path":"domain/presets.py","layer":"domain"},
@@ -21,7 +22,7 @@
   ],
   "notes":[
     "The manifest is the single machine authority for protected core modules.",
-    "All 12 protected modules live under domain/ (src package restructure, ADR-0007); forbidden_internal_modules now names the impure subpackages (data/services/ui/qt_app) rather than individual module filenames, since a domain/ module's cross-package relative import resolves to from ..<subpackage>.<mod> and the checker inspects only the first path component.",
+    "All 13 protected modules live under domain/ (src package restructure, ADR-0007); forbidden_internal_modules now names the impure subpackages (data/services/ui/qt_app) rather than individual module filenames, since a domain/ module's cross-package relative import resolves to from ..<subpackage>.<mod> and the checker inspects only the first path component.",
     "workflow.py (now services/workflow.py) remains application orchestration and must move provider exceptions behind a future port in WI-007/WI-009."
   ]
 }

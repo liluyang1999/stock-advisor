@@ -333,7 +333,7 @@ class ScreenerPage(QtWidgets.QWidget):
             "" if report.completeness.is_complete else "（⚠ 全市场分页不完整，以下为部分结果）"
         )
         if report.cancelled:
-            self.run_status.setText("已停止")
+            self.run_status.setText(f"已停止{partial}")
         elif not report.recommendations:
             # 零命中不是"什么都没发生"：它是一个要用户改条件的结果。老版在这里明确说了放宽哪
             # 一类条件，拆成 Qt 页后这句话丢了，页面只剩一行"推荐 0 只"和一张空表。

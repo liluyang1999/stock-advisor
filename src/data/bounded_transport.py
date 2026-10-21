@@ -54,15 +54,16 @@ from .data_provider import (
     SINA_QUOTE_URL,
     TENCENT_FQ_HISTORY_URL,
     TENCENT_HISTORY_URL,
+    HistoryResponse,
     MarketDataError,
     _clist_total,
     parse_clist_payload,
     parse_fund_flow_payload,
-    parse_history_payload,
+    parse_history_response,
     parse_quote_payload,
-    parse_sina_history_payload,
+    parse_sina_history_response,
     parse_sina_quote_payload,
-    parse_tencent_history_payload,
+    parse_tencent_history_response,
 )
 
 # 单次请求的超时上界。实际用的是它与 deadline 剩余预算的较小者——总预算收紧时，单次请求也得跟着收紧，
@@ -163,37 +164,47 @@ class BoundedUrllibProvider:
         budget = self._deadline(deadline)
         limit = max(1, int(limit))
 
-        def eastmoney() -> list[DailyBar]:
+        def eastmoney() -> HistoryResponse:
             payload = self._get(HISTORY_URL.format(secid=symbol.secid, limit=limit), budget)
-            return _require_rows(parse_history_payload(payload), "东方财富历史日线为空")
+            return _require_rows(parse_history_response(payload), "东方财富历史日线为空")
 
-        def sina() -> list[DailyBar]:
+        def sina() -> HistoryResponse:
             payload = self._get(
                 SINA_HISTORY_URL.format(symbol=symbol.normalized, limit=limit),
                 budget,
                 headers={"Referer": "https://finance.sina.com.cn/"},
                 encoding="gb18030",
             )
-            return _require_rows(parse_sina_history_payload(payload), "新浪历史日线为空")
+            return _require_rows(parse_sina_history_response(payload), "新浪历史日线为空")
 
-        def tencent(url_template: str) -> Callable[[], list[DailyBar]]:
-            def call() -> list[DailyBar]:
+        def tencent(url_template: str) -> Callable[[], HistoryResponse]:
+            def call() -> HistoryResponse:
                 payload = self._get(
                     url_template.format(symbol=symbol.normalized, limit=limit), budget
                 )
                 return _require_rows(
-                    parse_tencent_history_payload(symbol, payload), "腾讯历史日线为空"
+                    parse_tencent_history_response(symbol, payload), "腾讯历史日线为空"
                 )
 
             return call
 
-        attempts: list[Attempt[list[DailyBar]]] = [
+        attempts: list[Attempt[HistoryResponse]] = [
             _guarded("eastmoney", eastmoney),
             _guarded("sina", sina),
             _guarded("tencent_fq", tencent(TENCENT_FQ_HISTORY_URL)),
             _guarded("tencent", tencent(TENCENT_HISTORY_URL)),
         ]
-        return run_with_contract(attempts, deadline=budget, cancel_token=cancel_token)
+        outcome = run_with_contract(attempts, deadline=budget, cancel_token=cancel_token)
+        if outcome.succeeded and outcome.data is not None:
+            return TransportOutcome.ok(
+                outcome.data.rows, attempts=outcome.attempts, notes=outcome.data.notes
+            )
+        return TransportOutcome.failed(
+            outcome.error_class or "unknown",
+            outcome.message,
+            cancelled=outcome.cancelled,
+            attempts=outcome.attempts,
+        )
 
     def fetch_fund_flow(
         self,
@@ -224,8 +235,8 @@ class BoundedUrllibProvider:
 
     def fetch_market_snapshot(
         self,
-        page_size: int = 500,
-        max_pages: int = 20,
+        page_size: int = 100,
+        max_pages: int = 100,
         *,
         deadline: Deadline | None = None,
         cancel_token: CancelToken = _NEVER_CANCELLED,
@@ -257,12 +268,42 @@ class BoundedUrllibProvider:
                     host, page_size, max_pages, budget, cancel_token
                 )
             except TransportError as exc:
+                if cancel_token.is_cancelled():
+                    return TransportOutcome.failed(
+                        "network",
+                        "已取消",
+                        cancelled=True,
+                        attempts=tuple(tried),
+                        completeness=last_completeness,
+                    )
+                if budget.expired():
+                    return TransportOutcome.failed(
+                        "network",
+                        "操作超过总 deadline",
+                        attempts=tuple(tried),
+                        completeness=last_completeness,
+                    )
                 last_error = (exc.error_class, exc.message)
                 if exc.error_class != "network":
                     return TransportOutcome.failed(
                         exc.error_class, exc.message, attempts=tuple(tried)
                     )
                 continue
+            if cancel_token.is_cancelled():
+                return TransportOutcome.failed(
+                    "network",
+                    "已取消",
+                    cancelled=True,
+                    attempts=tuple(tried),
+                    completeness=last_completeness,
+                )
+            if budget.expired():
+                return TransportOutcome.failed(
+                    "network",
+                    "操作超过总 deadline",
+                    attempts=tuple(tried),
+                    completeness=last_completeness,
+                )
             if rows:
                 return TransportOutcome.ok(
                     rows, completeness=last_completeness, attempts=tuple(tried)
@@ -377,14 +418,14 @@ def _parse_page(payload: str) -> list[MarketSnapshot]:
         raise TransportError(classify_exception(exc), f"{type(exc).__name__}: {exc}") from exc
 
 
-def _require_rows(rows: list[DailyBar], message: str) -> list[DailyBar]:
+def _require_rows(rows: HistoryResponse, message: str) -> HistoryResponse:
     """空结果不是成功。
 
     归 network 而不是 parse，是因为分类在本合同里唯一的作用是"还该不该换源"：这个源没有数据，
     换一个很可能就有（原 provider 正是这么做的）。parse 表示的是"内容本身不合契约"，换源拿到的
     还是同样的坏内容——把空结果归进去会让备用源永远试不到。
     """
-    if not rows:
+    if not rows.rows:
         raise TransportError("network", message)
     return rows
 

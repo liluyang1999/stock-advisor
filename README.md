@@ -76,12 +76,10 @@ python -B -m unittest discover -s tests -p test_docs.py  # 仅检查教材导航
 ./build.sh           # Windows Git Bash；Windows 交付物须在 Windows 构建
 ```
 
-或手动执行：
+完整隔离入口（Windows x64 / Python 3.14.4，先提交源码并保持工作区干净）：
 
 ```bash
-python -m pip install --group build   # 唯一的构建期依赖 PyInstaller（版本已钉）
-python scripts/build_exe.py
-python scripts/make_release_manifest.py
+python -B scripts/package_app.py
 python scripts/make_release_manifest.py --verify
 ```
 
@@ -96,10 +94,10 @@ python scripts/make_release_manifest.py --verify
 
 构建完成后可执行 `dist\股市锦囊\股市锦囊.exe --self-test` 验证打包程序能启动并跑通核心逻辑。
 
-`build.bat` / `build.sh` 生成应用与说明书后，仍需在同一构建环境执行上面的清单生成与校验命令。
-清单覆盖应用、说明书、SBOM、第三方声明和两份许可证；多出的文件也会令校验失败。
-旧版清单没有覆盖这些配套文件，需在核对构建来源后重新生成，不能沿用旧的成功标记。
-还需启动真实 GUI：离线自检不会加载完整界面，不能替代 Windows 启动验证。
+`build.bat` / `build.sh` 会创建临时虚拟环境，按完整哈希锁安装依赖，并生成和校验全部交付文件。
+已有交付物保留到新构建与验证全部成功；失败时恢复。验证包括移走开发 Python/Qt 搜索路径后，
+从中文空格目录运行 EXE 自检与两次真实 Qt 窗口冒烟。详见[从源码到独立应用](docs/10-packaging.html)。
+这能验证当前机器的独立启动，视觉及目标设备人工验收仍有独立边界。
 
 当前构建未经代码签名。校验 SHA-256 能发现文件变化，不能单独证明发布者身份；请从可信来源取得清单，
 并保留系统安全检查。[发布就绪检查](loop/quality/RELEASE_READINESS.md)记录未完成条件，
@@ -123,7 +121,7 @@ observability/（数据与服务等层的日志辅助；纯领域内核不记日
 ```
 
 `domain/` 的纯度不是靠自觉，是**机器强制**的：`loop/scripts/check_core_boundaries.py`
-静态分析 12 个受保护核心模块的 import，越界即红（G-CORE 门禁；扫平后层名列入禁入根，
+静态分析 13 个受保护核心模块的 import，越界即红（G-CORE 门禁；扫平后层名列入禁入根，
 机制经变异验证——人为注入越层导入会立即变红）。
 
 ```
@@ -134,6 +132,7 @@ src/
     models.py                 数据结构（行情、K线、指标、快照、测量、决策、仓位、回测）
     money.py / numeric.py     金额与价格的 Decimal 表示（ADR-0013）；浮点解析的唯一入口
     symbols.py                代码规范化与市场号映射
+    history.py                日期校验、排序、重复冲突检测
     engine.py                 客观测量层 measure()（多因子评分），analyze_stock 薄包装
     policy.py                 决策层：5 档决策强度、decide/仓位/光谱
     backtest.py               可信度回测：同股历史信号事后复盘
@@ -217,6 +216,7 @@ loop/
 ```
 main.py                     程序入口（GUI / --self-test）
 scripts/                    工具脚本（不随应用分发）
+  package_app.py              隔离构建、失败恢复与独立启动验证
   build_exe.py                PyInstaller 打包（中间产物 build/，交付物 dist/）
   make_release_manifest.py    发布清单、第三方声明、SBOM 生成
   capture_ui.py               逐页截图供视觉评审：python scripts/capture_ui.py

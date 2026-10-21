@@ -8,10 +8,10 @@
   "active_milestone_id": "MS-08",
   "active_work_item_id": "WI-025",
   "iteration": 2,
-  "baseline_commit": "57e3d9cd8b7b8a01f22ca11179518b34ea26aa52",
+  "baseline_commit": "9b72dc33f931be3b6c8caf95be174e32b9977c1c",
   "branch": "codex/readiness-cleanup-20260928",
   "dirty_worktree": true,
-  "last_updated": "2026-09-28T23:02:30+09:00",
+  "last_updated": "2026-10-21T12:38:33+09:00",
   "completed_ids": [
     "WI-000",
     "WI-001",
@@ -52,9 +52,9 @@
     "WI-035"
   ],
   "next_actions": [
-    "本轮本地修复与文档已复核，记录见 EVD-LOOP-019；交付来源以 dist/RELEASE_MANIFEST.json 为准。",
-    "正式发布尚未就绪：人工签署、完整依赖/安全证据、目标机验收和发布追溯见 quality/RELEASE_READINESS.md。",
-    "本轮只提交本地主题分支，不自动合并、推送或发布。"
+    "本轮源码验收已完成：950项产品、59项工程测试及六维覆盖率通过；独立复核accept，见 EVD-LOOP-020。",
+    "此记录为提交前验证快照；最终交付来源以 dist/RELEASE_MANIFEST.json 和对应提交的三阶段远程CI为准。用户已授权 main 同步及已合并分支清理。",
+    "正式发布签署、静态组件SBOM及物理目标机人工验收仍按 RELEASE_READINESS.md 保留边界。"
   ],
   "blocker_ids": [],
   "risk_ids": [
@@ -70,13 +70,13 @@
     "RISK-010"
   ],
   "pending_decision_ids": [],
-  "latest_gate_run_id": "LOOP-20260928-001",
+  "latest_gate_run_id": "LOOP-20261021-001",
   "quality_summary": {
-    "tests_total": 921,
-    "tests_passed": 921,
+    "tests_total": 950,
+    "tests_passed": 950,
     "tests_failed": 0,
     "tests_skipped": 0,
-    "coverage": 0.9604264254563075,
+    "coverage": 0.9565972222222222,
     "qt_tests": 276,
     "release_ready": false
   },

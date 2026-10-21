@@ -1,6 +1,7 @@
 import sys
 import threading
 import unittest
+from datetime import date, timedelta
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -45,7 +46,7 @@ class FakeProvider:
             raise MarketDataError("history failed")
         return [
             DailyBar(
-                date=f"2026-06-{day + 1:02d}",
+                date=(date(2026, 6, 1) + timedelta(days=day)).isoformat(),
                 open=10 + day * 0.01,
                 close=10.02 + day * 0.01,
                 high=10.05 + day * 0.01,
@@ -187,7 +188,7 @@ class FakeMarketProvider:
     def fetch_history(self, symbol):
         return [
             DailyBar(
-                date=f"2026-06-{day + 1:02d}",
+                date=(date(2026, 6, 1) + timedelta(days=day)).isoformat(),
                 open=10 + day * 0.01,
                 close=10.02 + day * 0.01,
                 high=10.05 + day * 0.01,

@@ -18,7 +18,7 @@
     "test_runner": "unittest authoritative; pytest available for development",
     "runtime_font": "Microsoft YaHei",
     "candidate_versions": {
-      "PySide6": "6.11.1",
+      "PySide6": "6.12.0",
       "PyInstaller": "6.21.0",
       "pytest": "9.1.1",
       "pytest-qt": "4.5.0",

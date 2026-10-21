@@ -133,7 +133,7 @@ class WorkflowIntegrationTests(unittest.TestCase):
                     raise MarketDataError("history down")
                 return [
                     DailyBar(
-                        date=date(2026, 7, d),
+                        date=date(2026, 7, d).isoformat(),
                         open=Decimal("1670.00"),
                         close=Decimal("1680.00"),
                         high=Decimal("1690.00"),
@@ -143,7 +143,7 @@ class WorkflowIntegrationTests(unittest.TestCase):
                         pct_change=0.3,
                         turnover_rate=0.5,
                     )
-                    for d in range(1, 16)
+                    for d in range(1, 31)
                 ]
 
         return _P()

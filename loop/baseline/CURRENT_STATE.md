@@ -1,4 +1,6 @@
-# 当前状态基线
+# 历史迁移起点（2026-07-10）
+
+> 以下保留迁移前实测事实，不是当前产品状态。当前技术栈为 PySide6，参见 `../STATUS.md`、`../state/current.json` 和 `../quality/RELEASE_READINESS.md`；原始 test-baseline.json 同样仅描述 2026-07-10。
 
 ## 技术栈
 

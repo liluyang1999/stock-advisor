@@ -1,7 +1,7 @@
 {
   "$schema": "../schemas/metrics.schema.json",
   "schema_version": "1.0.0",
-  "updated_at": "2026-09-28T23:02:30+09:00",
+  "updated_at": "2026-10-21T12:38:33+09:00",
   "engineering": {
     "requirements_total": 34,
     "requirements_verified": 0,
@@ -22,24 +22,24 @@
     "independent_verification": true
   },
   "tests": {
-    "modules": 80,
-    "methods": 921,
-    "passed": 921,
+    "modules": 83,
+    "methods": 950,
+    "passed": 950,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
     "tk_specific": 0,
     "qt_specific": 276,
-    "duration_seconds": 111.6
+    "duration_seconds": 96.186
   },
   "coverage": {
-    "statement": 0.9604264254563075,
-    "branch": 0.9120498614958449
+    "statement": 0.9565972222222222,
+    "branch": 0.9054593874833555
   },
   "tooling": {
     "ci": true,
     "pyproject": true,
-    "lockfile": false,
+    "lockfile": true,
     "ruff": true,
     "pyright": true,
     "coverage": true,

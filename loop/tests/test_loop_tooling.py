@@ -64,7 +64,7 @@ class LoopToolingTests(unittest.TestCase):
     def test_protected_core_has_no_forbidden_imports(self) -> None:
         errors, stats = check_core_boundaries.check()
         self.assertEqual(errors, [])
-        self.assertEqual(stats["modules"], 12)
+        self.assertEqual(stats["modules"], 13)
 
     def test_core_boundary_parser_detects_relative_infrastructure_import(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

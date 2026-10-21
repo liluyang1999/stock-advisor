@@ -92,7 +92,18 @@ def backtest_steps(
             ok=False,
             message="回测参数无效：持有天数和预热样本需大于0，成本不能为负。",
         )
-    history = clean_history(history)
+    try:
+        history = clean_history(history)
+    except ValueError as exc:
+        return BacktestReport(
+            level=level,
+            horizon=horizon,
+            sample_size=0,
+            buy_hold_return=0.0,
+            note="历史日期无效",
+            ok=False,
+            message=str(exc),
+        )
     n = len(history)
     if n < warmup + horizon + 1:
         return BacktestReport(

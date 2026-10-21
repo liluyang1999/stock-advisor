@@ -73,7 +73,8 @@ Therefore:
 
 ## Environment note
 
-The project runs on the repo's Python (tests, gates, self-test); `.venv/` is a PyInstaller build
-sandbox (git-ignored), not the dev environment. CI provisions a fresh interpreter and installs the
-`dev` group. A single managed virtual environment holding all deps is a reasonable future
-convergence, but is out of scope for WS-8 (it would disturb the working run/build flow).
+The project runs under Python 3.14.4. Developers can use `.venv/` with the complete
+`requirements/dev-windows.lock`; CI installs this hash-locked set in a fresh Windows interpreter.
+Packaging always creates a separate disposable `build/package-env-*` environment from
+`requirements/build-windows.lock`, then removes it. It never reuses or edits a developer's `.venv/`.
+See `docs/10-packaging.html` for the teaching walkthrough and `scripts/package_app.py` for the entry point.

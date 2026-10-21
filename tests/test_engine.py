@@ -2,6 +2,7 @@ import math
 import sys
 import unittest
 from dataclasses import replace
+from datetime import date, timedelta
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -44,7 +45,7 @@ def make_history(start=10.0, step=0.1, days=80, volume=100000):
         close = price + step
         rows.append(
             DailyBar(
-                date=f"2026-04-{day + 1:02d}",
+                date=(date(2026, 4, 1) + timedelta(days=day)).isoformat(),
                 open=price,
                 close=close,
                 high=max(price, close) + 0.05,

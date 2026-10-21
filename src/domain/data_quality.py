@@ -43,6 +43,8 @@ class DataProvenance:
     source: str
     endpoint: str
     fallback_rank: int = 0
+    fetched_at: datetime | None = None
+    adjustment: str = ""
 
 
 @dataclass(frozen=True)

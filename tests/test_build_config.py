@@ -1,5 +1,7 @@
+import json
 import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -12,6 +14,52 @@ import build_exe
 
 
 class BuildConfigTests(unittest.TestCase):
+    def test_dirty_source_is_rejected_before_removing_outputs(self):
+        with patch.object(build_exe, "_source_is_clean", return_value=False, create=True):
+            with patch.object(build_exe, "_remove_dir") as remove:
+                with patch.object(build_exe, "_pyinstaller_available", return_value=True):
+                    with patch.object(build_exe.subprocess, "run"):
+                        self.assertEqual(build_exe.main(), 2)
+                remove.assert_not_called()
+
+    def test_cleanup_cannot_remove_project_root_or_source(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            source = root / "src"
+            source.mkdir()
+            with patch.object(build_exe, "PROJECT_ROOT", root):
+                for target in (root, source):
+                    with self.subTest(target=target):
+                        with self.assertRaises(RuntimeError):
+                            build_exe._remove_dir(target)
+                        self.assertTrue(source.is_dir())
+
+    def test_ignored_importable_source_is_not_a_clean_build(self):
+        from subprocess import CompletedProcess
+
+        with patch.object(build_exe, "_git_commit", return_value="a" * 40):
+            with patch.object(
+                build_exe.subprocess,
+                "run",
+                side_effect=[
+                    CompletedProcess([], 0, stdout=""),
+                    CompletedProcess([], 0, stdout="src/hidden.py\n"),
+                ],
+            ):
+                self.assertFalse(build_exe._source_is_clean())
+
+    def test_runtime_inventory_covers_native_files_and_carries_licenses(self):
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder)
+            (target / "sample.dll").write_bytes(b"example native payload")
+            build_exe._write_runtime_metadata(target)
+            info = json.loads((target / "RUNTIME_INVENTORY.json").read_text(encoding="utf-8"))
+            self.assertEqual(info["native_files"][0]["path"], "sample.dll")
+            self.assertEqual(len(info["native_files"][0]["sha256"]), 64)
+            self.assertEqual(info["native_files"][0]["bytes"], 22)
+            for name in ("Python-LICENSE.txt", "PyInstaller-COPYING.txt"):
+                self.assertGreater((target / "_internal" / "licenses" / name).stat().st_size, 100)
+
     def test_build_outputs_requested_name_and_uses_theme_icon(self):
         self.assertEqual(build_exe.OUTPUT_NAME, "股市锦囊.exe")
         self.assertEqual(build_exe.ICON_PATH.name, "a_stock_strategy.ico")

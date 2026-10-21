@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10 从源码到独立应用 · 股市锦囊知识库</title><link rel="stylesheet" href="assets/style.css"></head>
+<body><header class="band"><div class="wrap"><h1>10 · 从源码到独立应用</h1><p>装好工具、验证代码、打包、验收、回收临时文件</p></div></header>
+<main class="wrap"><nav class="crumbs"><a href="index.html">← 知识库首页</a> · <a href="09-review-and-troubleshooting.html">← 学习复盘</a></nav>
+<p class="lead">使用者拿到的是一个应用目录；维护者保留的是能重建它的源码、依赖锁和验证方法。两者用构建提交号与文件摘要对应起来。</p>
+<h2>一、先理解四层职责</h2>
+<p>页面展示输入和结果，控制器管理后台任务，服务层安排取数与计算，领域层只做纯计算。网络在 data 层，持久化在 store 中。Windows 应用没有另外部署的网页后端；点击按钮后的“后台”是本机工作线程。</p>
+<p>例如历史日线先校验日期、升序排列、合并完全相同的重复记录，再计算指标。同一天若出现两份不同记录就明确报错，不能任选一份。这样回测的“过去”才不会混入未来。详见<a href="02-domain-algorithms.html">算法</a>和<a href="06-data-quality.html">数据质量</a>。</p>
+<h2>二、准备可重复的开发环境</h2>
+<p>当前受验证的构建目标是 Windows x64、Python 3.14.4。运行成品无需安装 Python；其他系统没有被这条构建流程验证。下面的锁文件还固定了间接依赖和每个 wheel 的 SHA-256：</p>
+<pre><code>python -m venv .venv
+.venv\Scripts\python -m pip install --require-hashes --only-binary=:all: -r requirements/dev-windows.lock
+.venv\Scripts\python -m pip check</code></pre>
+<p><code>pyproject.toml</code> 说明直接需要哪些工具；<code>requirements/</code> 记录这次实际选择的完整版本与下载摘要。更新直接版本时，两份锁文件必须重新解析、复核并一并测试。哈希保证下载内容一致，不等于软件没有漏洞，也不保证 EXE 每个字节都可重现。</p>
+<h2>三、一条命令完成交付验证</h2>
+<p>先提交代码，保持工作区干净，再在仓库根目录运行：</p>
+<pre><code>.\build.bat
+# 等价入口，也可在已经准备好的离线 wheel 目录上构建：
+python -B scripts/package_app.py --wheelhouse build/wheels</code></pre>
+<p>正常构建会创建项目内的临时虚拟环境，按构建锁下载九个构建及运行发行包，运行依赖一致性检查，打包应用，生成说明书、许可证、组件清单与文件哈希，然后复制到含中文和空格的新路径检验。复制件会移除开发 Python/Qt 搜索路径，运行一次核心自检和两次真实 Qt 窗口冒烟。全部通过才显示 <code>PACKAGE_OK</code>。</p>
+<p>已有交付物先校验并临时保留；新构建失败时恢复旧交付物。若恢复本身受权限或占用阻止，按错误中显示的保留路径恢复，不删除备份。构建不会修改真实的用户配置。临时环境和独立运行配置自动回收，构建日志和中间产物留在 <code>build/</code> 供排错。</p>
+<h2>四、使用者应该拿到什么</h2>
+<p>分发完整 <code>dist/</code>：<code>股市锦囊/</code> 应用目录、<code>使用说明.html</code>、<code>RELEASE_MANIFEST.json</code>、<code>SBOM.json</code>、第三方声明和许可证目录。只复制 EXE 会缺少 Python、Qt DLL、插件与资源。不要把开发虚拟环境、日志或缓存放进去。</p>
+<pre><code>python scripts/make_release_manifest.py --verify</code></pre>
+<p>清单验证会发现文件缺失、改动及多余文件。保留可信来源的原始清单很重要：摘要不能证明发布者身份。当前构建未签名，正式发布人工门禁另见<a href="../loop/quality/RELEASE_READINESS.md">发布就绪检查</a>。</p>
+<h2>五、读懂“通过”的范围</h2>
+<table><tr><th>验证</th><th>证明什么</th><th>仍不能证明什么</th></tr>
+<tr><td>单元与集成测试</td><td>日期、金额、取消、降级、配置容错、界面交互等既定合同</td><td>所有未来输入都不会出问题</td></tr>
+<tr><td>EXE 自检与真实 Qt 冒烟</td><td>核心逻辑、DLL、插件、五页窗口在当前 Windows 环境可启动退出</td><td>所有机器、显示缩放及人工审美已经验收</td></tr>
+<tr><td>远程消费端检查</td><td>另一个 Windows runner 直接运行下载的交付目录，不安装项目依赖</td><td>未安装任何其他软件的物理目标机验收</td></tr>
+<tr><td>数据来源与时效</td><td>详情、复制和 CSV 带取数来源、获取时间、有效样本量；切档保留说明</td><td>获取时间就是交易所报价时间，或切档使旧行情变新</td></tr></table>
+<p>少于 30 条有效日线明确标为降级；停止任务后迟到结果不会作为成功发布；修改预警规则会丢弃旧规则正在计算的通知。预警只在应用运行期间生效。</p>
+<h2>六、测试后怎样清理</h2>
+<p>把测试配置和临时目录设在本项目 <code>build/</code> 内，关闭测试窗口、等待工作线程退出后，再按本次创建清单回收。保留 <code>dist/</code> 成品、<code>docs/</code> 教材图片和 <code>loop/</code> 必要证据。不删除真实 <code>%APPDATA%\StockAdvisor</code>、用户 IDE 配置或用途不明的文件。</p>
+<p>全部教学章节、图片、样式和设计参考都在 <code>docs/</code>。README 是入口，loop 是工程合同与验证记录，licenses 是原文；它们互相链接，不复制出多份容易过时的真源。</p>
+<h2>动手练习</h2><p>在临时复制件中改动说明书，确认清单校验失败；还原后再校验。用测试替身把日线倒序并重复一行，确认结果仍按交易日期计算。用工作线程屏障在最后一次请求途中取消，确认完成状态为“已停止”。练习应使用临时配置，结束即清理自己的复制件。</p>
+<nav class="crumbs bottom"><a href="index.html">返回知识库首页</a></nav><div class="disclaimer">仅用于学习与辅助研究，不构成投资建议。</div></main></body></html>

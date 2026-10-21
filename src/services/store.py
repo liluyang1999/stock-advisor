@@ -154,7 +154,12 @@ def _parse_alert(raw: object) -> AlertRule | None:
         return None
     field = raw.get("field")
     op = raw.get("op")
-    if field not in FIELD_LABELS or op not in OPS:
+    if (
+        not isinstance(field, str)
+        or not isinstance(op, str)
+        or field not in FIELD_LABELS
+        or op not in OPS
+    ):
         return None
     try:
         threshold = float(raw.get("threshold"))  # type: ignore[arg-type]

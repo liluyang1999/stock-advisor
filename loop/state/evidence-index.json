@@ -1397,7 +1397,37 @@
       "finished_at": "2026-09-28T23:04:49+09:00",
       "implemented_by": "coordinator",
       "verified_by": "Wegener independent initial strict gates plus final 25 tests/13 probes",
-      "summary": "921 final product tests, 59 loop tests, independent initial eight-gate run, final 25 tests/13 probes and final fast gates pass; 18 obsolete scratch diff snapshots removed. Source/docs review complete. Formal release blockers and browser visual-review limitation are explicit; final clean local build is identified by dist manifest."
+      "summary": "921 final product tests, 59 loop tests, independent initial eight-gate run, final 25 tests/13 probes and final fast gates pass; 18 obsolete scratch diff snapshots removed. Source/docs review complete. Formal release blockers and browser visual-review limitation are explicit; final clean local build is identified by dist manifest.",
+      "superseded_by": "EVD-LOOP-020"
+    },
+    {
+      "id": "EVD-LOOP-020",
+      "record_version": "2.0.0",
+      "requirement_ids": [
+        "REQ-028",
+        "REQ-029",
+        "REQ-030"
+      ],
+      "acceptance_ids": [
+        "AC-000",
+        "AC-010"
+      ],
+      "work_item_id": "WI-025",
+      "type": "readiness_and_delivery_verification",
+      "command": "950 product coverage; independent950 product/59loop tests and10probes; seven strict gates plus corrected G-LOOP; compileall; native UI15renders; external-provider/dependency audit",
+      "cwd": "D:\\Projects\\stock-advisor",
+      "exit_code": 0,
+      "artifact_path": "evidence/baselines/EVD-LOOP-020-portable-readiness.txt",
+      "sha256": "52c06e99b4a0dcb8a05468a461044e155977324f4a2e726a350a80ad92a5189a",
+      "control_plane_sha256": "16a8b8445c39bc1e7e553a10e7265a8f90a8a6c950d6fc603875251efaf70c73",
+      "commit": "9b72dc33f931be3b6c8caf95be174e32b9977c1c",
+      "dirty_worktree": true,
+      "environment": "Windows 11 x64; Python3.14.4; Qt6.12.0; complete hash-locked wheels",
+      "started_at": "2026-10-21T12:31:27+09:00",
+      "finished_at": "2026-10-21T12:38:55+09:00",
+      "implemented_by": "coordinator",
+      "verified_by": "Pascal independent final950 product/59loop tests and10probes; coordinator coverage/visual integration",
+      "summary": "950 product,59loop tests and six coverage thresholds pass; independent accept. Eight latest development-gate results pass across initial run and corrected G-LOOP. Native UI, dependency audit and live partial-market behavior verified. Final package/CI source identity is recorded by delivery manifest and remote run; formal approvals remain pending."
     }
   ]
 }

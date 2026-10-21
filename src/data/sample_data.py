@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date, timedelta
 from decimal import Decimal
 
 from domain.engine import analyze_stock, measure
@@ -23,7 +24,7 @@ def _sample_quote_history() -> tuple[Quote, list[DailyBar]]:
         close = price + Decimal("0.08")
         history.append(
             DailyBar(
-                date=f"2026-05-{day + 1:02d}",
+                date=(date(2026, 5, 1) + timedelta(days=day)).isoformat(),
                 open=price,
                 close=close,
                 high=close + Decimal("0.06"),

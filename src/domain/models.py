@@ -208,6 +208,7 @@ class AnalysisResult:
     recent_closes: list[float] = field(default_factory=list)
     reasons: list[str] = field(default_factory=list)
     risks: list[str] = field(default_factory=list)
+    data_note: str = ""
 
 
 # ---- 决策强度（测量/决策分离）相关结构 ----
@@ -250,6 +251,7 @@ class Measurement:
     risks: list[str]
     history_len: int
     expected_move_pct: float | None
+    data_note: str = ""
 
 
 @dataclass(frozen=True)

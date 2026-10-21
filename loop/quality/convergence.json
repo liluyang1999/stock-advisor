@@ -22,19 +22,19 @@
     "qt_controller_statement_min": 0.9,
     "qt_controller_branch_min": 0.85,
     "current": {
-      "measured_at": "2026-09-28T22:56:02.099314",
-      "commit": "57e3d9cd8b7b8a01f22ca11179518b34ea26aa52 + review worktree",
+      "measured_at": "2026-10-21T12:35:15.642989",
+      "commit": "9b72dc33f931be3b6c8caf95be174e32b9977c1c + reviewed worktree (EVD-LOOP-020 source digest)",
       "command": "python -m coverage run -m unittest discover -s tests; python -m coverage json -q -o build/coverage.json; python loop/scripts/check_coverage.py build/coverage.json",
       "omit": [],
-      "overall_statement": 0.9604264254563075,
-      "overall_branch": 0.9120498614958449,
-      "core_statement": 0.993272,
-      "core_branch": 0.983871,
-      "qt_controller_statement": 0.994286,
-      "qt_controller_branch": 0.958333,
-      "combined_total": 0.9512770137524558,
+      "overall_statement": 0.9565972222222222,
+      "overall_branch": 0.9054593874833555,
+      "core_statement": 0.9909855769230769,
+      "core_branch": 0.9806338028169014,
+      "qt_controller_statement": 0.9944289693593314,
+      "qt_controller_branch": 0.9615384615384616,
+      "combined_total": 0.9467976524623629,
       "verdict": "meets_target",
-      "note": "921 product tests pass after metadata follow-up; prior independent strict eight-gate run (919 tests), independent final 25 tests/13 probes and final five fast gates pass. Final six G-LOOP checks also pass. See EVD-LOOP-019. Formal release remains pending."
+      "note": "950 product tests and all six coverage thresholds pass. Independent 950 product/59 loop tests plus 10 defect probes pass, zero skips. Seven strict development gates pass, corrected G-LOOP rerun passes; final control-plane closure checked separately. See EVD-LOOP-020. Formal release remains pending."
     }
   },
   "numeric": {

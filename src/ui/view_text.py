@@ -171,6 +171,8 @@ def build_detail_text(result: AnalysisResult) -> str:
     lines.extend(f"- {_plain_text(reason)}" for reason in result.reasons)
     lines.extend(["", "需要注意"])
     lines.extend(f"- {_plain_text(risk)}" for risk in result.risks)
+    if result.data_note:
+        lines.extend(["", "数据来源与时效", _plain_text(result.data_note)])
     return "\n".join(lines)
 
 

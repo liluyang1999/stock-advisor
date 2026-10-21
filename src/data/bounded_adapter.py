@@ -89,7 +89,7 @@ class BoundedMarketDataProvider:
         return self._inner.fetch_fund_flow(symbol, limit, cancel_token=self._cancel)
 
     def fetch_market_snapshot_outcome(
-        self, page_size: int = 500, max_pages: int = 20
+        self, page_size: int = 100, max_pages: int = 100
     ) -> TransportOutcome[list[MarketSnapshot]]:
         outcome = self._inner.fetch_market_snapshot(page_size, max_pages, cancel_token=self._cancel)
         if outcome.succeeded:
@@ -112,7 +112,7 @@ class BoundedMarketDataProvider:
         )
 
     def fetch_market_snapshot(
-        self, page_size: int = 500, max_pages: int = 20
+        self, page_size: int = 100, max_pages: int = 100
     ) -> list[MarketSnapshot]:
         outcome = self._inner.fetch_market_snapshot(page_size, max_pages, cancel_token=self._cancel)
         rows = _unwrap(outcome, "全市场快照获取")

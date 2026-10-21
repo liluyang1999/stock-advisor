@@ -89,10 +89,11 @@
     <p>从输入到结果走一遍：验收窄窗、清空与切档，读懂数据缺失，隔离测试并清理自己的临时产物。</p>
   </a>
 
+  <a class="tile" href="10-packaging.html"><div class="tag">10 · 独立交付</div><h3>从源码到独立应用</h3><p>依赖哈希锁、隔离构建、失败恢复、独立运行验证与清理。</p></a>
 </div>
 
 <div class="note">
-  <strong>怎么选：</strong>01–07 按主题讲解，08 是通读附录，09 帮你动手检查理解。
+  <strong>怎么选：</strong>01–07 按主题讲解，08 是通读附录，09 帮你动手检查理解，10 串起独立交付流程。
   教材都随源码维护；发现差异时，应对照实现与工程记录核实，不把旧文章当成当前行为的保证。
 </div>
 
@@ -126,7 +127,7 @@ python -B -m unittest discover -s tests -p test_docs.py
 # 在另一个终端截图：使用演示数据，不调用行情接口；核对各状态与配置隔离
 python scripts/capture_ui.py --states success fail empty
 
-# 打包成免安装应用目录（自动装构建依赖 PyInstaller）
+# 提交源码后，隔离构建并验证完整交付目录
 .\build.bat      # Windows PowerShell；首次构建可能安装依赖</code></pre>
 
 <div class="note">

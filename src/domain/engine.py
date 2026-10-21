@@ -5,6 +5,7 @@ from dataclasses import replace
 from decimal import Decimal
 from statistics import mean, pstdev
 
+from .history import chronological_history
 from .models import (
     STANDARD_LEVEL,
     AnalysisResult,
@@ -147,6 +148,7 @@ def rsi(values: list[float], period: int = 14) -> float | None:
 def measure(quote: Quote, history: list[DailyBar]) -> Measurement:
     """客观测量层：算指标 + 8 因子 + 风控扣分 + 置信度，结果与决策档位无关。"""
     quote = _clean_quote(quote)
+    raw_history = history
     history = clean_history(history)
     # 报价是 Decimal（精确 2 位）；指标层是统计量,在此边界一次性转 float,不回流到金额/价格。
     last_f = float(quote.last)
@@ -187,6 +189,8 @@ def measure(quote: Quote, history: list[DailyBar]) -> Measurement:
 
     reasons: list[str] = []
     risks: list[str] = []
+    if history != raw_history:
+        risks.append("历史日线已校验排序并清理重复或无效记录。")
     factors: list[FactorScore] = []
 
     _extend_factor(factors, reasons, risks, *_score_moving_averages(last_f, ma5, ma20, ma60))
@@ -239,6 +243,7 @@ def build_analysis_result(m: Measurement, decision: Decision) -> AnalysisResult:
             FactorScore("风控扣分", m.risk_penalty, 20, "谨慎", "跳空、振幅或回撤触发风险扣分。")
         )
     return AnalysisResult(
+        data_note=m.data_note,
         symbol=m.symbol,
         name=m.name,
         action=decision.action,
@@ -773,7 +778,7 @@ def _clean_quote(quote: Quote) -> Quote:
 
 def clean_history(history: list[DailyBar]) -> list[DailyBar]:
     rows: list[DailyBar] = []
-    for bar in history:
+    for bar in chronological_history(history):
         if not all(_finite_positive(value) for value in (bar.open, bar.close, bar.high, bar.low)):
             continue
         if not all(

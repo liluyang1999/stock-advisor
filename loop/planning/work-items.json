@@ -838,9 +838,10 @@
       ],
       "evidence_ids": [
         "EVD-REL-001",
-        "EVD-LOOP-019"
+        "EVD-LOOP-019",
+        "EVD-LOOP-020"
       ],
-      "next_action": "许可证正文已齐；本轮完善交付清单校验。仍需完整依赖/安全证据、目标机与签名方案、发布追溯及五次完整发布门禁，最后 HG-LICENSE → HG-PACKAGING → HG-RELEASE 人工签署。见 quality/RELEASE_READINESS.md。",
+      "next_action": "950项产品测试、59项工程测试与六维覆盖率通过；完整Windows wheel哈希锁及隔离可回滚构建已落地。仍需静态组件SBOM复核、签名方案与物理目标机验收、发布追溯及五次完整发布门禁，最后 HG-LICENSE → HG-PACKAGING → HG-RELEASE 人工签署。见 quality/RELEASE_READINESS.md。",
       "size": "S",
       "definition_of_done": "requirement/evidence traceability is 100%, dependency license/SBOM/hash/rollback artifacts are ready, five consecutive full-green gate runs are recorded, and the human release gate is approved (AC-008/AC-010)."
     },
@@ -1124,6 +1125,9 @@
       "scope_out": [
         "QNetworkAccessManager 传输本身——那是 ADR-0003 的终态，另行推进",
         "历史背景：WI-026 当时只完成适配器；WI-033 已完成生产接线，当前实现见 next_action，仍待人工复核。"
+      ],
+      "evidence_ids": [
+        "EVD-LOOP-020"
       ]
     },
     {
@@ -1156,7 +1160,7 @@
         "TEST-VIS-002"
       ],
       "size": "L",
-      "next_action": "本轮修复小窗裁切、异步回测、结果与排序一致性，912 项测试通过；五页三态与多 DPI 由代理视觉复核。最终门禁与打包记录见 EVD-LOOP-017。仍待原约定的人类视觉验收，不将代理审查冒充人工签署。",
+      "next_action": "本轮950项产品测试通过，五页成功/失败/空态共15张原生界面截图已检查，见 EVD-LOOP-020。既有自动布局和交互门禁通过；仍待原约定的人类视觉验收，不将代理审查冒充人工签署。",
       "definition_of_done": "五个功能页均由 cards.Card + table_utils.Column 构成；结果表恢复老版八列与结论行底色；因子拆解条、决策强度光谱、整篇解释三者可见且随选中行联动；tokens.json 与 UI_DESIGN_SYSTEM.md 数值一致且对比度实测全部达标；test_qt_visual_matrix 零裁剪、全套测试通过。",
       "scope_out": [
         "不改信息架构：用户明确要求保留五个标签页，不回退成老版的两模式 + 四个弹窗",
@@ -1164,7 +1168,8 @@
       ],
       "evidence_ids": [
         "EVD-QT-020",
-        "EVD-LOOP-017"
+        "EVD-LOOP-017",
+        "EVD-LOOP-020"
       ]
     }
   ]

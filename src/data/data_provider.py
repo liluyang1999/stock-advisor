@@ -6,9 +6,11 @@ import math
 import time
 import urllib.error
 import urllib.request
+from dataclasses import dataclass, replace
 from decimal import Decimal
 
 from domain import money
+from domain.history import chronological_history
 from domain.models import DailyBar, FundFlow, MarketSnapshot, Quote, StockSymbol
 from domain.numeric import finite_float
 
@@ -26,11 +28,12 @@ MAX_RESPONSE_BYTES = 16 * 1024 * 1024  # 16 MiB
 # 全市场快照：一次分页调用即可覆盖全 A 股；fs 选取沪深主板/创业板/科创板/北交所。
 CLIST_FS = "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:81+s:2048"
 CLIST_FIELDS = "f12,f13,f14,f2,f3,f4,f5,f6,f7,f8,f9,f10,f20,f21,f22,f23,f24,f25"
-# 多个对等主机做回退，提升全市场拉取的成功率。
+# 多个对等主机做回退；按代码稳定排序，避免涨跌幅变动让跨页条目跳过或重复。
+# 服务端可能把每页限制为100条，因此默认最多100页；生产传输仍受20秒总预算约束。
 CLIST_HOSTS = ("push2.eastmoney.com", "push2delay.eastmoney.com")
 CLIST_URL = (
     "https://{host}/api/qt/clist/get"
-    "?pn={pn}&pz={pz}&po=1&np=1&fltt=2&invt=2&fid=f3"
+    "?pn={pn}&pz={pz}&po=1&np=1&fltt=2&invt=2&fid=f12"
     f"&fs={CLIST_FS}&fields={CLIST_FIELDS}"
 )
 
@@ -140,11 +143,11 @@ class EastmoneyProvider:
         raise MarketDataError("；".join(errors) or "历史日线获取失败")
 
     def fetch_market_snapshot(
-        self, page_size: int = 500, max_pages: int = 20
+        self, page_size: int = 100, max_pages: int = 100
     ) -> list[MarketSnapshot]:
         """分页拉取全 A 股实时快照，多个对等主机做回退。全部失败才报错。"""
-        page_size = _positive_int(page_size, 500)
-        max_pages = _positive_int(max_pages, 20)
+        page_size = _positive_int(page_size, 100)
+        max_pages = _positive_int(max_pages, 100)
         errors: list[str] = []
         for host in CLIST_HOSTS:
             try:
@@ -318,7 +321,48 @@ def parse_sina_quote_payload(symbol: StockSymbol, payload: str) -> Quote:
     )
 
 
+@dataclass(frozen=True)
+class HistoryResponse:
+    rows: list[DailyBar]
+    notes: tuple[str, ...] = ()
+
+
+def _history_response(rows: list[DailyBar], *, recompute: bool = False) -> HistoryResponse:
+    ordered = chronological_history(rows)
+    notes = (
+        (f"日线按日期排序并清理完全相同的重复记录：{len(rows)} 条 → {len(ordered)} 条。",)
+        if rows != ordered
+        else ()
+    )
+    return HistoryResponse(_ordered_fallback_history(ordered) if recompute else ordered, notes)
+
+
+def parse_history_response(payload: str) -> HistoryResponse:
+    return _history_response(_eastmoney_history_rows(payload))
+
+
+def parse_sina_history_response(payload: str) -> HistoryResponse:
+    return _history_response(_sina_history_rows(payload), recompute=True)
+
+
+def parse_tencent_history_response(symbol: StockSymbol, payload: str) -> HistoryResponse:
+    return _history_response(_tencent_history_rows(symbol, payload), recompute=True)
+
+
+# Existing callers keep the plain list contract; production transport also carries notes.
 def parse_history_payload(payload: str) -> list[DailyBar]:
+    return parse_history_response(payload).rows
+
+
+def parse_sina_history_payload(payload: str) -> list[DailyBar]:
+    return parse_sina_history_response(payload).rows
+
+
+def parse_tencent_history_payload(symbol: StockSymbol, payload: str) -> list[DailyBar]:
+    return parse_tencent_history_response(symbol, payload).rows
+
+
+def _eastmoney_history_rows(payload: str) -> list[DailyBar]:
     root = _json_object(payload)
     data = root.get("data")
     if not isinstance(data, dict):
@@ -369,10 +413,9 @@ def parse_history_payload(payload: str) -> list[DailyBar]:
     return rows
 
 
-def parse_sina_history_payload(payload: str) -> list[DailyBar]:
+def _sina_history_rows(payload: str) -> list[DailyBar]:
     items = _json_array(payload)
     rows: list[DailyBar] = []
-    previous_close: Decimal | None = None
     for item in items:
         if not isinstance(item, dict):
             continue
@@ -383,16 +426,15 @@ def parse_sina_history_payload(payload: str) -> list[DailyBar]:
             high_value=item.get("high"),
             low_value=item.get("low"),
             volume_value=item.get("volume"),
-            previous_close=previous_close,
+            previous_close=None,
         )
         if bar is None:
             continue
         rows.append(bar)
-        previous_close = bar.close
     return rows
 
 
-def parse_tencent_history_payload(symbol: StockSymbol, payload: str) -> list[DailyBar]:
+def _tencent_history_rows(symbol: StockSymbol, payload: str) -> list[DailyBar]:
     root = _json_object(payload)
     data = root.get("data")
     if not isinstance(data, dict):
@@ -407,7 +449,6 @@ def parse_tencent_history_payload(symbol: StockSymbol, payload: str) -> list[Dai
         return []
 
     rows: list[DailyBar] = []
-    previous_close: Decimal | None = None
     for item in raw_rows:
         if not isinstance(item, list | tuple) or len(item) < 6:
             continue
@@ -418,14 +459,24 @@ def parse_tencent_history_payload(symbol: StockSymbol, payload: str) -> list[Dai
             high_value=item[3],
             low_value=item[4],
             volume_value=item[5],
-            previous_close=previous_close,
+            previous_close=None,
             volume_multiplier=100,
         )
         if bar is None:
             continue
         rows.append(bar)
-        previous_close = bar.close
     return rows
+
+
+def _ordered_fallback_history(rows: list[DailyBar]) -> list[DailyBar]:
+    ordered = chronological_history(rows)
+    return [
+        replace(
+            bar,
+            pct_change=round(float((bar.close / ordered[i - 1].close - 1) * 100), 4) if i else 0.0,
+        )
+        for i, bar in enumerate(ordered)
+    ]
 
 
 def parse_clist_payload(payload: str) -> list[MarketSnapshot]:

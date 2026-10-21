@@ -77,9 +77,13 @@ def run_batch_analysis(
             report.cancelled = True
             break
         outcome = analyze_symbol(symbol, provider, level)
+        if cancel_token.is_cancelled():
+            report.cancelled = True
+            break
         report.outcomes.append(outcome)
         if on_progress is not None:
             on_progress(
                 BatchProgress(done=len(report.outcomes), total=len(symbols), outcome=outcome)
             )
+    report.cancelled = report.cancelled or cancel_token.is_cancelled()
     return report

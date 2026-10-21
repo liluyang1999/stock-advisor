@@ -1,0 +1,34 @@
+2026-10-21 portable engineering readiness review
+
+Completed source-verification snapshot before commit. Final clean-commit packaging and remote CI are separate post-commit checks; their source identity is provided by dist/RELEASE_MANIFEST.json and the matching CI run, never inferred from this pre-commit snapshot.
+
+Scope: chronological history with duplicate/conflict checks; late cancellation/deadline; alert revision ownership; malformed configuration; short-history degradation; provenance and normalization metadata through exports; bounded stable market pagination; isolated hash-locked transactional build and native diagnostics; teaching docs.
+TDD: independent original 10 counterexamples failed before fixes; final two normalization/cancellation regression methods failed before the final corrections. Current readiness + transport targeted suite: 44 tests / OK. Build/manifest targeted: 34 tests / OK. Rollback-failure tests: 5 / OK. Windowed diagnostic tests: 3 / OK. All pins resolve in fresh Windows Python 3.14.4 / PySide6 6.12.0 environment.
+UI: 15 Windows-native renders at 1000x680 logical pixels (5 pages x success/fail/empty); all 15 screenshots were visually inspected (250% Windows scale); they are task scratch and will be cleaned. This is not the physical target-device/DPI human signoff. Automated layout/interaction contracts remain in product tests.
+Dependencies: 9 build and 29 development distributions hash-locked; all 29 PyPI version advisory responses checked 2026-10-21 and returned no listed vulnerabilities. Qt advisories reviewed separately; 6.11.1 upgraded to 6.12.0. Native file inventory is not a full static-library SBOM.
+Live public data: quote / 120 history bars / fund flow succeeded. Old volatile pagination returned 1974 partial rows; stable code ordering and 100x100 page budget returned 5568 valid of provider total5925 in4.006s, marked partial. Missing/invalid values are never fabricated. This is one point-in-time check, not a reliability promise.
+Formal public release, signature and physical clean target-machine acceptance remain outside this local engineering evidence; user authorized main integration and remote sync, not human gate signatures.
+
+Final measured verification (2026-10-21):
+- Product unittest:950 passed,0 failures/errors/skips. Independent repeat950/950 in96.186s; loop59/59 in7.485s.
+- Coverage: overall statements6061/6336 (95.6597%),branches1360/1502 (90.5459%); domain statements1649/1664 (99.0986%),branches557/568 (98.0634%); Qt controllers357/359 (99.4429%),branches50/52 (96.1538%). All six thresholds pass without omissions.
+- Strict initial invocation: G-LOOP failed stale metrics/line endings/module count; G-FORMAT,G-LINT,G-TYPE,G-CORE,G-COVERAGE,G-SECURITY,G-SURFACE passed. Corrected G-LOOP then passed separately. This is composite green evidence, not a fabricated eight-gate successful invocation.
+- compileall exit0; CI YAML and5 embedded PowerShell scripts parse. Final evidence/annotation changes receive fast-gate recheck before commit.
+- Independent reviewer Pascal:accept;5 extended defect probes and5 package failure probes pass;self-test8/8,exit0;all six G-LOOP commands pass. Independent loop parser corrected a fault-injection 'skipped=1' substring: actual final unittest was59/59 with zero skips.
+- Independently frozen source SHA256 e6e4833a21bc548fd451168ace59bf3b6550e0065090ddf8e109a9cd0f2d902f (93files;sorted <file_sha256>  <posix_path> LF). Following review, pyproject comments were reconciled with disposable builds/13modules; no behavior changed. Control-plane closure is separately fingerprinted in the evidence index.
+- Native package tests still must run on the clean committed artifact, including copied Chinese/space path with developer PATH removed; CI has gates,isolated package and fresh-runner consumer stages. Automated smoke cannot replace manual release/license/target-device approval.
+
+Raw scratch evidence digests (scratch is intentionally removed after acceptance):
+independent-final/REVIEW.md: sha256=17043724b7f5afe876efb11eb7fc9d75b15796cbc59231a7878ef8e2104cedc2
+independent-final/run-results.json: sha256=9b965a49f94bc61d31a9dd23e2b8d14bab143bba7eb6fba1148806187a2c343b
+independent-final/product-suite.stderr.log: sha256=c67dbfd967019bcbed78feb4f40502aeced16b9d802d61bf45bdeec70b7c4176
+independent-final/loop-run-results.json: sha256=a3453bb3dc6b650569ea6dfa01fcc4675368a70bb838d3b0528d0e58256fbb45
+independent-final/loop-tests.stderr.log: sha256=fd5d1da9c286de52382ce0c1de177b89434d44234222a77806b1b407c1f7c069
+strict-final.log: sha256=e3fa5c845b635b43a0c48f46069f661ae375bb2596f63833443844c1115f8597
+loop-final.log: sha256=ae0e1ed782af618826d55db20c026936e8fecaabb30e932becaf311e3a1c5f57
+live-market-final.json: sha256=db1f645714729469d901f5b923589b68eeaf14d806c4d5b2782cfff640081548
+dependency-security.json: sha256=6bc4a69f64a723a10c36c84f2bbe63d2f213835418f2921b5eced262b8f04229
+coverage.json: sha256=1458e5d846d9ce87f456da13f967356776de0bfc36f90ad882b411d5f801cdf2
+
+Final closure: G-LOOP,G-FORMAT,G-LINT,G-TYPE,G-SECURITY,G-SURFACE all PASS; RUN_GATES_OK ran=6 failed=0 skipped=0.
+closure-gates.log sha256=f06598f700e8d9049aae8b46c671f0d53b55111d934d0e5649948aedaa9f1408

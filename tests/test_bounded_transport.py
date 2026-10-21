@@ -147,7 +147,7 @@ class ErrorClassificationTests(unittest.TestCase):
 
     def test_http_status_errors_are_network(self):
         for status in (429, 500, 502, 503, 403):
-            error = urllib.error.HTTPError("http://x", status, "boom", {}, None)  # type: ignore[arg-type]
+            error = _http_error(status)
             self.assertEqual(classify_exception(error), "network", status)
 
     def test_dns_failure_is_network(self):
@@ -422,7 +422,9 @@ class PagingCompletenessTests(unittest.TestCase):
 
         outcome = provider.fetch_market_snapshot(page_size=2, max_pages=4, cancel_token=cancel)
 
-        self.assertTrue(outcome.succeeded)  # 已取到的页照常交付
+        self.assertFalse(outcome.succeeded)  # 取消后不得再发布新成功结果
+        self.assertTrue(outcome.cancelled)
+        self.assertIsNone(outcome.data)
         self.assertFalse(outcome.completeness.is_complete)
         self.assertEqual(outcome.completeness.missing_pages, (2, 3, 4))
 

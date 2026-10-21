@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from PySide6 import QtCore
 
+from domain.alerts import rule_key
 from domain.models import AlertRule
 from ports import ManualCancel
 from services.alert_monitor import run_alert_cycle
@@ -22,21 +23,22 @@ from ..workers import GenerationGuard
 
 
 class _CycleSignals(QtCore.QObject):
-    done = QtCore.Signal(int, object, object)  # generation, newly_fired(list), fired(set)
+    done = QtCore.Signal(int, object, object, int)  # generation, newly, fired, rules revision
 
 
 class _CycleWorker(QtCore.QRunnable):
-    def __init__(self, generation, rules, provider, fired, signals) -> None:
+    def __init__(self, generation, rules, provider, fired, signals, revision=0) -> None:
         super().__init__()
         self._generation = generation
         self._rules = rules
         self._provider = provider
         self._fired = fired
         self._signals = signals
+        self._revision = revision
 
     def run(self) -> None:
         newly, fired = run_alert_cycle(self._rules, self._provider, self._fired)
-        self._signals.done.emit(self._generation, newly, fired)
+        self._signals.done.emit(self._generation, newly, fired, self._revision)
 
 
 class AlertController(QtCore.QObject):
@@ -62,6 +64,7 @@ class AlertController(QtCore.QObject):
         # 协作取消令牌：交给传输层，`stop()` 一翻就能打断**在途**那一轮轮询。少了它，关窗时
         # `shutdown()` 的 waitForDone 要一直等到该轮跑满总 deadline 才排空得掉。
         self._cancel: ManualCancel | None = None
+        self._rules_revision = 0
 
     def is_running(self) -> bool:
         return self._running
@@ -70,7 +73,11 @@ class AlertController(QtCore.QObject):
         return self._guard.current
 
     def set_rules(self, rules: list[AlertRule]) -> None:
+        if list(rules) != self._rules:
+            self._rules_revision += 1
         self._rules = list(rules)
+        enabled = {rule_key(rule) for rule in self._rules if rule.enabled}
+        self._fired.intersection_update(enabled)
 
     def start(self, interval_ms: int = 60000) -> None:
         """开始周期监控。递增 generation 使任何在途的上一代结果失效（RISK-005）。"""
@@ -105,17 +112,26 @@ class AlertController(QtCore.QObject):
         signals = _CycleSignals()
         signals.done.connect(self._on_cycle_done)
         worker = _CycleWorker(
-            self._guard.current, list(self._rules), self._provider, set(self._fired), signals
+            self._guard.current,
+            list(self._rules),
+            self._provider,
+            set(self._fired),
+            signals,
+            self._rules_revision,
         )
         self._pool.start(worker)
 
-    def _on_cycle_done(self, generation: int, newly: list, fired: set) -> None:
+    def _on_cycle_done(
+        self, generation: int, newly: list, fired: set, revision: int | None = None
+    ) -> None:
         # 迟到结果丢弃：generation 不匹配说明这轮属于已停止/已重启的上一代（RISK-005）。此时不清
         # in_flight——它属于当前代那一轮在途 worker（stop→start 已在 start 里重置过），迟到的旧代
         # worker 无权放行下一拍。
         if not self._guard.is_current(generation) or not self._running:
             return
         self._in_flight = False  # 当前代这一轮已结束，放行下一拍
+        if revision is not None and revision != self._rules_revision:
+            return
         self._fired = fired
         if newly:
             self.alerts_triggered.emit(newly)

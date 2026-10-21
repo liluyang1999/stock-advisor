@@ -36,7 +36,8 @@ SBOM_PATH = DIST_DIR / "SBOM.json"
 NOTICES_PATH = DIST_DIR / "THIRD_PARTY_NOTICES.md"
 
 # 随产品分发的运行期第三方组件。开发期工具（ruff/pyright/pytest/PyInstaller）不进 SBOM 的
-# 交付集合——它们不在用户机器上运行——但构建工具链记在 build_metadata 里，因为可复现构建需要它。
+# 交付集合。PyInstaller 的 bootloader 和 Python 运行时另记在 RUNTIME_INVENTORY.json；
+# 构建工具链记在 build_metadata 中。这里只列 Python 发行包，不冒充静态库的完整 SBOM。
 SHIPPED_DISTRIBUTIONS = ("PySide6-Essentials", "shiboken6")
 
 # 选定的许可证选项（PySide6 是三选一：LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only）。
@@ -129,18 +130,21 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def _verify() -> int:
+def _verify(dist_dir: Path | None = None) -> int:
     """把磁盘上的 dist/ 重新哈希一遍，和清单比对——回滚演练与到货校验都用这条路径。
 
     ROLLBACK_PLAN 第 4 级是"回退到上一个有哈希和 self-test 证据的 EXE"。光有哈希不够，还得有一条
     能把哈希用起来的命令，否则回滚永远停留在纸面。三类偏差分别报告：内容变了、少了文件、多了文件——
     多出来的文件同样是偏差，因为交付目录必须只含批准产物。
     """
-    if not MANIFEST_PATH.is_file():
-        print(f"未找到 {MANIFEST_PATH}；无可比对的基准", file=sys.stderr)
+    root = DIST_DIR if dist_dir is None else dist_dir
+    app_dir = root / APP_DIR.name
+    manifest_path = root / MANIFEST_PATH.name
+    if not manifest_path.is_file():
+        print(f"未找到 {manifest_path}；无可比对的基准", file=sys.stderr)
         return 2
     try:
-        manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if not isinstance(manifest, dict):
             raise ValueError("清单必须是 JSON 对象")
         if manifest.get("schema_version") != "1.1":
@@ -155,14 +159,14 @@ def _verify() -> int:
         ):
             raise ValueError("文件条目重复或摘要无效")
         required = {
-            f"{APP_DIR.name}/股市锦囊.exe",
-            f"{APP_DIR.name}/BUILD_INFO.json",
+            f"{app_dir.name}/股市锦囊.exe",
+            f"{app_dir.name}/BUILD_INFO.json",
             *[p.relative_to(DIST_DIR).as_posix() for p in _supporting_artifacts()],
         }
         components = manifest["components"]
         names = [_normalize(c["name"]) for c in components]
         source = manifest["source"]
-        build_info = json.loads((APP_DIR / "BUILD_INFO.json").read_text(encoding="utf-8"))
+        build_info = json.loads((app_dir / "BUILD_INFO.json").read_text(encoding="utf-8"))
         commit = build_info["commit"]
         if (
             not required <= expected.keys()
@@ -184,9 +188,9 @@ def _verify() -> int:
             print("RELEASE_VERIFY_INCOMPLETE 缺少完整交付基线；请重新生成清单", file=sys.stderr)
             return 1
         actual = {
-            p.relative_to(DIST_DIR).as_posix(): _sha256(p)
-            for p in DIST_DIR.rglob("*")
-            if p.is_file() and p != MANIFEST_PATH
+            p.relative_to(root).as_posix(): _sha256(p)
+            for p in root.rglob("*")
+            if p.is_file() and p != manifest_path
         }
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"RELEASE_VERIFY_INVALID {exc}", file=sys.stderr)
@@ -198,7 +202,7 @@ def _verify() -> int:
     if not (changed or absent or extra):
         tree = hashlib.sha256()
         for path, digest in sorted(actual.items()):
-            if path.startswith(APP_DIR.name + "/"):
+            if path.startswith(app_dir.name + "/"):
                 tree.update(f"{path}\n{digest}\n".encode())
         if tree.hexdigest() != manifest["artifacts"].get("tree_sha256"):
             print("RELEASE_VERIFY_INVALID 应用目录合并摘要不一致", file=sys.stderr)
@@ -349,6 +353,12 @@ def _build_sbom(components: list[dict[str, Any]]) -> dict[str, Any]:
                 "description": "离线规则驱动的 A 股桌面决策辅助工具",
             },
             "tools": [{"name": "make_release_manifest.py", "version": "1.0"}],
+            "properties": [
+                {
+                    "name": "stock-advisor:scope",
+                    "value": "Python distributions only; actual native file hashes and Python/bootloader provenance are in 股市锦囊/RUNTIME_INVENTORY.json. Upstream statically linked components are not enumerated.",
+                }
+            ],
         },
         "components": [
             {
@@ -386,6 +396,12 @@ def _build_notices(components: list[dict[str, Any]], present: list[str], missing
             f"| {c['name']} | {c['version']} | {c['declared_license']} | {c['chosen_license']} |"
         )
     lines += [
+        "",
+        "## Python 与启动器",
+        "",
+        "应用附带 Python 运行时和 PyInstaller bootloader，版本与原生二进制清单见 `股市锦囊/RUNTIME_INVENTORY.json`。",
+        "许可文本见 `股市锦囊/_internal/licenses/Python-LICENSE.txt` 与 `PyInstaller-COPYING.txt`（含 bootloader 分发例外）。",
+        "SBOM 的 Python 包清单与原生文件清单不等于完整静态链接第三方组件清单；正式发布仍需上游组件审查。",
         "",
         "## Qt / PySide6：以 LGPL-3.0 分发",
         "",

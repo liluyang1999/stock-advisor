@@ -126,6 +126,7 @@ class TransportOutcome[T]:
     message: str = ""
     cancelled: bool = False
     attempts: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
     """走过的源/尝试标签，供可观测性追溯（哪些源试过、以何顺序）。"""
 
     @classmethod
@@ -134,12 +135,14 @@ class TransportOutcome[T]:
         data: T,
         completeness: Completeness | None = None,
         attempts: tuple[str, ...] = (),
+        notes: tuple[str, ...] = (),
     ) -> TransportOutcome[T]:
         return cls(
             succeeded=True,
             data=data,
             completeness=completeness or Completeness(),
             attempts=attempts,
+            notes=notes,
         )
 
     @classmethod
@@ -150,9 +153,11 @@ class TransportOutcome[T]:
         *,
         cancelled: bool = False,
         attempts: tuple[str, ...] = (),
+        completeness: Completeness | None = None,
     ) -> TransportOutcome[T]:
         return cls(
             succeeded=False,
+            completeness=completeness or Completeness(),
             error_class=error_class,
             message=message,
             cancelled=cancelled,
@@ -195,12 +200,28 @@ def run_with_contract[T](
         try:
             data = call()
         except TransportError as exc:
+            if cancel_token.is_cancelled():
+                return TransportOutcome.failed(
+                    "network", "已取消", cancelled=True, attempts=tuple(tried)
+                )
+            if deadline.expired():
+                return TransportOutcome.failed(
+                    "network", "操作超过总 deadline", attempts=tuple(tried)
+                )
             last_error_class, last_message = exc.error_class, exc.message
             if exc.error_class not in _RETRYABLE:
                 # 内容契约/输入错误：换源也没用，立即返回该分类（不伪造数据）。
                 return TransportOutcome.failed(exc.error_class, exc.message, attempts=tuple(tried))
             continue  # 瞬时网络错误：尝试下一个备用源
         else:
+            if cancel_token.is_cancelled():
+                return TransportOutcome.failed(
+                    "network", "已取消", cancelled=True, attempts=tuple(tried)
+                )
+            if deadline.expired():
+                return TransportOutcome.failed(
+                    "network", "操作超过总 deadline", attempts=tuple(tried)
+                )
             return TransportOutcome.ok(data, completeness=completeness, attempts=tuple(tried))
 
     return TransportOutcome.failed(last_error_class, last_message, attempts=tuple(tried))

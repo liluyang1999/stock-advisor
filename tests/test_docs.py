@@ -19,6 +19,7 @@ CHAPTERS = (
     "07-engineering.html",
     "08-technical-stack-report.html",
     "09-review-and-troubleshooting.html",
+    "10-packaging.html",
 )
 
 

@@ -7,8 +7,8 @@ from datetime import UTC, datetime
 from typing import Protocol
 
 from data.data_provider import MarketDataError
-from domain.data_quality import DataQuality
-from domain.engine import build_analysis_result, measure
+from domain.data_quality import DataProvenance, DataQuality
+from domain.engine import build_analysis_result, clean_history, measure
 from domain.models import (
     STANDARD_LEVEL,
     AnalysisResult,
@@ -40,7 +40,7 @@ class MarketDataProvider(Protocol):
 
 class ScreeningProvider(MarketDataProvider, Protocol):
     def fetch_market_snapshot(
-        self, page_size: int = 1000, max_pages: int = 12
+        self, page_size: int = 100, max_pages: int = 100
     ) -> list[MarketSnapshot]:
         raise NotImplementedError
 
@@ -102,8 +102,8 @@ class AnalysisOutcome:
 def analyze_symbol(
     symbol: StockSymbol, provider: MarketDataProvider, level: int = STANDARD_LEVEL
 ) -> AnalysisOutcome:
-    fetched_at = datetime.now(UTC)
     quote_outcome = _fetch_outcome(provider, "fetch_quote", symbol)
+    quote_at = datetime.now(UTC)
     if not quote_outcome.succeeded or quote_outcome.data is None:
         # 实时行情取不到：返回不可分析（error，非伪造零价）——REQ-024 零伪造。
         # 分类与「是否被取消」都取自 envelope，不再由异常类型反推。
@@ -128,6 +128,7 @@ def analyze_symbol(
     history_error = ""
     history: list[DailyBar] = []
     history_outcome = _fetch_outcome(provider, "fetch_history", symbol)
+    history_at = datetime.now(UTC)
     if history_outcome.cancelled:
         # 取消应终止本次分析，不能按取数故障降级后继续生成、缓存新的结论。
         _log.info(
@@ -164,7 +165,16 @@ def analyze_symbol(
         )
 
     try:
+        original_history = history
+        history = clean_history(history)
+        if len(history) < 30:
+            degraded = True
+            history_error = history_error or "历史有效样本少于30个交易日，当前结果已降级。"
         m = measure(quote, history)
+        if history != original_history:
+            m = replace(m, risks=["历史日线已校验排序并清理重复或无效记录。", *m.risks])
+        if history_outcome.notes:
+            m = replace(m, risks=[*history_outcome.notes, *m.risks])
         if history_error:
             # 注入降级提示到测量层，改档重判时也会随结论带出。
             m = replace(m, risks=[history_error, *m.risks])
@@ -175,9 +185,43 @@ def analyze_symbol(
         return AnalysisOutcome(symbol=symbol, error=f"分析计算失败：{exc}")
     quality = DataQuality(
         level="degraded_history" if degraded else "complete",
-        fetched_at=fetched_at,
-        degradations=(history_error,) if history_error else (),
+        fetched_at=quote_at,
+        provenance=tuple(
+            DataProvenance(
+                source=o.attempts[-1],
+                endpoint=name,
+                fallback_rank=len(o.attempts) - 1,
+                fetched_at=acquired,
+                adjustment=(
+                    "前复权请求" if o.attempts[-1] in {"eastmoney", "tencent_fq"} else "不复权"
+                )
+                if name == "history"
+                else "",
+            )
+            for name, o, acquired in (
+                ("quote", quote_outcome, quote_at),
+                ("history", history_outcome, history_at),
+            )
+            if o.succeeded and o.attempts
+        ),
+        degradations=history_outcome.notes + ((history_error,) if history_error else ()),
     )
+    if quality.provenance:
+        labels = {"eastmoney": "东方财富", "sina": "新浪", "tencent_fq": "腾讯", "tencent": "腾讯"}
+        notes = [
+            f"{'行情' if p.endpoint == 'quote' else '日线'}：{labels.get(p.source, p.source)}"
+            + (f"（{p.adjustment}）" if p.adjustment else "")
+            + (f"，备用源第{p.fallback_rank}位" if p.fallback_rank else "")
+            for p in quality.provenance
+        ]
+        note = (
+            "数据来源："
+            + "；".join(notes)
+            + f"；行情获取时间 {quote_at.isoformat(timespec='seconds')}（UTC），不代表交易所报价时间；有效日线 {m.history_len} 条。"
+        )
+        note += " ".join(history_outcome.notes)
+        m = replace(m, data_note=note)
+        result = replace(result, data_note=note)
     return AnalysisOutcome(
         symbol=symbol,
         result=result,
@@ -251,6 +295,7 @@ def screen_and_recommend(
             message = f"全市场行情获取失败：{message}"
         return ScreenReport(total=0, matched=0, recommendations=[], error=message)
     snapshots = snapshot_outcome.data
+    completeness = _completeness_of(provider, snapshot_outcome)
 
     filtered = apply_filters(snapshots, criteria)
     ranked = rank(filtered, objective)
@@ -264,6 +309,7 @@ def screen_and_recommend(
                 matched=len(filtered),
                 recommendations=recommendations,
                 cancelled=True,
+                completeness=completeness,
             )
         recommendation = Recommendation(
             rank=index,
@@ -273,6 +319,14 @@ def screen_and_recommend(
         )
         if deep:
             recommendation = _deep_analyze(recommendation, provider, level)
+        if cancel_event is not None and cancel_event.is_set():
+            return ScreenReport(
+                total=len(snapshots),
+                matched=len(filtered),
+                recommendations=recommendations,
+                cancelled=True,
+                completeness=completeness,
+            )
         recommendations.append(recommendation)
         if progress_cb is not None:
             progress_cb(index, len(top), recommendation)
@@ -281,7 +335,8 @@ def screen_and_recommend(
         total=len(snapshots),
         matched=len(filtered),
         recommendations=recommendations,
-        completeness=_completeness_of(provider, snapshot_outcome),
+        completeness=completeness,
+        cancelled=cancel_event is not None and cancel_event.is_set(),
     )
 
 

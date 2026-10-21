@@ -2,23 +2,21 @@
 
 ## 当前实现与合同
 
-- Python 3.14+；运行依赖 PySide6-Essentials，构建依赖 PyInstaller，精确版本见 `pyproject.toml`。
-- `.venv/` 是项目内构建环境；开发测试使用仓库配置的 Python。不得修改全局环境。
-- `build/` 仅中间产物。构建会重建 `build/`、`dist/`，执行前核对路径并确认无用户文件。
-- ADR-0004 已选择 **onedir、windowed**：`dist/股市锦囊/股市锦囊.exe` 与独立 Qt 运行库。
-- 配套交付包含 `使用说明.html`、`RELEASE_MANIFEST.json`、`SBOM.json`、`THIRD_PARTY_NOTICES.md` 和 `licenses/` 两份正文。
-- 教材在 `docs/`，操作说明由 `src/ui/manual.py` 生成。不能只分发 EXE。
+- 已验证目标为 Windows x64 / Python 3.14.4；开发源码要求 Python 3.14+，成品不需 Python 安装。依赖及完整 Windows wheel 哈希锁在 `pyproject.toml` 与 `requirements/`。
+- `python -B scripts/package_app.py` 是统一入口；build.bat/build.sh 仅转交。构建临时环境在 `build/package-env-*`，不修改全局或已有 `.venv`。
+- 仅清理命名的 PyInstaller 中间目录，其他 `build/` 文件保留。拒绝脏源码、构建中提交变化、被本地忽略规则隐藏的可执行构建输入与链接目录。
+- 旧 dist 校验后临时保留；新构建/校验失败则恢复。恢复失败保留备份并报告路径。成功后才清理旧备份。
+- ADR-0004 保持 **onedir、windowed**；完整 dist 包含应用目录、HTML 说明、1.1 清单、SBOM、第三方声明及 LGPL/GPL 正文。应用内另带 Python/bootloader 许可和 RUNTIME_INVENTORY.json。
 
 ## 构建与核验
 
-1. 在隔离构建环境按 `pyproject.toml` 的 gui/build 组安装依赖；记录 Python、Qt、PyInstaller 版本。
-2. 运行产品与工程门禁。当前仅直接依赖精确钉版，尚无完整传递依赖哈希锁，不能声称完全可复现。
-3. `python scripts/build_exe.py` 生成应用与说明书；仅 Windows 打包子进程限制额外 DLL 搜索 PATH，避免混入其它工具的 ICU/CRT/OpenSSL。
-4. 在**同一构建环境**运行 `python scripts/make_release_manifest.py`，生成元数据、许可副本与文件摘要。
-5. 运行 `python scripts/make_release_manifest.py --verify`：文件改动、缺失或多出均失败。1.1 清单覆盖配套许可与元数据；旧清单须核实来源后重建。
-6. EXE `--self-test` 应退出 0 且含 `SELF_TEST_OK`；另行启动原生 Windows GUI 并检查 stderr、字体与交互。自检不加载完整 Qt 界面。
-7. 独立核对 BUILD_INFO、清单中的来源提交和真实构建提交；回滚核验允许旧提交，哈希通过本身不表示等于当前源码。
-8. 清理本轮临时配置、日志、截图草稿和构建缓存，保留最终 dist 与最小有效证据。
+1. 完成产品与工程门禁，提交源码；版本哈希锁必须同时一致。
+2. 统一入口创建临时环境，安装完整 hash-locked 构建依赖，执行 pip check，然后构建及生成清单。可用 `--wheelhouse <path>` 离线安装已下载 wheel。
+3. 构建子进程限制 DLL 搜索 PATH，避免混入其他工具的同名库。BUILD_INFO 记录源码提交、Python 及构建锁摘要。
+4. 拷贝完整交付到中文空格路径；移除 Python/Qt 环境与开发 PATH，运行 EXE `--self-test` 一次、`--smoke-test` 两次，检查退出码、成功标记和 stderr。smoke 使用真实 Qt 事件循环遍历五页，不替代人工视觉验收。
+5. 独立运行前后均校验清单，确认程序不往安装目录写文件。测试配置在临时隔离目录。
+6. 成功输出 PACKAGE_OK；暂存环境自动回收。最后按本次创建清单清理剩余 build 中间产物，保留 dist 成品与必要工程证据。
+7. CI 先跑八个严格开发门禁，再全新 Windows job 打包，再由无源码 checkout/无 Qt 安装的另一个 runner 下载产物、验 hash 并运行。这不等同于干净物理目标机人工验收。
 
 ## Qt 资产与预算
 
@@ -30,7 +28,7 @@
 
 当前构建未作 Authenticode 签名。README 与操作说明必须披露；用户应核实来源与 SHA-256，不能引导关闭系统防护。签名方案、证书及密钥管理尚未实现，归 WI-025 和人工发布门禁。
 
-PySide6 与 shiboken6 的组件记录、LGPL/GPL 正文及 THIRD_PARTY_NOTICES 已由清单脚本生成。文件存在不等于许可方案已经签署，也不等于漏洞审查已完成；Qt 及打包原生库的完整组件清点、漏洞复核、完整解析锁仍须在正式发布前补证。现有 SBOM 只声明两个 Python 发行组件，不冒充完整原生库 SBOM。
+PySide6 与 shiboken6 的组件记录、LGPL/GPL 正文及 THIRD_PARTY_NOTICES 已由清单脚本生成。文件存在不等于许可方案已经签署，也不等于漏洞审查已完成；完整 wheel 哈希锁与当日已公开漏洞核对已补齐；原生 EXE/DLL/PYD 的文件清单与摘要随包保存。静态嵌入第三方组件仍需上游 SBOM 复核，现有两个 Python 发行包 SBOM 不冒充完整原生库 SBOM。
 
 HG-LICENSE → HG-PACKAGING → HG-RELEASE 的人工签署不由代码审查代替。当前缺口集中在 `quality/RELEASE_READINESS.md`。
 

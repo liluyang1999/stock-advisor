@@ -14,6 +14,32 @@ from services.store import log_dir  # noqa: E402
 from ui.app import run_gui  # noqa: E402
 
 
+def _restore_diagnostic_streams() -> None:
+    """PyInstaller windowed sets streams to None even when a parent redirects them."""
+    if sys.platform != "win32":
+        return
+    import ctypes
+    import msvcrt
+    import os
+    from ctypes import wintypes
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.GetStdHandle.argtypes = [wintypes.DWORD]
+    kernel.GetStdHandle.restype = wintypes.HANDLE
+    for name, identifier in (("stdout", -11), ("stderr", -12)):
+        if getattr(sys, name) is not None:
+            continue
+        handle = kernel.GetStdHandle(identifier)
+        if handle in (None, 0, ctypes.c_void_p(-1).value):
+            continue  # Double click has no parent console; never allocate one.
+        try:
+            descriptor = msvcrt.open_osfhandle(handle, os.O_WRONLY | os.O_BINARY)
+            stream = os.fdopen(descriptor, "w", encoding="utf-8", buffering=1)
+        except OSError:
+            continue
+        setattr(sys, name, stream)
+
+
 def _self_test() -> int:
     """离线自测：委托给 `services.self_check`，一份自检逻辑同时供命令行与 Qt 自检对话框（避免漂移）。"""
     from services.self_check import self_check_cli_line
@@ -29,8 +55,14 @@ def _self_test() -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
+    if "--self-test" in args or "--smoke-test" in args:
+        _restore_diagnostic_streams()
     if "--self-test" in args:
         return _self_test()
+    if "--smoke-test" in args:
+        from qt_app.smoke import run_smoke
+
+        return run_smoke()
     # 不再手动置进程 DPI 感知：Qt6 默认 Per-Monitor-V2，若在 QApplication 之前先调
     # SetProcessDpiAwareness(系统级)，awareness 只能设一次，反而会把 Qt 降级成系统 DPI 感知
     # （多显示器异构 DPI 下发虚）。这条是 Tk 时代的补丁，随 Tk 生产层一并移除（WI-023）。
